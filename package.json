@@ -1,6 +1,6 @@
 {
   "name": "uploadista-sdk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "packageManager": "pnpm@10.18.3",
   "scripts": {
     "build": "turbo run build --filter=\"./packages/**/*\"",
