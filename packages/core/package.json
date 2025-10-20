@@ -1,9 +1,9 @@
 {
   "name": "@uploadista/core",
   "version": "0.0.2",
-  "description": "Core package of uploadista",
+  "description": "Core package of Uploadista",
   "license": "MIT",
-  "author": "uploadista",
+  "author": "Uploadista",
   "type": "module",
   "exports": {
     ".": {
@@ -73,5 +73,9 @@
     "@types/node": "catalog:",
     "tsdown": "0.15.7",
     "vitest": "3.2.4"
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org/"
   }
 }
