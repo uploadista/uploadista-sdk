@@ -1,14 +1,13 @@
 {
   "name": "uploadista-sdk",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "packageManager": "pnpm@10.18.3",
   "scripts": {
-    "dev": "turbo run dev",
-    "uploadista:build": "turbo run build --filter=\"./packages/**/*\"",
-    "uploadista:dev": "turbo watch build --filter=\"./packages/**/*\"",
-    "uploadista:release": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access public --no-git-checks",
-    "uploadista:release:no-build": "bumpp && pnpm -r publish --access public --no-git-checks --tag next",
-    "uploadista:release:canary": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access public --tag canary --no-git-checks",
+    "build": "turbo run build --filter=\"./packages/**/*\"",
+    "dev": "turbo watch build --filter=\"./packages/**/*\"",
+    "release": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access restricted --no-git-checks",
+    "release:no-build": "bumpp && pnpm -r publish --access restricted --no-git-checks --tag next",
+    "release:canary": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access restricted --tag canary --no-git-checks",
     "bump": "bumpp"
   },
   "devDependencies": {
