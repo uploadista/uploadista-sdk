@@ -1,5 +1,9 @@
 {
   "name": "@uploadista/core",
+  "version": "0.0.2",
+  "description": "Core package of uploadista",
+  "license": "MIT",
+  "author": "uploadista",
   "type": "module",
   "exports": {
     ".": {
@@ -50,7 +54,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "release": "tsdown && bumpp && pnpm publish --access public --no-git-checks",
+    "release": "tsdown && bumpp && pnpm publish --access restricted --no-git-checks",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
