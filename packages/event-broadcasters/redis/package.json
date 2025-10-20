@@ -1,0 +1,26 @@
+{
+  "name": "@uploadista/event-broadcaster-redis",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@redis/client": "5.8.3",
+    "@uploadista/core": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "@types/node": "catalog:"
+  }
+}

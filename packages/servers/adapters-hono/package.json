@@ -1,0 +1,43 @@
+{
+  "name": "@uploadista/adapters-hono",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "4.20251011.0",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
+    "@uploadista/event-broadcaster-memory": "workspace:*",
+    "@uploadista/event-emitter-websocket": "workspace:*",
+    "@uploadista/event-emitter-durable-object": "workspace:*",
+    "@uploadista/server": "workspace:*",
+    "effect": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@uploadista/kv-store-memory": "workspace:*",
+    "@uploadista/typescript-config": "workspace:*",
+    "hono": "^4.0.0",
+    "typescript": "catalog:",
+    "vitest": "3.2.4"
+  },
+  "peerDependencies": {
+    "hono": "^4.0.0"
+  }
+}

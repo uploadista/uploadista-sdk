@@ -1,0 +1,30 @@
+packages:
+  - apps/*
+  - packages/**/*
+  - examples/**/*
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - '@tailwindcss/oxide'
+  - core-js-pure
+  - esbuild
+  - msgpackr-extract
+  - nx
+  - oxc-resolver
+  - sharp
+  - unrs-resolver
+  - workerd
+
+catalog:
+  hono: 4.10.0
+  react: 19.2.0
+  react-dom: 19.2.0
+  react-router: 7.9.4
+  react-router-dom: 7.9.4
+  zod: 4.1.12
+  effect: 3.18.4
+  typescript: 5.9.3
+  "@types/node": 24.8.1

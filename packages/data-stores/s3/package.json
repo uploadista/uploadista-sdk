@@ -1,0 +1,32 @@
+{
+  "name": "@uploadista/data-store-s3",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.913.0",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/kv-store-memory": "workspace:*",
+    "@uploadista/observability": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "vitest": "3.2.4"
+  }
+}

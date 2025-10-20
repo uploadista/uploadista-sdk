@@ -1,0 +1,11 @@
+{
+  "extends": "@uploadista/typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "composite": true,
+    "moduleResolution": "bundler",
+    "incremental": true
+  },
+  "include": ["src/**/*"]
+}

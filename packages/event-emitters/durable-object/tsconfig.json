@@ -1,0 +1,14 @@
+{
+  "extends": "@uploadista/typescript-config/server.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "types": ["./worker-configuration.d.ts"],
+    "lib": ["ES2022", "WebWorker"]
+  },
+  "include": ["src", "worker-configuration.d.ts"]
+}

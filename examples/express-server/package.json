@@ -1,0 +1,43 @@
+{
+  "name": "@uploadista/express-server-example",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "test-client": "tsx src/client-example.ts",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@uploadista/adapters-express": "workspace:*",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/kv-store-memory": "workspace:*",
+    "@uploadista/kv-store-filesystem": "workspace:*",
+    "@uploadista/data-store-filesystem": "workspace:*",
+    "@uploadista/flow-images-nodes": "workspace:*",
+    "@uploadista/flow-images-photon": "workspace:*",
+    "@uploadista/flow-images-replicate": "workspace:*",
+    "@uploadista/flow-images-sharp": "workspace:*",
+    "@uploadista/event-emitter-websocket": "workspace:*",
+    "express": "5.1.0",
+    "cors": "2.8.5",
+    "multer": "2.0.2",
+    "pino-http": "11.0.0",
+    "ws": "^8.18.0",
+    "effect": "3.18.4"
+  },
+  "devDependencies": {
+    "@types/cors": "2.8.19",
+    "@types/express": "5.0.3",
+    "@types/multer": "2.0.0",
+    "@types/node": "24.3.1",
+    "@types/ws": "^8.5.13",
+    "@uploadista/typescript-config": "workspace:*",
+    "tsx": "4.20.5",
+    "typescript": "catalog:"
+  }
+}

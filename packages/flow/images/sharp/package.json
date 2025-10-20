@@ -1,0 +1,29 @@
+{
+  "name": "@uploadista/flow-images-sharp",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "sharp": "0.34.4",
+    "@uploadista/core": "workspace:*",
+    "effect": "catalog:",
+    "tinycolor2": "1.6.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/tinycolor2": "1.4.6",
+    "@uploadista/typescript-config": "workspace:*"
+  }
+}

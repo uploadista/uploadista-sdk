@@ -1,0 +1,73 @@
+{
+  "name": "@uploadista/core",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js",
+      "default": "./dist/errors/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "default": "./dist/types/index.js"
+    },
+    "./flow": {
+      "types": "./dist/flow/index.d.ts",
+      "import": "./dist/flow/index.js",
+      "default": "./dist/flow/index.js"
+    },
+    "./upload": {
+      "types": "./dist/upload/index.d.ts",
+      "import": "./dist/upload/index.js",
+      "default": "./dist/upload/index.js"
+    },
+    "./logger/*": {
+      "types": "./dist/logger/*.d.ts",
+      "import": "./dist/logger/*.js",
+      "default": "./dist/logger/*.js"
+    },
+    "./streams/*": {
+      "types": "./dist/streams/*.d.ts",
+      "import": "./dist/streams/*.js",
+      "default": "./dist/streams/*.js"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*.d.ts",
+      "import": "./dist/utils/*.js",
+      "default": "./dist/utils/*.js"
+    },
+    "./websocket": {
+      "types": "./dist/websocket/index.d.ts",
+      "import": "./dist/websocket/index.js",
+      "default": "./dist/websocket/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "release": "tsdown && bumpp && pnpm publish --access public --no-git-checks",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@uploadista/observability": "workspace:*",
+    "effect": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsdown": "0.15.7",
+    "vitest": "3.2.4"
+  }
+}

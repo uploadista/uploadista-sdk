@@ -1,0 +1,33 @@
+{
+  "name": "@uploadista/vue-client-example",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@uploadista/client-browser": "workspace:*",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/vue": "workspace:*",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-vue-next": "0.469.0",
+    "tailwind-merge": "3.3.1",
+    "vue": "3.5.22"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.1.14",
+    "@uploadista/typescript-config": "workspace:*",
+    "@vitejs/plugin-vue": "5.2.1",
+    "tailwindcss": "4.1.14",
+    "typescript": "catalog:",
+    "vite": "7.1.10",
+    "vue-tsc": "2.2.0"
+  }
+}

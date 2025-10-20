@@ -1,0 +1,43 @@
+{
+  "name": "@uploadista/expo",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Expo client for Uploadista with managed workflow support",
+  "exports": {
+    ".": "./src/index.ts",
+    "./services": "./src/services/index.ts"
+  },
+  "scripts": {
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*",
+    "@uploadista/client-core": "workspace:*",
+    "@uploadista/react-native-core": "workspace:*",
+    "uuid": "^10.0.0",
+    "js-base64": "^3.7.7"
+  },
+  "peerDependencies": {
+    "@react-native-async-storage/async-storage": ">=1.17.0",
+    "expo-camera": ">=15.0.0",
+    "expo-document-picker": ">=12.0.0",
+    "expo-file-system": ">=16.0.0",
+    "expo-image-picker": ">=14.0.0",
+    "expo-crypto": "15.0.7",
+    "react": ">=16.8.0",
+    "react-native": ">=0.71.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "@types/react": ">=18.0.0",
+    "@types/react-native": ">=0.71.0",
+    "@types/uuid": "^10.0.0"
+  }
+}

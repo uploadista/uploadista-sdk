@@ -1,0 +1,33 @@
+{
+  "name": "@uploadista/vue",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./composables/*": "./src/composables/*.ts",
+    "./components/*": "./src/components/*.vue",
+    "./providers/*": "./src/providers/*.vue",
+    "./utils/*": "./src/utils/*.ts"
+  },
+  "scripts": {
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "peerDependencies": {
+    "vue": "^3.3.0"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*",
+    "@uploadista/client-browser": "workspace:*"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "@vue/test-utils": "^2.4.6",
+    "vitest": "3.2.4",
+    "vue": "^3.5.0"
+  }
+}

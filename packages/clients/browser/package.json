@@ -1,0 +1,27 @@
+{
+  "name": "@uploadista/client-browser",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./flow": "./src/flow/index.ts",
+    "./upload": "./src/upload/index.ts",
+    "./framework-utils": "./src/framework-utils.ts"
+  },
+  "scripts": {
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src ",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@uploadista/client-core": "workspace:*",
+    "@uploadista/core": "workspace:*",
+    "js-base64": "3.7.8"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "vitest": "3.2.4"
+  }
+}

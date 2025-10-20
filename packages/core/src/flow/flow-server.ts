@@ -1,0 +1,936 @@
+import { Context, Effect, Layer } from "effect";
+import type { z } from "zod";
+import { UploadistaError } from "../errors";
+import {
+  createFlowWithSchema,
+  EventType,
+  type Flow,
+  type FlowData,
+  getFlowData,
+  runArgsSchema,
+} from "../flow";
+import type {
+  EventEmitter,
+  KvStore,
+  UploadFile,
+  WebSocketConnection,
+} from "../types";
+import { FlowEventEmitter, FlowJobKVStore } from "../types";
+import { UploadServer } from "../upload";
+import type { FlowEvent } from "./event";
+import type { FlowJob } from "./types/flow-job";
+
+// Define the Flow provider interface that applications must implement
+export type FlowProviderShape<TRequirements = any> = {
+  getFlow: (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<Flow<any, any, TRequirements>, UploadistaError>;
+};
+
+// Context Tag for FlowProvider
+export class FlowProvider extends Context.Tag("FlowProvider")<
+  FlowProvider,
+  FlowProviderShape<any>
+>() {}
+
+// Effect-based FlowServer interface - the core abstraction
+export type FlowServerShape = {
+  getFlow: <TRequirements>(
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<Flow<any, any, TRequirements>, UploadistaError>;
+
+  getFlowData: (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<FlowData, UploadistaError>;
+
+  runFlow: <TRequirements>({
+    flowId,
+    storageId,
+    clientId,
+    inputs,
+  }: {
+    flowId: string;
+    storageId: string;
+    clientId: string | null;
+    inputs: any;
+  }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
+
+  continueFlow: <TRequirements>({
+    jobId,
+    nodeId,
+    newData,
+    clientId,
+  }: {
+    jobId: string;
+    nodeId: string;
+    newData: unknown;
+    clientId: string | null;
+  }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
+
+  getJobStatus: (jobId: string) => Effect.Effect<FlowJob, UploadistaError>;
+
+  subscribeToFlowEvents: (
+    jobId: string,
+    connection: WebSocketConnection,
+  ) => Effect.Effect<void, UploadistaError>;
+
+  unsubscribeFromFlowEvents: (
+    jobId: string,
+  ) => Effect.Effect<void, UploadistaError>;
+};
+
+// Context Tag for FlowServer
+export class FlowServer extends Context.Tag("FlowServer")<
+  FlowServer,
+  FlowServerShape
+>() {}
+
+// Legacy types for backward compatibility
+export type FlowServerOptions = {
+  getFlow: <TRequirements>({
+    flowId,
+    storageId,
+  }: {
+    flowId: string;
+    storageId: string;
+  }) => Promise<Flow<any, any, TRequirements>>;
+  kvStore: KvStore<FlowJob>;
+};
+
+const isResultUploadFile = (result: unknown): result is UploadFile => {
+  return typeof result === "object" && result !== null && "id" in result;
+};
+
+// Function to enhance a flow with event emission capabilities
+function withFlowEvents<
+  TFlowInputSchema extends z.ZodSchema<any>,
+  TFlowOutputSchema extends z.ZodSchema<any>,
+  TRequirements,
+>(
+  flow: Flow<TFlowInputSchema, TFlowOutputSchema, TRequirements>,
+  eventEmitter: EventEmitter<FlowEvent>,
+  kvStore: KvStore<FlowJob>,
+): Flow<TFlowInputSchema, TFlowOutputSchema, TRequirements> {
+  // Shared helper to create onEvent callback for a given jobId
+  const createOnEventCallback = (executionJobId: string) => {
+    // Helper to update job in KV store
+    const updateJobInStore = (updates: Partial<FlowJob>) =>
+      Effect.gen(function* () {
+        const job = yield* kvStore.get(executionJobId);
+        if (job) {
+          yield* kvStore.set(executionJobId, {
+            ...job,
+            ...updates,
+            updatedAt: new Date(),
+          });
+        }
+      });
+
+    // Create the onEvent callback that calls original onEvent, emits to eventEmitter, and updates job
+    return (event: FlowEvent) =>
+      Effect.gen(function* () {
+        // Call the original onEvent from the flow if it exists
+        // Catch errors to prevent them from blocking flow execution
+        if (flow.onEvent) {
+          yield* Effect.catchAll(flow.onEvent(event), (error) => {
+            // Log the error but don't fail the flow
+            Effect.logError("Original onEvent failed", error);
+            return Effect.succeed({ eventId: null });
+          });
+        }
+
+        // Emit event
+        yield* eventEmitter.emit(executionJobId, event);
+
+        Effect.logInfo(
+          `Updating job ${executionJobId} with event ${event.eventType}`,
+        );
+
+        // Update job based on event type
+        switch (event.eventType) {
+          case EventType.FlowStart:
+            yield* updateJobInStore({ status: "running" });
+            break;
+
+          case EventType.FlowEnd:
+            // Flow end is handled by executeFlowInBackground
+            // This case ensures the event is still emitted
+            break;
+
+          case EventType.FlowError:
+            yield* updateJobInStore({
+              status: "failed",
+              error: event.error,
+            });
+            break;
+
+          case EventType.NodeStart:
+            yield* Effect.gen(function* () {
+              const job = yield* kvStore.get(executionJobId);
+              if (job) {
+                const existingTask = job.tasks.find(
+                  (t) => t.nodeId === event.nodeId,
+                );
+                const updatedTasks = existingTask
+                  ? job.tasks.map((t) =>
+                      t.nodeId === event.nodeId
+                        ? {
+                            ...t,
+                            status: "running" as const,
+                            updatedAt: new Date(),
+                          }
+                        : t,
+                    )
+                  : [
+                      ...job.tasks,
+                      {
+                        nodeId: event.nodeId,
+                        status: "running" as const,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      },
+                    ];
+
+                yield* kvStore.set(executionJobId, {
+                  ...job,
+                  tasks: updatedTasks,
+                  updatedAt: new Date(),
+                });
+              }
+            });
+            break;
+
+          case EventType.NodePause:
+            yield* Effect.gen(function* () {
+              const job = yield* kvStore.get(executionJobId);
+              if (job) {
+                const existingTask = job.tasks.find(
+                  (t) => t.nodeId === event.nodeId,
+                );
+                const updatedTasks = existingTask
+                  ? job.tasks.map((t) =>
+                      t.nodeId === event.nodeId
+                        ? {
+                            ...t,
+                            status: "paused" as const,
+                            result: event.partialData,
+                            updatedAt: new Date(),
+                          }
+                        : t,
+                    )
+                  : [
+                      ...job.tasks,
+                      {
+                        nodeId: event.nodeId,
+                        status: "paused" as const,
+                        result: event.partialData,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      },
+                    ];
+
+                yield* kvStore.set(executionJobId, {
+                  ...job,
+                  tasks: updatedTasks,
+                  updatedAt: new Date(),
+                });
+              }
+            });
+            break;
+
+          case EventType.NodeResume:
+            yield* Effect.gen(function* () {
+              const job = yield* kvStore.get(executionJobId);
+              if (job) {
+                const updatedTasks = job.tasks.map((t) =>
+                  t.nodeId === event.nodeId
+                    ? {
+                        ...t,
+                        status: "running" as const,
+                        updatedAt: new Date(),
+                      }
+                    : t,
+                );
+
+                yield* kvStore.set(executionJobId, {
+                  ...job,
+                  tasks: updatedTasks,
+                  updatedAt: new Date(),
+                });
+              }
+            });
+            break;
+
+          case EventType.NodeEnd:
+            yield* Effect.gen(function* () {
+              const job = yield* kvStore.get(executionJobId);
+              if (job) {
+                const updatedTasks = job.tasks.map((t) =>
+                  t.nodeId === event.nodeId
+                    ? {
+                        ...t,
+                        status: "completed" as const,
+                        result: event.result,
+                        updatedAt: new Date(),
+                      }
+                    : t,
+                );
+
+                // Track intermediate files for cleanup
+                // Check if result is an UploadFile and node is not an output node
+                const node = flow.nodes.find((n) => n.id === event.nodeId);
+                const isOutputNode = node?.type === "output";
+                const result = event.result;
+
+                let intermediateFiles = job.intermediateFiles || [];
+
+                if (isOutputNode && isResultUploadFile(result) && result.id) {
+                  // If this is an output node and it returns a file that was an intermediate file,
+                  // remove it from the intermediate files list (it's now the final output)
+                  intermediateFiles = intermediateFiles.filter(
+                    (fileId) => fileId !== result.id,
+                  );
+                } else if (
+                  !isOutputNode &&
+                  isResultUploadFile(result) &&
+                  result.id
+                ) {
+                  // Only add to intermediate files if it's not an output node
+                  if (!intermediateFiles.includes(result.id)) {
+                    intermediateFiles.push(result.id);
+                  }
+                }
+
+                yield* kvStore.set(executionJobId, {
+                  ...job,
+                  tasks: updatedTasks,
+                  intermediateFiles,
+                  updatedAt: new Date(),
+                });
+              }
+            });
+            break;
+
+          case EventType.NodeError:
+            yield* Effect.gen(function* () {
+              const job = yield* kvStore.get(executionJobId);
+              if (job) {
+                const updatedTasks = job.tasks.map((t) =>
+                  t.nodeId === event.nodeId
+                    ? {
+                        ...t,
+                        status: "failed" as const,
+                        error: event.error,
+                        retryCount: event.retryCount,
+                        updatedAt: new Date(),
+                      }
+                    : t,
+                );
+
+                yield* kvStore.set(executionJobId, {
+                  ...job,
+                  tasks: updatedTasks,
+                  error: event.error,
+                  updatedAt: new Date(),
+                });
+              }
+            });
+            break;
+        }
+
+        return { eventId: executionJobId };
+      });
+  };
+
+  return {
+    ...flow,
+    run: (args: {
+      inputs?: Record<string, z.infer<TFlowInputSchema>>;
+      storageId: string;
+      jobId?: string;
+      clientId: string | null;
+    }) => {
+      return Effect.gen(function* () {
+        // Use provided jobId or generate a new one
+        const executionJobId = args.jobId || crypto.randomUUID();
+
+        const onEventCallback = createOnEventCallback(executionJobId);
+
+        // Create a new flow with the same configuration but with onEvent callback
+        const flowWithEvents = yield* createFlowWithSchema({
+          flowId: flow.id,
+          name: flow.name,
+          nodes: flow.nodes,
+          edges: flow.edges,
+          inputSchema: flow.inputSchema,
+          outputSchema: flow.outputSchema,
+          onEvent: onEventCallback,
+        });
+
+        // Run the enhanced flow with consistent jobId
+        const result = yield* flowWithEvents.run({
+          ...args,
+          jobId: executionJobId,
+          clientId: args.clientId,
+        });
+
+        // Return the result directly (can be completed or paused)
+        return result;
+      });
+    },
+    resume: (args: {
+      jobId: string;
+      storageId: string;
+      nodeResults: Record<string, unknown>;
+      executionState: {
+        executionOrder: string[];
+        currentIndex: number;
+        inputs: Record<string, z.infer<TFlowInputSchema>>;
+      };
+      clientId: string | null;
+    }) => {
+      return Effect.gen(function* () {
+        const executionJobId = args.jobId;
+
+        const onEventCallback = createOnEventCallback(executionJobId);
+
+        // Create a new flow with the same configuration but with onEvent callback
+        const flowWithEvents = yield* createFlowWithSchema({
+          flowId: flow.id,
+          name: flow.name,
+          nodes: flow.nodes,
+          edges: flow.edges,
+          inputSchema: flow.inputSchema,
+          outputSchema: flow.outputSchema,
+          onEvent: onEventCallback,
+        });
+
+        // Resume the enhanced flow
+        const result = yield* flowWithEvents.resume(args);
+
+        // Return the result directly (can be completed or paused)
+        return result;
+      });
+    },
+  };
+}
+
+// Core FlowServer implementation
+export function createFlowServer() {
+  return Effect.gen(function* () {
+    const flowProvider = yield* FlowProvider;
+    const eventEmitter = yield* FlowEventEmitter;
+    const kvStore = yield* FlowJobKVStore;
+    const uploadServer = yield* UploadServer;
+
+    const updateJob = (jobId: string, updates: Partial<FlowJob>) =>
+      Effect.gen(function* () {
+        const job = yield* kvStore.get(jobId);
+        if (!job) {
+          return yield* Effect.fail(
+            UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+              cause: `Job ${jobId} not found`,
+            }),
+          );
+        }
+        return yield* kvStore.set(jobId, { ...job, ...updates });
+      });
+
+    // Helper function to cleanup intermediate files
+    const cleanupIntermediateFiles = (jobId: string, clientId: string | null) =>
+      Effect.gen(function* () {
+        const job = yield* kvStore.get(jobId);
+        if (
+          !job ||
+          !job.intermediateFiles ||
+          job.intermediateFiles.length === 0
+        ) {
+          return;
+        }
+
+        yield* Effect.logInfo(
+          `Cleaning up ${job.intermediateFiles.length} intermediate files for job ${jobId}`,
+        );
+
+        // Delete each intermediate file
+        yield* Effect.all(
+          job.intermediateFiles.map((fileId) =>
+            Effect.gen(function* () {
+              yield* uploadServer.delete(fileId, clientId);
+              yield* Effect.logDebug(`Deleted intermediate file ${fileId}`);
+            }).pipe(
+              Effect.catchAll((error) =>
+                Effect.gen(function* () {
+                  yield* Effect.logWarning(
+                    `Failed to delete intermediate file ${fileId}: ${error}`,
+                  );
+                  return Effect.succeed(undefined);
+                }),
+              ),
+            ),
+          ),
+          { concurrency: 5 },
+        );
+
+        // Clear the intermediateFiles array
+        yield* updateJob(jobId, {
+          intermediateFiles: [],
+        });
+      });
+
+    // Helper function to execute flow in background
+    const executeFlowInBackground = ({
+      jobId,
+      flow,
+      storageId,
+      clientId,
+      inputs,
+    }: {
+      jobId: string;
+      flow: Flow<any, any, any>;
+      storageId: string;
+      clientId: string | null;
+      inputs: Record<string, any>;
+    }) =>
+      Effect.gen(function* () {
+        // Update job status to running
+        yield* updateJob(jobId, {
+          status: "running",
+        });
+
+        const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
+
+        // Run the flow with the consistent jobId
+        const result = yield* flowWithEvents.run({
+          inputs,
+          storageId,
+          jobId,
+          clientId,
+        });
+
+        // Handle result based on type
+        if (result.type === "paused") {
+          // Update job as paused (node results are in tasks, not executionState)
+          yield* updateJob(jobId, {
+            status: "paused",
+            pausedAt: result.nodeId,
+            executionState: result.executionState,
+            updatedAt: new Date(),
+          });
+        } else {
+          // Update job as completed with final result
+          yield* updateJob(jobId, {
+            status: "completed",
+            result: result.result,
+            updatedAt: new Date(),
+            endedAt: new Date(),
+          });
+
+          // Cleanup intermediate files
+          yield* cleanupIntermediateFiles(jobId, clientId);
+        }
+
+        return result;
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Effect.logError("Flow execution failed", error);
+
+            // Convert error to a proper message
+            const errorMessage =
+              error instanceof UploadistaError ? error.body : String(error);
+
+            yield* Effect.logInfo(
+              `Updating job ${jobId} to failed status with error: ${errorMessage}`,
+            );
+
+            // Update job as failed - do this FIRST before cleanup
+            yield* updateJob(jobId, {
+              status: "failed",
+              error: errorMessage,
+              updatedAt: new Date(),
+            }).pipe(
+              Effect.catchAll((updateError) =>
+                Effect.gen(function* () {
+                  yield* Effect.logError(
+                    `Failed to update job ${jobId}`,
+                    updateError,
+                  );
+                  return Effect.succeed(undefined);
+                }),
+              ),
+            );
+
+            // Emit FlowError event to notify client
+            const job = yield* kvStore.get(jobId);
+            if (job) {
+              yield* eventEmitter
+                .emit(jobId, {
+                  jobId,
+                  eventType: EventType.FlowError,
+                  flowId: job.flowId,
+                  error: errorMessage,
+                })
+                .pipe(
+                  Effect.catchAll((emitError) =>
+                    Effect.gen(function* () {
+                      yield* Effect.logError(
+                        `Failed to emit FlowError event for job ${jobId}`,
+                        emitError,
+                      );
+                      return Effect.succeed(undefined);
+                    }),
+                  ),
+                );
+            }
+
+            // Cleanup intermediate files even on failure (don't let this fail the error handling)
+            yield* cleanupIntermediateFiles(jobId, clientId).pipe(
+              Effect.catchAll((cleanupError) =>
+                Effect.gen(function* () {
+                  yield* Effect.logWarning(
+                    `Failed to cleanup intermediate files for job ${jobId}`,
+                    cleanupError,
+                  );
+                  return Effect.succeed(undefined);
+                }),
+              ),
+            );
+
+            return Effect.fail(error);
+          }),
+        ),
+      );
+
+    return {
+      getFlow: (flowId, clientId) =>
+        Effect.gen(function* () {
+          const flow = yield* flowProvider.getFlow(flowId, clientId);
+          return flow;
+        }),
+
+      getFlowData: (flowId, clientId) =>
+        Effect.gen(function* () {
+          const flow = yield* flowProvider.getFlow(flowId, clientId);
+          return getFlowData(flow);
+        }),
+
+      runFlow: ({
+        flowId,
+        storageId,
+        clientId,
+        inputs,
+      }: {
+        flowId: string;
+        storageId: string;
+        clientId: string | null;
+        inputs: unknown;
+      }) =>
+        Effect.gen(function* () {
+          const parsedParams = yield* Effect.try({
+            try: () => runArgsSchema.parse({ inputs }),
+            catch: (error) =>
+              UploadistaError.fromCode("FLOW_INPUT_VALIDATION_ERROR", {
+                cause: error,
+              }),
+          });
+
+          // Generate a unique jobId
+          const jobId = crypto.randomUUID();
+          const createdAt = new Date();
+
+          // Store initial job metadata
+          const job: FlowJob = {
+            id: jobId,
+            flowId,
+            storageId,
+            clientId,
+            status: "started",
+            createdAt,
+            updatedAt: createdAt,
+            tasks: [],
+          };
+
+          yield* kvStore.set(jobId, job);
+
+          // Get the flow and start background execution
+          const flow = yield* flowProvider.getFlow(flowId, clientId);
+
+          // Fork the flow execution to run in background as daemon
+          yield* Effect.forkDaemon(
+            executeFlowInBackground({
+              jobId,
+              flow,
+              storageId,
+              clientId,
+              inputs: parsedParams.inputs,
+            }).pipe(
+              Effect.tapErrorCause((cause) =>
+                Effect.logError("Flow execution failed", cause),
+              ),
+            ),
+          );
+
+          // Return immediately with jobId
+          return job;
+        }),
+
+      getJobStatus: (jobId: string) =>
+        Effect.gen(function* () {
+          const job = yield* kvStore.get(jobId);
+          if (!job) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found`,
+              }),
+            );
+          }
+
+          return job;
+        }),
+
+      continueFlow: ({
+        jobId,
+        nodeId,
+        newData,
+        clientId,
+      }: {
+        jobId: string;
+        nodeId: string;
+        newData: unknown;
+        clientId: string | null;
+      }) =>
+        Effect.gen(function* () {
+          console.log("continueFlow", jobId, nodeId, newData);
+          // Get the current job
+          const job = yield* kvStore.get(jobId);
+          if (!job) {
+            console.error("Job not found");
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found`,
+              }),
+            );
+          }
+
+          // Verify job is paused
+          if (job.status !== "paused") {
+            console.error("Job is not paused");
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_ERROR", {
+                cause: `Job ${jobId} is not paused (status: ${job.status})`,
+              }),
+            );
+          }
+
+          // Verify it's paused at the expected node
+          if (job.pausedAt !== nodeId) {
+            console.error("Job is not paused at the expected node");
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_ERROR", {
+                cause: `Job ${jobId} is paused at node ${job.pausedAt}, not ${nodeId}`,
+              }),
+            );
+          }
+
+          // Verify we have execution state
+          if (!job.executionState) {
+            console.error("Job has no execution state");
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_ERROR", {
+                cause: `Job ${jobId} has no execution state`,
+              }),
+            );
+          }
+
+          // Reconstruct nodeResults from tasks
+          const nodeResults = job.tasks.reduce(
+            (acc, task) => {
+              if (task.result !== undefined) {
+                acc[task.nodeId] = task.result;
+              }
+              return acc;
+            },
+            {} as Record<string, unknown>,
+          );
+
+          // Update with new data
+          const updatedNodeResults = {
+            ...nodeResults,
+            [nodeId]: newData,
+          };
+
+          const updatedInputs = {
+            ...job.executionState.inputs,
+            [nodeId]: newData,
+          };
+
+          // Update job status to running BEFORE forking background execution
+          // This ensures the status is updated synchronously before events start firing
+          yield* updateJob(jobId, {
+            status: "running",
+          });
+
+          // Get the flow
+          const flow = yield* flowProvider.getFlow(job.flowId, job.clientId);
+
+          // Helper to resume flow in background
+          const resumeFlowInBackground = Effect.gen(function* () {
+            const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
+
+            if (!job.executionState) {
+              return yield* Effect.fail(
+                UploadistaError.fromCode("FLOW_JOB_ERROR", {
+                  cause: `Job ${jobId} has no execution state`,
+                }),
+              );
+            }
+
+            // Resume the flow with updated state
+            const result = yield* flowWithEvents.resume({
+              jobId,
+              storageId: job.storageId,
+              nodeResults: updatedNodeResults,
+              executionState: {
+                ...job.executionState,
+                inputs: updatedInputs,
+              },
+              clientId: job.clientId,
+            });
+
+            // Handle result based on type
+            if (result.type === "paused") {
+              // Update job as paused again (node results are in tasks, not executionState)
+              yield* updateJob(jobId, {
+                status: "paused",
+                pausedAt: result.nodeId,
+                executionState: result.executionState,
+                updatedAt: new Date(),
+              });
+            } else {
+              // Update job as completed with final result
+              yield* updateJob(jobId, {
+                status: "completed",
+                pausedAt: undefined,
+                executionState: undefined,
+                result: result.result,
+                updatedAt: new Date(),
+                endedAt: new Date(),
+              });
+
+              // Cleanup intermediate files
+              yield* cleanupIntermediateFiles(jobId, clientId);
+            }
+
+            return result;
+          }).pipe(
+            Effect.catchAll((error) =>
+              Effect.gen(function* () {
+                yield* Effect.logError("Flow resume failed", error);
+
+                // Convert error to a proper message
+                const errorMessage =
+                  error instanceof UploadistaError ? error.body : String(error);
+
+                yield* Effect.logInfo(
+                  `Updating job ${jobId} to failed status with error: ${errorMessage}`,
+                );
+
+                // Update job as failed - do this FIRST before cleanup
+                yield* updateJob(jobId, {
+                  status: "failed",
+                  error: errorMessage,
+                  updatedAt: new Date(),
+                }).pipe(
+                  Effect.catchAll((updateError) =>
+                    Effect.gen(function* () {
+                      yield* Effect.logError(
+                        `Failed to update job ${jobId}`,
+                        updateError,
+                      );
+                      return Effect.succeed(undefined);
+                    }),
+                  ),
+                );
+
+                // Emit FlowError event to notify client
+                const currentJob = yield* kvStore.get(jobId);
+                if (currentJob) {
+                  yield* eventEmitter
+                    .emit(jobId, {
+                      jobId,
+                      eventType: EventType.FlowError,
+                      flowId: currentJob.flowId,
+                      error: errorMessage,
+                    })
+                    .pipe(
+                      Effect.catchAll((emitError) =>
+                        Effect.gen(function* () {
+                          yield* Effect.logError(
+                            `Failed to emit FlowError event for job ${jobId}`,
+                            emitError,
+                          );
+                          return Effect.succeed(undefined);
+                        }),
+                      ),
+                    );
+                }
+
+                // Cleanup intermediate files even on failure (don't let this fail the error handling)
+                yield* cleanupIntermediateFiles(jobId, clientId).pipe(
+                  Effect.catchAll((cleanupError) =>
+                    Effect.gen(function* () {
+                      yield* Effect.logWarning(
+                        `Failed to cleanup intermediate files for job ${jobId}`,
+                        cleanupError,
+                      );
+                      return Effect.succeed(undefined);
+                    }),
+                  ),
+                );
+
+                return Effect.fail(error);
+              }),
+            ),
+          );
+
+          // Fork the resume execution to run in background as daemon
+          yield* Effect.forkDaemon(
+            resumeFlowInBackground.pipe(
+              Effect.tapErrorCause((cause) =>
+                Effect.logError("Flow resume failed", cause),
+              ),
+            ),
+          );
+
+          // Return immediately with updated job
+          const updatedJob = yield* kvStore.get(jobId);
+          if (!updatedJob) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found after update`,
+              }),
+            );
+          }
+          return updatedJob;
+        }),
+
+      subscribeToFlowEvents: (jobId: string, connection: WebSocketConnection) =>
+        Effect.gen(function* () {
+          yield* eventEmitter.subscribe(jobId, connection);
+        }),
+
+      unsubscribeFromFlowEvents: (jobId: string) =>
+        Effect.gen(function* () {
+          yield* eventEmitter.unsubscribe(jobId);
+        }),
+    } satisfies FlowServerShape;
+  });
+}
+
+// Export the FlowServer layer with job store dependency
+export const flowServer = Layer.effect(FlowServer, createFlowServer());
+export type FlowServerLayer = typeof flowServer;

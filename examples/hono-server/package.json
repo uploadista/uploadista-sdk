@@ -1,0 +1,40 @@
+{
+  "name": "@uploadista/hono-server-example",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "test-client": "tsx src/client-example.ts",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.19.5",
+    "@hono/node-ws": "1.2.0",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/data-store-filesystem": "workspace:*",
+    "@uploadista/kv-store-memory": "workspace:*",
+    "@uploadista/kv-store-filesystem": "workspace:*",
+    "@uploadista/server": "workspace:*",
+    "@uploadista/adapters-hono": "workspace:*",
+    "@uploadista/flow-images-nodes": "workspace:*",
+    "@uploadista/flow-images-photon": "workspace:*",
+    "@uploadista/flow-images-replicate": "workspace:*",
+    "@uploadista/flow-images-sharp": "workspace:*",
+    "dotenv": "17.2.3",
+    "effect": "catalog:",
+    "hono": "catalog:",
+    "hono-pino": "0.10.3",
+    "pino": "10.0.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "4.20.6"
+  }
+}

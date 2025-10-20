@@ -1,0 +1,946 @@
+/**
+ * Core Flow Engine implementation using Effect-based DAG execution.
+ *
+ * This module implements the Flow Engine, which executes directed acyclic graphs (DAGs)
+ * of processing nodes. It supports sequential execution with topological sorting,
+ * conditional node execution, retry logic, and pausable flows.
+ *
+ * @module flow
+ * @see {@link createFlowWithSchema} for creating new flows
+ * @see {@link Flow} for the flow type definition
+ */
+
+/** biome-ignore-all lint/suspicious/noExplicitAny: any is used to allow for dynamic types */
+
+import { Effect } from "effect";
+import { z } from "zod";
+import { UploadistaError } from "../errors";
+import type { FlowEdge } from "./edge";
+
+import { EventType } from "./event";
+import { getNodeData } from "./node";
+
+import type { FlowConfig, FlowNode, FlowNodeData } from "./types/flow-types";
+import { FlowTypeValidator } from "./types/type-validator";
+
+/**
+ * Serialized flow data for storage and transport.
+ * Contains the minimal information needed to reconstruct a flow.
+ *
+ * @property id - Unique flow identifier
+ * @property name - Human-readable flow name
+ * @property nodes - Array of node data (without execution logic)
+ * @property edges - Connections between nodes defining data flow
+ */
+export type FlowData = {
+  id: string;
+  name: string;
+  nodes: FlowNodeData[];
+  edges: FlowEdge[];
+};
+
+/**
+ * Extracts serializable flow data from a Flow instance.
+ * Useful for storing flow definitions or sending them over the network.
+ *
+ * @template TRequirements - Effect requirements for the flow
+ * @param flow - Flow instance to extract data from
+ * @returns Serializable flow data without execution logic
+ *
+ * @example
+ * ```typescript
+ * const flowData = getFlowData(myFlow);
+ * // Store in database or send to client
+ * await db.flows.save(flowData);
+ * ```
+ */
+export const getFlowData = <TRequirements>(
+  flow: Flow<any, any, TRequirements>,
+): FlowData => {
+  return {
+    id: flow.id,
+    name: flow.name,
+    nodes: flow.nodes.map(getNodeData),
+    edges: flow.edges,
+  };
+};
+
+/**
+ * Result of a flow execution - either completed or paused.
+ *
+ * @template TOutput - Type of the flow's output data
+ *
+ * @remarks
+ * Flows can pause when a node needs additional data (e.g., waiting for user input
+ * or external service). The execution state allows resuming from where it paused.
+ *
+ * @example
+ * ```typescript
+ * const result = await Effect.runPromise(flow.run({ inputs, storageId, jobId }));
+ *
+ * if (result.type === "completed") {
+ *   console.log("Flow completed:", result.result);
+ * } else {
+ *   console.log("Flow paused at node:", result.nodeId);
+ *   // Can resume later with: flow.resume({ jobId, executionState: result.executionState, ... })
+ * }
+ * ```
+ */
+export type FlowExecutionResult<TOutput> =
+  | { type: "completed"; result: TOutput }
+  | {
+      type: "paused";
+      nodeId: string;
+      executionState: {
+        executionOrder: string[];
+        currentIndex: number;
+        inputs: Record<string, unknown>;
+      };
+    };
+
+/**
+ * A Flow represents a directed acyclic graph (DAG) of processing nodes.
+ *
+ * Flows execute nodes in topological order, passing data between nodes through edges.
+ * They support conditional execution, retry logic, pausable nodes, and event emission.
+ *
+ * @template TFlowInputSchema - Zod schema defining the shape of input data
+ * @template TFlowOutputSchema - Zod schema defining the shape of output data
+ * @template TRequirements - Effect requirements (services/contexts) needed by nodes
+ *
+ * @property id - Unique flow identifier
+ * @property name - Human-readable flow name
+ * @property nodes - Array of nodes in the flow
+ * @property edges - Connections between nodes
+ * @property inputSchema - Zod schema for validating flow inputs
+ * @property outputSchema - Zod schema for validating flow outputs
+ * @property onEvent - Optional callback for flow execution events
+ * @property run - Executes the flow from the beginning
+ * @property resume - Resumes a paused flow execution
+ * @property validateTypes - Validates node type compatibility
+ * @property validateInputs - Validates input data against schema
+ * @property validateOutputs - Validates output data against schema
+ *
+ * @remarks
+ * Flows are created using {@link createFlowWithSchema}. The Effect-based design
+ * allows for composable error handling, resource management, and dependency injection.
+ *
+ * @example
+ * ```typescript
+ * const flow = yield* createFlowWithSchema({
+ *   flowId: "image-pipeline",
+ *   name: "Image Processing Pipeline",
+ *   nodes: [inputNode, resizeNode, optimizeNode, storageNode],
+ *   edges: [
+ *     { source: "input", target: "resize" },
+ *     { source: "resize", target: "optimize" },
+ *     { source: "optimize", target: "storage" }
+ *   ],
+ *   inputSchema: z.object({ file: z.instanceof(File) }),
+ *   outputSchema: uploadFileSchema
+ * });
+ *
+ * const result = yield* flow.run({
+ *   inputs: { input: { file: myFile } },
+ *   storageId: "storage-1",
+ *   jobId: "job-123"
+ * });
+ * ```
+ */
+export type Flow<
+  TFlowInputSchema extends z.ZodSchema<any>,
+  TFlowOutputSchema extends z.ZodSchema<any>,
+  TRequirements,
+> = {
+  id: string;
+  name: string;
+  nodes: FlowNode<any, any, UploadistaError>[];
+  edges: FlowEdge[];
+  inputSchema: TFlowInputSchema;
+  outputSchema: TFlowOutputSchema;
+  onEvent?: FlowConfig<
+    TFlowInputSchema,
+    TFlowOutputSchema,
+    TRequirements
+  >["onEvent"];
+  run: (args: {
+    inputs?: Record<string, z.infer<TFlowInputSchema>>;
+    storageId: string;
+    jobId: string;
+    clientId: string | null;
+  }) => Effect.Effect<
+    FlowExecutionResult<Record<string, z.infer<TFlowOutputSchema>>>,
+    UploadistaError,
+    TRequirements
+  >;
+  resume: (args: {
+    jobId: string;
+    storageId: string;
+    nodeResults: Record<string, unknown>; // Reconstructed from tasks
+    executionState: {
+      executionOrder: string[];
+      currentIndex: number;
+      inputs: Record<string, z.infer<TFlowInputSchema>>;
+    };
+    clientId: string | null;
+  }) => Effect.Effect<
+    FlowExecutionResult<Record<string, z.infer<TFlowOutputSchema>>>,
+    UploadistaError,
+    TRequirements
+  >;
+  validateTypes: () => { isValid: boolean; errors: string[] };
+  validateInputs: (inputs: unknown) => { isValid: boolean; errors: string[] };
+  validateOutputs: (outputs: unknown) => { isValid: boolean; errors: string[] };
+};
+
+/**
+ * Creates a new Flow with Zod schema-based type validation.
+ *
+ * This is the primary way to create flows in Uploadista. It constructs a Flow
+ * instance that validates inputs/outputs, executes nodes in topological order,
+ * handles errors with retries, and emits events during execution.
+ *
+ * @template TFlowInputSchema - Zod schema for flow input validation
+ * @template TFlowOutputSchema - Zod schema for flow output validation
+ * @template TRequirements - Effect requirements/services needed by the flow
+ * @template TNodeError - Union of possible errors from nodes
+ * @template TNodeRequirements - Union of requirements from nodes
+ *
+ * @param config - Flow configuration object
+ * @param config.flowId - Unique identifier for the flow
+ * @param config.name - Human-readable flow name
+ * @param config.nodes - Array of nodes (can be plain nodes or Effects resolving to nodes)
+ * @param config.edges - Array of edges connecting nodes
+ * @param config.inputSchema - Zod schema for validating inputs
+ * @param config.outputSchema - Zod schema for validating outputs
+ * @param config.typeChecker - Optional custom type compatibility checker
+ * @param config.onEvent - Optional event callback for monitoring execution
+ *
+ * @returns Effect that resolves to a Flow instance
+ *
+ * @throws {UploadistaError} FLOW_CYCLE_ERROR if the graph contains cycles
+ * @throws {UploadistaError} FLOW_NODE_NOT_FOUND if a node is referenced but missing
+ * @throws {UploadistaError} FLOW_NODE_ERROR if node execution fails
+ * @throws {UploadistaError} FLOW_OUTPUT_VALIDATION_ERROR if outputs don't match schema
+ *
+ * @remarks
+ * - Nodes can be provided as plain objects or as Effects that resolve to nodes
+ * - The flow performs topological sorting to determine execution order
+ * - Conditional nodes are evaluated before execution
+ * - Nodes can specify retry configuration with exponential backoff
+ * - Pausable nodes can halt execution and resume later
+ *
+ * @example
+ * ```typescript
+ * const flow = yield* createFlowWithSchema({
+ *   flowId: "image-upload",
+ *   name: "Image Upload with Processing",
+ *   nodes: [
+ *     inputNode,
+ *     yield* createResizeNode({ width: 1920, height: 1080 }),
+ *     optimizeNode,
+ *     storageNode
+ *   ],
+ *   edges: [
+ *     { source: "input", target: "resize" },
+ *     { source: "resize", target: "optimize" },
+ *     { source: "optimize", target: "storage" }
+ *   ],
+ *   inputSchema: z.object({
+ *     file: z.instanceof(File),
+ *     metadata: z.record(z.string(), z.any()).optional()
+ *   }),
+ *   outputSchema: uploadFileSchema,
+ *   onEvent: (event) => Effect.gen(function* () {
+ *     console.log("Flow event:", event);
+ *     return { eventId: event.jobId };
+ *   })
+ * });
+ * ```
+ *
+ * @see {@link Flow} for the returned flow type
+ * @see {@link FlowConfig} for configuration options
+ */
+export function createFlowWithSchema<
+  TFlowInputSchema extends z.ZodSchema<any>,
+  TFlowOutputSchema extends z.ZodSchema<any>,
+  TRequirements = never,
+  TNodeError = never,
+  TNodeRequirements = never,
+>(
+  config: FlowConfig<
+    TFlowInputSchema,
+    TFlowOutputSchema,
+    TNodeError,
+    TNodeRequirements
+  >,
+): Effect.Effect<
+  Flow<TFlowInputSchema, TFlowOutputSchema, TRequirements>,
+  TNodeError,
+  TNodeRequirements
+> {
+  return Effect.gen(function* () {
+    // Resolve nodes - handle mixed arrays of pure nodes and Effect nodes
+    const resolvedNodes: Array<FlowNode<any, any, UploadistaError>> =
+      yield* Effect.all(
+        config.nodes.map((node) =>
+          Effect.isEffect(node)
+            ? (node as Effect.Effect<
+                FlowNode<any, any, UploadistaError>,
+                TNodeError,
+                TNodeRequirements
+              >)
+            : Effect.succeed(node as FlowNode<any, any, UploadistaError>),
+        ),
+      );
+
+    const {
+      flowId,
+      name,
+      onEvent,
+      edges,
+      inputSchema,
+      outputSchema,
+      typeChecker,
+    } = config;
+    const nodes = resolvedNodes;
+    const typeValidator = new FlowTypeValidator(typeChecker);
+
+    // Build adjacency list for topological sorting
+    const buildGraph = () => {
+      const graph: Record<string, string[]> = {};
+      const inDegree: Record<string, number> = {};
+      const reverseGraph: Record<string, string[]> = {};
+
+      // Initialize
+      nodes.forEach((node: any) => {
+        graph[node.id] = [];
+        reverseGraph[node.id] = [];
+        inDegree[node.id] = 0;
+      });
+
+      // Build edges
+      edges.forEach((edge: any) => {
+        graph[edge.source]?.push(edge.target);
+        reverseGraph[edge.target]?.push(edge.source);
+        inDegree[edge.target] = (inDegree[edge.target] || 0) + 1;
+      });
+
+      return { graph, reverseGraph, inDegree };
+    };
+
+    // Topological sort to determine execution order
+    const topologicalSort = () => {
+      const { graph, inDegree } = buildGraph();
+      const queue: string[] = [];
+      const result: string[] = [];
+
+      // Add nodes with no incoming edges
+      Object.keys(inDegree).forEach((nodeId) => {
+        if (inDegree[nodeId] === 0) {
+          queue.push(nodeId);
+        }
+      });
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current) {
+          throw new Error("No current node found");
+        }
+        result.push(current);
+
+        graph[current]?.forEach((neighbor: any) => {
+          inDegree[neighbor] = (inDegree[neighbor] || 0) - 1;
+          if (inDegree[neighbor] === 0) {
+            queue.push(neighbor);
+          }
+        });
+      }
+
+      return result;
+    };
+
+    // Evaluate condition for conditional nodes using Effect
+    const evaluateCondition = (
+      node: FlowNode<any, any, UploadistaError>,
+      data: unknown,
+    ): Effect.Effect<boolean, never> => {
+      if (!node.condition) return Effect.succeed(true);
+
+      const { field, operator, value } = node.condition;
+      const dataRecord = data as Record<string, unknown>;
+      const metadata = dataRecord?.metadata as
+        | Record<string, unknown>
+        | undefined;
+      const fieldValue = metadata?.[field] || dataRecord?.[field];
+
+      const result = (() => {
+        switch (operator) {
+          case "equals":
+            return fieldValue === value;
+          case "notEquals":
+            return fieldValue !== value;
+          case "greaterThan":
+            return Number(fieldValue) > Number(value);
+          case "lessThan":
+            return Number(fieldValue) < Number(value);
+          case "contains":
+            return String(fieldValue).includes(String(value));
+          case "startsWith":
+            return String(fieldValue).startsWith(String(value));
+          default:
+            return true;
+        }
+      })();
+
+      return Effect.succeed(result);
+    };
+
+    // Get all inputs for a node
+    const getNodeInputs = (
+      nodeId: string,
+      nodeResults: Map<string, unknown>,
+    ) => {
+      const { reverseGraph } = buildGraph();
+      const incomingNodes = reverseGraph[nodeId] || [];
+      const inputs: Record<string, unknown> = {};
+
+      incomingNodes.forEach((sourceNodeId: any) => {
+        const result = nodeResults.get(sourceNodeId);
+        if (result !== undefined) {
+          inputs[sourceNodeId] = result;
+        }
+      });
+
+      return inputs;
+    };
+
+    // Map flow inputs to input nodes
+    const mapFlowInputsToNodes = (
+      flowInputs: Record<string, z.infer<TFlowInputSchema>>,
+    ) => {
+      const inputNodes = nodes.filter((node: any) => node.type === "input");
+      const mappedInputs: Record<string, z.infer<TFlowInputSchema>> = {};
+
+      inputNodes.forEach((node: any) => {
+        if (
+          flowInputs &&
+          typeof flowInputs === "object" &&
+          node.id in flowInputs
+        ) {
+          mappedInputs[node.id] = inputSchema.parse(flowInputs[node.id]);
+        }
+      });
+
+      return mappedInputs;
+    };
+
+    // Collect outputs from output nodes
+    const collectFlowOutputs = (
+      nodeResults: Map<string, unknown>,
+    ): Record<string, z.infer<TFlowInputSchema>> => {
+      const outputNodes = nodes.filter((node: any) => node.type === "output");
+      const flowOutputs: Record<string, unknown> = {};
+
+      outputNodes.forEach((node: any) => {
+        const result = nodeResults.get(node.id);
+        if (result !== undefined) {
+          flowOutputs[node.id] = result;
+        }
+      });
+
+      return flowOutputs as Record<string, z.infer<TFlowInputSchema>>;
+    };
+
+    // Execute a single node using Effect
+    const executeNode = (
+      nodeId: string,
+      storageId: string,
+      nodeInputs: Record<string, z.infer<TFlowInputSchema>>,
+      nodeResults: Map<string, unknown>,
+      nodeMap: Map<string, FlowNode<any, any, UploadistaError>>,
+      jobId: string,
+      clientId: string | null,
+    ): Effect.Effect<
+      { nodeId: string; result: unknown; success: boolean; waiting: boolean },
+      UploadistaError
+    > => {
+      return Effect.gen(function* () {
+        const node = nodeMap.get(nodeId);
+        if (!node) {
+          return yield* UploadistaError.fromCode(
+            "FLOW_NODE_NOT_FOUND",
+          ).toEffect();
+        }
+
+        // Emit NodeStart event if provided
+        if (onEvent) {
+          yield* onEvent({
+            jobId,
+            flowId,
+            nodeId,
+            eventType: EventType.NodeStart,
+            nodeName: node.name,
+            nodeType: node.type,
+          });
+        }
+
+        // Get retry configuration
+        const maxRetries = node.retry?.maxRetries ?? 0;
+        const baseDelay = node.retry?.retryDelay ?? 1000;
+        const useExponentialBackoff = node.retry?.exponentialBackoff ?? true;
+
+        let retryCount = 0;
+        let lastError: UploadistaError | null = null;
+
+        // Retry loop
+        while (retryCount <= maxRetries) {
+          try {
+            // Prepare input data for the node
+            let nodeInput: unknown;
+            let nodeInputsForExecution: Record<string, unknown> = {};
+
+            if (node.type === "input") {
+              // For input nodes, use the mapped flow input
+              nodeInput = nodeInputs[nodeId];
+              if (nodeInput === undefined) {
+                return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
+                  cause: new Error(`Input node ${nodeId} has no input data`),
+                }).toEffect();
+              }
+            } else {
+              // Get all inputs for the node
+              nodeInputsForExecution = getNodeInputs(nodeId, nodeResults);
+
+              if (Object.keys(nodeInputsForExecution).length === 0) {
+                return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
+                  cause: new Error(`Node ${nodeId} has no input data`),
+                }).toEffect();
+              }
+
+              // For single input nodes, use the first input
+              if (!node.multiInput) {
+                const firstInputKey = Object.keys(nodeInputsForExecution)[0];
+                if (!firstInputKey) {
+                  return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
+                    cause: new Error(`Node ${nodeId} has no input data`),
+                  }).toEffect();
+                }
+                nodeInput = nodeInputsForExecution[firstInputKey];
+              } else {
+                // For multi-input nodes, pass all inputs
+                nodeInput = nodeInputsForExecution;
+              }
+            }
+
+            // Check condition for conditional nodes
+            if (node.type === "conditional") {
+              const conditionResult = yield* evaluateCondition(node, nodeInput);
+              if (!conditionResult) {
+                // Skip this node - return success but no result
+                if (onEvent) {
+                  yield* onEvent({
+                    jobId,
+                    flowId,
+                    nodeId,
+                    eventType: EventType.NodeEnd,
+                    nodeName: node.name,
+                  });
+                }
+                return {
+                  nodeId,
+                  result: nodeInput,
+                  success: true,
+                  waiting: false,
+                };
+              }
+            }
+
+            // Execute the node
+            const executionResult = yield* node.run({
+              data: nodeInput,
+              inputs: nodeInputsForExecution,
+              jobId,
+              flowId,
+              storageId,
+              clientId,
+            });
+
+            // Handle execution result
+            if (executionResult.type === "waiting") {
+              // Node is waiting for more data - pause execution
+              const result = executionResult.partialData;
+
+              // Emit NodePause event with partial data result
+              if (onEvent) {
+                yield* onEvent({
+                  jobId,
+                  flowId,
+                  nodeId,
+                  eventType: EventType.NodePause,
+                  nodeName: node.name,
+                  partialData: result,
+                });
+              }
+
+              return {
+                nodeId,
+                result,
+                success: true,
+                waiting: true,
+              };
+            }
+
+            // Node completed successfully
+            const result = executionResult.data;
+
+            // Emit NodeEnd event with result
+            if (onEvent) {
+              yield* onEvent({
+                jobId,
+                flowId,
+                nodeId,
+                eventType: EventType.NodeEnd,
+                nodeName: node.name,
+                result,
+              });
+            }
+
+            return { nodeId, result, success: true, waiting: false };
+          } catch (error) {
+            // Store the error
+            lastError =
+              error instanceof UploadistaError
+                ? error
+                : UploadistaError.fromCode("FLOW_NODE_ERROR", { cause: error });
+
+            // Check if we should retry
+            if (retryCount < maxRetries) {
+              retryCount++;
+
+              // Calculate delay with exponential backoff if enabled
+              const delay = useExponentialBackoff
+                ? baseDelay * 2 ** (retryCount - 1)
+                : baseDelay;
+
+              // Log retry attempt
+              yield* Effect.logWarning(
+                `Node ${nodeId} (${node.name}) failed, retrying (${retryCount}/${maxRetries}) after ${delay}ms`,
+              );
+
+              // Wait before retrying
+              yield* Effect.sleep(delay);
+
+              // Continue to next iteration of retry loop
+              continue;
+            }
+
+            // No more retries - emit final error event
+            if (onEvent) {
+              yield* onEvent({
+                jobId,
+                flowId,
+                nodeId,
+                eventType: EventType.NodeError,
+                nodeName: node.name,
+                error: lastError.body,
+                retryCount,
+              });
+            }
+
+            return yield* lastError.toEffect();
+          }
+        }
+
+        // If we get here, all retries failed
+        if (lastError) {
+          return yield* lastError.toEffect();
+        }
+
+        // Should never reach here
+        return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
+          cause: new Error("Unexpected error in retry loop"),
+        }).toEffect();
+      });
+    };
+
+    // Internal execution function that can start fresh or resume
+    const executeFlow = ({
+      inputs,
+      storageId,
+      jobId,
+      resumeFrom,
+      clientId,
+    }: {
+      inputs?: Record<string, z.infer<TFlowInputSchema>>;
+      storageId: string;
+      jobId: string;
+      resumeFrom?: {
+        executionOrder: string[];
+        nodeResults: Map<string, unknown>;
+        currentIndex: number;
+      };
+      clientId: string | null;
+    }): Effect.Effect<
+      | {
+          type: "completed";
+          result: Record<string, z.infer<TFlowOutputSchema>>;
+        }
+      | {
+          type: "paused";
+          nodeId: string;
+          executionState: {
+            executionOrder: string[];
+            currentIndex: number;
+            inputs: Record<string, z.infer<TFlowInputSchema>>;
+          };
+        },
+      UploadistaError
+    > => {
+      return Effect.gen(function* () {
+        // Emit FlowStart event only if starting fresh
+        if (!resumeFrom && onEvent) {
+          yield* onEvent({
+            jobId,
+            eventType: EventType.FlowStart,
+            flowId,
+          });
+        }
+
+        // Map flow inputs to input nodes
+        const nodeInputs = mapFlowInputsToNodes(inputs || {});
+
+        // Get execution order and results - either fresh or from resume state
+        let executionOrder: string[];
+        let nodeResults: Map<string, unknown>;
+        let startIndex: number;
+
+        if (resumeFrom) {
+          // Resume from saved state
+          executionOrder = resumeFrom.executionOrder;
+          nodeResults = resumeFrom.nodeResults;
+          startIndex = resumeFrom.currentIndex;
+        } else {
+          // Start fresh
+          executionOrder = topologicalSort();
+          nodeResults = new Map<string, unknown>();
+          startIndex = 0;
+
+          // Check for cycles
+          if (executionOrder.length !== nodes.length) {
+            return yield* UploadistaError.fromCode(
+              "FLOW_CYCLE_ERROR",
+            ).toEffect();
+          }
+        }
+
+        // Create node map for quick lookup
+        const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+
+        // Execute nodes sequentially starting from startIndex
+        for (let i = startIndex; i < executionOrder.length; i++) {
+          const nodeId = executionOrder[i];
+          if (!nodeId) {
+            return yield* UploadistaError.fromCode(
+              "FLOW_NODE_NOT_FOUND",
+            ).toEffect();
+          }
+
+          // Emit NodeResume event if we're resuming from a paused state at this node
+          if (resumeFrom && i === startIndex && onEvent) {
+            const node = nodeMap.get(nodeId);
+            if (node) {
+              yield* onEvent({
+                jobId,
+                flowId,
+                nodeId,
+                eventType: EventType.NodeResume,
+                nodeName: node.name,
+                nodeType: node.type,
+              });
+            }
+          }
+
+          const nodeResult = yield* executeNode(
+            nodeId,
+            storageId,
+            nodeInputs,
+            nodeResults,
+            nodeMap,
+            jobId,
+            clientId,
+          );
+
+          if (nodeResult.waiting) {
+            // Node is waiting - pause execution and return state
+            if (nodeResult.result !== undefined) {
+              nodeResults.set(nodeResult.nodeId, nodeResult.result);
+            }
+
+            return {
+              type: "paused" as const,
+              nodeId: nodeResult.nodeId,
+              executionState: {
+                executionOrder,
+                currentIndex: i, // Stay at current index to re-execute this node on resume
+                inputs: nodeInputs,
+              },
+            };
+          }
+
+          if (nodeResult.success) {
+            nodeResults.set(nodeResult.nodeId, nodeResult.result);
+          }
+        }
+
+        // All nodes completed - collect outputs
+        const finalResult = collectFlowOutputs(nodeResults);
+
+        const finalResultSchema = z.record(z.string(), outputSchema);
+
+        // Validate the final result against the output schema
+        const parseResult = finalResultSchema.safeParse(finalResult);
+        if (!parseResult.success) {
+          const validationError = `Flow output validation failed: ${parseResult.error.message}. Expected outputs: ${JSON.stringify(Object.keys(collectFlowOutputs(nodeResults)))}. Output nodes: ${nodes
+            .filter((n: any) => n.type === "output")
+            .map((n: any) => n.id)
+            .join(", ")}`;
+
+          // Emit FlowError event for validation failure
+          if (onEvent) {
+            yield* onEvent({
+              jobId,
+              eventType: EventType.FlowError,
+              flowId,
+              error: validationError,
+            });
+          }
+          return yield* UploadistaError.fromCode(
+            "FLOW_OUTPUT_VALIDATION_ERROR",
+            {
+              body: validationError,
+              cause: parseResult.error,
+            },
+          ).toEffect();
+        }
+        const validatedResult = parseResult.data;
+
+        // Emit FlowEnd event
+        if (onEvent) {
+          yield* onEvent({
+            jobId,
+            eventType: EventType.FlowEnd,
+            flowId,
+            result: validatedResult,
+          });
+        }
+
+        return { type: "completed" as const, result: validatedResult };
+      });
+    };
+
+    const run = ({
+      inputs,
+      storageId,
+      jobId,
+      clientId,
+    }: {
+      inputs?: Record<string, z.infer<TFlowInputSchema>>;
+      storageId: string;
+      jobId: string;
+      clientId: string | null;
+    }): Effect.Effect<
+      | {
+          type: "completed";
+          result: Record<string, z.infer<TFlowOutputSchema>>;
+        }
+      | {
+          type: "paused";
+          nodeId: string;
+          executionState: {
+            executionOrder: string[];
+            currentIndex: number;
+            inputs: Record<string, z.infer<TFlowInputSchema>>;
+          };
+        },
+      UploadistaError,
+      TRequirements
+    > => {
+      return executeFlow({ inputs, storageId, jobId, clientId });
+    };
+
+    const resume = ({
+      jobId,
+      storageId,
+      nodeResults,
+      executionState,
+      clientId,
+    }: {
+      jobId: string;
+      storageId: string;
+      nodeResults: Record<string, unknown>;
+      executionState: {
+        executionOrder: string[];
+        currentIndex: number;
+        inputs: Record<string, z.infer<TFlowInputSchema>>;
+      };
+      clientId: string | null;
+    }): Effect.Effect<
+      | {
+          type: "completed";
+          result: Record<string, z.infer<TFlowOutputSchema>>;
+        }
+      | {
+          type: "paused";
+          nodeId: string;
+          executionState: {
+            executionOrder: string[];
+            currentIndex: number;
+            inputs: Record<string, z.infer<TFlowInputSchema>>;
+          };
+        },
+      UploadistaError
+    > => {
+      return executeFlow({
+        inputs: executionState.inputs,
+        storageId,
+        jobId,
+        resumeFrom: {
+          executionOrder: executionState.executionOrder,
+          nodeResults: new Map(Object.entries(nodeResults)),
+          currentIndex: executionState.currentIndex,
+        },
+        clientId,
+      });
+    };
+
+    const validateTypes = () => {
+      // Convert FlowNode to FlowNode for validation
+      const compatibleNodes = nodes as FlowNode<any, any>[];
+      return typeValidator.validateFlow(compatibleNodes, edges);
+    };
+
+    const validateInputs = (inputs: unknown) => {
+      return typeValidator.validateData(inputs, inputSchema);
+    };
+
+    const validateOutputs = (outputs: unknown) => {
+      return typeValidator.validateData(outputs, outputSchema);
+    };
+
+    return {
+      id: flowId,
+      name,
+      nodes,
+      edges,
+      inputSchema,
+      outputSchema,
+      onEvent,
+      run,
+      resume,
+      validateTypes,
+      validateInputs,
+      validateOutputs,
+    };
+  });
+}

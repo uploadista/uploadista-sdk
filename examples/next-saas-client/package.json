@@ -1,0 +1,32 @@
+{
+  "name": "@uploadista/next-saas-client-example",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack --port 4202",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "@uploadista/client-browser": "workspace:*",
+    "@uploadista/react": "workspace:*",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/server": "workspace:*",
+    "axios": "1.12.2",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "next": "15.5.4"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "@tailwindcss/postcss": "4.1.14",
+    "tailwindcss": "4.1.14",
+    "@biomejs/biome": "2.2.5",
+    "@uploadista/typescript-config": "workspace:*"
+  }
+}

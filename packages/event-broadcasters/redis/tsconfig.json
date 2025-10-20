@@ -1,0 +1,14 @@
+{
+  "extends": "@uploadista/typescript-config/server.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "typeRoots": ["../../../../node_modules/@types"],
+    "lib": ["ES2022"]
+  },
+  "include": ["src"]
+}

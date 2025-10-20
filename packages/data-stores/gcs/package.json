@@ -1,0 +1,27 @@
+{
+  "name": "@uploadista/data-store-gcs",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "7.17.2",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*"
+  }
+}

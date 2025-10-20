@@ -1,0 +1,42 @@
+{
+  "name": "uploadista-sdk",
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.18.3",
+  "scripts": {
+    "dev": "turbo run dev",
+    "uploadista:build": "turbo run build --filter=\"./packages/**/*\"",
+    "uploadista:dev": "turbo watch build --filter=\"./packages/**/*\"",
+    "uploadista:release": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access public --no-git-checks",
+    "uploadista:release:no-build": "bumpp && pnpm -r publish --access public --no-git-checks --tag next",
+    "uploadista:release:canary": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access public --tag canary --no-git-checks",
+    "bump": "bumpp"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.6",
+    "@nx/js": "21.6.5",
+    "@swc-node/register": "1.11.1",
+    "@swc/core": "1.13.20",
+    "@swc/helpers": "0.5.17",
+    "bumpp": "10.3.1",
+    "nx": "21.6.5",
+    "rimraf": "6.0.1",
+    "tinyglobby": "0.2.15",
+    "turbo": "2.5.8",
+    "typescript": "catalog:"
+  },
+  "volta": {
+    "node": "24.10.0",
+    "pnpm": "10.18.3"
+  },
+  "workspaces": [
+    "packages/**",
+    "examples/**",
+    "apps/**"
+  ],
+  "trustedDependencies": [
+    "@tailwindcss/oxide",
+    "core-js-pure",
+    "unrs-resolver"
+  ],
+  "dependencies": {}
+}
