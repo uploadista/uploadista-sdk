@@ -3,4 +3,4 @@
 .cursor
 .env
 .turbo
-.tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
