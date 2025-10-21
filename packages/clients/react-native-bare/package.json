@@ -15,19 +15,19 @@
     "check": "biome check --write ./src"
   },
   "dependencies": {
+    "@uploadista/client-core": "workspace:*",
     "@uploadista/react-native-core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-native": ">=0.71.0",
-    "react-native-document-picker": ">=9.0.0",
+    "@react-native-documents/picker": ">=10.0.0",
     "react-native-image-picker": ">=7.0.0",
     "rn-fetch-blob": ">=0.12.0"
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
     "@types/react": ">=18.0.0",
-    "@types/react-native": ">=0.71.0",
     "tsdown": "catalog:"
   }
 }

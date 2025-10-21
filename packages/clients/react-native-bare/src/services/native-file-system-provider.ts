@@ -1,3 +1,4 @@
+import * as DocumentPicker from "@react-native-documents/picker";
 import type {
   CameraOptions,
   FileInfo,
@@ -5,8 +6,6 @@ import type {
   FileSystemProvider,
   PickerOptions,
 } from "@uploadista/react-native-core";
-
-import * as DocumentPicker from "react-native-document-picker";
 import * as ImagePicker from "react-native-image-picker";
 import RNFetchBlob from "rn-fetch-blob";
 
@@ -33,7 +32,7 @@ export class NativeFileSystemProvider implements FileSystemProvider {
         name: file.name || "document",
         size: file.size || 0,
         mimeType: file.type || undefined,
-        localPath: file.fileCopyUri || undefined,
+        localPath: file.uri || undefined,
       };
     } catch (error) {
       if (

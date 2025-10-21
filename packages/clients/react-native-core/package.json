@@ -21,7 +21,7 @@
   "dependencies": {
     "@uploadista/core": "workspace:*",
     "@uploadista/client-core": "workspace:*",
-    "uuid": "^10.0.0",
+    "uuid": "^13.0.0",
     "js-base64": "^3.7.7"
   },
   "peerDependencies": {
@@ -37,8 +37,6 @@
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
     "@types/react": ">=18.0.0",
-    "@types/react-native": ">=0.71.0",
-    "@types/uuid": "^10.0.0",
     "tsdown": "catalog:"
   }
 }

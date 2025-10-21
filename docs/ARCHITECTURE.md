@@ -763,7 +763,7 @@ Polling fallback / Retry event
 
 1. **Server Setup**: See [SERVER_SETUP.md](./SERVER_SETUP.md)
 2. **Client Integration**: See [CLIENT_INTEGRATION.md](./CLIENT_INTEGRATION.md)
-3. **Flow Processing**: See [FLOW_NODES.md](./packages/flow/FLOW_NODES.md)
+3. **Flow Processing**: See [FLOW_NODES.md](../packages/flow/FLOW_NODES.md)
 4. **Deployment**: Choose architecture pattern and deploy
 
 ## Related Documentation
@@ -771,5 +771,5 @@ Polling fallback / Retry event
 - [SERVER_SETUP.md](./SERVER_SETUP.md) - Step-by-step server setup
 - [CLIENT_INTEGRATION.md](./CLIENT_INTEGRATION.md) - Frontend integration
 - [FLOW_NODES.md](./packages/flow/FLOW_NODES.md) - Processing pipelines
-- [@uploadista/core](./packages/core/README.md) - Core package
-- [@uploadista/server](./packages/servers/server/README.md) - Server package
+- [@uploadista/core](../packages/core/README.md) - Core package
+- [@uploadista/server](../packages/servers/server/README.md) - Server package
