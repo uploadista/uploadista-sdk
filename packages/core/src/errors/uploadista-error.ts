@@ -178,18 +178,6 @@ export const ERROR_CATALOG: Readonly<
     status: 400,
     body: "The specified checksum algorithm is not supported\n",
   },
-  // UNSUPPORTED_CONCATENATION_EXTENSION: {
-  //   status: 501,
-  //   body: "Concatenation extension is not (yet) supported. Disable parallel uploads in the tus client.\n",
-  // },
-  // UNSUPPORTED_CREATION_DEFER_LENGTH_EXTENSION: {
-  //   status: 501,
-  //   body: "creation-defer-length extension is not (yet) supported.\n",
-  // },
-  // UNSUPPORTED_EXPIRATION_EXTENSION: {
-  //   status: 501,
-  //   body: "expiration extension is not (yet) supported.\n",
-  // },
 } as const;
 
 /**
@@ -387,7 +375,7 @@ export function isUploadistaError(error: unknown): error is UploadistaError {
  * return Effect.gen(function* () {
  *   const file = yield* kvStore.get(fileId);
  *   if (!file) {
- *     return yield* httpFailureEffect("FILE_NOT_FOUND", {
+ *     return yield* httpFailure("FILE_NOT_FOUND", {
  *       details: { fileId }
  *     });
  *   }
@@ -395,7 +383,7 @@ export function isUploadistaError(error: unknown): error is UploadistaError {
  * });
  * ```
  */
-export function httpFailureEffect(
+export function httpFailure(
   code: UploadistaErrorCode,
   overrides?: Partial<Pick<UploadistaError, "status" | "body">> & {
     details?: unknown;

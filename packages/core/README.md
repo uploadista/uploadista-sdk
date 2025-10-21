@@ -485,71 +485,6 @@ if (capabilities.supportsParallelUploads) {
 
 Advanced stream manipulation utilities:
 
-#### MultiStream
-
-Combine multiple streams into one:
-
-```typescript
-import { MultiStream } from "@uploadista/core/streams/multi-stream";
-
-const stream1 = new ReadableStream({ /* ... */ });
-const stream2 = new ReadableStream({ /* ... */ });
-
-const multiStream = new MultiStream([stream1, stream2]);
-const combined = multiStream.readable;
-
-// Effect-based version
-import { MultiStreamEffect } from "@uploadista/core/streams/multi-stream";
-import { Stream } from "effect";
-
-const effectStream = MultiStreamEffect.fromReadableStreams([
-  stream1,
-  stream2
-]);
-```
-
-#### StreamSplitter
-
-Split a stream into fixed-size chunks:
-
-```typescript
-import { streamSplitter } from "@uploadista/core/streams/stream-splitter";
-
-await streamSplitter(readableStream, {
-  options: { chunkSize: 5 * 1024 * 1024 }, // 5MB chunks
-  onData: (size) => console.log("Read", size, "bytes"),
-  onChunkStarted: (partNumber) => console.log("Chunk", partNumber, "started"),
-  onChunkCompleted: (chunkInfo) => {
-    console.log("Chunk", chunkInfo.partNumber, "completed");
-    // Upload chunkInfo.stream
-  },
-  onChunkError: (partNumber, error) => {
-    console.error("Chunk", partNumber, "failed:", error);
-  }
-});
-
-// Effect-based version
-import { StreamSplitterEffect } from "@uploadista/core/streams/stream-splitter";
-import { Stream } from "effect";
-
-const program = Stream.fromReadableStream(
-  () => readableStream,
-  (error) => UploadistaError.fromCode("FILE_READ_ERROR", { cause: error })
-).pipe(
-  StreamSplitterEffect.split({
-    chunkSize: 5 * 1024 * 1024,
-    onChunkStarted: (part) => console.log("Chunk", part, "started"),
-    onChunkCompleted: (info) => console.log("Chunk completed:", info),
-    onChunkError: (part, err) => console.error("Error:", err)
-  }),
-  Stream.runForEach((chunkInfo) =>
-    Effect.sync(() => {
-      // Process each chunk
-    })
-  )
-);
-```
-
 #### StreamLimiter
 
 Limit stream data rate or total size:
@@ -604,41 +539,6 @@ throttledFn(2); // Ignored (within 1s)
 throttledFn(3); // Ignored (within 1s)
 // After 1s
 throttledFn(4); // Logs "Value: 4"
-```
-
-#### Semaphore
-
-Control concurrent access to resources:
-
-```typescript
-import { semaphore } from "@uploadista/core/utils/semaphore";
-
-const sem = semaphore(3); // Allow 3 concurrent operations
-
-async function processFile(file: File) {
-  const permit = await sem.acquire();
-  try {
-    // Process file (max 3 concurrent)
-    await uploadFile(file);
-  } finally {
-    await permit.release();
-  }
-}
-
-// Effect-based version
-import { SemaphoreEffect } from "@uploadista/core/utils/semaphore";
-import { Effect } from "effect";
-
-const program = Effect.gen(function* () {
-  const sem = yield* SemaphoreEffect.make(3);
-
-  yield* sem.acquire(
-    Effect.gen(function* () {
-      // Process file (automatic cleanup)
-      yield* uploadFileEffect(file);
-    })
-  );
-});
 ```
 
 #### Once
