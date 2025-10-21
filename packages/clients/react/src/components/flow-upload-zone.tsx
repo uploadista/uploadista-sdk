@@ -9,6 +9,17 @@ import {
   useFlowUpload,
 } from "../hooks/use-flow-upload";
 
+/**
+ * Render props passed to the FlowUploadZone children function.
+ * Provides access to flow upload state, drag-drop handlers, and helper functions.
+ *
+ * @property dragDrop - Complete drag-and-drop state and handlers
+ * @property flowUpload - Flow upload hook with upload state and controls
+ * @property isActive - True when dragging over zone
+ * @property openFilePicker - Programmatically open file selection dialog
+ * @property getRootProps - Returns props to spread on the drop zone container
+ * @property getInputProps - Returns props to spread on the hidden file input
+ */
 export interface FlowUploadZoneRenderProps {
   /**
    * Drag and drop state and handlers
@@ -46,6 +57,15 @@ export interface FlowUploadZoneRenderProps {
   getInputProps: () => React.InputHTMLAttributes<HTMLInputElement>;
 }
 
+/**
+ * Props for the FlowUploadZone component.
+ *
+ * @property flowConfig - Flow execution configuration (flowId, storageId, etc.)
+ * @property options - Flow upload options (callbacks, metadata, etc.)
+ * @property accept - Accepted file types (e.g., "image/*", ".pdf")
+ * @property multiple - Allow multiple file selection (default: false)
+ * @property children - Render function receiving flow upload zone state
+ */
 export interface FlowUploadZoneProps {
   /**
    * Flow configuration
@@ -74,38 +94,98 @@ export interface FlowUploadZoneProps {
 }
 
 /**
- * Flow upload zone component with drag-and-drop support
+ * Headless flow upload zone component with drag-and-drop support.
+ * Combines drag-drop functionality with flow processing, using render props
+ * for complete UI control.
+ *
+ * Files uploaded through this zone are automatically processed through the
+ * specified flow, which can perform operations like image optimization,
+ * storage saving, webhooks, etc.
+ *
+ * Must be used within an UploadistaProvider.
+ *
+ * @param props - Flow upload zone configuration and render prop
+ * @returns Rendered flow upload zone using the provided render prop
  *
  * @example
  * ```tsx
+ * // Image upload with flow processing
  * <FlowUploadZone
- *   client={client}
  *   flowConfig={{
- *     flowId: "my-upload-flow",
- *     storageId: "my-storage",
+ *     flowId: "image-processing-flow",
+ *     storageId: "s3-images",
+ *     outputNodeId: "optimized-image",
+ *   }}
+ *   options={{
+ *     onSuccess: (result) => console.log('Processed:', result),
+ *     onFlowComplete: (outputs) => {
+ *       console.log('All outputs:', outputs);
+ *     },
  *   }}
  *   accept="image/*"
  * >
- *   {({ isDragging, isUploading, state, getRootProps, getInputProps, openFilePicker }) => (
- *     <div {...getRootProps()}>
+ *   {({ dragDrop, flowUpload, getRootProps, getInputProps, openFilePicker }) => (
+ *     <div {...getRootProps()} style={{
+ *       border: dragDrop.state.isDragging ? '2px solid blue' : '2px dashed gray',
+ *       padding: '2rem',
+ *       textAlign: 'center'
+ *     }}>
  *       <input {...getInputProps()} />
  *
- *       {isDragging && <p>Drop files here...</p>}
- *       {!isDragging && !isUploading && (
- *         <button onClick={openFilePicker}>Choose Files</button>
+ *       {dragDrop.state.isDragging && (
+ *         <p>Drop image here...</p>
  *       )}
- *       {isUploading && (
+ *
+ *       {!dragDrop.state.isDragging && !flowUpload.isUploading && (
  *         <div>
- *           <progress value={state.progress} max={100} />
- *           <p>{state.progress}%</p>
+ *           <p>Drag an image or click to browse</p>
+ *           <button onClick={openFilePicker}>Choose File</button>
  *         </div>
  *       )}
- *       {state.status === "success" && <p>Upload complete!</p>}
- *       {state.status === "error" && <p>Error: {state.error?.message}</p>}
+ *
+ *       {flowUpload.isUploadingFile && (
+ *         <div>
+ *           <p>Uploading...</p>
+ *           <progress value={flowUpload.state.progress} max={100} />
+ *           <span>{flowUpload.state.progress}%</span>
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.isProcessing && (
+ *         <div>
+ *           <p>Processing image...</p>
+ *           {flowUpload.state.currentNodeName && (
+ *             <span>Step: {flowUpload.state.currentNodeName}</span>
+ *           )}
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.state.status === "success" && (
+ *         <div>
+ *           <p>✓ Upload complete!</p>
+ *           {flowUpload.state.result && (
+ *             <img src={flowUpload.state.result.url} alt="Uploaded" />
+ *           )}
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.state.status === "error" && (
+ *         <div>
+ *           <p>Error: {flowUpload.state.error?.message}</p>
+ *           <button onClick={flowUpload.reset}>Try Again</button>
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.isUploading && (
+ *         <button onClick={flowUpload.abort}>Cancel</button>
+ *       )}
  *     </div>
  *   )}
  * </FlowUploadZone>
  * ```
+ *
+ * @see {@link SimpleFlowUploadZone} for a pre-styled version
+ * @see {@link useFlowUpload} for the underlying hook
  */
 export function FlowUploadZone({
   flowConfig,
@@ -159,6 +239,16 @@ export function FlowUploadZone({
   );
 }
 
+/**
+ * Props for the SimpleFlowUploadZone component.
+ *
+ * @property flowConfig - Flow execution configuration
+ * @property options - Flow upload options (callbacks, metadata)
+ * @property accept - Accepted file types
+ * @property className - CSS class name for custom styling
+ * @property dragText - Text displayed when dragging files over zone
+ * @property idleText - Text displayed when zone is idle
+ */
 export interface SimpleFlowUploadZoneProps {
   /**
    * Flow configuration
@@ -192,21 +282,54 @@ export interface SimpleFlowUploadZoneProps {
 }
 
 /**
- * Simple pre-styled flow upload zone component
+ * Simple pre-styled flow upload zone component with built-in UI.
+ * Provides a ready-to-use drag-and-drop interface for flow uploads.
+ *
+ * Features:
+ * - Built-in drag-and-drop visual feedback
+ * - Automatic progress display for upload and processing phases
+ * - Success and error state display
+ * - Cancel button during upload
+ * - Customizable text labels
+ *
+ * @param props - Flow upload zone configuration with styling options
+ * @returns Styled flow upload zone component
  *
  * @example
  * ```tsx
+ * // Basic image upload with flow processing
  * <SimpleFlowUploadZone
- 
  *   flowConfig={{
- *     flowId: "my-upload-flow",
- *     inputNodeId: "upload-node",
- *     storageId: "my-storage",
+ *     flowId: "image-optimization-flow",
+ *     storageId: "s3-images",
  *   }}
  *   accept="image/*"
- *   onSuccess={(result) => console.log("Uploaded:", result)}
+ *   options={{
+ *     onSuccess: (result) => console.log("Image processed:", result),
+ *     onError: (error) => console.error("Processing failed:", error),
+ *   }}
+ *   idleText="Drop an image to optimize and upload"
+ *   dragText="Release to start processing"
+ *   className="my-upload-zone"
+ * />
+ *
+ * // Document upload with custom flow
+ * <SimpleFlowUploadZone
+ *   flowConfig={{
+ *     flowId: "document-processing-flow",
+ *     storageId: "docs",
+ *     outputNodeId: "processed-doc",
+ *   }}
+ *   accept=".pdf,.doc,.docx"
+ *   options={{
+ *     onFlowComplete: (outputs) => {
+ *       console.log('Processing outputs:', outputs);
+ *     },
+ *   }}
  * />
  * ```
+ *
+ * @see {@link FlowUploadZone} for the headless version with full control
  */
 export function SimpleFlowUploadZone({
   flowConfig,

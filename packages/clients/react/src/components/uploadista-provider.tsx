@@ -8,6 +8,17 @@ import {
   useUploadistaClient,
 } from "../hooks/use-uploadista-client";
 
+/**
+ * Props for the UploadistaProvider component.
+ * Combines client configuration options with React children.
+ *
+ * @property children - React components that will have access to the upload client context
+ * @property baseUrl - API base URL for uploads
+ * @property storageId - Default storage identifier
+ * @property chunkSize - Upload chunk size in bytes
+ * @property onEvent - Global event handler for all upload events
+ * @property ... - All other UploadistaClientOptions
+ */
 export interface UploadistaProviderProps extends UseUploadistaClientOptions {
   /**
    * Children components that will have access to the upload client

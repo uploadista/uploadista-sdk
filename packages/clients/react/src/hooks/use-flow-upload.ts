@@ -26,6 +26,10 @@ function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
   );
 }
 
+/**
+ * Possible states for a flow upload lifecycle.
+ * Flow uploads progress through: idle → uploading → processing → success/error/aborted
+ */
 export type FlowUploadStatus =
   | "idle"
   | "uploading"
@@ -34,6 +38,24 @@ export type FlowUploadStatus =
   | "error"
   | "aborted";
 
+/**
+ * Complete state information for a flow upload operation.
+ * Tracks both the upload phase (file transfer) and processing phase (flow execution).
+ *
+ * @template TOutput - Type of the final output from the flow (defaults to UploadFile)
+ *
+ * @property status - Current upload status (idle, uploading, processing, success, error, aborted)
+ * @property progress - Upload progress percentage (0-100)
+ * @property bytesUploaded - Number of bytes successfully uploaded
+ * @property totalBytes - Total file size in bytes (null if unknown)
+ * @property error - Error object if upload or processing failed
+ * @property result - Final output from the flow (available when status is "success")
+ * @property jobId - Unique identifier for the flow execution job
+ * @property flowStarted - Whether the flow processing has started
+ * @property currentNodeName - Name of the currently executing flow node
+ * @property currentNodeType - Type of the currently executing flow node
+ * @property flowOutputs - Complete outputs from all output nodes in the flow
+ */
 export interface FlowUploadState<TOutput = UploadFile> {
   status: FlowUploadStatus;
   progress: number;
@@ -50,6 +72,19 @@ export interface FlowUploadState<TOutput = UploadFile> {
   flowOutputs: Record<string, unknown> | null;
 }
 
+/**
+ * Return value from the useFlowUpload hook with upload control methods and state.
+ *
+ * @template TOutput - Type of the final output from the flow (defaults to UploadFile)
+ *
+ * @property state - Complete flow upload state with progress and outputs
+ * @property upload - Function to initiate file upload through the flow
+ * @property abort - Cancel the current upload and flow execution
+ * @property reset - Reset state to idle (clears all data)
+ * @property isUploading - True when upload or processing is active
+ * @property isUploadingFile - True only during file upload phase
+ * @property isProcessing - True only during flow processing phase
+ */
 export interface UseFlowUploadReturn<TOutput = UploadFile> {
   /**
    * Current upload state
@@ -102,39 +137,92 @@ const initialState: FlowUploadState = {
 };
 
 /**
- * Hook for uploading files through a flow
+ * React hook for uploading files through a flow with automatic flow execution.
+ * Handles both the file upload phase and the flow processing phase, providing
+ * real-time progress updates and flow node execution tracking.
  *
- * This hook provides a simple interface for uploading files through a flow.
- * The flow handles the upload process and can perform post-processing like
- * saving to storage, optimizing images, etc.
+ * The flow engine processes the uploaded file through a DAG of nodes, which can
+ * perform operations like image optimization, storage saving, webhooks, etc.
  *
- * Must be used within an UploadistaProvider. Events are automatically wired up
- * through the provider context.
+ * Must be used within an UploadistaProvider. Flow events (node start/end, flow complete)
+ * are automatically subscribed through the provider context.
+ *
+ * @template TOutput - Type of the final result from the flow (defaults to UploadFile)
+ * @param options - Flow upload configuration including flow ID and event handlers
+ * @returns Flow upload state and control methods
  *
  * @example
  * ```tsx
- * function MyComponent() {
+ * // Basic flow upload with progress tracking
+ * function ImageUploader() {
  *   const flowUpload = useFlowUpload({
  *     flowConfig: {
- *       flowId: "my-upload-flow",
- *       storageId: "my-storage",
+ *       flowId: "image-optimization-flow",
+ *       storageId: "s3-images",
+ *       outputNodeId: "optimized-output", // Optional: specify which output to use
  *     },
  *     onSuccess: (result) => {
- *       console.log("Upload complete:", result);
+ *       console.log("Image optimized and saved:", result);
+ *     },
+ *     onFlowComplete: (outputs) => {
+ *       console.log("All flow outputs:", outputs);
+ *       // outputs might include: { thumbnail: {...}, optimized: {...}, original: {...} }
+ *     },
+ *     onError: (error) => {
+ *       console.error("Upload or processing failed:", error);
  *     },
  *   });
  *
  *   return (
- *     <input
- *       type="file"
- *       onChange={(e) => {
- *         const file = e.target.files?.[0];
- *         if (file) flowUpload.upload(file);
- *       }}
- *     />
+ *     <div>
+ *       <input
+ *         type="file"
+ *         accept="image/*"
+ *         onChange={(e) => {
+ *           const file = e.target.files?.[0];
+ *           if (file) flowUpload.upload(file);
+ *         }}
+ *       />
+ *
+ *       {flowUpload.isUploadingFile && (
+ *         <div>Uploading... {flowUpload.state.progress}%</div>
+ *       )}
+ *
+ *       {flowUpload.isProcessing && (
+ *         <div>
+ *           Processing...
+ *           {flowUpload.state.currentNodeName && (
+ *             <span>Current step: {flowUpload.state.currentNodeName}</span>
+ *           )}
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.state.status === "success" && (
+ *         <div>
+ *           <p>Upload complete!</p>
+ *           {flowUpload.state.result && (
+ *             <img src={flowUpload.state.result.url} alt="Uploaded" />
+ *           )}
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.state.status === "error" && (
+ *         <div>
+ *           <p>Error: {flowUpload.state.error?.message}</p>
+ *           <button onClick={flowUpload.reset}>Try Again</button>
+ *         </div>
+ *       )}
+ *
+ *       {flowUpload.isUploading && (
+ *         <button onClick={flowUpload.abort}>Cancel</button>
+ *       )}
+ *     </div>
  *   );
  * }
  * ```
+ *
+ * @see {@link useMultiFlowUpload} for uploading multiple files through a flow
+ * @see {@link useUpload} for simple uploads without flow processing
  */
 export function useFlowUpload<TOutput = UploadFile>(
   options: FlowUploadOptions<TOutput>,

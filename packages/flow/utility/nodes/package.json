@@ -1,6 +1,10 @@
 {
   "name": "@uploadista/flow-utility-nodes",
   "type": "module",
+  "version": "0.0.2",
+  "description": "Utility nodes for Uploadista Flow",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     "./nodes": {
       "types": "./dist/nodes/index.d.ts",

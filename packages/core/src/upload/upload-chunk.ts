@@ -13,7 +13,55 @@ import { computeChecksum } from "../utils/checksum";
 import { compareMimeTypes, detectMimeType } from "./mime";
 import { writeToStore } from "./write-to-store";
 
-// Chunk upload
+/**
+ * Uploads a chunk of data for an existing upload.
+ *
+ * This function handles the core chunk upload logic including:
+ * - Retrieving upload metadata from KV store
+ * - Routing to appropriate data store based on storage ID
+ * - Writing chunk data to storage with progress tracking
+ * - Updating upload offset and metadata
+ * - Emitting progress events
+ * - Validating upload completion (checksum, MIME type)
+ *
+ * The function includes comprehensive observability with:
+ * - Effect tracing spans for performance monitoring
+ * - Metrics tracking for chunk size, throughput, and success rates
+ * - Structured logging for debugging and monitoring
+ * - Error handling with proper UploadistaError types
+ *
+ * @param uploadId - Unique identifier for the upload
+ * @param clientId - Client identifier (null for anonymous uploads)
+ * @param chunk - ReadableStream containing the chunk data to upload
+ * @param dataStoreService - Service for routing to appropriate data stores
+ * @param kvStore - KV store for upload metadata persistence
+ * @param eventEmitter - Event emitter for progress and validation events
+ * @returns Effect that yields the updated UploadFile with new offset
+ *
+ * @example
+ * ```typescript
+ * // Upload a chunk for an existing upload
+ * const uploadChunkEffect = uploadChunk(
+ *   "upload-123",
+ *   "client-456",
+ *   chunkStream,
+ *   {
+ *     dataStoreService,
+ *     kvStore,
+ *     eventEmitter
+ *   }
+ * );
+ *
+ * // Run with dependencies
+ * const result = await Effect.runPromise(
+ *   uploadChunkEffect.pipe(
+ *     Effect.provide(dataStoreLayer),
+ *     Effect.provide(kvStoreLayer),
+ *     Effect.provide(eventEmitterLayer)
+ *   )
+ * );
+ * ```
+ */
 export const uploadChunk = (
   uploadId: string,
   clientId: string | null,
@@ -26,7 +74,7 @@ export const uploadChunk = (
     dataStoreService: UploadFileDataStoresShape;
     kvStore: KvStore<UploadFile>;
     eventEmitter: EventEmitter<UploadEvent>;
-  },
+  }
 ) =>
   Effect.gen(function* () {
     // Get file from KV store
@@ -35,7 +83,7 @@ export const uploadChunk = (
     // Get datastore
     const dataStore = yield* dataStoreService.getDataStore(
       file.storage.id,
-      clientId,
+      clientId
     );
 
     // Note: AbortController could be used for cancellation if needed
@@ -94,7 +142,7 @@ export const uploadChunk = (
         yield* Metric.increment(
           Metric.counter("chunk_uploaded_total", {
             description: "Total number of chunks uploaded",
-          }),
+          })
         );
 
         // Record chunk size
@@ -105,7 +153,7 @@ export const uploadChunk = (
             start: 262_144,
             width: 262_144,
             count: 20,
-          }),
+          })
         );
         yield* Metric.update(chunkSizeHistogram, chunkSize);
 
@@ -113,11 +161,11 @@ export const uploadChunk = (
         if (file.size && file.size > 0) {
           const throughput = chunkSize; // bytes processed
           const throughputGauge = Metric.gauge(
-            "upload_throughput_bytes_per_second",
+            "upload_throughput_bytes_per_second"
           );
           yield* Metric.set(throughputGauge, throughput);
         }
-      }),
+      })
     ),
     // Add structured logging for chunk progress
     Effect.tap((file) =>
@@ -130,8 +178,8 @@ export const uploadChunk = (
               ? ((file.offset / file.size) * 100).toFixed(2)
               : "0",
           "upload.total_size": file.size?.toString() ?? "0",
-        }),
-      ),
+        })
+      )
     ),
     // Handle errors with logging
     Effect.tapError((error) =>
@@ -139,14 +187,44 @@ export const uploadChunk = (
         Effect.annotateLogs({
           "upload.id": uploadId,
           error: String(error),
-        }),
-      ),
-    ),
+        })
+      )
+    )
   );
 
 /**
- * Validate upload after completion.
- * Performs checksum and MIME type validation if configured.
+ * Validates an upload after completion.
+ *
+ * Performs comprehensive validation including:
+ * - Checksum validation (if provided) using the specified algorithm
+ * - MIME type validation (if required by data store capabilities)
+ * - File size validation against data store limits
+ *
+ * Validation results are emitted as events and failures result in:
+ * - Cleanup of uploaded data from storage
+ * - Removal of metadata from KV store
+ * - Appropriate error responses
+ *
+ * The function respects data store capabilities for validation limits
+ * and provides detailed error information for debugging.
+ *
+ * @param file - The upload file to validate
+ * @param dataStore - Data store containing the uploaded file
+ * @param eventEmitter - Event emitter for validation events
+ * @returns Effect that completes validation or fails with UploadistaError
+ *
+ * @example
+ * ```typescript
+ * // Validate upload after completion
+ * const validationEffect = validateUpload({
+ *   file: completedUpload,
+ *   dataStore: s3DataStore,
+ *   eventEmitter: progressEmitter
+ * });
+ *
+ * // Run validation
+ * await Effect.runPromise(validationEffect);
+ * ```
  */
 const validateUpload = ({
   file,
@@ -184,7 +262,7 @@ const validateUpload = ({
     if (file.checksum && file.checksumAlgorithm) {
       const computedChecksum = yield* computeChecksum(
         fileBytes,
-        file.checksumAlgorithm,
+        file.checksumAlgorithm
       );
 
       if (computedChecksum !== file.checksum) {
@@ -232,7 +310,10 @@ const validateUpload = ({
       const detectedMimeType = detectMimeType(fileBytes);
       const declaredMimeType = file.metadata?.type as string | undefined;
 
-      if (declaredMimeType && !compareMimeTypes(declaredMimeType, detectedMimeType)) {
+      if (
+        declaredMimeType &&
+        !compareMimeTypes(declaredMimeType, detectedMimeType)
+      ) {
         // Emit validation failure event
         yield* eventEmitter.emit(file.id, {
           type: UploadEventType.UPLOAD_VALIDATION_FAILED,
@@ -274,7 +355,10 @@ const validateUpload = ({
       attributes: {
         "upload.id": file.id,
         "validation.checksum_provided": file.checksum ? "true" : "false",
-        "validation.mime_required": dataStore.getCapabilities().requiresMimeTypeValidation ? "true" : "false",
+        "validation.mime_required": dataStore.getCapabilities()
+          .requiresMimeTypeValidation
+          ? "true"
+          : "false",
       },
-    }),
+    })
   );

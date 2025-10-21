@@ -20,7 +20,41 @@ import { UploadServer } from "../upload";
 import type { FlowEvent } from "./event";
 import type { FlowJob } from "./types/flow-job";
 
-// Define the Flow provider interface that applications must implement
+/**
+ * Flow provider interface that applications must implement.
+ *
+ * This interface defines how the FlowServer retrieves flow definitions.
+ * Applications provide their own implementation to load flows from a database,
+ * configuration files, or any other source.
+ *
+ * @template TRequirements - Additional Effect requirements for flow execution
+ *
+ * @property getFlow - Retrieves a flow definition by ID with authorization check
+ *
+ * @example
+ * ```typescript
+ * // Implement a flow provider from database
+ * const dbFlowProvider: FlowProviderShape = {
+ *   getFlow: (flowId, clientId) => Effect.gen(function* () {
+ *     // Load flow from database
+ *     const flowData = yield* db.getFlow(flowId);
+ *
+ *     // Check authorization
+ *     if (flowData.ownerId !== clientId) {
+ *       return yield* Effect.fail(
+ *         UploadistaError.fromCode("FLOW_NOT_AUTHORIZED")
+ *       );
+ *     }
+ *
+ *     // Create flow instance
+ *     return createFlow(flowData);
+ *   })
+ * };
+ *
+ * // Provide to FlowServer
+ * const flowProviderLayer = Layer.succeed(FlowProvider, dbFlowProvider);
+ * ```
+ */
 export type FlowProviderShape<TRequirements = any> = {
   getFlow: (
     flowId: string,
@@ -28,13 +62,97 @@ export type FlowProviderShape<TRequirements = any> = {
   ) => Effect.Effect<Flow<any, any, TRequirements>, UploadistaError>;
 };
 
-// Context Tag for FlowProvider
+/**
+ * Effect-TS context tag for the FlowProvider service.
+ *
+ * Applications must provide an implementation of FlowProviderShape
+ * to enable the FlowServer to retrieve flow definitions.
+ *
+ * @example
+ * ```typescript
+ * // Access FlowProvider in an Effect
+ * const effect = Effect.gen(function* () {
+ *   const provider = yield* FlowProvider;
+ *   const flow = yield* provider.getFlow("flow123", "client456");
+ *   return flow;
+ * });
+ * ```
+ */
 export class FlowProvider extends Context.Tag("FlowProvider")<
   FlowProvider,
   FlowProviderShape<any>
 >() {}
 
-// Effect-based FlowServer interface - the core abstraction
+/**
+ * FlowServer service interface.
+ *
+ * This is the core flow processing service that executes DAG-based file processing pipelines.
+ * It manages flow execution, job tracking, node processing, pause/resume functionality,
+ * and real-time event broadcasting.
+ *
+ * All operations return Effect types for composable, type-safe error handling.
+ *
+ * @property getFlow - Retrieves a flow definition by ID
+ * @property getFlowData - Retrieves flow metadata (nodes, edges) without full flow instance
+ * @property runFlow - Starts a new flow execution and returns immediately with job ID
+ * @property continueFlow - Resumes a paused flow with new data for a specific node
+ * @property getJobStatus - Retrieves current status and results of a flow job
+ * @property subscribeToFlowEvents - Subscribes WebSocket to flow execution events
+ * @property unsubscribeFromFlowEvents - Unsubscribes from flow events
+ *
+ * @example
+ * ```typescript
+ * // Execute a flow
+ * const program = Effect.gen(function* () {
+ *   const server = yield* FlowServer;
+ *
+ *   // Start flow execution (returns immediately)
+ *   const job = yield* server.runFlow({
+ *     flowId: "resize-optimize",
+ *     storageId: "s3-production",
+ *     clientId: "client123",
+ *     inputs: {
+ *       input_1: { uploadId: "upload_abc123" }
+ *     }
+ *   });
+ *
+ *   // Subscribe to events
+ *   yield* server.subscribeToFlowEvents(job.id, websocket);
+ *
+ *   // Poll for status
+ *   const status = yield* server.getJobStatus(job.id);
+ *   console.log(status.status); // "running", "paused", "completed", or "failed"
+ *
+ *   return job;
+ * });
+ *
+ * // Resume a paused flow
+ * const resume = Effect.gen(function* () {
+ *   const server = yield* FlowServer;
+ *
+ *   // Flow paused waiting for user input at node "approval_1"
+ *   const job = yield* server.continueFlow({
+ *     jobId: "job123",
+ *     nodeId: "approval_1",
+ *     newData: { approved: true },
+ *     clientId: "client123"
+ *   });
+ *
+ *   return job;
+ * });
+ *
+ * // Check flow structure before execution
+ * const inspect = Effect.gen(function* () {
+ *   const server = yield* FlowServer;
+ *
+ *   const flowData = yield* server.getFlowData("resize-optimize", "client123");
+ *   console.log("Nodes:", flowData.nodes);
+ *   console.log("Edges:", flowData.edges);
+ *
+ *   return flowData;
+ * });
+ * ```
+ */
 export type FlowServerShape = {
   getFlow: <TRequirements>(
     flowId: string,
@@ -82,13 +200,48 @@ export type FlowServerShape = {
   ) => Effect.Effect<void, UploadistaError>;
 };
 
-// Context Tag for FlowServer
+/**
+ * Effect-TS context tag for the FlowServer service.
+ *
+ * Use this tag to access the FlowServer in an Effect context.
+ * The server must be provided via a Layer or dependency injection.
+ *
+ * @example
+ * ```typescript
+ * // Access FlowServer in an Effect
+ * const flowEffect = Effect.gen(function* () {
+ *   const server = yield* FlowServer;
+ *   const job = yield* server.runFlow({
+ *     flowId: "my-flow",
+ *     storageId: "s3",
+ *     clientId: null,
+ *     inputs: {}
+ *   });
+ *   return job;
+ * });
+ *
+ * // Provide FlowServer layer
+ * const program = flowEffect.pipe(
+ *   Effect.provide(flowServer),
+ *   Effect.provide(flowProviderLayer),
+ *   Effect.provide(flowJobKvStore)
+ * );
+ * ```
+ */
 export class FlowServer extends Context.Tag("FlowServer")<
   FlowServer,
   FlowServerShape
 >() {}
 
-// Legacy types for backward compatibility
+/**
+ * Legacy configuration options for FlowServer.
+ *
+ * @deprecated Use Effect Layers and FlowProvider instead.
+ * This type is kept for backward compatibility.
+ *
+ * @property getFlow - Function to retrieve flow definitions
+ * @property kvStore - KV store for flow job metadata
+ */
 export type FlowServerOptions = {
   getFlow: <TRequirements>({
     flowId,

@@ -5,6 +5,19 @@ import type {
 } from "../hooks/use-multi-upload";
 import type { UploadStatus } from "../hooks/use-upload";
 
+/**
+ * Render props passed to the UploadList children function.
+ * Provides organized access to upload items, status groupings, and actions.
+ *
+ * @property items - All upload items (filtered and sorted if configured)
+ * @property itemsByStatus - Upload items grouped by their current status
+ * @property multiUpload - Complete multi-upload hook instance
+ * @property actions - Helper functions for common item operations
+ * @property actions.removeItem - Remove an item from the list
+ * @property actions.retryItem - Retry a failed upload
+ * @property actions.abortItem - Cancel an active upload
+ * @property actions.startItem - Begin uploading an idle item
+ */
 export interface UploadListRenderProps {
   /**
    * All upload items
@@ -38,6 +51,14 @@ export interface UploadListRenderProps {
   };
 }
 
+/**
+ * Props for the UploadList component.
+ *
+ * @property multiUpload - Multi-upload hook instance to display
+ * @property filter - Optional function to filter which items to show
+ * @property sortBy - Optional comparator function to sort items
+ * @property children - Render function receiving list state and actions
+ */
 export interface UploadListProps {
   /**
    * Multi-upload instance from useMultiUpload hook
@@ -228,21 +249,13 @@ export function UploadList({
 }
 
 /**
- * Simple upload list item component for quick prototyping.
- * Provides a basic UI for upload items with common actions.
+ * Props for the SimpleUploadListItem component.
  *
- * @example
- * ```tsx
- * <UploadList multiUpload={multiUpload}>
- *   {({ items, actions }) => (
- *     <div>
- *       {items.map((item) => (
- *         <SimpleUploadListItem key={item.id} item={item} actions={actions} />
- *       ))}
- *     </div>
- *   )}
- * </UploadList>
- * ```
+ * @property item - The upload item to display
+ * @property actions - Action functions from UploadList render props
+ * @property className - Additional CSS class name
+ * @property style - Inline styles for the item container
+ * @property showDetails - Whether to display file size and upload details
  */
 export interface SimpleUploadListItemProps {
   /**
@@ -271,6 +284,48 @@ export interface SimpleUploadListItemProps {
   showDetails?: boolean;
 }
 
+/**
+ * Pre-styled upload list item component with status indicators and action buttons.
+ * Displays file info, progress, errors, and contextual actions based on upload status.
+ *
+ * Features:
+ * - Status-specific color coding and icons
+ * - Progress bar for active uploads
+ * - Error message display
+ * - File size formatting
+ * - Contextual action buttons (start, cancel, retry, remove)
+ *
+ * @param props - Upload item and configuration
+ * @returns Styled upload list item component
+ *
+ * @example
+ * ```tsx
+ * // Use with UploadList
+ * <UploadList multiUpload={multiUpload}>
+ *   {({ items, actions }) => (
+ *     <div>
+ *       {items.map((item) => (
+ *         <SimpleUploadListItem
+ *           key={item.id}
+ *           item={item}
+ *           actions={actions}
+ *           showDetails={true}
+ *         />
+ *       ))}
+ *     </div>
+ *   )}
+ * </UploadList>
+ *
+ * // Custom styling
+ * <SimpleUploadListItem
+ *   item={uploadItem}
+ *   actions={actions}
+ *   className="my-upload-item"
+ *   style={{ borderRadius: '12px', margin: '1rem' }}
+ *   showDetails={true}
+ * />
+ * ```
+ */
 export function SimpleUploadListItem({
   item,
   actions,

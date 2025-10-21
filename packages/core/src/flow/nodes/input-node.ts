@@ -9,46 +9,91 @@ import { createFlowNode, NodeType } from "../node";
 import { completeNodeExecution, waitingNodeExecution } from "../types";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
-// Input schemas for different operations
+/**
+ * Schema for initializing a streaming upload operation.
+ * Creates a new upload session for chunked file uploads.
+ */
 const initStreamingInputSchema = z.object({
+  /** Operation type identifier */
   operation: z.literal("init"),
+  /** Storage ID where the file will be stored */
   storageId: z.string(),
+  /** Optional metadata for the file */
   metadata: z.record(z.string(), z.any()).optional(),
 });
 
+/**
+ * Schema for finalizing a streaming upload operation.
+ * Completes the upload process after all chunks have been uploaded.
+ */
 const finalizeStreamingInputSchema = z.object({
+  /** Operation type identifier */
   operation: z.literal("finalize"),
+  /** Upload ID from the init operation */
   uploadId: z.string(),
 });
 
+/**
+ * Schema for fetching a file from a URL.
+ * Downloads and processes a file from a remote URL.
+ */
 const urlInputSchema = z.object({
+  /** Operation type identifier */
   operation: z.literal("url"),
+  /** URL to fetch the file from */
   url: z.string(),
+  /** Optional storage ID where the file will be stored */
   storageId: z.string().optional(),
+  /** Optional metadata for the file */
   metadata: z.record(z.string(), z.any()).optional(),
 });
 
+/**
+ * Union schema for all input operations.
+ * Defines the possible input data structures for the input node.
+ */
 export const inputDataSchema = z.union([
   initStreamingInputSchema,
   finalizeStreamingInputSchema,
   urlInputSchema,
 ]);
 
+/**
+ * Type representing the input data for the input node.
+ * Can be one of three operation types: init, finalize, or url.
+ */
 export type InputData = z.infer<typeof inputDataSchema>;
 
-// Input node parameters for filtering
+/**
+ * Schema for input node filtering parameters.
+ * Defines validation rules for incoming files.
+ */
 export const inputNodeParamsSchema = z.object({
+  /** Array of allowed MIME types (supports wildcards like "image/*") */
   allowedMimeTypes: z.array(z.string()).optional(),
+  /** Minimum file size in bytes */
   minSize: z.number().positive().optional(),
+  /** Maximum file size in bytes */
   maxSize: z.number().positive().optional(),
 });
 
+/**
+ * Parameters for configuring input node validation.
+ * Controls which files are accepted based on type and size constraints.
+ */
 export type InputNodeParams = z.infer<typeof inputNodeParamsSchema>;
 
-// Helper function to validate file against params
+/**
+ * Helper function to validate file against input parameters.
+ * Performs MIME type and size validation based on the provided parameters.
+ *
+ * @param file - File information to validate
+ * @param params - Validation parameters
+ * @returns An Effect that succeeds if validation passes or fails with validation error
+ */
 function validateFile(
   file: { type: string; size: number },
-  params?: InputNodeParams,
+  params?: InputNodeParams
 ): Effect.Effect<void, UploadistaError> {
   return Effect.gen(function* () {
     if (!params) return;
@@ -67,7 +112,11 @@ function validateFile(
       if (!isAllowed) {
         throw yield* UploadistaError.fromCode("VALIDATION_ERROR", {
           cause: new Error(
-            `File type "${file.type}" is not allowed. Allowed types: ${params.allowedMimeTypes.join(", ")}`,
+            `File type "${
+              file.type
+            }" is not allowed. Allowed types: ${params.allowedMimeTypes.join(
+              ", "
+            )}`
           ),
         }).toEffect();
       }
@@ -77,7 +126,7 @@ function validateFile(
     if (params.minSize !== undefined && file.size < params.minSize) {
       throw yield* UploadistaError.fromCode("VALIDATION_ERROR", {
         cause: new Error(
-          `File size (${file.size} bytes) is below minimum (${params.minSize} bytes)`,
+          `File size (${file.size} bytes) is below minimum (${params.minSize} bytes)`
         ),
       }).toEffect();
     }
@@ -86,13 +135,37 @@ function validateFile(
     if (params.maxSize !== undefined && file.size > params.maxSize) {
       throw yield* UploadistaError.fromCode("VALIDATION_ERROR", {
         cause: new Error(
-          `File size (${file.size} bytes) exceeds maximum (${params.maxSize} bytes)`,
+          `File size (${file.size} bytes) exceeds maximum (${params.maxSize} bytes)`
         ),
       }).toEffect();
     }
   });
 }
 
+/**
+ * Creates an input node for handling file input through multiple methods.
+ *
+ * The input node supports three operation types:
+ * - `init`: Initialize a streaming upload session
+ * - `finalize`: Complete a streaming upload after all chunks are uploaded
+ * - `url`: Fetch a file directly from a URL
+ *
+ * @param id - Unique identifier for the node
+ * @param params - Optional validation parameters for filtering incoming files
+ * @returns An Effect that creates a flow node configured for file input
+ *
+ * @example
+ * ```typescript
+ * // Create input node with validation
+ * const inputNode = yield* createInputNode("file-input", {
+ *   allowedMimeTypes: ["image/*", "application/pdf"],
+ *   maxSize: 10 * 1024 * 1024, // 10MB
+ * });
+ *
+ * // Create input node without validation
+ * const openInputNode = yield* createInputNode("open-input");
+ * ```
+ */
 export function createInputNode(id: string, params?: InputNodeParams) {
   return Effect.gen(function* () {
     const uploadServer = yield* UploadServer;
@@ -127,7 +200,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
 
               const uploadFile = yield* uploadServer.createUpload(
                 inputFile,
-                clientId,
+                clientId
               );
 
               // Return waiting state with the upload file
@@ -138,7 +211,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
             case "finalize": {
               // Get final upload file from upload server's KV store
               const finalUploadFile = yield* uploadServer.getUpload(
-                data.uploadId,
+                data.uploadId
               );
 
               // Extract type and size from metadata for validation
@@ -197,7 +270,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
               const uploadFile = yield* uploadServer.upload(
                 inputFile,
                 clientId,
-                stream,
+                stream
               );
 
               // Complete the node execution with the upload file

@@ -8,6 +8,19 @@ import type { UploadFile } from "@uploadista/core/types";
 import { useCallback, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
 
+/**
+ * Return value from the useMultiFlowUpload hook with batch upload control methods.
+ *
+ * @property state - Aggregated state across all flow upload items
+ * @property addFiles - Add new files to the upload queue
+ * @property removeFile - Remove a file from the queue (aborts if uploading)
+ * @property startUpload - Begin uploading all pending files
+ * @property abortUpload - Cancel a specific upload by its ID
+ * @property abortAll - Cancel all active uploads
+ * @property clear - Remove all items and abort active uploads
+ * @property retryUpload - Retry a specific failed upload
+ * @property isUploading - True when any uploads are in progress
+ */
 export interface UseMultiFlowUploadReturn {
   /**
    * Current upload state
@@ -56,22 +69,39 @@ export interface UseMultiFlowUploadReturn {
 }
 
 /**
- * Hook for uploading multiple files through a flow
+ * React hook for uploading multiple files through a flow with concurrent upload management.
+ * Processes each file through the specified flow while respecting concurrency limits.
  *
- * Must be used within an UploadistaProvider.
+ * Each file is uploaded and processed independently through the flow, with automatic
+ * queue management. Failed uploads can be retried individually, and uploads can be
+ * aborted at any time.
+ *
+ * Must be used within an UploadistaProvider. Flow events for each upload are automatically
+ * tracked and synchronized.
+ *
+ * @param options - Multi-flow upload configuration including flow config and concurrency settings
+ * @returns Multi-flow upload state and control methods
  *
  * @example
  * ```tsx
- * function MyComponent() {
+ * // Batch image upload with progress tracking
+ * function BatchImageUploader() {
  *   const multiFlowUpload = useMultiFlowUpload({
  *     flowConfig: {
- *       flowId: "batch-upload-flow",
- *       inputNodeId: "upload-node",
- *       storageId: "my-storage",
+ *       flowId: "image-optimization-flow",
+ *       storageId: "s3-images",
  *     },
- *     maxConcurrent: 3,
+ *     maxConcurrent: 3, // Process 3 files at a time
+ *     onItemSuccess: (item) => {
+ *       console.log(`${item.file.name} uploaded successfully`);
+ *     },
+ *     onItemError: (item, error) => {
+ *       console.error(`${item.file.name} failed:`, error);
+ *     },
  *     onComplete: (items) => {
- *       console.log("All uploads complete:", items);
+ *       const successful = items.filter(i => i.status === 'success');
+ *       const failed = items.filter(i => i.status === 'error');
+ *       console.log(`Batch complete: ${successful.length} successful, ${failed.length} failed`);
  *     },
  *   });
  *
@@ -80,6 +110,7 @@ export interface UseMultiFlowUploadReturn {
  *       <input
  *         type="file"
  *         multiple
+ *         accept="image/*"
  *         onChange={(e) => {
  *           if (e.target.files) {
  *             multiFlowUpload.addFiles(e.target.files);
@@ -88,14 +119,65 @@ export interface UseMultiFlowUploadReturn {
  *         }}
  *       />
  *
+ *       <div>
+ *         <p>Overall Progress: {multiFlowUpload.state.totalProgress}%</p>
+ *         <p>
+ *           {multiFlowUpload.state.activeUploads} uploading,
+ *           {multiFlowUpload.state.completedUploads} completed,
+ *           {multiFlowUpload.state.failedUploads} failed
+ *         </p>
+ *       </div>
+ *
+ *       <div>
+ *         <button onClick={multiFlowUpload.startUpload} disabled={multiFlowUpload.isUploading}>
+ *           Start All
+ *         </button>
+ *         <button onClick={multiFlowUpload.abortAll} disabled={!multiFlowUpload.isUploading}>
+ *           Cancel All
+ *         </button>
+ *         <button onClick={multiFlowUpload.clear}>
+ *           Clear List
+ *         </button>
+ *       </div>
+ *
  *       {multiFlowUpload.state.items.map((item) => (
- *         <div key={item.id}>
- *           <span>{item.file.name}</span>
- *           <progress value={item.progress} max={100} />
+ *         <div key={item.id} style={{
+ *           border: '1px solid #ccc',
+ *           padding: '1rem',
+ *           marginBottom: '0.5rem'
+ *         }}>
+ *           <div>{item.file instanceof File ? item.file.name : 'File'}</div>
+ *           <div>Status: {item.status}</div>
+ *
  *           {item.status === "uploading" && (
- *             <button onClick={() => multiFlowUpload.abortUpload(item.id)}>
- *               Cancel
- *             </button>
+ *             <div>
+ *               <progress value={item.progress} max={100} />
+ *               <span>{item.progress}%</span>
+ *               <button onClick={() => multiFlowUpload.abortUpload(item.id)}>
+ *                 Cancel
+ *               </button>
+ *             </div>
+ *           )}
+ *
+ *           {item.status === "error" && (
+ *             <div>
+ *               <p style={{ color: 'red' }}>{item.error?.message}</p>
+ *               <button onClick={() => multiFlowUpload.retryUpload(item.id)}>
+ *                 Retry
+ *               </button>
+ *               <button onClick={() => multiFlowUpload.removeFile(item.id)}>
+ *                 Remove
+ *               </button>
+ *             </div>
+ *           )}
+ *
+ *           {item.status === "success" && (
+ *             <div>
+ *               <p style={{ color: 'green' }}>✓ Upload complete</p>
+ *               <button onClick={() => multiFlowUpload.removeFile(item.id)}>
+ *                 Remove
+ *               </button>
+ *             </div>
  *           )}
  *         </div>
  *       ))}
@@ -103,6 +185,9 @@ export interface UseMultiFlowUploadReturn {
  *   );
  * }
  * ```
+ *
+ * @see {@link useFlowUpload} for single file flow uploads
+ * @see {@link useMultiUpload} for multi-file uploads without flow processing
  */
 export function useMultiFlowUpload(
   options: MultiFlowUploadOptions<BrowserUploadInput>,

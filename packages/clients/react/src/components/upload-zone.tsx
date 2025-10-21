@@ -24,6 +24,17 @@ import { useMultiUpload } from "../hooks/use-multi-upload";
 import type { UseUploadOptions, UseUploadReturn } from "../hooks/use-upload";
 import { useUpload } from "../hooks/use-upload";
 
+/**
+ * Render props passed to the UploadZone children function.
+ * Provides access to drag-drop state, upload controls, and helper functions.
+ *
+ * @property dragDrop - Complete drag-and-drop state and event handlers
+ * @property upload - Single upload hook (null when multiple=true)
+ * @property multiUpload - Multi-upload hook (null when multiple=false)
+ * @property openFilePicker - Programmatically trigger file selection dialog
+ * @property isActive - True when dragging over zone or files selected
+ * @property isProcessing - True when uploads are in progress
+ */
 export interface UploadZoneRenderProps {
   /**
    * Drag and drop state and handlers
@@ -56,6 +67,21 @@ export interface UploadZoneRenderProps {
   isProcessing: boolean;
 }
 
+/**
+ * Props for the UploadZone component.
+ * Combines drag-drop options with upload configuration.
+ *
+ * @property multiple - Enable multi-file selection and upload (default: true)
+ * @property multiUploadOptions - Configuration for multi-upload mode
+ * @property uploadOptions - Configuration for single-upload mode
+ * @property children - Render function receiving upload zone state
+ * @property onUploadStart - Called when files pass validation and upload begins
+ * @property onValidationError - Called when file validation fails
+ * @property accept - Accepted file types (e.g., ['image/*', '.pdf'])
+ * @property maxFiles - Maximum number of files allowed
+ * @property maxFileSize - Maximum file size in bytes
+ * @property validator - Custom validation function
+ */
 export interface UploadZoneProps
   extends Omit<DragDropOptions, "onFilesReceived"> {
   /**
@@ -254,31 +280,15 @@ export function UploadZone({
 }
 
 /**
- * Simple upload zone with built-in styling and basic functionality.
- * Provides a ready-to-use upload interface with minimal configuration.
- * Includes built-in error display for validation errors.
+ * Props for the SimpleUploadZone component with built-in styling.
  *
- * @example
- * ```tsx
- * <SimpleUploadZone
- *   multiple={true}
- *   accept={['image/*']}
- *   onUploadStart={(files) => console.log('Starting uploads:', files.length)}
- *   onValidationError={(errors) => console.error('Validation errors:', errors)}
- *   multiUploadOptions={{
- *     onComplete: (results) => console.log('All uploads complete:', results),
- *   }}
- *   style={{
- *     width: '400px',
- *     height: '200px',
- *     margin: '20px auto'
- *   }}
- *   errorStyle={{
- *     backgroundColor: '#fff3cd',
- *     borderColor: '#ffeaa7'
- *   }}
- * />
- * ```
+ * @property className - CSS class name for custom styling
+ * @property style - Inline styles for the upload zone container
+ * @property text - Custom text labels for different states
+ * @property text.idle - Text shown when zone is idle
+ * @property text.dragging - Text shown when dragging files over zone
+ * @property text.uploading - Text shown during upload
+ * @property errorStyle - Custom styles for validation error display
  */
 export interface SimpleUploadZoneProps extends UploadZoneProps {
   /**
@@ -306,6 +316,68 @@ export interface SimpleUploadZoneProps extends UploadZoneProps {
   errorStyle?: React.CSSProperties;
 }
 
+/**
+ * Simple pre-styled upload zone component with built-in UI and error handling.
+ * Provides a ready-to-use drag-and-drop upload interface with minimal configuration.
+ *
+ * Features:
+ * - Built-in drag-and-drop visual feedback
+ * - Automatic progress display
+ * - File validation error display
+ * - Customizable text and styling
+ * - Keyboard accessible
+ *
+ * @param props - Upload zone configuration with styling options
+ * @returns Styled upload zone component
+ *
+ * @example
+ * ```tsx
+ * // Multi-file upload with validation
+ * <SimpleUploadZone
+ *   multiple={true}
+ *   accept={['image/*', '.pdf']}
+ *   maxFiles={5}
+ *   maxFileSize={10 * 1024 * 1024} // 10MB
+ *   onUploadStart={(files) => console.log('Starting uploads:', files.length)}
+ *   onValidationError={(errors) => {
+ *     errors.forEach(err => console.error(err));
+ *   }}
+ *   multiUploadOptions={{
+ *     maxConcurrent: 3,
+ *     onComplete: (results) => {
+ *       console.log(`${results.successful.length}/${results.total} uploaded`);
+ *     },
+ *   }}
+ *   style={{
+ *     width: '400px',
+ *     height: '200px',
+ *     margin: '20px auto',
+ *   }}
+ *   text={{
+ *     idle: 'Drop your files here or click to browse',
+ *     dragging: 'Release to upload',
+ *     uploading: 'Uploading files...',
+ *   }}
+ *   errorStyle={{
+ *     backgroundColor: '#fff3cd',
+ *     borderColor: '#ffeaa7',
+ *   }}
+ * />
+ *
+ * // Single file upload
+ * <SimpleUploadZone
+ *   multiple={false}
+ *   accept={['image/*']}
+ *   uploadOptions={{
+ *     onSuccess: (result) => console.log('Uploaded:', result),
+ *     onError: (error) => console.error('Failed:', error),
+ *   }}
+ *   text={{
+ *     idle: 'Click or drag an image to upload',
+ *   }}
+ * />
+ * ```
+ */
 export function SimpleUploadZone({
   className = "",
   style = {},

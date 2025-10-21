@@ -1,5 +1,11 @@
 import { Data, Effect } from "effect";
 
+/**
+ * Union type of all possible error codes in the Uploadista system.
+ *
+ * Each error code corresponds to a specific error condition with predefined
+ * HTTP status codes and messages in the ERROR_CATALOG.
+ */
 export type UploadistaErrorCode =
   | "MISSING_OFFSET"
   | "ABORTED"
@@ -33,10 +39,29 @@ export type UploadistaErrorCode =
   | "CHECKSUM_MISMATCH"
   | "MIMETYPE_MISMATCH"
   | "UNSUPPORTED_CHECKSUM_ALGORITHM";
-// | "UNSUPPORTED_CONCATENATION_EXTENSION"
-// | "UNSUPPORTED_CREATION_DEFER_LENGTH_EXTENSION"
-// | "UNSUPPORTED_EXPIRATION_EXTENSION";
 
+/**
+ * Catalog of all predefined errors in the Uploadista system.
+ *
+ * Maps error codes to their HTTP status codes and default error messages.
+ * This centralized catalog ensures consistent error handling across all
+ * Uploadista packages and adapters.
+ *
+ * Each error entry contains:
+ * - `status`: HTTP status code (400-500 range)
+ * - `body`: Human-readable error message
+ *
+ * @example
+ * ```typescript
+ * // Access a specific error definition
+ * const fileNotFound = ERROR_CATALOG.FILE_NOT_FOUND;
+ * console.log(fileNotFound.status); // 404
+ * console.log(fileNotFound.body);   // "The file for this url was not found\n"
+ *
+ * // Use with UploadistaError
+ * const error = UploadistaError.fromCode("FILE_NOT_FOUND");
+ * ```
+ */
 export const ERROR_CATALOG: Readonly<
   Record<UploadistaErrorCode, { status: number; body: string }>
 > = {
@@ -274,7 +299,7 @@ export class UploadistaError extends Data.TaggedError("UploadistaError") {
     overrides?: Partial<Pick<UploadistaError, "status" | "body">> & {
       details?: unknown;
       cause?: unknown;
-    },
+    }
   ): UploadistaError {
     const base = ERROR_CATALOG[code];
     return new UploadistaError({
@@ -314,19 +339,68 @@ export class UploadistaError extends Data.TaggedError("UploadistaError") {
   }
 }
 
+/**
+ * Type guard to check if an unknown value is an UploadistaError.
+ *
+ * Useful for error handling when catching errors that might be from
+ * different sources or libraries.
+ *
+ * @param error - The value to check
+ * @returns True if the value is an UploadistaError instance
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   await someOperation();
+ * } catch (error) {
+ *   if (isUploadistaError(error)) {
+ *     console.log(`Uploadista error: ${error.code} (${error.status})`);
+ *     console.log(error.body);
+ *   } else {
+ *     console.error("Unknown error:", error);
+ *   }
+ * }
+ * ```
+ */
 export function isUploadistaError(error: unknown): error is UploadistaError {
   return error instanceof UploadistaError;
 }
 
 /**
- * Create an Effect that fails with an UploadistaError
+ * Creates an Effect that immediately fails with an UploadistaError.
+ *
+ * This is a convenience function that combines error creation with Effect conversion.
+ * It's equivalent to calling `UploadistaError.fromCode(code, overrides).toEffect()`.
+ *
+ * @param code - One of the predefined error codes from UploadistaErrorCode
+ * @param overrides - Optional overrides for the default error properties
+ * @param overrides.status - Custom HTTP status code
+ * @param overrides.body - Custom error message
+ * @param overrides.details - Additional structured data about the error
+ * @param overrides.cause - The underlying error that caused this error
+ *
+ * @returns An Effect that immediately fails with the created UploadistaError
+ *
+ * @example
+ * ```typescript
+ * // In an Effect pipeline
+ * return Effect.gen(function* () {
+ *   const file = yield* kvStore.get(fileId);
+ *   if (!file) {
+ *     return yield* httpFailureEffect("FILE_NOT_FOUND", {
+ *       details: { fileId }
+ *     });
+ *   }
+ *   return file;
+ * });
+ * ```
  */
 export function httpFailureEffect(
   code: UploadistaErrorCode,
   overrides?: Partial<Pick<UploadistaError, "status" | "body">> & {
     details?: unknown;
     cause?: unknown;
-  },
+  }
 ): Effect.Effect<never, UploadistaError> {
   return UploadistaError.fromCode(code, overrides).toEffect();
 }

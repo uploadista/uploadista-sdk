@@ -1,6 +1,10 @@
 {
   "name": "@uploadista/kv-store-redis",
   "type": "module",
+  "version": "0.0.2",
+  "description": "Redis KV store for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

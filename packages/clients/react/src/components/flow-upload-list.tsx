@@ -7,6 +7,24 @@ import type {
 import type { ReactNode } from "react";
 import { useMultiFlowUpload } from "../hooks/use-multi-flow-upload";
 
+/**
+ * Render props passed to the FlowUploadList children function.
+ * Provides access to upload items, aggregate statistics, and control methods.
+ *
+ * @property items - All flow upload items in the queue
+ * @property totalProgress - Average progress across all uploads (0-100)
+ * @property activeUploads - Count of currently uploading items
+ * @property completedUploads - Count of successfully completed uploads
+ * @property failedUploads - Count of failed uploads
+ * @property isUploading - True when any uploads are in progress
+ * @property addFiles - Add new files to the upload queue
+ * @property removeFile - Remove a specific file from the queue
+ * @property startUpload - Begin uploading all pending files
+ * @property abortUpload - Cancel a specific active upload
+ * @property abortAll - Cancel all active uploads
+ * @property clear - Remove all items from the queue
+ * @property retryUpload - Retry a specific failed upload
+ */
 export interface FlowUploadListRenderProps {
   /**
    * List of upload items
@@ -74,6 +92,13 @@ export interface FlowUploadListRenderProps {
   retryUpload: (id: string) => void;
 }
 
+/**
+ * Props for the FlowUploadList component.
+ *
+ * @property flowConfig - Flow execution configuration (flowId, storageId, etc.)
+ * @property options - Multi-flow upload options (callbacks, concurrency, etc.)
+ * @property children - Render function receiving flow upload list state
+ */
 export interface FlowUploadListProps {
   /**
    * Flow configuration
@@ -92,27 +117,55 @@ export interface FlowUploadListProps {
 }
 
 /**
- * Flow upload list component for managing multiple file uploads
+ * Headless flow upload list component for managing batch file uploads through a flow.
+ * Uses render props pattern to provide complete control over the UI while handling
+ * concurrent uploads and flow processing.
+ *
+ * Each file is uploaded and processed independently through the specified flow,
+ * with automatic queue management and concurrency control.
+ *
+ * Must be used within an UploadistaProvider.
+ *
+ * @param props - Flow upload list configuration and render prop
+ * @returns Rendered flow upload list using the provided render prop
  *
  * @example
  * ```tsx
+ * // Batch image processing with custom UI
  * <FlowUploadList
- *   client={client}
  *   flowConfig={{
- *     flowId: "batch-upload-flow",
- *     inputNodeId: "upload-node",
- *     storageId: "my-storage",
+ *     flowId: "image-batch-processing",
+ *     storageId: "s3-images",
+ *     outputNodeId: "optimized",
  *   }}
  *   options={{
  *     maxConcurrent: 3,
- *     onComplete: (items) => console.log("All done:", items),
+ *     onItemSuccess: (item) => {
+ *       console.log(`${item.file.name} processed successfully`);
+ *     },
+ *     onComplete: (items) => {
+ *       const successful = items.filter(i => i.status === 'success');
+ *       console.log(`Batch complete: ${successful.length}/${items.length} successful`);
+ *     },
  *   }}
  * >
- *   {({ items, addFiles, startUpload, abortUpload, retryUpload }) => (
+ *   {({
+ *     items,
+ *     totalProgress,
+ *     activeUploads,
+ *     completedUploads,
+ *     failedUploads,
+ *     addFiles,
+ *     startUpload,
+ *     abortUpload,
+ *     retryUpload,
+ *     clear,
+ *   }) => (
  *     <div>
  *       <input
  *         type="file"
  *         multiple
+ *         accept="image/*"
  *         onChange={(e) => {
  *           if (e.target.files) {
  *             addFiles(e.target.files);
@@ -121,18 +174,42 @@ export interface FlowUploadListProps {
  *         }}
  *       />
  *
- *       <ul>
+ *       <div style={{ marginTop: '1rem' }}>
+ *         <h3>Upload Progress</h3>
+ *         <div>Overall: {totalProgress}%</div>
+ *         <div>
+ *           Active: {activeUploads}, Completed: {completedUploads}, Failed: {failedUploads}
+ *         </div>
+ *         <button onClick={clear}>Clear All</button>
+ *       </div>
+ *
+ *       <ul style={{ listStyle: 'none', padding: 0 }}>
  *         {items.map((item) => (
- *           <li key={item.id}>
- *             <span>{item.file.name}</span>
- *             <progress value={item.progress} max={100} />
- *             <span>{item.progress}%</span>
+ *           <li key={item.id} style={{
+ *             padding: '1rem',
+ *             border: '1px solid #ccc',
+ *             marginBottom: '0.5rem'
+ *           }}>
+ *             <div>{item.file instanceof File ? item.file.name : 'File'}</div>
+ *             <div>Status: {item.status}</div>
  *
  *             {item.status === "uploading" && (
- *               <button onClick={() => abortUpload(item.id)}>Cancel</button>
+ *               <div>
+ *                 <progress value={item.progress} max={100} style={{ width: '100%' }} />
+ *                 <div>{item.progress}%</div>
+ *                 <button onClick={() => abortUpload(item.id)}>Cancel</button>
+ *               </div>
  *             )}
+ *
  *             {item.status === "error" && (
- *               <button onClick={() => retryUpload(item.id)}>Retry</button>
+ *               <div>
+ *                 <div style={{ color: 'red' }}>{item.error?.message}</div>
+ *                 <button onClick={() => retryUpload(item.id)}>Retry</button>
+ *               </div>
+ *             )}
+ *
+ *             {item.status === "success" && (
+ *               <div style={{ color: 'green' }}>✓ Complete</div>
  *             )}
  *           </li>
  *         ))}
@@ -141,6 +218,9 @@ export interface FlowUploadListProps {
  *   )}
  * </FlowUploadList>
  * ```
+ *
+ * @see {@link SimpleFlowUploadList} for a pre-styled version
+ * @see {@link useMultiFlowUpload} for the underlying hook
  */
 export function FlowUploadList({
   flowConfig,
@@ -173,6 +253,14 @@ export function FlowUploadList({
   );
 }
 
+/**
+ * Props for the SimpleFlowUploadListItem component.
+ *
+ * @property item - The flow upload item to display
+ * @property onAbort - Called when the abort button is clicked
+ * @property onRetry - Called when the retry button is clicked
+ * @property onRemove - Called when the remove button is clicked
+ */
 export interface SimpleFlowUploadListItemProps {
   /**
    * Upload item
@@ -196,7 +284,27 @@ export interface SimpleFlowUploadListItemProps {
 }
 
 /**
- * Simple pre-styled flow upload list item component
+ * Pre-styled flow upload list item component with status indicators.
+ * Displays file name, upload progress, status, and contextual action buttons.
+ *
+ * Features:
+ * - Status-specific icons and colors
+ * - Progress bar with percentage and byte count
+ * - Error message display
+ * - Contextual action buttons (cancel, retry, remove)
+ *
+ * @param props - Upload item and callback functions
+ * @returns Styled flow upload list item component
+ *
+ * @example
+ * ```tsx
+ * <SimpleFlowUploadListItem
+ *   item={uploadItem}
+ *   onAbort={() => console.log('Abort')}
+ *   onRetry={() => console.log('Retry')}
+ *   onRemove={() => console.log('Remove')}
+ * />
+ * ```
  */
 export function SimpleFlowUploadListItem({
   item,
@@ -346,6 +454,15 @@ export function SimpleFlowUploadListItem({
   );
 }
 
+/**
+ * Props for the SimpleFlowUploadList component.
+ *
+ * @property flowConfig - Flow execution configuration
+ * @property options - Multi-flow upload options (callbacks, concurrency)
+ * @property className - CSS class name for the container
+ * @property showFileInput - Whether to display the file input (default: true)
+ * @property accept - Accepted file types for the file input
+ */
 export interface SimpleFlowUploadListProps {
   /**
    * Flow configuration
@@ -374,24 +491,54 @@ export interface SimpleFlowUploadListProps {
 }
 
 /**
- * Simple pre-styled flow upload list component
+ * Simple pre-styled flow upload list component with built-in UI.
+ * Provides a ready-to-use interface for batch file uploads with flow processing.
+ *
+ * Features:
+ * - Built-in file input
+ * - Overall progress display
+ * - Individual item progress tracking
+ * - Status indicators and action buttons
+ * - Automatic upload start on file selection
+ *
+ * @param props - Flow upload list configuration with styling options
+ * @returns Styled flow upload list component
  *
  * @example
  * ```tsx
+ * // Basic batch image upload
  * <SimpleFlowUploadList
- *   client={client}
  *   flowConfig={{
- *     flowId: "batch-upload-flow",
- *     inputNodeId: "upload-node",
- *     storageId: "my-storage",
+ *     flowId: "image-batch-processing",
+ *     storageId: "s3-images",
  *   }}
  *   options={{
  *     maxConcurrent: 3,
- *     onComplete: (items) => console.log("All uploads complete"),
+ *     onItemSuccess: (item) => {
+ *       console.log(`${item.file.name} processed`);
+ *     },
+ *     onComplete: (items) => {
+ *       console.log("Batch complete:", items.length);
+ *     },
  *   }}
  *   accept="image/*"
+ *   className="my-upload-list"
+ * />
+ *
+ * // Without file input (add files programmatically)
+ * <SimpleFlowUploadList
+ *   flowConfig={{
+ *     flowId: "document-processing",
+ *     storageId: "docs",
+ *   }}
+ *   showFileInput={false}
+ *   options={{
+ *     maxConcurrent: 2,
+ *   }}
  * />
  * ```
+ *
+ * @see {@link FlowUploadList} for the headless version with full control
  */
 export function SimpleFlowUploadList({
   flowConfig,

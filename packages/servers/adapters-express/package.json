@@ -1,6 +1,10 @@
 {
   "name": "@uploadista/adapters-express",
   "type": "module",
+  "version": "0.0.2",
+  "description": "Express adapter for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

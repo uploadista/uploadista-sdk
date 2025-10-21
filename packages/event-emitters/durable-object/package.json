@@ -1,6 +1,10 @@
 {
   "name": "@uploadista/event-emitter-durable-object",
   "type": "module",
+  "version": "0.0.2",
+  "description": "Durable Object event emitter for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

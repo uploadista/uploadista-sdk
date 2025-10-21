@@ -1,7 +1,10 @@
 {
   "name": "@uploadista/vue",
-  "version": "0.1.0",
   "type": "module",
+  "version": "0.0.2",
+  "description": "Vue client for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": "./src/index.ts",
     "./composables/*": "./src/composables/*.ts",

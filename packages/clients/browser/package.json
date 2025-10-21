@@ -1,6 +1,10 @@
 {
   "name": "@uploadista/client-browser",
   "type": "module",
+  "version": "0.0.2",
+  "description": "Browser client for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": "./src/index.ts",
     "./flow": "./src/flow/index.ts",

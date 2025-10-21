@@ -8,6 +8,26 @@ import { completeNodeExecution } from "../types";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
 /**
+ * Configuration object for creating a transform node.
+ */
+export interface TransformNodeConfig {
+  /** Unique identifier for the node */
+  id: string;
+  /** Human-readable name for the node */
+  name: string;
+  /** Description of what the node does */
+  description: string;
+  /** Function that transforms file bytes */
+  transform: (
+    bytes: Uint8Array,
+    file: UploadFile
+  ) => Effect.Effect<
+    Uint8Array | { bytes: Uint8Array; type?: string; fileName?: string },
+    UploadistaError
+  >;
+}
+
+/**
  * Creates a transform node that handles the common pattern of:
  * 1. Reading bytes from an UploadFile
  * 2. Transforming the bytes
@@ -15,24 +35,44 @@ import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
  *
  * This simplifies nodes that just need to transform file bytes without
  * worrying about upload server interactions.
+ *
+ * @param config - Configuration object for the transform node
+ * @returns An Effect that creates a flow node configured for file transformation
+ *
+ * @example
+ * ```typescript
+ * // Create an image resize transform node
+ * const resizeNode = yield* createTransformNode({
+ *   id: "resize-image",
+ *   name: "Resize Image",
+ *   description: "Resizes images to specified dimensions",
+ *   transform: (bytes, file) => {
+ *     // Your transformation logic here
+ *     return Effect.succeed(transformedBytes);
+ *   }
+ * });
+ *
+ * // Create a transform node that changes file metadata
+ * const metadataTransformNode = yield* createTransformNode({
+ *   id: "add-metadata",
+ *   name: "Add Metadata",
+ *   description: "Adds custom metadata to files",
+ *   transform: (bytes, file) => {
+ *     return Effect.succeed({
+ *       bytes,
+ *       type: "application/custom",
+ *       fileName: `processed-${file.fileName}`
+ *     });
+ *   }
+ * });
+ * ```
  */
 export function createTransformNode({
   id,
   name,
   description,
   transform,
-}: {
-  id: string;
-  name: string;
-  description: string;
-  transform: (
-    bytes: Uint8Array,
-    file: UploadFile,
-  ) => Effect.Effect<
-    Uint8Array | { bytes: Uint8Array; type?: string; fileName?: string },
-    UploadistaError
-  >;
-}) {
+}: TransformNodeConfig) {
   return Effect.gen(function* () {
     const uploadServer = yield* UploadServer;
 
@@ -96,7 +136,7 @@ export function createTransformNode({
               flow,
             },
             clientId,
-            stream,
+            stream
           );
 
           return completeNodeExecution(
@@ -105,7 +145,7 @@ export function createTransformNode({
                   ...result,
                   metadata,
                 }
-              : result,
+              : result
           );
         });
       },

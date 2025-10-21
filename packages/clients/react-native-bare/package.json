@@ -1,7 +1,10 @@
 {
   "name": "@uploadista/react-native-bare",
   "type": "module",
-  "description": "Bare React Native file system provider for Uploadista React Native client",
+  "description": "Bare React Native Client for Uploadista",
+  "version": "0.0.2",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": "./src/index.ts"
   },

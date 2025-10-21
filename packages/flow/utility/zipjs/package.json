@@ -1,6 +1,10 @@
 {
   "name": "@uploadista/flow-utility-zipjs",
   "type": "module",
+  "version": "0.0.2",
+  "description": "ZipJS utility for Uploadista Flow",
+  "license": "MIT",
+  "author": "Uploadista",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

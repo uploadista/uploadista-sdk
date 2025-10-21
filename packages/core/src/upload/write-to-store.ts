@@ -5,6 +5,17 @@ import type { DataStore, UploadEvent, UploadFile } from "../types";
 import { type EventEmitter, UploadEventType } from "../types";
 import { convertToStream } from "./convert-to-stream";
 
+/**
+ * Configuration options for writing data to a data store.
+ *
+ * @property data - The stream of data to write
+ * @property upload - Upload file metadata
+ * @property dataStore - Target data store for writing
+ * @property maxFileSize - Maximum allowed file size in bytes
+ * @property controller - AbortController for cancellation
+ * @property eventEmitter - Event emitter for progress tracking
+ * @property uploadProgressInterval - Progress emission interval in milliseconds (default: 200)
+ */
 type WriteToStoreOptions = {
   data: ReadableStream<Uint8Array>;
   upload: UploadFile;
@@ -15,6 +26,56 @@ type WriteToStoreOptions = {
   uploadProgressInterval?: number;
 };
 
+/**
+ * Writes data stream to a data store with progress tracking and size limits.
+ *
+ * This function handles the core data writing logic including:
+ * - Stream conversion and processing
+ * - File size validation and limiting
+ * - Progress tracking with throttled events
+ * - Abort signal handling for cancellation
+ * - Error handling and cleanup
+ *
+ * The function includes comprehensive observability with:
+ * - Effect tracing spans for performance monitoring
+ * - Structured logging for debugging and monitoring
+ * - Progress event emission with throttling
+ * - Error handling with proper UploadistaError types
+ *
+ * @param data - The stream of data to write to storage
+ * @param upload - Upload file metadata containing ID, offset, etc.
+ * @param dataStore - Target data store for writing the data
+ * @param maxFileSize - Maximum allowed file size in bytes
+ * @param controller - AbortController for handling cancellation
+ * @param eventEmitter - Event emitter for progress tracking
+ * @param uploadProgressInterval - Progress emission interval in milliseconds (default: 200)
+ * @returns Effect that yields the number of bytes written
+ *
+ * @example
+ * ```typescript
+ * // Write data to store with progress tracking
+ * const writeEffect = writeToStore({
+ *   data: fileStream,
+ *   upload: uploadMetadata,
+ *   dataStore: s3DataStore,
+ *   maxFileSize: 100_000_000, // 100MB
+ *   controller: abortController,
+ *   eventEmitter: progressEmitter,
+ *   uploadProgressInterval: 500 // Emit progress every 500ms
+ * });
+ *
+ * // Run with error handling
+ * const bytesWritten = await Effect.runPromise(
+ *   writeEffect.pipe(
+ *     Effect.catchAll((error) =>
+ *       Effect.logError("Failed to write to store").pipe(
+ *         Effect.andThen(Effect.fail(error))
+ *       )
+ *     )
+ *   )
+ * );
+ * ```
+ */
 export function writeToStore({
   data,
   upload,
@@ -88,13 +149,13 @@ export function writeToStore({
                       }
                       return Effect.void;
                     }),
-                    Effect.runPromise,
+                    Effect.runPromise
                   )
                   .catch(() => {
                     // Ignore errors during progress emission
                   });
               },
-            },
+            }
           );
 
           return offset;
@@ -107,14 +168,14 @@ export function writeToStore({
               return Effect.fail(error);
             }
             return Effect.fail(
-              UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error }),
+              UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error })
             );
-          }),
+          })
         ),
       ({ onAbort }) =>
         Effect.sync(() => {
           controller.signal.removeEventListener("abort", onAbort);
-        }),
+        })
     );
   }).pipe(
     // Add tracing span for write operation
@@ -133,8 +194,8 @@ export function writeToStore({
           "upload.id": upload.id,
           "write.offset": offset.toString(),
           "write.bytes_written": (offset - upload.offset).toString(),
-        }),
-      ),
+        })
+      )
     ),
     // Handle errors with logging
     Effect.tapError((error) =>
@@ -142,12 +203,9 @@ export function writeToStore({
         Effect.annotateLogs({
           "upload.id": upload.id,
           "upload.offset": upload.offset.toString(),
-          error:
-            error instanceof UploadistaError
-              ? error.code
-              : String(error),
-        }),
-      ),
-    ),
+          error: error instanceof UploadistaError ? error.code : String(error),
+        })
+      )
+    )
   );
 }
