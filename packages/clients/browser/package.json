@@ -6,10 +6,22 @@
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
-    ".": "./src/index.ts",
-    "./flow": "./src/flow/index.ts",
-    "./upload": "./src/upload/index.ts",
-    "./framework-utils": "./src/framework-utils.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./flow": {
+      "types": "./dist/flow/index.d.ts",
+      "import": "./dist/flow/index.js"
+    },
+    "./upload": {
+      "types": "./dist/upload/index.d.ts",
+      "import": "./dist/upload/index.js"
+    },
+    "./framework-utils": {
+      "types": "./dist/framework-utils.d.ts",
+      "import": "./dist/framework-utils.js"
+    }
   },
   "scripts": {
     "build": "tsdown",
