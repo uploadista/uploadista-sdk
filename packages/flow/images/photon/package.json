@@ -6,14 +6,19 @@
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "import": "./dist/*.js",
-      "default": "./dist/*.js"
+    "node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js"
+    },
+    "serverless": {
+      "types": "./dist/serverless.d.ts",
+      "import": "./dist/serverless.js",
+      "default": "./dist/serverless.js"
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"
@@ -28,6 +33,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/tinycolor2": "1.4.6",
-    "@uploadista/typescript-config": "workspace:*"
+    "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:"
   }
 }

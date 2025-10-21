@@ -3,11 +3,11 @@ import {
   createUploadistaClient,
   type UploadistaEvent,
 } from "@uploadista/client-browser";
+import { onBeforeUnmount, provide, ref } from "vue";
 import {
   UPLOADISTA_CLIENT_KEY,
   UPLOADISTA_EVENT_SUBSCRIBERS_KEY,
-} from "@uploadista/vue";
-import { onBeforeUnmount, provide, ref } from "vue";
+} from "../composables/plugin";
 
 const props = withDefaults(
   defineProps<{

@@ -6,12 +6,21 @@
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
-    ".": "./src/index.ts",
-    "./components/*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts",
-    "./utils/*": "./src/utils/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    }
   },
   "scripts": {
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
@@ -30,6 +39,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "tsdown": "catalog:",
     "vitest": "3.2.4"
   }
 }

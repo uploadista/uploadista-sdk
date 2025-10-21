@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
@@ -38,6 +38,7 @@
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
     "hono": "^4.0.0",
+    "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "3.2.4"
   },

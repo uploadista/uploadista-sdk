@@ -13,6 +13,7 @@
     "./services": "./src/services/index.ts"
   },
   "scripts": {
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"
@@ -37,6 +38,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "@types/react": ">=18.0.0",
     "@types/react-native": ">=0.71.0",
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "tsdown": "catalog:"
   }
 }

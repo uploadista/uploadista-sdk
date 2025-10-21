@@ -12,7 +12,7 @@
     "./upload": "./src/upload/index.ts"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:",
     "vitest": "3.2.4"
   }
 }

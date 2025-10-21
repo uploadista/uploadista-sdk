@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
@@ -37,6 +37,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "3.2.4"
   },

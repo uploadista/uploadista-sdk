@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"
@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@uploadista/typescript-config": "workspace:*"
+    "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:"
   }
 }

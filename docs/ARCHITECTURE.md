@@ -15,14 +15,14 @@ Uploadista is a modular, plugin-based file upload and processing system built on
                          ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                   API Layer                                 │
-│  (Hono / Express / Fastify + Authentication)               │
+│  (Hono / Express / Fastify + Authentication)                │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              Upload & Flow Processing                       │
-│  (Core upload logic, chunking, resumable uploads)          │
-│  (Flow Engine: DAG-based pipeline processing)              │
+│  (Core upload logic, chunking, resumable uploads)           │
+│  (Flow Engine: DAG-based pipeline processing)               │
 └────┬────────────────────┬────────────────────────────────┬──┘
      │                    │                                │
      ↓                    ↓                                ↓
@@ -49,7 +49,7 @@ Handles HTTP requests for file uploads with:
 - **Resumable uploads**: Resume interrupted uploads
 - **Chunked uploads**: Split large files into parts
 - **Multipart uploads**: Handle multiple files
-- **Authentication**: Validate requests with JWT/API keys
+- **Authentication**: Validate requests with JWT/API keys or other authentication methods
 
 ```
 Client                    Server

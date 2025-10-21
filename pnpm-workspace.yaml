@@ -28,3 +28,4 @@ catalog:
   effect: 3.18.4
   typescript: 5.9.3
   "@types/node": 24.8.1
+  tsdown: 0.15.9
