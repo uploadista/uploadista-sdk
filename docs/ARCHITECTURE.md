@@ -19,26 +19,26 @@ Uploadista is a modular, plugin-based file upload and processing system built on
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│              Upload & Flow Processing                       │
-│  (Core upload logic, chunking, resumable uploads)           │
-│  (Flow Engine: DAG-based pipeline processing)               │
-└────┬────────────────────┬────────────────────────────────┬──┘
-     │                    │                                │
-     ↓                    ↓                                ↓
-┌──────────────┐ ┌──────────────────┐           ┌──────────────┐
-│ Data Stores  │ │ KV Stores        │           │Event System  │
-│              │ │                  │           │              │
-│ • S3         │ │ • Memory         │           │ • Broadcast  │
-│ • Azure      │ │ • Redis          │           │ • WebSocket  │
-│ • GCS        │ │ • IORedis        │           │ • Emitters   │
-│ • Filesystem │ │ • Cloudflare KV  │           │              │
-│              │ │ • Cloudflare DO  │           │              │
-│              │ │ • Filesystem     │           │              │
-└──────────────┘ └──────────────────┘           └──────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│              Upload & Flow Processing                                     │
+│  (Core upload logic, chunking, resumable uploads)                         │
+│  (Flow Engine: DAG-based pipeline processing)                             │
+└────┬────────────────────┬──────────────────────────┬──────────────────┬───┘
+     │                    │                          │                  │
+     ↓                    ↓                          ↓                  ↓
+┌──────────────┐ ┌──────────────────┐       ┌──────────────┐  ┌─────────────────┐
+│ Data Stores  │ │ KV Stores        │       │Event System  │  │   Plugins       │
+│              │ │                  │       │              │  │                 │
+│ • S3         │ │ • Memory         │       │ • Broadcast  │  │ • Image Nodes   │
+│ • Azure      │ │ • Redis          │       │ • WebSocket  │  │ • AI Processing │
+│ • GCS        │ │ • IORedis        │       │ • Emitters   │  │ • Compression   │
+│ • Filesystem │ │ • Cloudflare KV  │       │              │  │ • Custom Nodes  │
+│              │ │ • Cloudflare DO  │       │              │  │ • Archiving     │
+│              │ │ • Filesystem     │       │              │  │                 │
+└──────────────┘ └──────────────────┘       └──────────────┘  └─────────────────┘
 
-     File Storage      State & Sessions      Real-time Events
-     (Durable)        (Upload Progress)      (Progress/Status)
+  File Storage    State & Sessions   Real-time Events   Processing Extensions
+  (Durable)      (Upload Progress)   (Progress/Status)   (Flow Nodes)
 ```
 
 ## Core Concepts
@@ -52,23 +52,30 @@ Handles HTTP requests for file uploads with:
 - **Authentication**: Validate requests with JWT/API keys or other authentication methods
 
 ```
-Client                    Server
-  │                         │
-  ├─ POST /uploads ────────→ │ Create upload session
-  │                         │ (stored in KV)
-  │ ←── { uploadId, url } ──┤
-  │                         │
-  ├─ PUT /uploads/{id} ────→ │ Upload chunk 1
-  │    (part 1)             │ (stored in S3)
-  │ ←── { uploaded: 5MB } ──┤
-  │                         │
-  ├─ PATCH /uploads/{id} ──→ │ Mark chunk as received
-  │                         │ (KV updated)
-  │ ←── { progress: 50% } ──┤
-  │                         │
-  └─ PUT /uploads/{id} ────→ │ Upload chunk 2
-       (part 2)             │ (finalize if complete)
-                            │ (trigger flow processing)
+Client                                Server
+  │                                    │
+  ├─ POST /uploads ──────────────────→ │ Create upload session (UploadFile)
+  │                                    │ (stored in KV)
+  │ ←─── { uploadId, url } ────────────┤
+  │                                    │
+  ├─ PATCH /uploads/{id} ────────────→ │ Upload chunk 1
+  │    (part 1)                        │ (stored in S3)
+  │ ←─── { offset: 5MB } ──────────────┤
+  │ ◄─── WebSocket: progress ──────────┤ { uploadId, progress: 20% }
+  │                                    │
+  ├─ PATCH /uploads/{id} ────────────→ │ Upload chunk 2
+  │    (part 2)                        │ (stored in S3)
+  │ ←─── { offset: 10MB } ─────────────┤
+  │ ◄─── WebSocket: progress ──────────┤ { uploadId, progress: 40% }
+  │                                    │
+  └─ PATCH /uploads/{id} ────────────→ │ Complete upload
+       (finalize if complete)          │ (stored in S3)
+       { finalize: true }              │ (trigger flow processing if configured)
+                                       │
+                                       ├─ Verify all chunks
+                                       ├─ Complete multipart
+                                       │ ◄─── WebSocket: complete ─────┤
+                                       │ { uploadId, status: "completed" }
 ```
 
 ### 2. Flow Engine (DAG Processor)
@@ -98,35 +105,42 @@ Conditional (is image?)
 type: "input"
 
 // Processing nodes: Transformations
-type: "resize" | "optimize" | "remove-background" | "upscale"
+type: "resize" | "optimize" | "remove-background"
 
 // Utility nodes: Control flow
 type: "conditional" | "merge" | "multiplex" | "zip"
 
 // Output nodes: Storage backends
-type: "s3" | "azure" | "gcs" | "filesystem"
+type: "output"
 ```
 
 **Example Configuration**:
 
 ```typescript
-{
-  nodes: [
-    { id: "input", type: "input" },
-    {
-      id: "resize",
-      type: "resize",
-      params: { width: 800, fit: "cover" }
-    },
-    { id: "s3", type: "s3", params: { bucket: "uploads" } },
-    { id: "output", type: "output" }
-  ],
+import { createFlow, createInputNode, createStorageNode } from "@uploadista/core";
+import { createOptimizeNode } from "@uploadista/flow-images-nodes";
+
+const inputNode = createInputNode("input");
+const outputNode = createStorageNode("output");
+
+const optimizeNode = createOptimizeNode("optimize", {
+  quality: 80,
+  format: "webp",
+});
+
+export const optimizeFlow = createFlow({
+  flowId: "optimize-flow",
+  name: "Optimize Flow",
+  nodes: {
+    input: inputNode,
+    output: outputNode,
+    optimize: optimizeNode,
+  },
   edges: [
-    { from: "input", to: "resize" },
-    { from: "resize", to: "s3" },
-    { from: "s3", to: "output" }
-  ]
-}
+    { source: "input", target: "optimize" },
+    { source: "optimize", target: "output" },
+  ],
+});
 ```
 
 ### 3. KV Store (State Management)
@@ -135,18 +149,29 @@ Stores upload session state, progress, metadata.
 
 **Key Data Stored**:
 ```typescript
-interface UploadSession {
+export type UploadFile = {
   id: string;
-  fileId: string;
-  filename: string;
-  size: number;
-  uploadedSize: number;
-  chunks: ChunkInfo[];
-  status: "uploading" | "processing" | "completed" | "error";
-  createdAt: Date;
-  expiresAt: Date;
-  metadata: Record<string, any>;
-}
+  offset: number;
+  storage: {
+    id: string;
+    type: string;
+    path?: string | undefined;
+    uploadId?: string | undefined;
+    bucket?: string | undefined;
+  };
+  flow?: {
+    flowId: string;
+    nodeId: string;
+    jobId: string;
+  };
+  size?: number | undefined;
+  metadata?: Record<string, string | number | boolean> | undefined;
+  creationDate?: string | undefined;
+  url?: string | undefined;
+  sizeIsDeferred?: boolean | undefined;
+  checksum?: string | undefined;
+  checksumAlgorithm?: string | undefined;
+};
 ```
 
 **Implementation Options**:
