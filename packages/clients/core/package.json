@@ -12,6 +12,7 @@
     "./upload": "./src/upload/index.ts"
   },
   "scripts": {
+    "build": "tsc -b",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"

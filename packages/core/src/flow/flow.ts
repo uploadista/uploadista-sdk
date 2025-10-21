@@ -14,12 +14,12 @@
 
 import { Effect } from "effect";
 import { z } from "zod";
+
 import { UploadistaError } from "../errors";
 import type { FlowEdge } from "./edge";
-
 import { EventType } from "./event";
 import { getNodeData } from "./node";
-
+import { ParallelScheduler } from "./parallel-scheduler";
 import type { FlowConfig, FlowNode, FlowNodeData } from "./types/flow-types";
 import { FlowTypeValidator } from "./types/type-validator";
 
@@ -737,59 +737,163 @@ export function createFlowWithSchema<
         // Create node map for quick lookup
         const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
-        // Execute nodes sequentially starting from startIndex
-        for (let i = startIndex; i < executionOrder.length; i++) {
-          const nodeId = executionOrder[i];
-          if (!nodeId) {
-            return yield* UploadistaError.fromCode(
-              "FLOW_NODE_NOT_FOUND",
-            ).toEffect();
-          }
+        // Determine execution strategy
+        const useParallelExecution =
+          config.parallelExecution?.enabled ?? false;
 
-          // Emit NodeResume event if we're resuming from a paused state at this node
-          if (resumeFrom && i === startIndex && onEvent) {
-            const node = nodeMap.get(nodeId);
-            if (node) {
-              yield* onEvent({
-                jobId,
-                flowId,
-                nodeId,
-                eventType: EventType.NodeResume,
-                nodeName: node.name,
-                nodeType: node.type,
-              });
-            }
-          }
-
-          const nodeResult = yield* executeNode(
-            nodeId,
-            storageId,
-            nodeInputs,
-            nodeResults,
-            nodeMap,
-            jobId,
-            clientId,
+        if (useParallelExecution) {
+          // Parallel execution using execution levels
+          yield* Effect.logDebug(
+            `Flow ${flowId}: Executing in parallel mode (maxConcurrency: ${config.parallelExecution?.maxConcurrency ?? 4})`,
           );
 
-          if (nodeResult.waiting) {
-            // Node is waiting - pause execution and return state
-            if (nodeResult.result !== undefined) {
-              nodeResults.set(nodeResult.nodeId, nodeResult.result);
+          const scheduler = new ParallelScheduler({
+            maxConcurrency: config.parallelExecution?.maxConcurrency ?? 4,
+          });
+
+          // Get execution levels
+          const executionLevels = scheduler.groupNodesByExecutionLevel(
+            nodes,
+            edges,
+          );
+
+          yield* Effect.logDebug(
+            `Flow ${flowId}: Grouped nodes into ${executionLevels.length} execution levels`,
+          );
+
+          // Build reverse graph for dependency checking
+          const reverseGraph: Record<string, string[]> = {};
+          nodes.forEach((node) => {
+            reverseGraph[node.id] = [];
+          });
+          edges.forEach((edge) => {
+            reverseGraph[edge.target]?.push(edge.source);
+          });
+
+          // Execute each level sequentially, but nodes within level in parallel
+          for (const level of executionLevels) {
+            yield* Effect.logDebug(
+              `Flow ${flowId}: Executing level ${level.level} with nodes: ${level.nodes.join(", ")}`,
+            );
+
+            // Create executor functions for all nodes in this level
+            const nodeExecutors = level.nodes.map((nodeId) => () =>
+              Effect.gen(function* () {
+                // Emit NodeResume event if we're resuming from a paused state at this node
+                if (resumeFrom && nodeId === resumeFrom.executionOrder[startIndex] && onEvent) {
+                  const node = nodeMap.get(nodeId);
+                  if (node) {
+                    yield* onEvent({
+                      jobId,
+                      flowId,
+                      nodeId,
+                      eventType: EventType.NodeResume,
+                      nodeName: node.name,
+                      nodeType: node.type,
+                    });
+                  }
+                }
+
+                const nodeResult = yield* executeNode(
+                  nodeId,
+                  storageId,
+                  nodeInputs,
+                  nodeResults,
+                  nodeMap,
+                  jobId,
+                  clientId,
+                );
+
+                return { nodeId, nodeResult };
+              }),
+            );
+
+            // Execute all nodes in this level in parallel
+            const levelResults = yield* scheduler.executeNodesInParallel(
+              nodeExecutors,
+            );
+
+            // Process results and check for waiting nodes
+            for (const { nodeId, nodeResult } of levelResults) {
+              if (nodeResult.waiting) {
+                // Node is waiting - pause execution and return state
+                if (nodeResult.result !== undefined) {
+                  nodeResults.set(nodeId, nodeResult.result);
+                }
+
+                return {
+                  type: "paused" as const,
+                  nodeId,
+                  executionState: {
+                    executionOrder,
+                    currentIndex: executionOrder.indexOf(nodeId),
+                    inputs: nodeInputs,
+                  },
+                };
+              }
+
+              if (nodeResult.success) {
+                nodeResults.set(nodeId, nodeResult.result);
+              }
+            }
+          }
+        } else {
+          // Sequential execution (original behavior)
+          yield* Effect.logDebug(`Flow ${flowId}: Executing in sequential mode`);
+
+          for (let i = startIndex; i < executionOrder.length; i++) {
+            const nodeId = executionOrder[i];
+            if (!nodeId) {
+              return yield* UploadistaError.fromCode(
+                "FLOW_NODE_NOT_FOUND",
+              ).toEffect();
             }
 
-            return {
-              type: "paused" as const,
-              nodeId: nodeResult.nodeId,
-              executionState: {
-                executionOrder,
-                currentIndex: i, // Stay at current index to re-execute this node on resume
-                inputs: nodeInputs,
-              },
-            };
-          }
+            // Emit NodeResume event if we're resuming from a paused state at this node
+            if (resumeFrom && i === startIndex && onEvent) {
+              const node = nodeMap.get(nodeId);
+              if (node) {
+                yield* onEvent({
+                  jobId,
+                  flowId,
+                  nodeId,
+                  eventType: EventType.NodeResume,
+                  nodeName: node.name,
+                  nodeType: node.type,
+                });
+              }
+            }
 
-          if (nodeResult.success) {
-            nodeResults.set(nodeResult.nodeId, nodeResult.result);
+            const nodeResult = yield* executeNode(
+              nodeId,
+              storageId,
+              nodeInputs,
+              nodeResults,
+              nodeMap,
+              jobId,
+              clientId,
+            );
+
+            if (nodeResult.waiting) {
+              // Node is waiting - pause execution and return state
+              if (nodeResult.result !== undefined) {
+                nodeResults.set(nodeResult.nodeId, nodeResult.result);
+              }
+
+              return {
+                type: "paused" as const,
+                nodeId: nodeResult.nodeId,
+                executionState: {
+                  executionOrder,
+                  currentIndex: i, // Stay at current index to re-execute this node on resume
+                  inputs: nodeInputs,
+                },
+              };
+            }
+
+            if (nodeResult.success) {
+              nodeResults.set(nodeResult.nodeId, nodeResult.result);
+            }
           }
         }
 

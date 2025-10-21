@@ -1,0 +1,6 @@
+.github
+.vscode
+.cursor
+.env
+.turbo
+.tsconfig.tsbuildinfo

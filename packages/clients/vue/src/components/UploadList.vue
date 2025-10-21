@@ -1,8 +1,47 @@
 <script setup lang="ts">
+/**
+ * UploadList - Display a list of uploads with customizable status grouping and sorting
+ *
+ * Shows the progress and status of multiple file uploads. Supports filtering, sorting,
+ * and status-based grouping. Provides flexible slot-based customization for rendering each item.
+ *
+ * @component
+ * @example
+ * // Basic upload list
+ * <UploadList :uploads="uploads" />
+ *
+ * @example
+ * // Custom item rendering with status indicators
+ * <UploadList :uploads="uploads">
+ *   <template #item="{ item, isSuccess, isError }">
+ *     <div class="upload-item">
+ *       <span>{{ item.filename }}</span>
+ *       <progress :value="item.progress" max="100"></progress>
+ *       <span :class="{ success: isSuccess, error: isError }">
+ *         {{ item.state.status }}
+ *       </span>
+ *     </div>
+ *   </template>
+ * </UploadList>
+ *
+ * @example
+ * // With filtering and sorting
+ * <UploadList
+ *   :uploads="uploads"
+ *   :filter="item => item.state.status === 'success'"
+ *   :sort-by="(a, b) => a.uploadedAt - b.uploadedAt"
+ * />
+ */
 import { computed } from "vue";
 import type { UploadItem } from "../composables";
 import { isBrowserFile } from "../utils";
 
+/**
+ * Props for the UploadList component
+ * @property {UploadItem[]} uploads - Array of upload items to display
+ * @property {Function} filter - Optional filter for which items to display
+ * @property {Function} sortBy - Optional sorting function for items (a, b) => number
+ */
 export interface UploadListProps {
   /**
    * Array of upload items to display

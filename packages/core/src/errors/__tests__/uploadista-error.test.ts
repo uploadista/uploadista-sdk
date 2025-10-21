@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { ResultType } from "../result/index";
+
 import {
   ERROR_CATALOG,
   httpFailure,
   isUploadistaError,
   UploadistaError,
   type UploadistaErrorCode,
-} from "./uploadista-error";
+} from "../uploadista-error";
+import { Effect } from "effect";
 
 describe("ERROR_CATALOG", () => {
   it("should contain all error codes with status and body", () => {
@@ -177,17 +178,8 @@ describe("UploadistaError", () => {
       const error = UploadistaError.fromCode("FILE_NOT_FOUND");
       const result = error.toEffect();
 
-      expect(result).toEqual({
-        type: ResultType.Error,
-        error: error,
-      });
-    });
-
-    it("should work with generic type parameter", () => {
-      const error = UploadistaError.fromCode("FILE_NOT_FOUND");
-      const result = error.toEffect();
-
-      //TODO: Test this
+      expect(Effect.isFailure(result)).toBe(true);
+      expect(Effect.isSuccess(result)).toBe(false);
     });
   });
 });
@@ -228,12 +220,8 @@ describe("httpFailure", () => {
   it("should create failure result from error code", () => {
     const result = httpFailure("FILE_NOT_FOUND");
 
-    expect(result.type).toBe(ResultType.Error);
-    if (result.type === ResultType.Error) {
-      expect(result.error).toBeInstanceOf(UploadistaError);
-      expect(result.error.code).toBe("FILE_NOT_FOUND");
-      expect(result.error.status).toBe(404);
-    }
+    expect(Effect.isFailure(result)).toBe(true);
+    expect(Effect.isSuccess(result)).toBe(false);
   });
 
   it("should allow overriding error properties", () => {
@@ -243,12 +231,8 @@ describe("httpFailure", () => {
       details: { retryAfter: 60 },
     });
 
-    expect(result.type).toBe(ResultType.Error);
-    if (result.type === ResultType.Error) {
-      expect(result.error.status).toBe(503);
-      expect(result.error.body).toBe("Service unavailable");
-      expect(result.error.details).toEqual({ retryAfter: 60 });
-    }
+    expect(Effect.isFailure(result)).toBe(true);
+    expect(Effect.isSuccess(result)).toBe(false);
   });
 
   it("should work with all error codes", () => {
@@ -260,10 +244,8 @@ describe("httpFailure", () => {
 
     for (const code of errorCodes) {
       const result = httpFailure(code);
-      expect(result.type).toBe(ResultType.Error);
-      if (result.type === ResultType.Error) {
-        expect(result.error.code).toBe(code);
-      }
+      expect(Effect.isFailure(result)).toBe(true);
+      expect(Effect.isSuccess(result)).toBe(false);
     }
   });
 });

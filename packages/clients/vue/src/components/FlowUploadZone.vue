@@ -1,4 +1,41 @@
 <script setup lang="ts">
+/**
+ * FlowUploadZone - Upload zone with flow processing pipeline
+ *
+ * Specialized upload component that uploads files through a flow pipeline for processing.
+ * Supports drag-and-drop and file picker with flow configuration. Emits events for flow
+ * completion, errors, and upload status changes.
+ *
+ * @component
+ * @example
+ * // Upload images through image processing flow
+ * <FlowUploadZone
+ *   :flow-config="{ flowId: 'image-processor' }"
+ *   accept="image/*"
+ *   @upload-complete="handleFlowResult"
+ *   @upload-error="handleError"
+ * />
+ *
+ * @example
+ * // With custom slot content
+ * <FlowUploadZone
+ *   :flow-config="{ flowId: 'image-processor' }"
+ *   @upload-complete="handleResult"
+ * >
+ *   <template #default="{ isDragging, isProcessing, progress }">
+ *     <div :class="{ processing: isProcessing }">
+ *       <p v-if="isProcessing">Processing... {{ progress }}%</p>
+ *       <p v-else-if="isDragging">Drop file here</p>
+ *       <p v-else>Drag file here for processing</p>
+ *     </div>
+ *   </template>
+ * </FlowUploadZone>
+ *
+ * @emits upload-complete - Flow processing completed with results
+ * @emits upload-error - Upload or processing failed
+ * @emits upload-start - File upload started
+ * @emits validation-error - File validation failed
+ */
 import type {
   FlowUploadConfig,
   FlowUploadOptions,
@@ -6,6 +43,15 @@ import type {
 import { computed, ref } from "vue";
 import { useDragDrop, useFlowUpload } from "../composables";
 
+/**
+ * Props for the FlowUploadZone component
+ * @property {FlowUploadConfig} flowConfig - Flow configuration with flowId
+ * @property {FlowUploadOptions} options - Additional flow upload options
+ * @property {string} accept - Accepted file types (single MIME type or extension string)
+ * @property {boolean} multiple - Allow multiple files (default: false, flow uploads are single-file)
+ * @property {boolean} disabled - Disable the upload zone (default: false)
+ * @property {number} maxFileSize - Maximum file size in bytes
+ */
 export interface FlowUploadZoneProps {
   /**
    * Flow configuration

@@ -1,11 +1,12 @@
 import type { TokenCredential } from "@azure/core-auth";
-import type { BlobServiceClient, ContainerClient } from "@azure/storage-blob";
-import { BlobServiceClient as BlobService } from "@azure/storage-blob";
+import {
+  BlobServiceClient as BlobService,
+  type BlobServiceClient,
+  type ContainerClient,
+  StorageSharedKeyCredential,
+} from "@azure/storage-blob";
 import { UploadistaError } from "@uploadista/core/errors";
-import type { Logger } from "@uploadista/core/logger/logger";
-import { createLogger } from "@uploadista/core/logger/logger";
-import { MultiStream } from "@uploadista/core/streams/multi-stream";
-import { streamSplitter } from "@uploadista/core/streams/stream-splitter";
+
 import type {
   DataStore,
   DataStoreCapabilities,
@@ -14,8 +15,6 @@ import type {
   UploadFile,
   UploadStrategy,
 } from "@uploadista/core/types";
-import type { Permit } from "@uploadista/core/utils/semaphore";
-import { semaphore } from "@uploadista/core/utils/semaphore";
 import {
   azureActiveUploadsGauge as activeUploadsGauge,
   azureFileSizeHistogram as fileSizeHistogram,
@@ -31,7 +30,24 @@ import {
   withAzureTimingMetrics as withTimingMetrics,
   withAzureUploadMetrics as withUploadMetrics,
 } from "@uploadista/observability";
-import { Effect, Stream } from "effect";
+import { Effect, Ref, Stream } from "effect";
+
+// Using base64 encoding that works in both Node.js and browser
+const bufferFrom = (str: string) => {
+  // Use global Buffer if available, otherwise fallback to btoa
+  if (typeof globalThis !== "undefined" && "Buffer" in globalThis) {
+    return (globalThis as any).Buffer.from(str);
+  }
+  // Fallback for browser environments
+  return new Uint8Array(Array.from(str, (c) => c.charCodeAt(0)));
+};
+
+export type ChunkInfo = {
+  blockNumber: number;
+  data: Uint8Array;
+  size: number;
+  isFinalPart?: boolean;
+};
 
 export type AzureStoreOptions = {
   deliveryUrl: string;
@@ -76,7 +92,6 @@ export type AzureStoreOptions = {
    */
   accountKey?: string;
   containerName: string;
-  logger?: Logger;
 };
 
 function calcOffsetFromBlocks(blocks?: Array<{ size: number }>) {
@@ -112,7 +127,6 @@ export function azureStore({
   accountName,
   accountKey,
   containerName,
-  logger = createLogger(true),
 }: AzureStoreOptions): AzureStore {
   const preferredBlockSize = blockSize || 8 * 1024 * 1024; // 8MB default
   const maxUploadSize = 5_497_558_138_880 as const; // 5TiB (Azure Block Blob limit)
@@ -141,7 +155,6 @@ export function azureStore({
     // Legacy shared key authentication (Node.js only)
     // This will fail in browser/edge environments
     try {
-      const { StorageSharedKeyCredential } = require("@azure/storage-blob");
       const sharedKeyCredential = new StorageSharedKeyCredential(
         accountName,
         accountKey,
@@ -166,7 +179,6 @@ export function azureStore({
 
   const containerClient: ContainerClient =
     blobServiceClient.getContainerClient(containerName);
-  const blockUploadSemaphore = semaphore(maxConcurrentBlockUploads);
 
   const incompletePartKey = (id: string) => {
     return `${id}.incomplete`;
@@ -180,8 +192,12 @@ export function azureStore({
     return withTimingMetrics(
       partUploadDurationHistogram,
       Effect.gen(function* () {
-        yield* Effect.sync(() =>
-          logger.log(`[${uploadFile.id}] uploading block ${blockId}`),
+        yield* Effect.logInfo("Uploading block").pipe(
+          Effect.annotateLogs({
+            upload_id: uploadFile.id,
+            block_id: blockId,
+            block_size: readStream.length,
+          }),
         );
 
         yield* uploadPartsTotal(Effect.succeed(1));
@@ -205,17 +221,18 @@ export function azureStore({
                   block_size: readStream.length,
                 }),
               );
-              return UploadistaError.fromCode(
-                "FILE_WRITE_ERROR",
-                error as Error,
-              );
+              return UploadistaError.fromCode("FILE_WRITE_ERROR", {
+                cause: error as Error,
+              });
             },
           });
 
-          yield* Effect.sync(() =>
-            logger.log(
-              `[${uploadFile.id}] finished uploading block ${blockId}`,
-            ),
+          yield* Effect.logInfo("Finished uploading block").pipe(
+            Effect.annotateLogs({
+              upload_id: uploadFile.id,
+              block_id: blockId,
+              block_size: readStream.length,
+            }),
           );
         } catch (error) {
           Effect.runSync(
@@ -238,11 +255,18 @@ export function azureStore({
           incompletePartKey(id),
         );
         await blobClient.upload(readStream, readStream.length);
-        logger.log(`[${id}] finished uploading incomplete block`);
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
-    });
+        UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error as Error }),
+    }).pipe(
+      Effect.tap(() =>
+        Effect.logInfo("Finished uploading incomplete block").pipe(
+          Effect.annotateLogs({
+            upload_id: id,
+          }),
+        ),
+      ),
+    );
   };
 
   const getIncompleteBlock = (id: string) => {
@@ -267,7 +291,7 @@ export function azureStore({
         }
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
+        UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error as Error }),
     });
   };
 
@@ -293,7 +317,7 @@ export function azureStore({
         }
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
+        UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error as Error }),
     });
   };
 
@@ -306,7 +330,7 @@ export function azureStore({
         await blobClient.deleteIfExists();
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
+        UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error as Error }),
     });
   };
 
@@ -325,24 +349,17 @@ export function azureStore({
 
       try {
         while (true) {
-          const { done, value } = yield* Effect.promise(() => reader.read());
-          if (done) break;
-          chunks.push(value);
-          incompleteBlockSize += value.length;
+          const result = yield* Effect.promise(() => reader.read());
+          if (result.done) break;
+          chunks.push(result.value);
+          incompleteBlockSize += result.value.length;
         }
       } finally {
         reader.releaseLock();
       }
 
       // Create a new readable stream from the chunks
-      const stream = new ReadableStream({
-        start(controller) {
-          for (const chunk of chunks) {
-            controller.enqueue(chunk);
-          }
-          controller.close();
-        },
-      });
+      const stream = Stream.fromIterable(chunks);
 
       return {
         size: incompleteBlockSize,
@@ -371,168 +388,223 @@ export function azureStore({
     return Math.ceil(finalBlockSize / 1024) * 1024; // Align to 1KB boundaries
   };
 
+  // Proper single-pass chunking using Effect's async stream constructor
+  // Ensures all parts except the final part are exactly the same size (S3 requirement)
+  const createChunkedStream =
+    (chunkSize: number) =>
+    <E>(stream: Stream.Stream<Uint8Array, E>): Stream.Stream<ChunkInfo, E> => {
+      return Stream.async<ChunkInfo, E>((emit) => {
+        let buffer = new Uint8Array(0);
+        let blockNumber = 1;
+        let totalBytesProcessed = 0;
+
+        const emitChunk = (data: Uint8Array, isFinalChunk = false) => {
+          // Log chunk information for debugging - use INFO level to see in logs
+          Effect.runSync(
+            Effect.logInfo("Creating chunk").pipe(
+              Effect.annotateLogs({
+                block_number: blockNumber,
+                chunk_size: data.length,
+                expected_size: chunkSize,
+                is_final_chunk: isFinalChunk,
+                total_bytes_processed: totalBytesProcessed + data.length,
+              }),
+            ),
+          );
+          emit.single({
+            blockNumber: blockNumber++,
+            data,
+            size: data.length,
+          });
+        };
+
+        const processChunk = (newData: Uint8Array) => {
+          // Combine buffer with new data
+          const combined = new Uint8Array(buffer.length + newData.length);
+          combined.set(buffer);
+          combined.set(newData, buffer.length);
+          buffer = combined;
+          totalBytesProcessed += newData.length;
+
+          // Emit full chunks of exactly chunkSize bytes
+          // This ensures S3 multipart upload rule: all parts except last must be same size
+          while (buffer.length >= chunkSize) {
+            const chunk = buffer.slice(0, chunkSize);
+            buffer = buffer.slice(chunkSize);
+            emitChunk(chunk, false);
+          }
+        };
+
+        // Process the stream
+        Effect.runFork(
+          stream.pipe(
+            Stream.runForEach((chunk) =>
+              Effect.sync(() => processChunk(chunk)),
+            ),
+            Effect.andThen(() =>
+              Effect.sync(() => {
+                // Emit final chunk if there's remaining data
+                // The final chunk can be any size < chunkSize (S3 allows this)
+                if (buffer.length > 0) {
+                  emitChunk(buffer, true);
+                }
+                emit.end();
+              }),
+            ),
+            Effect.catchAll((error) => Effect.sync(() => emit.fail(error))),
+          ),
+        );
+      });
+    };
+
+  // Byte-level progress tracking during streaming
+  // This provides smooth, immediate progress feedback by tracking bytes as they
+  // flow through the stream, before they reach S3. This solves the issue where
+  // small files (< 5MB) would jump from 0% to 100% instantly.
+  const withByteProgressTracking =
+    (onProgress?: (totalBytes: number) => void, initialOffset = 0) =>
+    <E, R>(stream: Stream.Stream<Uint8Array, E, R>) => {
+      if (!onProgress) return stream;
+
+      return Effect.gen(function* () {
+        const totalBytesProcessedRef = yield* Ref.make(initialOffset);
+
+        return stream.pipe(
+          Stream.tap((chunk) =>
+            Effect.gen(function* () {
+              const newTotal = yield* Ref.updateAndGet(
+                totalBytesProcessedRef,
+                (total) => total + chunk.length,
+              );
+              onProgress(newTotal);
+            }),
+          ),
+        );
+      }).pipe(Stream.unwrap);
+    };
+
   /**
    * Uploads a stream to Azure using multiple blocks
    */
   const uploadBlocks = (
     uploadFile: UploadFile,
-    readStream: ReadableStream,
+    readStream: Stream.Stream<Uint8Array, UploadistaError>,
     initCurrentBlockNumber: number,
     initOffset: number,
-    incompleteBlockSize: number,
     onProgress?: (newOffset: number) => void,
   ) => {
     return Effect.gen(function* () {
-      logger.log(
-        `[${uploadFile.id}] uploading blocks from ${initOffset} to ${uploadFile.size}`,
+      yield* Effect.logInfo("Uploading blocks").pipe(
+        Effect.annotateLogs({
+          upload_id: uploadFile.id,
+          init_offset: initOffset,
+          file_size: uploadFile.size,
+        }),
       );
 
-      let offset = initOffset;
       const size = uploadFile.size;
-      const promises: Promise<{ blockId: string; blockSize: number }>[] = [];
-      const permits: Map<number, Permit> = new Map();
-      let streamError: Error | undefined;
 
       const uploadBlockSize = calcOptimalBlockSize(size);
-      logger.log(`[${uploadFile.id}] block size ${uploadBlockSize}`);
+      yield* Effect.logInfo("Block size").pipe(
+        Effect.annotateLogs({
+          upload_id: uploadFile.id,
+          block_size: uploadBlockSize,
+        }),
+      );
+      // Enhanced Progress Tracking Strategy:
+      // 1. Byte-level progress during streaming - provides immediate, smooth feedback
+      //    as data flows through the pipeline (even for small files)
+      // 2. This tracks progress BEFORE S3 upload, giving users immediate feedback
+      // 3. For large files with multiple parts, this provides granular updates
+      // 4. For small files (single part), this prevents 0%->100% jumps
+      const chunkStream = readStream.pipe(
+        // Add byte-level progress tracking during streaming (immediate feedback)
+        withByteProgressTracking(onProgress, initOffset),
+        // Create chunks for S3 multipart upload with uniform part sizes
+        createChunkedStream(uploadBlockSize),
+      );
 
-      let tempOffset = offset - incompleteBlockSize;
-      const blockIds: string[] = [];
+      // Track cumulative offset and total bytes with Effect Refs
+      const cumulativeOffsetRef = yield* Ref.make(initOffset);
+      const totalBytesUploadedRef = yield* Ref.make(0);
+      const blockIdsRef = yield* Ref.make<string[]>([]);
+      // Create a chunk upload function for the sink
+      const uploadChunk = (chunkInfo: ChunkInfo) =>
+        Effect.gen(function* () {
+          // Calculate cumulative bytes to determine if this is the final block
+          const cumulativeOffset = yield* Ref.updateAndGet(
+            cumulativeOffsetRef,
+            (offset) => offset + chunkInfo.size,
+          );
+          const isFinalBlock = cumulativeOffset >= (uploadFile.size || 0);
 
-      try {
-        yield* Effect.promise(() =>
-          streamSplitter(readStream, {
-            options: { chunkSize: uploadBlockSize },
-            onData: (chunkSize) => {
-              tempOffset += chunkSize;
-              if (tempOffset > initOffset) {
-                onProgress?.(tempOffset);
-              }
-            },
-            onChunkStarted: async (blockNumber: number) => {
-              const permit = await blockUploadSemaphore.acquire();
-              permits.set(blockNumber, permit);
-            },
-            onChunkError: (blockNumber, error) => {
-              const errorDetails =
-                error instanceof Error
-                  ? {
-                      name: error.name,
-                      message: error.message,
-                      stack: error.stack,
-                      cause: error.cause,
-                    }
-                  : error;
-              logger.log(
-                `[${uploadFile.id}] error ${JSON.stringify(errorDetails)} on block ${blockNumber}`,
-              );
-              streamError = error as Error;
-              permits.get(blockNumber)?.release();
-            },
-            onChunkCompleted: (chunk) => {
-              const {
-                partNumber: currentBlockNumber,
-                stream: blockStream,
-                size: blockSize,
-              } = chunk;
+          yield* Effect.logDebug("Processing chunk").pipe(
+            Effect.annotateLogs({
+              upload_id: uploadFile.id,
+              cumulative_offset: cumulativeOffset,
+              file_size: uploadFile.size,
+              chunk_size: chunkInfo.size,
+              is_final_block: isFinalBlock,
+            }),
+          );
 
-              const blockNumber = initCurrentBlockNumber + currentBlockNumber;
-              offset += blockSize;
-              const isFinalBlock = size === offset;
+          const actualBlockNumber =
+            initCurrentBlockNumber + chunkInfo.blockNumber - 1;
 
-              // Generate block ID (base64 encoded, must be consistent)
-              const blockId = btoa(
-                `block-${blockNumber.toString().padStart(6, "0")}`,
-              );
-              blockIds.push(blockId);
-
-              const uploadPromise = async (): Promise<{
-                blockId: string;
-                blockSize: number;
-              }> => {
-                try {
-                  logger.log(
-                    `[${uploadFile.id}] uploading block ${JSON.stringify({
-                      blockSize,
-                      blockNumber,
-                      blockId,
-                    })}`,
-                  );
-
-                  if (blockSize > uploadBlockSize) {
-                    logger.log(
-                      `[${uploadFile.id}] block size ${blockSize} is greater than upload block size ${uploadBlockSize}`,
-                    );
-                    throw new Error(
-                      `Block size ${blockSize} is greater than upload block size ${uploadBlockSize}`,
-                    );
-                  }
-
-                  if (blockSize === uploadBlockSize || isFinalBlock) {
-                    await Effect.runPromise(
-                      uploadBlock(uploadFile, blockStream, blockId),
-                    );
-                  } else {
-                    await Effect.runPromise(
-                      uploadIncompleteBlock(uploadFile.id, blockStream),
-                    );
-                  }
-
-                  return { blockId, blockSize };
-                } catch (error) {
-                  streamError = error as Error;
-                  const errorDetails =
-                    error instanceof Error
-                      ? {
-                          name: error.name,
-                          message: error.message,
-                          stack: error.stack,
-                          cause: error.cause,
-                        }
-                      : error;
-                  logger.log(
-                    `[${uploadFile.id}] error ${JSON.stringify(errorDetails)} on block ${blockNumber}`,
-                  );
-                  throw error;
-                } finally {
-                  permits.get(currentBlockNumber)?.release();
-                }
-              };
-
-              logger.log(
-                `[${uploadFile.id}] block ${blockNumber} upload started`,
-              );
-              promises.push(uploadPromise());
-            },
-          }),
-        );
-
-        if (streamError) {
-          throw streamError;
-        }
-
-        logger.log(
-          `[${uploadFile.id}] waiting for ${promises.length} block(s) to complete`,
-        );
-
-        // Wait for all promises to complete and sum the bytes uploaded
-        const blockResults = yield* Effect.promise(() =>
-          Promise.allSettled(promises),
-        );
-        const committedBlockIds: string[] = [];
-        const bytesUploaded = blockResults.reduce((total, blockResult) => {
-          if (blockResult.status === "fulfilled") {
-            committedBlockIds.push(blockResult.value.blockId);
-            return total + blockResult.value.blockSize;
+          if (chunkInfo.size > uploadBlockSize) {
+            yield* Effect.fail(
+              UploadistaError.fromCode("FILE_WRITE_ERROR", {
+                cause: new Error(
+                  `Block size ${chunkInfo.size} exceeds upload block size ${uploadBlockSize}`,
+                ),
+              }),
+            );
           }
-          return total;
-        }, 0);
 
-        return { bytesUploaded, blockIds: committedBlockIds };
-      } catch (error) {
-        logger.log(`[${uploadFile.id}] error ${JSON.stringify(error)}`);
-        throw error;
-      }
+          // For parts that meet the minimum part size (5MB) or are the final part,
+          // upload them as regular multipart parts
+          if (chunkInfo.size >= minBlockSize || isFinalBlock) {
+            yield* Effect.logDebug("Uploading multipart chunk").pipe(
+              Effect.annotateLogs({
+                upload_id: uploadFile.id,
+                block_number: actualBlockNumber,
+                chunk_size: chunkInfo.size,
+                min_block_size: minBlockSize,
+                is_final_block: isFinalBlock,
+              }),
+            );
+            // Generate block ID (base64 encoded, must be consistent)
+            const blockId = bufferFrom(
+              `block-${actualBlockNumber.toString().padStart(6, "0")}`,
+            ).toString("base64");
+            yield* uploadBlock(uploadFile, chunkInfo.data, blockId);
+            yield* Ref.update(blockIdsRef, (ids) => [...ids, blockId]);
+            yield* partSizeHistogram(Effect.succeed(chunkInfo.size));
+          } else {
+            // Only upload as incomplete part if it's smaller than minimum and not final
+            yield* uploadIncompleteBlock(uploadFile.id, chunkInfo.data);
+          }
+
+          yield* Ref.update(
+            totalBytesUploadedRef,
+            (total) => total + chunkInfo.size,
+          );
+
+          // Note: Byte-level progress is now tracked during streaming phase
+          // This ensures smooth progress updates regardless of part size
+          // Azure upload completion is tracked via totalBytesUploadedRef for accuracy
+        });
+
+      // Process chunks concurrently with controlled concurrency
+      yield* chunkStream.pipe(
+        Stream.runForEach((chunkInfo) => uploadChunk(chunkInfo)),
+        Effect.withConcurrency(maxConcurrentBlockUploads),
+      );
+
+      return {
+        bytesUploaded: yield* Ref.get(totalBytesUploadedRef),
+        blockIds: yield* Ref.get(blockIdsRef),
+      };
     });
   };
 
@@ -551,7 +623,7 @@ export function azureStore({
         });
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
+        UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error as Error }),
     });
   };
 
@@ -584,7 +656,9 @@ export function azureStore({
         }
       },
       catch: (error) =>
-        UploadistaError.fromCode("UPLOAD_ID_NOT_FOUND", error as Error),
+        UploadistaError.fromCode("UPLOAD_ID_NOT_FOUND", {
+          cause: error as Error,
+        }),
     });
   };
 
@@ -593,7 +667,11 @@ export function azureStore({
    */
   const clearCache = (id: string) => {
     return Effect.gen(function* () {
-      logger.log(`[${id}] removing cached data`);
+      yield* Effect.logInfo("Removing cached data").pipe(
+        Effect.annotateLogs({
+          upload_id: id,
+        }),
+      );
       yield* kvStore.delete(id);
     });
   };
@@ -607,8 +685,10 @@ export function azureStore({
       yield* activeUploadsGauge(Effect.succeed(1));
       yield* fileSizeHistogram(Effect.succeed(upload.size || 0));
 
-      yield* Effect.sync(() =>
-        logger.log(`[${upload.id}] initializing Azure blob upload`),
+      yield* Effect.logInfo("Initializing Azure blob upload").pipe(
+        Effect.annotateLogs({
+          upload_id: upload.id,
+        }),
       );
 
       upload.creationDate = new Date().toISOString();
@@ -621,8 +701,10 @@ export function azureStore({
       upload.url = `${deliveryUrl}/${upload.id}`;
 
       yield* kvStore.set(upload.id, upload);
-      yield* Effect.sync(() =>
-        logger.log(`[${upload.id}] Azure blob upload initialized`),
+      yield* Effect.logInfo("Azure blob upload initialized").pipe(
+        Effect.annotateLogs({
+          upload_id: upload.id,
+        }),
       );
 
       return upload;
@@ -645,7 +727,9 @@ export function azureStore({
         throw new Error("No blob body or readable stream body");
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
+        UploadistaError.fromCode("FILE_WRITE_ERROR", {
+          cause: error as Error,
+        }),
     });
   };
 
@@ -656,7 +740,7 @@ export function azureStore({
       // Convert stream/blob to Uint8Array
       if (stream instanceof Blob) {
         const arrayBuffer = yield* Effect.promise(() => stream.arrayBuffer());
-        return new Uint8Array(arrayBuffer);
+        return new Uint8Array(arrayBuffer as ArrayBuffer);
       }
 
       // Read from ReadableStream
@@ -665,9 +749,9 @@ export function azureStore({
 
       try {
         while (true) {
-          const { done, value } = yield* Effect.promise(() => reader.read());
-          if (done) break;
-          chunks.push(value);
+          const result = yield* Effect.promise(() => reader.read());
+          if (result.done) break;
+          chunks.push(result.value);
         }
       } finally {
         reader.releaseLock();
@@ -689,14 +773,12 @@ export function azureStore({
   const prepareUpload = (
     file_id: string,
     initialOffset: number,
-    initialData: ReadableStream,
+    initialData: Stream.Stream<Uint8Array, UploadistaError>,
   ) => {
     return Effect.gen(function* () {
       const uploadFile = yield* kvStore.get(file_id);
-      logger.log(`[${file_id}] metadata ${JSON.stringify(uploadFile)}`);
 
       const blocks = yield* retrieveBlocks(file_id);
-      logger.log(`[${file_id}] blocks ${JSON.stringify(blocks)}`);
 
       const blockNumber = blocks.length;
       const nextBlockNumber = blockNumber + 1;
@@ -704,13 +786,9 @@ export function azureStore({
       const incompleteBlock = yield* downloadIncompleteBlock(file_id);
 
       if (incompleteBlock) {
-        logger.log(
-          `[${file_id}] incompleteBlock ${JSON.stringify(incompleteBlock)}`,
-        );
         yield* deleteIncompleteBlock(file_id);
         const offset = initialOffset - incompleteBlock.size;
-        const data = new MultiStream([incompleteBlock.stream, initialData])
-          .readable;
+        const data = incompleteBlock.stream.pipe(Stream.concat(initialData));
         return {
           uploadFile,
           nextBlockNumber: nextBlockNumber - 1,
@@ -746,14 +824,11 @@ export function azureStore({
         Effect.gen(function* () {
           const startTime = Date.now();
           const {
-            stream: effectStream,
+            stream: initialData,
             file_id,
             offset: initialOffset,
           } = options;
           const { onProgress } = dependencies;
-
-          // Convert Effect Stream to ReadableStream
-          const initialData = Stream.toReadableStream(effectStream);
 
           const prepareResult = yield* prepareUpload(
             file_id,
@@ -761,20 +836,13 @@ export function azureStore({
             initialData,
           );
 
-          const {
-            uploadFile,
-            nextBlockNumber,
-            offset,
-            data,
-            incompleteBlockSize,
-          } = prepareResult;
+          const { uploadFile, nextBlockNumber, offset, data } = prepareResult;
 
           const { bytesUploaded, blockIds } = yield* uploadBlocks(
             uploadFile,
             data,
             nextBlockNumber,
             offset,
-            incompleteBlockSize,
             onProgress,
           );
 
@@ -799,8 +867,11 @@ export function azureStore({
               yield* uploadSuccessTotal(Effect.succeed(1));
               yield* activeUploadsGauge(Effect.succeed(-1));
             } catch (error) {
-              yield* Effect.sync(() =>
-                logger.log(`[${file_id}] failed to finish upload, ${error}`),
+              yield* Effect.logError("Failed to finish upload").pipe(
+                Effect.annotateLogs({
+                  upload_id: file_id,
+                  error: JSON.stringify(error),
+                }),
               );
               yield* uploadErrorsTotal(Effect.succeed(1));
               Effect.runSync(
@@ -846,7 +917,12 @@ export function azureStore({
           };
         }
 
-        logger.log(`${error}`);
+        yield* Effect.logError("Error on get upload").pipe(
+          Effect.annotateLogs({
+            upload_id: id,
+            error: JSON.stringify(error),
+          }),
+        );
         throw error;
       }
 
@@ -876,7 +952,11 @@ export function azureStore({
           "statusCode" in error &&
           error.statusCode === 404
         ) {
-          yield* Effect.sync(() => logger.log("remove: No file found"));
+          yield* Effect.logError("No file found").pipe(
+            Effect.annotateLogs({
+              upload_id: id,
+            }),
+          );
           return yield* Effect.fail(UploadistaError.fromCode("FILE_NOT_FOUND"));
         }
         Effect.runSync(
@@ -930,18 +1010,14 @@ export function azureStore({
 
         // Delete expired blobs
         for (const blobName of expiredBlobs) {
-          try {
-            await containerClient.deleteBlob(blobName);
-            deleted++;
-          } catch (error) {
-            logger.log(`Failed to delete expired blob ${blobName}: ${error}`);
-          }
+          await containerClient.deleteBlob(blobName);
+          deleted++;
         }
 
         return deleted;
       },
       catch: (error) =>
-        UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error),
+        UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error as Error }),
     });
   };
 
