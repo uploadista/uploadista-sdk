@@ -31,20 +31,15 @@
       "import": "./dist/upload/index.js",
       "default": "./dist/upload/index.js"
     },
-    "./logger/*": {
-      "types": "./dist/logger/*.d.ts",
-      "import": "./dist/logger/*.js",
-      "default": "./dist/logger/*.js"
+    "./streams": {
+      "types": "./dist/streams/index.d.ts",
+      "import": "./dist/streams/index.js",
+      "default": "./dist/streams/index.js"
     },
-    "./streams/*": {
-      "types": "./dist/streams/*.d.ts",
-      "import": "./dist/streams/*.js",
-      "default": "./dist/streams/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "import": "./dist/utils/*.js",
-      "default": "./dist/utils/*.js"
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "default": "./dist/utils/index.js"
     },
     "./websocket": {
       "types": "./dist/websocket/index.d.ts",
@@ -53,7 +48,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsdown",
+    "dev": "tsc -b",
     "release": "tsdown && bumpp && pnpm publish --access restricted --no-git-checks",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",

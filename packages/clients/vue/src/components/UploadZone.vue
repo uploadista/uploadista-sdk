@@ -1,9 +1,53 @@
 <script setup lang="ts">
+/**
+ * UploadZone - A flexible file upload component with drag-and-drop support
+ *
+ * Provides a drag-and-drop zone and file picker for uploading files. Supports both single
+ * and multiple file uploads with validation. Emits events for file selection and upload events.
+ *
+ * @component
+ * @example
+ * // Basic single file upload
+ * <UploadZone @file-select="handleFiles" />
+ *
+ * @example
+ * // Multiple files with validation
+ * <UploadZone
+ *   multiple
+ *   accept={["image/*"]}
+ *   :max-file-size="10 * 1024 * 1024"
+ *   @file-select="handleFiles"
+ *   @validation-error="handleErrors"
+ * >
+ *   <template #default="{ isDragging, errors, openFilePicker }">
+ *     <div :class="{ dragging: isDragging }" @click="openFilePicker">
+ *       <p>{{ isDragging ? 'Drop files here' : 'Click or drag files here' }}</p>
+ *       <div v-if="errors.length">
+ *         <p v-for="error in errors" :key="error">{{ error }}</p>
+ *       </div>
+ *     </div>
+ *   </template>
+ * </UploadZone>
+ *
+ * @emits file-select - When files are selected/dropped
+ * @emits upload-start - When upload begins
+ * @emits validation-error - When validation fails
+ */
 import type { UploadOptions } from "@uploadista/client-browser";
 import { computed, ref } from "vue";
 import type { MultiUploadOptions } from "../composables";
 import { useDragDrop, useMultiUpload, useUpload } from "../composables";
 
+/**
+ * Props for the UploadZone component
+ * @property {string[]} accept - Accepted file types (MIME types or file extensions)
+ * @property {boolean} multiple - Whether to allow multiple files (default: true)
+ * @property {boolean} disabled - Whether the upload zone is disabled (default: false)
+ * @property {number} maxFileSize - Maximum file size in bytes
+ * @property {Function} validator - Custom validation function for files
+ * @property {MultiUploadOptions} multiUploadOptions - Multi-upload options (only used when multiple=true)
+ * @property {UploadOptions} uploadOptions - Single upload options (only used when multiple=false)
+ */
 export interface UploadZoneProps {
   /**
    * Accepted file types (MIME types or file extensions)

@@ -481,7 +481,7 @@ if (capabilities.supportsParallelUploads) {
 }
 ```
 
-### Streams Module (`/streams/*`)
+### Streams Module (`/streams`)
 
 Advanced stream manipulation utilities:
 
@@ -502,14 +502,14 @@ const limiter = new StreamLimiter({
 const limited = inputStream.pipeThrough(limiter.transform);
 ```
 
-### Utils Module (`/utils/*`)
+### Utils Module (`/utils`)
 
 Utility functions for common operations:
 
 #### Debounce
 
 ```typescript
-import { debounce } from "@uploadista/core/utils/debounce";
+import { debounce } from "@uploadista/core/utils";
 
 const debouncedFn = debounce(
   (value: string) => console.log("Search:", value),
@@ -526,7 +526,7 @@ debouncedFn("abc"); // Logs "Search: abc" after 300ms
 #### Throttle
 
 ```typescript
-import { throttle } from "@uploadista/core/utils/throttle";
+import { throttle } from "@uploadista/core/utils";
 
 const throttledFn = throttle(
   (value: number) => console.log("Value:", value),
@@ -546,7 +546,7 @@ throttledFn(4); // Logs "Value: 4"
 Ensure a function runs only once:
 
 ```typescript
-import { once } from "@uploadista/core/utils/once";
+import { once } from "@uploadista/core/utils";
 
 const initialize = once(() => {
   console.log("Initializing...");
@@ -563,7 +563,7 @@ initialize(); // Does nothing
 Generate unique identifiers:
 
 ```typescript
-import { GenerateId } from "@uploadista/core/utils/generate-id";
+import { GenerateId } from "@uploadista/core/utils";
 import { Effect } from "effect";
 
 const program = Effect.gen(function* () {
@@ -571,20 +571,6 @@ const program = Effect.gen(function* () {
   const id = yield* generateId.generate();
   console.log("ID:", id); // e.g., "abc123def456"
 });
-```
-
-### Logger Module (`/logger/*`)
-
-Simple logging utilities:
-
-```typescript
-import { createLogger } from "@uploadista/core/logger/logger";
-
-const logger = createLogger(true); // enabled
-logger.log("Processing file..."); // Logs to console
-
-const disabledLogger = createLogger(false); // disabled
-disabledLogger.log("This won't log"); // Silent
 ```
 
 ### WebSocket Module (`/websocket`)

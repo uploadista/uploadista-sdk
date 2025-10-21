@@ -14,10 +14,7 @@ import {
   type UploadFileKVStore,
 } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
-import {
-  type GenerateId,
-  GenerateIdLive,
-} from "@uploadista/core/utils/generate-id";
+import { type GenerateId, GenerateIdLive } from "@uploadista/core/utils";
 import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
 import { NodeSdkLive } from "@uploadista/observability";

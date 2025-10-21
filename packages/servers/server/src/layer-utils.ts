@@ -12,11 +12,29 @@ import {
   uploadFileKvStore,
 } from "@uploadista/core/types";
 import { type UploadServer, uploadServer } from "@uploadista/core/upload";
-import type { GenerateId } from "@uploadista/core/utils/generate-id";
+import type { GenerateId } from "@uploadista/core/utils";
 import { Layer } from "effect";
 
 /**
- * Configuration for creating upload server layers
+ * Configuration for creating upload server layers.
+ * Specifies all dependencies needed by the upload server Effect Layer.
+ *
+ * @property kvStore - Key-value store for upload metadata
+ * @property eventEmitter - Event emitter for upload progress events
+ * @property dataStore - File data storage implementation
+ * @property bufferedDataStore - Optional buffered storage for performance optimization
+ * @property generateId - Optional custom ID generator (uses default if omitted)
+ *
+ * @example
+ * ```typescript
+ * import { createUploadServerLayer } from "@uploadista/server";
+ *
+ * const uploadLayerConfig: UploadServerLayerConfig = {
+ *   kvStore: redisKvStore,
+ *   eventEmitter: webSocketEventEmitter,
+ *   dataStore: s3DataStore,
+ * };
+ * ```
  */
 export interface UploadServerLayerConfig {
   kvStore: Layer.Layer<BaseKvStoreService>;
@@ -31,7 +49,25 @@ export interface UploadServerLayerConfig {
 }
 
 /**
- * Configuration for creating flow server layers
+ * Configuration for creating flow server layers.
+ * Specifies all dependencies needed by the flow processing server.
+ *
+ * @property kvStore - Key-value store for flow job metadata
+ * @property eventEmitter - Event emitter for flow progress events
+ * @property flowProvider - Factory function for creating flows
+ * @property uploadServer - Upload server layer (used by flows for uploads)
+ *
+ * @example
+ * ```typescript
+ * import { createFlowServerLayer } from "@uploadista/server";
+ *
+ * const flowLayerConfig: FlowServerLayerConfig = {
+ *   kvStore: redisKvStore,
+ *   eventEmitter: webSocketEventEmitter,
+ *   flowProvider: createFlowsEffect,
+ *   uploadServer: uploadServerLayer,
+ * };
+ * ```
  */
 export interface FlowServerLayerConfig {
   kvStore: Layer.Layer<BaseKvStoreService>;
@@ -41,7 +77,33 @@ export interface FlowServerLayerConfig {
 }
 
 /**
- * Creates the upload server layer with all dependencies
+ * Creates the upload server layer with all dependencies composed.
+ * This layer handles file uploads with chunked transfer, resumption, and metadata tracking.
+ *
+ * The created layer includes:
+ * - Upload KV store (metadata tracking)
+ * - Data store (file storage)
+ * - Event emitter (progress notifications)
+ * - Optional buffered data store (performance optimization)
+ * - Optional custom ID generator
+ *
+ * @param config - Upload server layer configuration
+ * @returns Effect Layer providing UploadServer
+ *
+ * @example
+ * ```typescript
+ * import { createUploadServerLayer } from "@uploadista/server";
+ * import { Layer } from "effect";
+ *
+ * const uploadServerLayer = createUploadServerLayer({
+ *   kvStore: redisKvStore,
+ *   eventEmitter: webSocketEventEmitter,
+ *   dataStore: s3DataStore,
+ * });
+ *
+ * // Use in application
+ * const app = Layer.provide(appLogic, uploadServerLayer);
+ * ```
  */
 export const createUploadServerLayer = ({
   kvStore,
@@ -73,7 +135,33 @@ export const createUploadServerLayer = ({
 };
 
 /**
- * Creates the flow server layer with all dependencies
+ * Creates the flow server layer with all dependencies composed.
+ * This layer handles file processing workflows with multi-stage pipelines.
+ *
+ * The created layer includes:
+ * - Flow job KV store (job metadata and state)
+ * - Event emitter (progress notifications)
+ * - Flow provider (flow definitions)
+ * - Upload server (for uploads within flows)
+ *
+ * @param config - Flow server layer configuration
+ * @returns Effect Layer providing FlowServer
+ *
+ * @example
+ * ```typescript
+ * import { createFlowServerLayer } from "@uploadista/server";
+ * import { Layer } from "effect";
+ *
+ * const flowServerLayer = createFlowServerLayer({
+ *   kvStore: redisKvStore,
+ *   eventEmitter: webSocketEventEmitter,
+ *   flowProvider: createFlowsEffect,
+ *   uploadServer: uploadServerLayer,
+ * });
+ *
+ * // Use in application
+ * const app = Layer.provide(appLogic, flowServerLayer);
+ * ```
  */
 export const createFlowServerLayer = ({
   kvStore,

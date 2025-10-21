@@ -1,5 +1,6 @@
 import { inputFileSchema } from "@uploadista/core/types";
 import type { UploadServerShape } from "@uploadista/core/upload";
+import { isSupportedAlgorithm } from "@uploadista/core/utils";
 import { MetricsService } from "@uploadista/observability";
 import { AuthCacheService, AuthContextService } from "@uploadista/server";
 import { Effect } from "effect";
@@ -8,7 +9,6 @@ import {
   handleErrorResponse,
   ValidationError,
 } from "./error-types";
-import { isSupportedAlgorithm } from "@uploadista/core/utils/checksum";
 
 export const handleUploadPost = (req: Request, server: UploadServerShape) =>
   Effect.gen(function* () {

@@ -1,4 +1,43 @@
 <script setup lang="ts">
+/**
+ * FlowUploadList - Display list of flow uploads with processing status
+ *
+ * Shows the progress and processing status of files being uploaded through flow pipelines.
+ * Supports filtering, sorting, and status-based grouping. Provides flexible slot-based
+ * customization for rendering each flow upload item.
+ *
+ * @component
+ * @example
+ * // Basic flow upload list
+ * <FlowUploadList :uploads="flowUploads" />
+ *
+ * @example
+ * // Custom item rendering with flow status
+ * <FlowUploadList :uploads="flowUploads">
+ *   <template #item="{ item, isSuccess, isError, isUploading }">
+ *     <div class="flow-item">
+ *       <span>{{ item.filename }}</span>
+ *       <progress :value="item.uploadProgress" max="100"></progress>
+ *       <span v-if="isUploading">Processing...</span>
+ *       <span v-else-if="isSuccess">Complete</span>
+ *       <span v-else-if="isError">Failed</span>
+ *     </div>
+ *   </template>
+ * </FlowUploadList>
+ *
+ * @example
+ * // With status grouping
+ * <FlowUploadList :uploads="flowUploads">
+ *   <template #default="{ itemsByStatus }">
+ *     <div v-if="itemsByStatus.uploading.length">
+ *       <h3>Uploading...</h3>
+ *       <div v-for="item of itemsByStatus.uploading" :key="item.id">
+ *         {{ item.filename }}
+ *       </div>
+ *     </div>
+ *   </template>
+ * </FlowUploadList>
+ */
 import type {
   BrowserUploadInput,
   FlowUploadItem,
@@ -6,6 +45,12 @@ import type {
 import { computed } from "vue";
 import { isBrowserFile } from "../utils";
 
+/**
+ * Props for the FlowUploadList component
+ * @property {FlowUploadItem[]} uploads - Array of flow upload items to display
+ * @property {Function} filter - Optional filter for which items to display
+ * @property {Function} sortBy - Optional sorting function for items (a, b) => number
+ */
 export interface FlowUploadListProps {
   /**
    * Array of flow upload items to display
