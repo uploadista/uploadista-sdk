@@ -225,6 +225,31 @@ export type UploadistaApi = {
   ) => Promise<FlowJob>;
 
   /**
+   * Pauses a running flow execution.
+   *
+   * The flow will stop at the next node boundary (not mid-node execution).
+   * Can be resumed later using resumeFlow.
+   *
+   * @param jobId - Job identifier for the running flow
+   * @returns Updated job metadata with "paused" status
+   * @throws {UploadistaError} If job not found or cannot be paused
+   */
+  pauseFlow: (jobId: string) => Promise<FlowJob>;
+
+  /**
+   * Cancels a running or paused flow execution.
+   *
+   * The flow will stop at the next node boundary (not mid-node execution).
+   * Intermediate files are automatically cleaned up. This operation is terminal
+   * and cannot be undone.
+   *
+   * @param jobId - Job identifier for the flow to cancel
+   * @returns Updated job metadata with "cancelled" status
+   * @throws {UploadistaError} If job not found or cannot be cancelled
+   */
+  cancelFlow: (jobId: string) => Promise<FlowJob>;
+
+  /**
    * Retrieves current job status and outputs.
    *
    * Works for both upload and flow jobs.
@@ -682,6 +707,66 @@ export function createUploadistaApi(
       }
 
       const data = (await res.json()) as FlowJob;
+      return data;
+    },
+
+    pauseFlow: async (jobId: string) => {
+      const res = await httpClient.request(`${jobsEndpoint}/${jobId}/pause`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => ({}))) as ErrorResponse;
+        const errorName = mapServerErrorCodeToClientName(
+          errorData.code,
+          "FLOW_PAUSE_FAILED",
+        );
+        const errorMessage =
+          errorData.error ||
+          errorData.message ||
+          `Failed to pause flow for job ${jobId}`;
+
+        throw new UploadistaError({
+          name: errorName,
+          message: errorData.code
+            ? `${errorMessage} (${errorData.code})`
+            : errorMessage,
+          status: res.status,
+        });
+      }
+
+      const data = (await res.json()) as FlowJob;
+      logger?.log(`Flow paused: ${jobId}, status: ${data.status}`);
+      return data;
+    },
+
+    cancelFlow: async (jobId: string) => {
+      const res = await httpClient.request(`${jobsEndpoint}/${jobId}/cancel`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => ({}))) as ErrorResponse;
+        const errorName = mapServerErrorCodeToClientName(
+          errorData.code,
+          "FLOW_CANCEL_FAILED",
+        );
+        const errorMessage =
+          errorData.error ||
+          errorData.message ||
+          `Failed to cancel flow for job ${jobId}`;
+
+        throw new UploadistaError({
+          name: errorName,
+          message: errorData.code
+            ? `${errorMessage} (${errorData.code})`
+            : errorMessage,
+          status: res.status,
+        });
+      }
+
+      const data = (await res.json()) as FlowJob;
+      logger?.log(`Flow cancelled: ${jobId}, status: ${data.status}`);
       return data;
     },
 

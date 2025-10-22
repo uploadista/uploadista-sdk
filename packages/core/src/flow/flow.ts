@@ -163,6 +163,11 @@ export type Flow<
     TFlowOutputSchema,
     TRequirements
   >["onEvent"];
+  checkJobStatus?: FlowConfig<
+    TFlowInputSchema,
+    TFlowOutputSchema,
+    TRequirements
+  >["checkJobStatus"];
   run: (args: {
     inputs?: Record<string, z.infer<TFlowInputSchema>>;
     storageId: string;
@@ -298,6 +303,7 @@ export function createFlowWithSchema<
       flowId,
       name,
       onEvent,
+      checkJobStatus,
       edges,
       inputSchema,
       outputSchema,
@@ -471,6 +477,23 @@ export function createFlowWithSchema<
           return yield* UploadistaError.fromCode(
             "FLOW_NODE_NOT_FOUND",
           ).toEffect();
+        }
+
+        // Check job status before executing node
+        if (checkJobStatus) {
+          const status = yield* checkJobStatus(jobId);
+          if (status === "paused") {
+            // Flow was paused by user - stop execution gracefully
+            return yield* UploadistaError.fromCode("FLOW_PAUSED", {
+              cause: `Flow ${flowId} was paused by user at job ${jobId}`,
+            }).toEffect();
+          }
+          if (status === "cancelled") {
+            // Flow was cancelled by user - stop execution
+            return yield* UploadistaError.fromCode("FLOW_CANCELLED", {
+              cause: `Flow ${flowId} was cancelled by user at job ${jobId}`,
+            }).toEffect();
+          }
         }
 
         // Emit NodeStart event if provided
@@ -1040,6 +1063,7 @@ export function createFlowWithSchema<
       inputSchema,
       outputSchema,
       onEvent,
+      checkJobStatus,
       run,
       resume,
       validateTypes,

@@ -34,9 +34,11 @@ import type { Context, Env } from "hono";
 import type { WSEvents } from "hono/ws";
 import type { z } from "zod";
 import {
+  handleCancelFlow,
   handleFlowGet,
   handleFlowPost,
   handleJobStatus,
+  handlePauseFlow,
   handleResumeFlow,
 } from "./flow-http-handlers";
 import {
@@ -329,6 +331,20 @@ const createHonoUploadistaAdapterServiceLayer = <TEnv extends Env>(
                 routeSegments.includes("resume")
               ) {
                 return yield* handleResumeFlow<never>(req, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/pause")
+              ) {
+                return yield* handlePauseFlow(req, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/cancel")
+              ) {
+                return yield* handleCancelFlow(req, flowServer).pipe(
                   Effect.provide(authLayer),
                 );
               }

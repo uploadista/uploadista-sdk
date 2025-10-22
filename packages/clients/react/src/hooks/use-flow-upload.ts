@@ -102,6 +102,11 @@ export interface UseFlowUploadReturn<TOutput = UploadFile> {
   abort: () => void;
 
   /**
+   * Pause the current upload
+   */
+  pause: () => void;
+
+  /**
    * Reset the upload state
    */
   reset: () => void;
@@ -233,6 +238,7 @@ export function useFlowUpload<TOutput = UploadFile>(
     initialState as FlowUploadState<TOutput>,
   );
   const abortRef = useRef<(() => void) | null>(null);
+  const pauseRef = useRef<(() => void) | null>(null);
   const onSuccessRef = useRef(options.onSuccess);
   const onErrorRef = useRef(options.onError);
   const onFlowCompleteRef = useRef(options.onFlowComplete);
@@ -460,20 +466,6 @@ export function useFlowUpload<TOutput = UploadFile>(
     return unsubscribe;
   }, [client, handleFlowEvent]);
 
-  const abort = useCallback(() => {
-    if (abortRef.current) {
-      abortRef.current();
-      abortRef.current = null;
-
-      setState((prev) => ({
-        ...prev,
-        status: "aborted",
-      }));
-
-      options.onAbort?.();
-    }
-  }, [options]);
-
   const upload = useCallback(
     async (file: File | Blob) => {
       jobIdRef.current = null;
@@ -485,7 +477,7 @@ export function useFlowUpload<TOutput = UploadFile>(
       } as FlowUploadState<TOutput>);
 
       try {
-        const { abort: _abortFn } = await client.client.uploadWithFlow(
+        const { abort, pause } = await client.client.uploadWithFlow(
           file,
           options.flowConfig,
           {
@@ -536,7 +528,8 @@ export function useFlowUpload<TOutput = UploadFile>(
           },
         );
 
-        abortRef.current = _abortFn;
+        abortRef.current = abort;
+        pauseRef.current = pause;
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -550,6 +543,27 @@ export function useFlowUpload<TOutput = UploadFile>(
     [client, options],
   );
 
+  const abort = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current();
+      abortRef.current = null;
+
+      setState((prev) => ({
+        ...prev,
+        status: "aborted",
+      }));
+
+      options.onAbort?.();
+    }
+  }, [options]);
+
+  const pause = useCallback(() => {
+    if (pauseRef.current) {
+      pauseRef.current();
+      pauseRef.current = null;
+    }
+  }, []);
+
   const reset = useCallback(() => {
     setState(initialState as FlowUploadState<TOutput>);
     abortRef.current = null;
@@ -560,6 +574,7 @@ export function useFlowUpload<TOutput = UploadFile>(
     state,
     upload,
     abort,
+    pause,
     reset,
     isUploading: state.status === "uploading" || state.status === "processing",
     isUploadingFile: state.status === "uploading",

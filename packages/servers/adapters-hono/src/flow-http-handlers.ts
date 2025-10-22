@@ -219,3 +219,82 @@ export const handleResumeFlow = <TRequirements>(
     });
   }).pipe(Effect.catchAll(handleErrorResponse));
 };
+export const handlePauseFlow = (req: Request, flowServer: FlowServerShape) => {
+  return Effect.gen(function* () {
+    // Try to get auth from current request or cached auth
+    const authService = yield* AuthContextService;
+    const authCache = yield* AuthCacheService;
+
+    const url = new URL(req.url);
+    const urlSegments = url.pathname.split("/");
+    const jobId = urlSegments[urlSegments.length - 2]; // .../jobs/:jobId/pause
+
+    if (!jobId) {
+      console.error("No job id");
+      return new Response("No job id", { status: 400 });
+    }
+
+    // Try current auth first, fallback to cached auth
+    let clientId = yield* authService.getClientId();
+    if (!clientId) {
+      const cachedAuth = yield* authCache.get(jobId);
+      clientId = cachedAuth?.clientId ?? null;
+    }
+
+    if (clientId) {
+      console.log(`[Flow] Pausing flow: jobId=${jobId}, client: ${clientId}`);
+    }
+
+    const result = yield* flowServer.pauseFlow(jobId, clientId);
+
+    if (clientId) {
+      console.log(`[Flow] Flow paused: ${jobId}, status: ${result.status}`);
+    }
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }).pipe(Effect.catchAll(handleErrorResponse));
+};
+
+export const handleCancelFlow = (req: Request, flowServer: FlowServerShape) => {
+  return Effect.gen(function* () {
+    // Try to get auth from current request or cached auth
+    const authService = yield* AuthContextService;
+    const authCache = yield* AuthCacheService;
+
+    const url = new URL(req.url);
+    const urlSegments = url.pathname.split("/");
+    const jobId = urlSegments[urlSegments.length - 2]; // .../jobs/:jobId/cancel
+
+    if (!jobId) {
+      console.error("No job id");
+      return new Response("No job id", { status: 400 });
+    }
+
+    // Try current auth first, fallback to cached auth
+    let clientId = yield* authService.getClientId();
+    if (!clientId) {
+      const cachedAuth = yield* authCache.get(jobId);
+      clientId = cachedAuth?.clientId ?? null;
+    }
+
+    if (clientId) {
+      console.log(`[Flow] Cancelling flow: jobId=${jobId}, client: ${clientId}`);
+    }
+
+    const result = yield* flowServer.cancelFlow(jobId, clientId);
+
+    // Clear cache since flow is cancelled
+    yield* authCache.delete(jobId);
+    if (clientId) {
+      console.log(`[Flow] Flow cancelled, cleared auth cache: ${jobId}`);
+    }
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }).pipe(Effect.catchAll(handleErrorResponse));
+};

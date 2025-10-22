@@ -1,3 +1,4 @@
+import type { FlowJob } from "@uploadista/core/flow";
 import type { DataStoreCapabilities } from "@uploadista/core/types";
 import type { AuthConfig, AuthManager } from "../auth";
 import {
@@ -670,7 +671,11 @@ export function createUploadistaClient<UploadInput>({
       UploadistaUploadOptions,
       "uploadLengthDeferred" | "uploadSize" | "metadata"
     > = {},
-  ): Promise<{ abort: () => void; jobId: string }> => {
+  ): Promise<{
+    abort: () => Promise<void>;
+    pause: () => Promise<FlowJob>;
+    jobId: string;
+  }> => {
     const source = await fileReader.openFile(file, chunkSize);
 
     const initializedSmartChunker = await initializeSmartChunker();
@@ -701,7 +706,10 @@ export function createUploadistaClient<UploadInput>({
 
     if (!result) {
       return {
-        abort: () => {},
+        abort: async () => {},
+        pause: async () => {
+          throw new Error("Flow upload not initialized");
+        },
         jobId: "",
       };
     }
@@ -739,7 +747,17 @@ export function createUploadistaClient<UploadInput>({
     });
 
     return {
-      abort: () => {
+      abort: async () => {
+        // First, tell the server to cancel the flow
+        try {
+          await uploadistaApi.cancelFlow(jobId);
+          logger.log(`Flow cancelled on server: ${jobId}`);
+        } catch (err) {
+          // Log but don't throw - client cleanup should still happen
+          logger.log(`Failed to cancel flow on server: ${err}`);
+        }
+
+        // Then do client-side cleanup
         abortController.abort();
         if (timeoutId) {
           platformService.clearTimeout(timeoutId);
@@ -748,6 +766,7 @@ export function createUploadistaClient<UploadInput>({
         wsManager.closeWebSocket(jobId);
         wsManager.closeUploadWebSocket(uploadFile.id);
       },
+      pause: () => uploadistaApi.pauseFlow(jobId),
       jobId,
     };
   };
@@ -795,6 +814,14 @@ export function createUploadistaClient<UploadInput>({
       return uploadistaApi.resumeFlow(jobId, nodeId, newData, {
         contentType,
       });
+    },
+
+    pauseFlow: async (jobId: string) => {
+      return uploadistaApi.pauseFlow(jobId);
+    },
+
+    cancelFlow: async (jobId: string) => {
+      return uploadistaApi.cancelFlow(jobId);
     },
 
     // Job operations (unified for both uploads and flows)

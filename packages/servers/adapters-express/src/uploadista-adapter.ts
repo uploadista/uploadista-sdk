@@ -36,9 +36,11 @@ import { Effect, Layer } from "effect";
 import type { Request, Response } from "express";
 import type { z } from "zod";
 import {
+  handleCancelFlow,
   handleFlowGet,
   handleFlowPost,
   handleJobStatus,
+  handlePauseFlow,
   handleResumeFlow,
 } from "./flow-http-handlers";
 import {
@@ -356,6 +358,20 @@ const createExpressUploadistaAdapterServiceLayer = (
                   res,
                   flowServer,
                 ).pipe(Effect.provide(authLayer));
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/pause")
+              ) {
+                return yield* handlePauseFlow(req, res, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/cancel")
+              ) {
+                return yield* handleCancelFlow(req, res, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
               }
               res.status(405).json({ error: "Method not allowed" });
               return;

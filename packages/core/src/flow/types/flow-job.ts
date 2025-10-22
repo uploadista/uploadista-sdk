@@ -126,8 +126,9 @@ export type FlowJob = {
 /**
  * Overall status of a flow job.
  *
- * Job lifecycle: started → running → (completed | failed)
- * Or with pauses: started → running → paused → running → (completed | failed)
+ * Job lifecycle: started → running → (completed | failed | cancelled)
+ * Or with pauses: started → running → paused → running → (completed | failed | cancelled)
+ * User actions: running → paused (via pauseFlow) or running → cancelled (via cancelFlow)
  */
 export type FlowJobStatus =
   | "pending"
@@ -135,4 +136,5 @@ export type FlowJobStatus =
   | "completed"
   | "failed"
   | "started"
-  | "paused";
+  | "paused"
+  | "cancelled";

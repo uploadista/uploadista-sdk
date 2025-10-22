@@ -38,6 +38,10 @@ export enum EventType {
   FlowEnd = "flow-end",
   /** Emitted when a flow encounters an error */
   FlowError = "flow-error",
+  /** Emitted when a flow is paused by user request */
+  FlowPause = "flow-pause",
+  /** Emitted when a flow is cancelled by user request */
+  FlowCancel = "flow-cancel",
   /** Emitted when a node starts processing */
   NodeStart = "node-start",
   /** Emitted when a node completes successfully */
@@ -102,6 +106,30 @@ export type FlowEventFlowError = {
   flowId: string;
   eventType: EventType.FlowError;
   error: string;
+};
+
+/**
+ * Event emitted when a flow is paused by user request.
+ *
+ * Unlike NodePause which occurs when a node needs more data,
+ * this event is triggered by an explicit user action to pause the flow.
+ */
+export type FlowEventFlowPause = {
+  jobId: string;
+  flowId: string;
+  eventType: EventType.FlowPause;
+  pausedAt?: string; // nodeId where execution was paused
+};
+
+/**
+ * Event emitted when a flow is cancelled by user request.
+ *
+ * Cancelled flows will clean up intermediate files and stop execution.
+ */
+export type FlowEventFlowCancel = {
+  jobId: string;
+  flowId: string;
+  eventType: EventType.FlowCancel;
 };
 
 /**
@@ -212,6 +240,9 @@ export type FlowEventNodeResponse = {
  *     case EventType.FlowError:
  *       console.error("Flow failed:", event.error);
  *       break;
+ *     case EventType.FlowCancel:
+ *       console.log("Flow cancelled:", event.flowId);
+ *       break;
  *   }
  * }
  * ```
@@ -222,6 +253,8 @@ export type FlowEvent =
   | FlowEventFlowStart
   | FlowEventFlowEnd
   | FlowEventFlowError
+  | FlowEventFlowPause
+  | FlowEventFlowCancel
   | FlowEventNodeStart
   | FlowEventNodeEnd
   | FlowEventNodePause

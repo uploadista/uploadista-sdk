@@ -18,6 +18,8 @@ export type UploadistaErrorCode =
   | "FLOW_NODE_ERROR"
   | "FLOW_NOT_AUTHORIZED"
   | "FLOW_NOT_FOUND"
+  | "FLOW_PAUSED"
+  | "FLOW_CANCELLED"
   | "FILE_READ_ERROR"
   | "FLOW_JOB_NOT_FOUND"
   | "FLOW_JOB_ERROR"
@@ -98,6 +100,14 @@ export const ERROR_CATALOG: Readonly<
   FLOW_NOT_FOUND: {
     status: 404,
     body: "The flow was not found\n",
+  },
+  FLOW_PAUSED: {
+    status: 409,
+    body: "The flow execution was paused by user\n",
+  },
+  FLOW_CANCELLED: {
+    status: 409,
+    body: "The flow execution was cancelled by user\n",
   },
   FLOW_STRUCTURE_ERROR: {
     status: 500,
