@@ -7,7 +7,7 @@ This document describes the authentication system for the uploadista engine.
 The uploadista engine supports optional authentication through a dual-mode system:
 
 1. **Direct Auth Mode**: Bring your own authentication (BYO)
-2. **SaaS Auth Mode**: Standard JWT token exchange with auth server (coming soon)
+2. **UploadistaCloud Auth Mode**: Standard JWT token exchange with auth server (coming soon)
 
 **Current MVP Status**: ✅ Direct Auth Mode with Hono adapter
 
@@ -243,7 +243,7 @@ client.upload(file, {
 The MVP provides the foundation for:
 
 - ✅ Direct auth mode (DONE)
-- ⏳ SaaS auth mode with JWT token exchange
+- ⏳ UploadistaCloud auth mode with JWT token exchange
 - ⏳ Auth context available in upload/flow processing
 - ⏳ WebSocket authentication
 - ⏳ Express and Fastify adapter support
@@ -292,7 +292,7 @@ export const NoAuthContextServiceLive: Layer
 
 ```typescript
 // From @uploadista/client
-export type AuthConfig = DirectAuthConfig | SaasAuthConfig;
+export type AuthConfig = DirectAuthConfig | UploadistaCloudAuthConfig;
 
 export type DirectAuthConfig = {
   mode: 'direct';

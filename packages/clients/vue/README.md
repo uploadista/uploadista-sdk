@@ -41,9 +41,9 @@ import App from './App.vue'
 const app = createApp(App)
 
 app.use(createUploadistaPlugin({
-  serverUrl: 'http://localhost:4200', // Your Uploadista server URL
+  serverUrl: 'https://api.uploadista.com', // Your Uploadista server URL
   auth: {
-    type: 'saas',
+    type: 'uploadista-cloud',
     apiKey: 'your-api-key'
   }
 }))
@@ -100,9 +100,9 @@ Creates the Uploadista Vue plugin.
 **Options:**
 - `serverUrl` - Uploadista server URL
 - `auth` - Authentication configuration
-  - `type: 'no-auth' | 'saas' | 'direct'`
-  - For SaaS: `{ type: 'saas', apiKey: string, projectId?: string }`
-  - For direct: `{ type: 'direct', getAuthorizationHeader: () => Promise<string> }`
+  - `type: 'no-auth' | 'uploadista-cloud' | 'direct'`
+  - For UploadistaCloud: `{ type: 'uploadista-cloud', authServerUrl: string, clientId: string }`
+  - For direct: `{ type: 'direct', getCredentials: () => Promise<{ username: string, password: string }> }`
 
 ### Composables
 

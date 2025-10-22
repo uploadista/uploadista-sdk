@@ -390,7 +390,7 @@ export function createUploadistaApi(
 
   /**
    * Helper function to extract auth token for WebSocket connection.
-   * Supports both DirectAuthManager (extracts from headers) and SaasAuthManager (gets cached token).
+   * Supports both DirectAuthManager (extracts from headers) and UploadistaCloudAuthManager (gets cached token).
    */
   const getAuthTokenForWebSocket = async (
     manager: AuthManager,
@@ -398,17 +398,19 @@ export function createUploadistaApi(
   ): Promise<string | null> => {
     logger?.log(`Getting auth token for WebSocket (jobId: ${jobId})`);
 
-    // Check if this is a SaasAuthManager (has attachToken method)
+    // Check if this is a UploadistaCloudAuthManager (has attachToken method)
     if ("attachToken" in manager) {
-      logger?.log("Detected SaasAuthManager, calling attachToken");
+      logger?.log("Detected UploadistaCloudAuthManager, calling attachToken");
       const headers = await manager.attachToken({}, jobId);
       const authHeader = headers.Authorization;
       if (authHeader?.startsWith("Bearer ")) {
-        logger?.log("Successfully extracted Bearer token from SaasAuthManager");
+        logger?.log(
+          "Successfully extracted Bearer token from UploadistaCloudAuthManager",
+        );
         return authHeader.substring(7); // Remove "Bearer " prefix
       }
       logger?.log(
-        `No valid Authorization header from SaasAuthManager: ${authHeader}`,
+        `No valid Authorization header from UploadistaCloudAuthManager: ${authHeader}`,
       );
     }
 

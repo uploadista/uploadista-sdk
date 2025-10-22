@@ -34,20 +34,20 @@ type PluginConfig =
 
 /**
  * Create the Replicate ImageAI plugin
- * Supports both static credentials (OSS) and dynamic credential providers (SaaS)
+ * Supports both static credentials (OSS) and dynamic credential providers (UploadistaCloud)
  *
  * @example
  * // Static credentials (OSS)
  * imageAiPlugin(process.env.REPLICATE_API_TOKEN)
  *
  * @example
- * // Dynamic credentials with function (SaaS)
+ * // Dynamic credentials with function (UploadistaCloud)
  * imageAiPlugin({
  *   credentialProvider: (context) => Effect.succeed({ apiKey: "..." })
  * })
  *
  * @example
- * // Dynamic credentials with Effect service (SaaS)
+ * // Dynamic credentials with Effect service (UploadistaCloud)
  * imageAiPlugin({
  *   useCredentialProviderService: true
  * })

@@ -1,24 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SaasAuthManager } from "../saas-auth";
-import type { SaasAuthConfig } from "../types";
+import type { UploadistaCloudAuthConfig } from "../types";
+import { UploadistaCloudAuthManager } from "../uploadista-cloud-auth";
 
 // Mock fetch globally
 global.fetch = vi.fn();
 
-describe("SaasAuthManager", () => {
+describe("UploadistaCloudAuthManager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe("fetchToken", () => {
     it("should fetch token from auth server", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({
-          username: "user",
-          password: "pass",
-        }),
+        clientId: "client-id-123",
       };
 
       vi.mocked(global.fetch).mockResolvedValueOnce({
@@ -29,7 +26,7 @@ describe("SaasAuthManager", () => {
         }),
       });
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config);
       const result = await manager.fetchToken();
 
       expect(result).toEqual({
@@ -50,10 +47,10 @@ describe("SaasAuthManager", () => {
     });
 
     it("should handle auth server errors", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "wrong" }),
+        clientId: "client-id-123",
       };
 
       vi.mocked(global.fetch).mockResolvedValueOnce({
@@ -62,7 +59,7 @@ describe("SaasAuthManager", () => {
         text: async () => JSON.stringify({ error: "Invalid credentials" }),
       });
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config);
 
       await expect(manager.fetchToken()).rejects.toThrow(
         "Failed to fetch auth token: Invalid credentials",
@@ -70,15 +67,15 @@ describe("SaasAuthManager", () => {
     });
 
     it("should handle network errors", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
       vi.mocked(global.fetch).mockRejectedValueOnce(new Error("Network error"));
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config);
 
       await expect(manager.fetchToken()).rejects.toThrow(
         "Failed to fetch auth token: Network error",
@@ -86,10 +83,10 @@ describe("SaasAuthManager", () => {
     });
 
     it("should validate token response format", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
       vi.mocked(global.fetch).mockResolvedValueOnce({
@@ -97,7 +94,7 @@ describe("SaasAuthManager", () => {
         json: async () => ({ noToken: "here" }), // Missing token field
       });
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config);
 
       await expect(manager.fetchToken()).rejects.toThrow(
         "Auth server response missing 'token' field",
@@ -107,10 +104,10 @@ describe("SaasAuthManager", () => {
 
   describe("attachToken", () => {
     it("should attach token as Bearer header", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
       vi.mocked(global.fetch).mockResolvedValueOnce({

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { HttpClient } from "../../http-client";
+import type { HttpClient } from "../../services";
 import { AuthHttpClient } from "../auth-http-client";
 import { DirectAuthManager } from "../direct-auth";
 import { NoAuthManager } from "../no-auth";
-import { SaasAuthManager } from "../saas-auth";
-import type { DirectAuthConfig, SaasAuthConfig } from "../types";
+import type { DirectAuthConfig, UploadistaCloudAuthConfig } from "../types";
+import { UploadistaCloudAuthManager } from "../uploadista-cloud-auth";
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -192,7 +192,7 @@ describe("AuthHttpClient", () => {
 
     it("should extract job ID from flow URL", async () => {
       const config: SaasAuthConfig = {
-        mode: "saas",
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
         getCredentials: () => ({ username: "user", password: "pass" }),
       };

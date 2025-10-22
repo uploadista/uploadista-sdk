@@ -5,12 +5,15 @@ import type {
 } from "../services/http-client";
 import type { DirectAuthManager } from "./direct-auth";
 import type { NoAuthManager } from "./no-auth";
-import type { SaasAuthManager } from "./saas-auth";
+import type { UploadistaCloudAuthManager } from "./uploadista-cloud-auth";
 
 /**
  * Union type of all auth managers
  */
-export type AuthManager = DirectAuthManager | SaasAuthManager | NoAuthManager;
+export type AuthManager =
+  | DirectAuthManager
+  | UploadistaCloudAuthManager
+  | NoAuthManager;
 
 /**
  * Auth-aware HTTP client wrapper.
@@ -49,7 +52,7 @@ export class AuthHttpClient implements HttpClient {
         // include credentials for cors if needed
         credentials:
           this.authManager.getType() === "no-auth" ||
-          this.authManager.getType() === "saas"
+          this.authManager.getType() === "uploadista-cloud"
             ? "omit"
             : (options.credentials ?? "include"),
       });
@@ -72,14 +75,14 @@ export class AuthHttpClient implements HttpClient {
     headers: Record<string, string>,
     url: string,
   ): Promise<Record<string, string>> {
-    // Check if this is a DirectAuthManager or SaasAuthManager
+    // Check if this is a DirectAuthManager or UploadistaCloudAuthManager
     if ("attachCredentials" in this.authManager) {
       // DirectAuthManager or NoAuthManager
       return await this.authManager.attachCredentials(headers);
     }
 
     if ("attachToken" in this.authManager) {
-      // SaasAuthManager - extract job ID from URL if present
+      // UploadistaCloudAuthManager - extract job ID from URL if present
       const jobId = this.extractJobIdFromUrl(url);
       return await this.authManager.attachToken(headers, jobId);
     }
@@ -114,7 +117,7 @@ export class AuthHttpClient implements HttpClient {
       return jobMatch[1];
     }
 
-    // No job ID found - SaaS mode will use global token
+    // No job ID found - UploadistaCloud mode will use global token
     return undefined;
   }
 

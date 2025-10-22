@@ -1,6 +1,10 @@
 import type { DataStoreCapabilities } from "@uploadista/core/types";
 import type { AuthConfig, AuthManager } from "../auth";
-import { DirectAuthManager, NoAuthManager, SaasAuthManager } from "../auth";
+import {
+  DirectAuthManager,
+  NoAuthManager,
+  UploadistaCloudAuthManager,
+} from "../auth";
 import type { Logger } from "../logger";
 import { createLogger } from "../logger";
 import { defaultClientCapabilities } from "../mock-data-store";
@@ -175,7 +179,7 @@ export type UploadistaClientOptions<UploadInput> = {
    * Optional authentication configuration.
    * Supports two modes:
    * - Direct: Bring your own auth (headers, cookies, custom tokens)
-   * - SaaS: Standard JWT token exchange with auth server
+   * - UploadistaCloud: Standard JWT token exchange with auth server
    *
    * If omitted, client operates in no-auth mode (backward compatible).
    *
@@ -189,10 +193,10 @@ export type UploadistaClientOptions<UploadInput> = {
    * }
    * ```
    *
-   * @example SaaS mode with auth server
+   * @example UploadistaCloud mode with auth server
    * ```typescript
    * auth: {
-   *   mode: 'saas',
+   *   mode: 'uploadista-cloud',
    *   authServerUrl: 'https://auth.myapp.com/token',
    *   getCredentials: () => ({ username: 'user', password: 'pass' })
    * }
@@ -230,7 +234,7 @@ export const defaultConnectionPoolingConfig: ConnectionPoolConfig = {
  * - Smart chunking based on network conditions
  * - Flow-based file processing pipelines
  * - WebSocket support for real-time progress
- * - Authentication (direct, SaaS, or no-auth modes)
+ * - Authentication (direct, uploadista-cloud, or no-auth modes)
  *
  * The client automatically:
  * - Fetches server capabilities and adapts upload strategy
@@ -369,13 +373,13 @@ export function createUploadistaClient<UploadInput>({
   const authManager: AuthManager = auth
     ? auth.mode === "direct"
       ? new DirectAuthManager(auth, platformService, logger)
-      : new SaasAuthManager(auth, httpClient)
+      : new UploadistaCloudAuthManager(auth, httpClient)
     : new NoAuthManager();
 
   // Log auth mode for debugging (without exposing credentials)
   if (auth) {
     logger.log(
-      `Authentication enabled in ${auth.mode} mode${auth.mode === "saas" ? ` (server: ${auth.authServerUrl})` : ""}`,
+      `Authentication enabled in ${auth.mode} mode${auth.mode === "uploadista-cloud" ? ` (server: ${auth.authServerUrl})` : ""}`,
     );
   }
 

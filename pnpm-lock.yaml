@@ -279,7 +279,7 @@ importers:
         specifier: 4.20.6
         version: 4.20.6
 
-  examples/next-saas-client:
+  examples/next-cloud-client:
     dependencies:
       '@uploadista/client-browser':
         specifier: workspace:*
