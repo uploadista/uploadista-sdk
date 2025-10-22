@@ -110,7 +110,7 @@ export const handleJobStatus = (
   }).pipe(Effect.catchAll(handleErrorResponse(res)));
 };
 
-export const handleContinueFlow = <TRequirements = never>(
+export const handleResumeFlow = <TRequirements = never>(
   req: Request,
   res: Response,
   flowServer: FlowServerShape,
@@ -121,8 +121,8 @@ export const handleContinueFlow = <TRequirements = never>(
 
     const url = new URL(req.url, `http://${req.get("host")}`);
     const urlSegments = url.pathname.split("/");
-    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/continue/:nodeId
-    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/continue/:nodeId
+    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/resume/:nodeId
+    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/resume/:nodeId
 
     if (!jobId) {
       console.error("No job id");
@@ -172,7 +172,7 @@ export const handleContinueFlow = <TRequirements = never>(
       return;
     }
 
-    const result = yield* flowServer.continueFlow<TRequirements>({
+    const result = yield* flowServer.resumeFlow<TRequirements>({
       jobId,
       nodeId,
       newData,

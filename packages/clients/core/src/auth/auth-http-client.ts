@@ -100,7 +100,7 @@ export class AuthHttpClient implements HttpClient {
     // - /api/upload/{uploadId}
     // - /api/flow/{flowId}/{storageId}
     // - /api/jobs/{jobId}/status
-    // - /api/jobs/{jobId}/continue/{nodeId}
+    // - /api/jobs/{jobId}/resume/{nodeId}
 
     const uploadMatch = url.match(/\/api\/upload\/([^/?]+)/);
     if (uploadMatch) {

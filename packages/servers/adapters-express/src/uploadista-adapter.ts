@@ -36,10 +36,10 @@ import { Effect, Layer } from "effect";
 import type { Request, Response } from "express";
 import type { z } from "zod";
 import {
-  handleContinueFlow,
   handleFlowGet,
   handleFlowPost,
   handleJobStatus,
+  handleResumeFlow,
 } from "./flow-http-handlers";
 import {
   handleUploadGet,
@@ -286,7 +286,7 @@ const createExpressUploadistaAdapterServiceLayer = (
             const needsJsonBody =
               (routeSegments.includes("upload") && req.method === "POST") ||
               (routeSegments.includes("flow") && req.method === "POST") ||
-              (routeSegments.includes("continue") &&
+              (routeSegments.includes("resume") &&
                 req.get("Content-Type")?.includes("application/json"));
 
             if (needsJsonBody && !req.body) {
@@ -349,9 +349,9 @@ const createExpressUploadistaAdapterServiceLayer = (
                 );
               } else if (
                 req.method === "PATCH" &&
-                routeSegments.includes("continue")
+                routeSegments.includes("resume")
               ) {
-                return yield* handleContinueFlow<never>(
+                return yield* handleResumeFlow<never>(
                   req,
                   res,
                   flowServer,

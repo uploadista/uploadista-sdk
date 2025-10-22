@@ -39,10 +39,10 @@ import {
   NoOpMetricsServiceLive,
 } from "@uploadista/observability";
 import {
-  handleContinueFlow,
   handleFlowGet,
   handleFlowPost,
   handleJobStatus,
+  handleResumeFlow,
 } from "./flow-http-handlers";
 import {
   handleUploadGet,
@@ -322,9 +322,9 @@ const createFastifyUploadistaAdapterServiceLayer = (
                 );
               } else if (
                 req.method === "PATCH" &&
-                routeSegments.includes("continue")
+                routeSegments.includes("resume")
               ) {
-                return yield* handleContinueFlow<never>(
+                return yield* handleResumeFlow<never>(
                   req,
                   reply,
                   flowServer,

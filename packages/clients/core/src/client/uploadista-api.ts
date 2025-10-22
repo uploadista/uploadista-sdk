@@ -215,7 +215,7 @@ export type UploadistaApi = {
    * @returns Updated job metadata
    * @throws {UploadistaError} If job not found or continuation fails
    */
-  continueFlow: (
+  resumeFlow: (
     jobId: string,
     nodeId: string,
     newData: unknown,
@@ -631,7 +631,7 @@ export function createUploadistaApi(
       return { status: res.status, job: data };
     },
 
-    continueFlow: async (
+    resumeFlow: async (
       jobId: string,
       nodeId: string,
       newData: unknown,
@@ -639,8 +639,6 @@ export function createUploadistaApi(
         contentType?: "application/json" | "application/octet-stream";
       },
     ) => {
-      logger?.log(`continueFlow: ${jobId} at node: ${nodeId}`);
-
       const contentType = options?.contentType || "application/json";
 
       let body: RequestBody;
@@ -653,7 +651,7 @@ export function createUploadistaApi(
       }
 
       const res = await httpClient.request(
-        `${jobsEndpoint}/${jobId}/continue/${nodeId}`,
+        `${jobsEndpoint}/${jobId}/resume/${nodeId}`,
         {
           method: "PATCH",
           headers: {
@@ -667,12 +665,12 @@ export function createUploadistaApi(
         const errorData = (await res.json().catch(() => ({}))) as ErrorResponse;
         const errorName = mapServerErrorCodeToClientName(
           errorData.code,
-          "FLOW_CONTINUE_FAILED",
+          "FLOW_RESUMED_FAILED",
         );
         const errorMessage =
           errorData.error ||
           errorData.message ||
-          `Failed to continue flow for job ${jobId}`;
+          `Failed to resume flow for job ${jobId}`;
 
         throw new UploadistaError({
           name: errorName,

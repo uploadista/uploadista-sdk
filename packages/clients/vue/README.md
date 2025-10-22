@@ -102,7 +102,7 @@ Creates the Uploadista Vue plugin.
 - `auth` - Authentication configuration
   - `type: 'no-auth' | 'uploadista-cloud' | 'direct'`
   - For UploadistaCloud: `{ type: 'uploadista-cloud', authServerUrl: string, clientId: string }`
-  - For direct: `{ type: 'direct', getCredentials: () => Promise<{ username: string, password: string }> }`
+  - For direct: `{ type: 'direct', getAuthorizationHeader: () => Promise<string> }`
 
 ### Composables
 

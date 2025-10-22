@@ -131,7 +131,7 @@ export const handleJobStatus = (req: Request, flowServer: FlowServerShape) => {
   }).pipe(Effect.catchAll(handleErrorResponse));
 };
 
-export const handleContinueFlow = <TRequirements>(
+export const handleResumeFlow = <TRequirements>(
   req: Request,
   flowServer: FlowServerShape,
 ) => {
@@ -142,8 +142,8 @@ export const handleContinueFlow = <TRequirements>(
 
     const url = new URL(req.url);
     const urlSegments = url.pathname.split("/");
-    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/continue/:nodeId
-    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/continue/:nodeId
+    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/resume/:nodeId
+    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/resume/:nodeId
 
     if (!jobId) {
       console.error("No job id");
@@ -196,7 +196,7 @@ export const handleContinueFlow = <TRequirements>(
       return new Response("Unsupported Content-Type", { status: 415 });
     }
 
-    const result = yield* flowServer.continueFlow<TRequirements>({
+    const result = yield* flowServer.resumeFlow<TRequirements>({
       jobId,
       nodeId,
       newData,

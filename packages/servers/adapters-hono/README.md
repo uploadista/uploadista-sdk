@@ -225,8 +225,8 @@ POST   /uploadista/api/flow/:flowId/:storageId
 GET    /uploadista/api/flow/:flowId
        Get flow metadata and schema
 
-PATCH  /uploadista/api/jobs/:jobId/continue/:nodeId
-       Continue paused flow node
+PATCH  /uploadista/api/jobs/:jobId/resume/:nodeId
+       Resume paused flow node
 ```
 
 ### Job Status Routes

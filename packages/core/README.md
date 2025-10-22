@@ -372,7 +372,7 @@ const program = Effect.gen(function* () {
 
   // Continue a paused flow
   if (status.status === "paused" && status.pausedAt) {
-    yield* flowServer.continueFlow({
+    yield* flowServer.resumeFlow({
       jobId: job.id,
       nodeId: status.pausedAt,
       newData: additionalData,

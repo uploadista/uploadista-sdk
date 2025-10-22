@@ -144,7 +144,7 @@ export async function startFlowUpload({
 }
 
 /**
- * Upload chunks directly to the upload API (not through continueFlow)
+ * Upload chunks directly to the upload API (not through resumeFlow)
  * This is more efficient and reuses the existing upload infrastructure
  */
 export async function performFlowUpload({
@@ -265,7 +265,7 @@ export async function performFlowUpload({
       logger.log(`Finalizing flow upload for job ${jobId}`);
 
       try {
-        await uploadistaApi.continueFlow(
+        await uploadistaApi.resumeFlow(
           jobId,
           inputNodeId,
           {

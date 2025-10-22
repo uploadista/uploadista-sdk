@@ -781,7 +781,7 @@ export function createUploadistaClient<UploadInput>({
       return { status, job };
     },
 
-    continueFlow: async ({
+    resumeFlow: async ({
       jobId,
       nodeId,
       newData,
@@ -792,7 +792,7 @@ export function createUploadistaClient<UploadInput>({
       newData: unknown;
       contentType?: "application/json" | "application/octet-stream";
     }) => {
-      return uploadistaApi.continueFlow(jobId, nodeId, newData, {
+      return uploadistaApi.resumeFlow(jobId, nodeId, newData, {
         contentType,
       });
     },
@@ -878,7 +878,7 @@ export function createUploadistaClient<UploadInput>({
  *
  * The client provides methods for:
  * - **Upload operations**: upload(), uploadWithFlow()
- * - **Flow operations**: getFlow(), runFlow(), continueFlow()
+ * - **Flow operations**: getFlow(), runFlow(), resumeFlow()
  * - **Job management**: getJobStatus()
  * - **WebSocket management**: openUploadWebSocket(), openFlowWebSocket(), closeWebSocket()
  * - **Metrics and diagnostics**: getNetworkMetrics(), getChunkingInsights(), exportMetrics()

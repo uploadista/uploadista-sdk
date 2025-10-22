@@ -91,7 +91,7 @@ export type FlowJobTask = {
  *   console.log("Final result:", status.result);
  * } else if (status.status === "paused") {
  *   // Resume with additional data
- *   yield* flowServer.continueFlow({
+ *   yield* flowServer.resumeFlow({
  *     jobId: job.id,
  *     nodeId: status.pausedAt,
  *     newData: additionalChunk

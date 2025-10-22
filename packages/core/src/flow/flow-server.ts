@@ -95,7 +95,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  * @property getFlow - Retrieves a flow definition by ID
  * @property getFlowData - Retrieves flow metadata (nodes, edges) without full flow instance
  * @property runFlow - Starts a new flow execution and returns immediately with job ID
- * @property continueFlow - Resumes a paused flow with new data for a specific node
+ * @property resumeFlow - Resumes a paused flow with new data for a specific node
  * @property getJobStatus - Retrieves current status and results of a flow job
  * @property subscribeToFlowEvents - Subscribes WebSocket to flow execution events
  * @property unsubscribeFromFlowEvents - Unsubscribes from flow events
@@ -131,7 +131,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  *   const server = yield* FlowServer;
  *
  *   // Flow paused waiting for user input at node "approval_1"
- *   const job = yield* server.continueFlow({
+ *   const job = yield* server.resumeFlow({
  *     jobId: "job123",
  *     nodeId: "approval_1",
  *     newData: { approved: true },
@@ -176,7 +176,7 @@ export type FlowServerShape = {
     inputs: any;
   }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
 
-  continueFlow: <TRequirements>({
+  resumeFlow: <TRequirements>({
     jobId,
     nodeId,
     newData,
@@ -845,7 +845,7 @@ export function createFlowServer() {
           return job;
         }),
 
-      continueFlow: ({
+      resumeFlow: ({
         jobId,
         nodeId,
         newData,
@@ -857,7 +857,6 @@ export function createFlowServer() {
         clientId: string | null;
       }) =>
         Effect.gen(function* () {
-          console.log("continueFlow", jobId, nodeId, newData);
           // Get the current job
           const job = yield* kvStore.get(jobId);
           if (!job) {
