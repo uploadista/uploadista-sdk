@@ -71,10 +71,7 @@ export type DirectAuthConfig = {
  * {
  *   mode: 'uploadista-cloud',
  *   authServerUrl: 'https://auth.myapp.com/token',
- *   getCredentials: async () => ({
- *     username: await getUsername(),
- *     password: await getPassword()
- *   })
+ *   clientId: 'my-client-id'
  * }
  * ```
  */
@@ -86,9 +83,7 @@ export type UploadistaCloudAuthConfig = {
    */
   authServerUrl: string;
   /**
-   * Function that returns user credentials to send to the auth server.
-   * The auth server will validate these credentials before issuing a token.
-   * Credentials format is client id
+   * Client ID to use for authentication. It will be used to compare the API Key with the client id on the auth server.
    */
   clientId: string;
 };

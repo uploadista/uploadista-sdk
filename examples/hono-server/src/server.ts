@@ -3,16 +3,17 @@ import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createNodeWebSocket } from "@hono/node-ws";
+import { createClient } from "@redis/client";
 import { createHonoUploadistaAdapter } from "@uploadista/adapters-hono";
-import { fileStore } from "@uploadista/data-store-filesystem";
+import { s3Store } from "@uploadista/data-store-s3";
+import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
-import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { redisKvStore } from "@uploadista/kv-store-redis";
 import dotenv from "dotenv";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
-
 import { flows } from "./flows";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,13 +25,42 @@ const app = new Hono();
 
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
-const kvStore = fileKvStore({
-  directory: join(__dirname, "../uploads"),
+// Create Redis client for KV store
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
 });
 
-const dataStore = fileStore({
-  directory: join(__dirname, "../uploads"),
-  deliveryUrl: "http://localhost:3000/uploads",
+await redisClient.connect();
+console.log("Redis client connected for KV store");
+
+// Create separate Redis client for pub/sub subscriber (Redis requires dedicated connection)
+const redisSubscriberClient = createClient({
+  url: process.env.REDIS_URL,
+});
+
+await redisSubscriberClient.connect();
+console.log("Redis subscriber client connected for event broadcasting");
+
+const kvStore = redisKvStore({
+  redis: redisClient,
+});
+
+const eventBroadcaster = redisEventBroadcaster({
+  redis: redisClient,
+  subscriberRedis: redisSubscriberClient,
+});
+
+const dataStore = s3Store({
+  deliveryUrl: process.env.R2_DELIVERY_URL!,
+  s3ClientConfig: {
+    bucket: process.env.R2_BUCKET!,
+    region: "auto",
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+    },
+    endpoint: process.env.R2_ENDPOINT!,
+  },
 });
 
 if (!process.env.REPLICATE_API_TOKEN) {
@@ -43,6 +73,7 @@ const uploadistaAdapter = await createHonoUploadistaAdapter({
   flows,
   plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
   kvStore,
+  eventBroadcaster,
 });
 
 app.use(

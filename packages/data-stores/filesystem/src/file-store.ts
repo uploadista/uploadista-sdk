@@ -134,7 +134,7 @@ const destroyWriteStream = (writeStream: fs.WriteStream) =>
  * @param options - The options for the file store.
  * @returns A data store that stores files in the filesystem.
  */
-export const createFileStore = ({ directory, deliveryUrl }: FileStoreOptions) =>
+export const fileStore = ({ directory, deliveryUrl }: FileStoreOptions) =>
   Effect.gen(function* () {
     yield* checkOrCreateDirectory(directory);
     const kvStore = yield* UploadFileKVStore;
@@ -369,6 +369,3 @@ export const createFileStore = ({ directory, deliveryUrl }: FileStoreOptions) =>
       validateUploadStrategy,
     } as DataStore<UploadFile>;
   });
-
-export const fileStore = (options: FileStoreOptions) =>
-  createFileStore(options);

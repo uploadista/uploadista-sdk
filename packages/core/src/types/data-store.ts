@@ -273,7 +273,7 @@ export class UploadFileDataStores extends Context.Tag("UploadFileDataStores")<
  * // Effect that creates a store
  * const config: DataStoreConfig = Effect.gen(function* () {
  *   const kvStore = yield* UploadFileKVStore;
- *   return createS3Store(kvStore);
+ *   return s3Store(kvStore);
  * });
  *
  * // Pre-built Layer

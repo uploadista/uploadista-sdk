@@ -35,14 +35,14 @@ pnpm add @uploadista/data-store-s3 @aws-sdk/client-s3 @uploadista/core
 ### 1. Create S3 Data Store
 
 ```typescript
-import { createS3Store } from "@uploadista/data-store-s3";
+import { s3Store } from "@uploadista/data-store-s3";
 import { createUploadServerLayer } from "@uploadista/server";
 import { memoryKvStore } from "@uploadista/kv-store-memory";
 import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
 import { Effect } from "effect";
 
 // Create S3 store
-const s3Store = createS3Store({
+const dataStore = s3Store({
   deliveryUrl: "https://my-bucket.s3.amazonaws.com",
   s3ClientConfig: {
     region: "us-east-1",
@@ -53,7 +53,7 @@ const s3Store = createS3Store({
 
 // Use in upload server
 const uploadLayer = createUploadServerLayer({
-  dataStore: s3Store,
+  dataStore,
   kvStore: memoryKvStore,
   eventEmitter: webSocketEventEmitter,
 });

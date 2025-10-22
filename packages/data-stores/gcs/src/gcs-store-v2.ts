@@ -21,9 +21,7 @@ import {
   GCSClientService,
 } from "./services";
 
-export type GCSStoreOptions = {
-  kvStore: KvStore<UploadFile>;
-} & GCSClientConfig;
+export type GCSStoreOptions = GCSClientConfig;
 
 /**
  * Convert the Upload object to a format that can be stored in GCS metadata.
@@ -71,19 +69,10 @@ const getUpload = (
   });
 };
 
-export function createGCSStore(options: Omit<GCSStoreOptions, "kvStore">) {
-  return Effect.gen(function* () {
-    const kvStore = yield* UploadFileKVStore;
-    return yield* createGCSStoreImplementation({ ...options, kvStore });
-  });
-}
-
-export function createGCSStoreImplementation(
-  config: GCSStoreOptions,
-): Effect.Effect<DataStore<UploadFile>, never, GCSClientService> {
+export function createGCSStore() {
   return Effect.gen(function* () {
     const gcsClient = yield* GCSClientService;
-    const { kvStore } = config;
+    const kvStore = yield* UploadFileKVStore;
 
     const getCapabilities = (): DataStoreCapabilities => {
       return {
@@ -262,25 +251,12 @@ export function createGCSStoreImplementation(
           return buffer;
         });
       },
-    };
+    } as DataStore<UploadFile>;
   });
 }
 
-export const GCSStoreLayer = (options: Omit<GCSStoreOptions, "kvStore">) =>
-  Layer.effect(UploadFileDataStore, createGCSStore(options));
+export const gcsStoreRest = (config: GCSStoreOptions) =>
+  createGCSStore().pipe(Effect.provide(GCSClientRESTLayer(config)));
 
-export const gcsStoreRest = (config: GCSStoreOptions) => {
-  return Effect.runPromise(
-    createGCSStoreImplementation(config).pipe(
-      Effect.provide(GCSClientRESTLayer(config)),
-    ),
-  );
-};
-
-export const gcsStoreNodejs = (config: GCSStoreOptions) => {
-  return Effect.runPromise(
-    createGCSStoreImplementation(config).pipe(
-      Effect.provide(GCSClientNodeJSLayer(config)),
-    ),
-  );
-};
+export const gcsStoreNodejs = (config: GCSStoreOptions) =>
+  createGCSStore().pipe(Effect.provide(GCSClientNodeJSLayer(config)));

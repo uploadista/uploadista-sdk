@@ -2,7 +2,7 @@ import { UploadistaError } from "@uploadista/core/errors";
 import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect, Option, Stream } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createS3StoreImplementation } from "../s3-store";
+import { createS3Store } from "../s3-store";
 import type { S3ClientService } from "../services";
 import type { S3Store } from "../types";
 import {
@@ -32,7 +32,7 @@ describe("S3Store - Edge Cases and Error Handling", () => {
         const kvStore = yield* UploadFileKVStore;
         const config = createTestS3StoreConfig();
 
-        s3Store = yield* createS3StoreImplementation({
+        s3Store = yield* createS3Store({
           ...config,
           kvStore,
         });
@@ -456,7 +456,7 @@ describe("S3Store - Edge Cases and Error Handling", () => {
             maxMultipartParts: 5, // Very low limit
           });
 
-          const limitedStore = yield* createS3StoreImplementation({
+          const limitedStore = yield* createS3Store({
             ...config,
             kvStore,
           });

@@ -393,6 +393,3 @@ export function gcsStore({
     validateUploadStrategy,
   };
 }
-
-export const GCSStoreLayer = (options: Omit<GCSStoreOptions, "kvStore">) =>
-  Layer.effect(UploadFileDataStore, createGCSStore(options));
