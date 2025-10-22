@@ -1,5 +1,5 @@
 import type { HttpClient } from "../services/http-client";
-import { BaseAuthManager, type SaasAuthConfig } from "./types";
+import { BaseAuthManager, type UploadistaCloudAuthConfig } from "./types";
 
 /**
  * Token response from the auth server
@@ -20,7 +20,7 @@ type CachedToken = {
 };
 
 /**
- * SaaS auth manager - handles JWT token exchange with an auth server.
+ * UploadistaCloud auth manager - handles JWT token exchange with an auth server.
  *
  * Token exchange flow:
  * 1. Client calls getCredentials() to get user credentials
@@ -31,7 +31,7 @@ type CachedToken = {
  *
  * Security: API keys are kept server-side in the auth server, never exposed to clients.
  */
-export class SaasAuthManager extends BaseAuthManager {
+export class UploadistaCloudAuthManager extends BaseAuthManager {
   /** Token cache: maps job ID to cached token */
   private tokenCache = new Map<string, CachedToken>();
 
@@ -39,10 +39,10 @@ export class SaasAuthManager extends BaseAuthManager {
   private globalToken: CachedToken | null = null;
 
   constructor(
-    private config: SaasAuthConfig,
+    private config: UploadistaCloudAuthConfig,
     private httpClient: HttpClient,
   ) {
-    super("saas");
+    super("uploadista-cloud");
   }
 
   /**

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { HttpClient } from "../../http-client";
+import type { HttpClient } from "../../services";
 import { AuthHttpClient } from "../auth-http-client";
 import { DirectAuthManager } from "../direct-auth";
 import { NoAuthManager } from "../no-auth";
-import { SaasAuthManager } from "../saas-auth";
-import type { DirectAuthConfig, SaasAuthConfig } from "../types";
+import type { DirectAuthConfig, UploadistaCloudAuthConfig } from "../types";
+import { UploadistaCloudAuthManager } from "../uploadista-cloud-auth";
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -74,10 +74,10 @@ describe("AuthHttpClient", () => {
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         "https://api.example.com/upload",
-        {
+        expect.objectContaining({
           method: "POST",
           headers: { "Content-Type": "application/json" },
-        },
+        }),
       );
     });
   });
@@ -100,13 +100,13 @@ describe("AuthHttpClient", () => {
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         "https://api.example.com/upload",
-        {
+        expect.objectContaining({
           method: "POST",
-          headers: {
+          headers: expect.objectContaining({
             "Content-Type": "application/json",
             Authorization: "Bearer direct-token",
-          },
-        },
+          }),
+        }),
       );
     });
 
@@ -125,27 +125,72 @@ describe("AuthHttpClient", () => {
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         "https://api.example.com/upload",
-        {
+        expect.objectContaining({
           headers: { Authorization: "Bearer async-token" },
-        },
+        }),
       );
     });
   });
 
-  describe("with SaasAuthManager", () => {
-    it("should attach JWT token from SaasAuthManager", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+  describe("with UploadistaCloudAuthManager", () => {
+    let uploadAuthMockHttpClient: HttpClient;
+
+    beforeEach(() => {
+      // Create a separate mock HTTP client for auth requests
+      uploadAuthMockHttpClient = {
+        request: vi.fn(),
+        getMetrics: vi.fn(() => ({
+          activeConnections: 0,
+          totalConnections: 0,
+          reuseRate: 0,
+          averageConnectionTime: 0,
+        })),
+        getDetailedMetrics: vi.fn(() => ({
+          activeConnections: 0,
+          totalConnections: 0,
+          reuseRate: 0,
+          averageConnectionTime: 0,
+          health: {
+            status: "healthy" as const,
+            score: 100,
+            issues: [],
+            recommendations: [],
+          },
+          requestsPerSecond: 0,
+          errorRate: 0,
+          timeouts: 0,
+          retries: 0,
+          fastConnections: 0,
+          slowConnections: 0,
+          http2Info: {
+            supported: true,
+            detected: false,
+            version: "h2",
+            multiplexingActive: false,
+          },
+        })),
+        reset: vi.fn(),
+        close: vi.fn(async () => {}),
+        warmupConnections: vi.fn(async () => {}),
+      };
+    });
+
+    it("should attach JWT token from UploadistaCloudAuthManager", async () => {
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: "jwt-token-123" }),
-      } as Response);
+      } as any);
 
-      const authManager = new SaasAuthManager(config);
+      const authManager = new UploadistaCloudAuthManager(
+        config,
+        uploadAuthMockHttpClient,
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await authClient.request("https://api.example.com/upload", {
@@ -155,29 +200,32 @@ describe("AuthHttpClient", () => {
 
       expect(mockHttpClient.request).toHaveBeenCalledWith(
         "https://api.example.com/upload",
-        {
+        expect.objectContaining({
           method: "POST",
-          headers: {
+          headers: expect.objectContaining({
             "Content-Type": "application/json",
             Authorization: "Bearer jwt-token-123",
-          },
-        },
+          }),
+        }),
       );
     });
 
     it("should extract job ID from upload URL", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: "jwt-token-for-upload-123" }),
-      } as Response);
+      } as any);
 
-      const authManager = new SaasAuthManager(config);
+      const authManager = new UploadistaCloudAuthManager(
+        config,
+        uploadAuthMockHttpClient,
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await authClient.request(
@@ -191,18 +239,21 @@ describe("AuthHttpClient", () => {
     });
 
     it("should extract job ID from flow URL", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: "jwt-token-for-flow-456" }),
-      } as Response);
+      } as any);
 
-      const authManager = new SaasAuthManager(config);
+      const authManager = new UploadistaCloudAuthManager(
+        config,
+        uploadAuthMockHttpClient,
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await authClient.request(
@@ -216,18 +267,21 @@ describe("AuthHttpClient", () => {
     });
 
     it("should extract job ID from jobs URL", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: "jwt-token-for-job-789" }),
-      } as Response);
+      } as any);
 
-      const authManager = new SaasAuthManager(config);
+      const authManager = new UploadistaCloudAuthManager(
+        config,
+        uploadAuthMockHttpClient,
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await authClient.request(

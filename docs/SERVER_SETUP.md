@@ -9,66 +9,23 @@ This guide walks through building a complete upload server with:
 - Multiple storage backends
 - State management (KV stores)
 - Real-time event updates
-- Authentication
 - Flow-based processing pipelines
 
 **Setup Time**: 15-30 minutes depending on cloud provider choice
 
 ## Prerequisites
 
-- Node.js 18+ or Cloudflare Workers account
+- Node.js 18+
 - npm or pnpm
 - Choice of:
   - **Storage**: S3, Azure, GCS, or Filesystem
-  - **Framework**: Hono (Cloudflare), Express (Node.js), or Fastify (Node.js)
-  - **KV Store**: Redis, Memory (development), or Cloudflare KV
-  - **Events**: Redis Pub/Sub or Cloudflare Durable Objects
+  - **Framework**: Hono, Express, or Fastify (all Node.js)
+  - **KV Store**: Redis, IORedis, Filesystem, Memory (development), or Cloudflare KV/DO
+  - **Events**: Redis Pub/Sub, IORedis, Memory (development), or WebSocket
 
 ## Quick Start (5 minutes)
 
-### Option 1: Cloudflare Workers (Recommended for beginners)
-
-Instant global deployment with minimal infrastructure.
-
-```bash
-# Create new project
-npm create wrangler@latest uploadista-server
-cd uploadista-server
-
-# Install dependencies
-npm install @uploadista/server @uploadista/adapters-hono @uploadista/data-store-s3
-```
-
-Create `src/index.ts`:
-
-```typescript
-import { Hono } from "hono";
-import { createUploadServer } from "@uploadista/adapters-hono";
-import { S3DataStore } from "@uploadista/data-store-s3";
-
-const app = new Hono();
-
-// Configure storage
-const storage = new S3DataStore({
-  bucket: "my-uploads",
-  region: "us-east-1",
-});
-
-// Add upload routes
-app.route("/api", createUploadServer({ storage }));
-
-export default app;
-```
-
-Deploy:
-
-```bash
-wrangler publish
-```
-
-Your server is live at `https://uploadista-server.your-account.workers.dev`
-
-### Option 2: Express + Node.js (Most popular)
+### Option 1: Express + Node.js (Most popular)
 
 Traditional Node.js server with proven tooling.
 
@@ -79,59 +36,327 @@ mkdir uploadista-server && cd uploadista-server
 # Initialize
 npm init -y
 npm install express @uploadista/server @uploadista/adapters-express \
-  @uploadista/data-store-s3 @uploadista/kv-store-redis \
-  @uploadista/event-broadcaster-redis
+  @uploadista/data-store-filesystem @uploadista/kv-store-filesystem \
+  @uploadista/event-emitter-websocket ws cors pino-http
 ```
 
 Create `src/server.ts`:
 
 ```typescript
+import { createServer } from "node:http";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createExpressUploadistaAdapter } from "@uploadista/adapters-express";
+import { createFileStore } from "@uploadista/data-store-filesystem";
+import { imagePlugin } from "@uploadista/flow-images-sharp";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createFlow, createInputNode, createStorageNode } from "@uploadista/core";
+import cors from "cors";
 import express from "express";
-import { createUploadServer } from "@uploadista/adapters-express";
-import { S3DataStore } from "@uploadista/data-store-s3";
-import { RedisKVStore } from "@uploadista/kv-store-redis";
-import { RedisBroadcaster } from "@uploadista/event-broadcaster-redis";
+import pinoHttp from "pino-http";
+import { WebSocketServer } from "ws";
 
-const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const storage = new S3DataStore({ bucket: "my-uploads" });
-const kvStore = new RedisKVStore({ url: process.env.REDIS_URL });
-const broadcaster = new RedisBroadcaster({ url: process.env.REDIS_URL });
+async function startServer() {
+  const app = express();
+  const server = createServer(app);
+  const port = process.env.PORT || 3000;
 
-app.use(
-  "/api",
-  createUploadServer({
-    storage,
+  // Middleware
+  app.use(cors());
+  app.use(pinoHttp());
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/uploadista/")) {
+      return next();
+    }
+    express.json()(req, res, next);
+  });
+
+  const kvStore = fileKvStore({
+    directory: join(__dirname, "../uploads"),
+  });
+
+  const dataStore = createFileStore({
+    directory: join(__dirname, "../uploads"),
+    deliveryUrl: "http://localhost:3000",
+  });
+
+  // Simple flow
+  const flows = (flowId: string) => {
+    return createFlow({
+      flowId: "simple-flow",
+      name: "Simple Flow",
+      nodes: {
+        input: createInputNode("input"),
+        output: createStorageNode("output"),
+      },
+      edges: [{ source: "input", target: "output" }],
+    });
+  };
+
+  // Create upload adapter
+  const uploadistaAdapter = await createExpressUploadistaAdapter({
     kvStore,
-    broadcaster,
-  })
-);
+    dataStore,
+    flows,
+    plugins: [imagePlugin],
+  });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+  // Health check endpoint
+  app.get("/health", (_req, res) => {
+    res.json({ status: "OK", timestamp: new Date().toISOString() });
+  });
+
+  // Upload endpoints
+  app.all("/uploadista/api/*splat", uploadistaAdapter.handler);
+
+  // WebSocket server
+  const wss = new WebSocketServer({ server });
+  wss.on("connection", uploadistaAdapter.websocketConnectionHandler);
+
+  // Start server
+  server.listen(port, () => {
+    console.log(`🚀 Express server running on port ${port}`);
+    console.log(`📁 Upload endpoint: http://localhost:${port}/uploadista/api/`);
+    console.log(`🔌 WebSocket endpoint: ws://localhost:${port}/uploadista/ws/`);
+  });
+
+  // Graceful shutdown
+  const shutdown = async () => {
+    console.log("🛑 Shutting down server...");
+    wss.close(() => console.log("📡 WebSocket server closed"));
+    server.close(() => console.log("🔌 HTTP server closed"));
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+}
+
+startServer().catch((error) => {
+  console.error("❌ Failed to start server:", error);
+  process.exit(1);
+});
 ```
 
 Start: `npm run dev`
 
 Your server is at `http://localhost:3000`
 
+### Option 2: Hono + Node.js (Lightweight & Fast)
+
+Modern, lightweight framework with excellent performance.
+
+```bash
+mkdir uploadista-server && cd uploadista-server
+npm init -y
+npm install hono @hono/node-server @hono/node-ws @uploadista/server \
+  @uploadista/adapters-hono @uploadista/data-store-filesystem \
+  @uploadista/kv-store-filesystem dotenv
+```
+
+Create `src/server.ts`:
+
+```typescript
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { serve } from "@hono/node-server";
+import { createNodeWebSocket } from "@hono/node-ws";
+import { createHonoUploadistaAdapter } from "@uploadista/adapters-hono";
+import { createFileStore } from "@uploadista/data-store-filesystem";
+import { imagePlugin } from "@uploadista/flow-images-sharp";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createFlow, createInputNode, createStorageNode } from "@uploadista/core";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = new Hono();
+const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+
+const kvStore = fileKvStore({
+  directory: join(__dirname, "../uploads"),
+});
+
+const dataStore = createFileStore({
+  directory: join(__dirname, "../uploads"),
+  deliveryUrl: "http://localhost:3000",
+});
+
+// Simple flow
+const flows = (flowId: string) => {
+  return createFlow({
+    flowId: "simple-flow",
+    name: "Simple Flow",
+    nodes: {
+      input: createInputNode("input"),
+      output: createStorageNode("output"),
+    },
+    edges: [{ source: "input", target: "output" }],
+  });
+};
+
+const uploadistaAdapter = await createHonoUploadistaAdapter({
+  dataStore,
+  flows,
+  plugins: [imagePlugin],
+  kvStore,
+});
+
+app.use("*", cors());
+
+app.on(
+  ["HEAD", "POST", "GET", "PATCH"],
+  ["/uploadista/api/**", "/uploadista/api"],
+  uploadistaAdapter.handler,
+);
+
+app.on(
+  ["GET"],
+  ["/uploadista/ws/upload/:uploadId", "/uploadista/ws/flow/:jobId"],
+  upgradeWebSocket(uploadistaAdapter.websocketHandler),
+);
+
+const server = serve({ port: 3000, fetch: app.fetch }, (info) => {
+  console.log(`🚀 Hono server running on port ${info.port}`);
+});
+
+injectWebSocket(server);
+```
+
+Deploy: `npm run start`
+
+### Option 3: Fastify (High Performance)
+
+Extremely fast with built-in streaming support.
+
+```bash
+mkdir uploadista-server && cd uploadista-server
+npm init -y
+npm install fastify @fastify/websocket @fastify/cors @uploadista/server \
+  @uploadista/adapters-fastify @uploadista/data-store-filesystem \
+  @uploadista/kv-store-filesystem
+```
+
+Create `src/server.ts`:
+
+```typescript
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import cors from "@fastify/cors";
+import websocket from "@fastify/websocket";
+import { createFastifyUploadistaAdapter } from "@uploadista/adapters-fastify";
+import { fileStore } from "@uploadista/data-store-filesystem";
+import { imagePlugin } from "@uploadista/flow-images-sharp";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createFlow, createInputNode, createStorageNode } from "@uploadista/core";
+import Fastify from "fastify";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+async function startServer() {
+  const fastify = Fastify({ logger: true });
+  const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000;
+
+  // Register plugins
+  await fastify.register(websocket);
+  await fastify.register(cors, {
+    origin: ["*"],
+    credentials: true,
+  });
+
+  const kvStore = fileKvStore({
+    directory: join(__dirname, "../uploads"),
+  });
+
+  const dataStore = fileStore({
+    directory: join(__dirname, "../uploads"),
+    deliveryUrl: "http://localhost:3000/uploads",
+  });
+
+  // Simple flow
+  const flows = (flowId: string) => {
+    return createFlow({
+      flowId: "simple-flow",
+      name: "Simple Flow",
+      nodes: {
+        input: createInputNode("input"),
+        output: createStorageNode("output"),
+      },
+      edges: [{ source: "input", target: "output" }],
+    });
+  };
+
+  const uploadistaAdapter = await createFastifyUploadistaAdapter({
+    dataStore,
+    flows,
+    plugins: [imagePlugin],
+    kvStore,
+  });
+
+  // Add content type parser for binary data
+  fastify.addContentTypeParser(
+    "application/octet-stream",
+    (_req, _payload, done) => {
+      done(null);
+    },
+  );
+
+  // Health check
+  fastify.get("/health", async (_request, reply) => {
+    reply.send({ status: "OK", timestamp: new Date().toISOString() });
+  });
+
+  // Upload endpoints
+  fastify.all("/uploadista/api/*", async (request, reply) => {
+    return uploadistaAdapter.handler(request, reply);
+  });
+
+  // WebSocket endpoints
+  fastify.get(
+    "/uploadista/ws/upload/:uploadId",
+    { websocket: true },
+    uploadistaAdapter.websocketHandler,
+  );
+
+  fastify.get(
+    "/uploadista/ws/flow/:jobId",
+    { websocket: true },
+    uploadistaAdapter.websocketHandler,
+  );
+
+  await fastify.listen({ port, host: "0.0.0.0" });
+  console.log(`🚀 Fastify server running on port ${port}`);
+}
+
+startServer().catch((error) => {
+  console.error("❌ Failed to start server:", error);
+  process.exit(1);
+});
+```
+
 ## Framework Comparison
 
-### Hono (Cloudflare Workers)
+### Hono
 
-**Best For**: Global CDN, serverless, zero ops
+**Best For**: Modern, lightweight applications, serverless-ready
 
 ```
-✓ Deploy instantly
-✓ Global edge locations
-✓ No infrastructure management
-✓ Scales automatically
-✓ Perfect for small-medium projects
-✗ Max 10 MB request body
-✗ 30s timeout
-✗ Cloudflare billing
+✓ Extremely fast
+✓ Lightweight (~12KB)
+✓ Built for edge/serverless
+✓ Modern API design
+✓ Works with Node.js, Bun, Deno
+✓ Perfect for microservices
+✗ Smaller ecosystem than Express
 ```
 
-**Setup Time**: 2 minutes
+**Setup Time**: 5 minutes
 
 ### Express
 
@@ -144,7 +369,7 @@ Your server is at `http://localhost:3000`
 ✓ No request size limits
 ✓ Perfect for complex logic
 ✗ Need to manage infrastructure
-✗ Database setup required
+✗ Slightly slower than alternatives
 ```
 
 **Setup Time**: 10 minutes
@@ -167,15 +392,21 @@ Your server is at `http://localhost:3000`
 
 ## Storage Backend Selection
 
-### S3 (AWS) - Most popular
+### S3 (AWS/Cloudflare R2) - Most popular
 
 ```typescript
-import { S3DataStore } from "@uploadista/data-store-s3";
+import { s3Store } from "@uploadista/data-store-s3";
 
-const storage = new S3DataStore({
-  bucket: "my-uploads",
-  region: "us-east-1",
-  partSize: 5 * 1024 * 1024, // 5MB parts
+const storage = s3Store({
+  deliveryUrl: "https://my-bucket.s3.amazonaws.com",
+  s3ClientConfig: {
+    bucket: "my-uploads",
+    region: "us-east-1",
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  },
 });
 ```
 
@@ -200,11 +431,14 @@ aws s3 mb s3://my-uploads --region us-east-1
 ### Azure Blob Storage
 
 ```typescript
-import { AzureDataStore } from "@uploadista/data-store-azure";
+import { azureStore } from "@uploadista/data-store-azure";
 
-const storage = new AzureDataStore({
-  container: "uploads",
-  connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
+const storage = azureStore({
+  deliveryUrl: "https://mystorageaccount.blob.core.windows.net/uploads",
+  azureClientConfig: {
+    container: "uploads",
+    connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
+  },
 });
 ```
 
@@ -213,23 +447,27 @@ const storage = new AzureDataStore({
 ### Google Cloud Storage
 
 ```typescript
-import { GCSDataStore } from "@uploadista/data-store-gcs";
+import { gcsStore } from "@uploadista/data-store-gcs";
 
-const storage = new GCSDataStore({
-  bucket: "my-uploads",
-  projectId: process.env.GCP_PROJECT_ID,
+const storage = gcsStore({
+  deliveryUrl: "https://storage.googleapis.com/my-uploads",
+  gcsClientConfig: {
+    bucket: "my-uploads",
+    projectId: process.env.GCP_PROJECT_ID,
+  },
 });
 ```
 
 **Best For**: Google ecosystem, BigQuery integration
 
-### Filesystem (Development only)
+### Filesystem (Development & Self-hosted)
 
 ```typescript
-import { FilesystemDataStore } from "@uploadista/data-store-filesystem";
+import { createFileStore } from "@uploadista/data-store-filesystem";
 
-const storage = new FilesystemDataStore({
-  basePath: "/uploads",
+const storage = createFileStore({
+  directory: "/uploads",
+  deliveryUrl: "http://localhost:3000/uploads",
 });
 ```
 
@@ -242,22 +480,43 @@ KV stores hold upload sessions, progress, metadata.
 ### Development: In-Memory
 
 ```typescript
-import { MemoryKVStore } from "@uploadista/kv-store-memory";
+import { memoryKvStore } from "@uploadista/kv-store-memory";
 
-const kvStore = new MemoryKVStore();
+const kvStore = memoryKvStore();
 ```
 
 **Good For**: Development, single-process
 
 **Limitation**: Data lost on restart, single process only
 
+### Development: Filesystem
+
+```typescript
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+
+const kvStore = fileKvStore({
+  directory: "/uploads",
+});
+```
+
+**Good For**: Development, testing, persistent state
+
+**Limitation**: Single server, not for production scale
+
 ### Production: Redis
 
 ```typescript
-import { RedisKVStore } from "@uploadista/kv-store-redis";
+import { redisKvStore } from "@uploadista/kv-store-redis";
+import { createClient } from "@redis/client";
 
-const kvStore = new RedisKVStore({
+const redisClient = createClient({
   url: process.env.REDIS_URL, // redis://localhost:6379
+});
+
+await redisClient.connect();
+
+const kvStore = redisKvStore({
+  redis: redisClient,
 });
 ```
 
@@ -274,19 +533,19 @@ docker run -d -p 6379:6379 redis:7
 ### Advanced: IORedis with Clustering
 
 ```typescript
-import { IORedisKVStore } from "@uploadista/kv-store-ioredis";
+import { ioredisKvStore } from "@uploadista/kv-store-ioredis";
+import IORedis from "ioredis";
 
-const kvStore = new IORedisKVStore({
-  nodes: [
-    { host: "redis-node-1", port: 6379 },
-    { host: "redis-node-2", port: 6379 },
-    { host: "redis-node-3", port: 6379 },
-  ],
-  options: {
-    enableReadyCheck: false,
-    enableOfflineQueue: true,
-  },
+const redis = new IORedis.Cluster([
+  { host: "redis-node-1", port: 6379 },
+  { host: "redis-node-2", port: 6379 },
+  { host: "redis-node-3", port: 6379 },
+], {
+  enableReadyCheck: false,
+  enableOfflineQueue: true,
 });
+
+const kvStore = ioredisKvStore({ redis });
 ```
 
 **Best For**: Large scale, failover required, global distribution
@@ -294,12 +553,22 @@ const kvStore = new IORedisKVStore({
 ### Cloudflare: Durable Objects
 
 ```typescript
-import { DurableObjectKVStore } from "@uploadista/kv-store-cloudflare-do";
+import { durableObjectKvStore } from "@uploadista/kv-store-cloudflare-do";
 
-const kvStore = new DurableObjectKVStore(env.UPLOAD_STATE);
+const kvStore = durableObjectKvStore(env.UPLOAD_STATE);
 ```
 
 **Best For**: Cloudflare Workers, strong consistency, real-time coordination
+
+### Cloudflare KV
+
+```typescript
+import { cloudflareKvStore } from "@uploadista/kv-store-cloudflare-kv";
+
+const kvStore = cloudflareKvStore(env.UPLOAD_KV);
+```
+
+**Best For**: Cloudflare Workers, global edge caching
 
 ## Real-Time Events Setup
 
@@ -308,9 +577,9 @@ Events notify clients of upload progress, errors, completion.
 ### Development: In-Memory Broadcaster
 
 ```typescript
-import { MemoryBroadcaster } from "@uploadista/event-broadcaster-memory";
+import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 
-const broadcaster = new MemoryBroadcaster();
+const broadcaster = memoryEventBroadcaster();
 ```
 
 **Note**: Only works within same Node.js process
@@ -318,10 +587,25 @@ const broadcaster = new MemoryBroadcaster();
 ### Production: Redis Pub/Sub
 
 ```typescript
-import { RedisBroadcaster } from "@uploadista/event-broadcaster-redis";
+import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
+import { createClient } from "@redis/client";
 
-const broadcaster = new RedisBroadcaster({
+const redisClient = createClient({
   url: process.env.REDIS_URL,
+});
+
+await redisClient.connect();
+
+// Redis requires separate client for subscriber
+const redisSubscriberClient = createClient({
+  url: process.env.REDIS_URL,
+});
+
+await redisSubscriberClient.connect();
+
+const broadcaster = redisEventBroadcaster({
+  redis: redisClient,
+  subscriberRedis: redisSubscriberClient,
 });
 ```
 
@@ -330,168 +614,139 @@ const broadcaster = new RedisBroadcaster({
 ### Advanced: IORedis with Clustering
 
 ```typescript
-import { IOREdisBroadcaster } from "@uploadista/event-broadcaster-ioredis";
+import { ioredisEventBroadcaster } from "@uploadista/event-broadcaster-ioredis";
+import IORedis from "ioredis";
 
-const broadcaster = new IOREdisBroadcaster({
-  nodes: [...cluster nodes...],
+const redis = new IORedis.Cluster([...cluster nodes...]);
+const subscriber = new IORedis.Cluster([...cluster nodes...]);
+
+const broadcaster = ioredisEventBroadcaster({
+  redis,
+  subscriberRedis: subscriber,
 });
 ```
 
 ### WebSocket Emitter (Real-time to browsers)
 
-```typescript
-import { WebSocketEmitter } from "@uploadista/event-emitter-websocket";
+WebSocket emitters are built into the framework adapters. When you create an adapter, WebSocket support is automatically configured.
 
-const emitter = new WebSocketEmitter();
-
-// In HTTP server:
-app.ws("/api/uploads/stream", (ws, req) => {
-  emitter.addConnection(ws);
-  ws.on("close", () => emitter.removeConnection(ws));
-});
-```
-
-## Authentication Setup
-
-### Option 1: API Keys (Simple)
+For Express, the adapter expects a WebSocketServer:
 
 ```typescript
-import { createAuthMiddleware } from "@uploadista/server";
+import { WebSocketServer } from "ws";
+import { createServer } from "http";
 
-const authMiddleware = createAuthMiddleware({
-  apiKey: process.env.API_KEY,
-});
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
 
-app.use("/api", authMiddleware);
+wss.on("connection", uploadistaAdapter.websocketConnectionHandler);
 ```
 
-**Use**: Internal services, third-party integrations
-
-### Option 2: JWT (Recommended)
-
-```typescript
-import { createJWTMiddleware } from "@uploadista/server";
-
-const authMiddleware = createJWTMiddleware({
-  secret: process.env.JWT_SECRET,
-  issuer: "my-auth-service",
-});
-
-app.use("/api", authMiddleware);
-```
-
-**Use**: Web apps, mobile apps, browser clients
-
-**Token Generation**:
-```typescript
-import jwt from "jsonwebtoken";
-
-const token = jwt.sign(
-  { userId: "user-123", email: "user@example.com" },
-  process.env.JWT_SECRET,
-  { expiresIn: "1 hour", issuer: "my-auth-service" }
-);
-```
-
-### Option 3: Session Cookies (Traditional web)
-
-```typescript
-import session from "express-session";
-import { RedisStore } from "connect-redis";
-
-app.use(
-  session({
-    store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-  })
-);
-```
+For Hono and Fastify, WebSocket support is integrated directly into the routing.
 
 ## Complete Production Example
 
 ### Express + S3 + Redis
 
 ```typescript
+import { createServer } from "node:http";
+import { createExpressUploadistaAdapter } from "@uploadista/adapters-express";
+import { s3Store } from "@uploadista/data-store-s3";
+import { redisKvStore } from "@uploadista/kv-store-redis";
+import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
+import { imagePlugin } from "@uploadista/flow-images-sharp";
+import { createClient } from "@redis/client";
+import { createFlow, createInputNode, createStorageNode } from "@uploadista/core";
+import cors from "cors";
 import express from "express";
-import { createServer } from "http";
+import pinoHttp from "pino-http";
 import { WebSocketServer } from "ws";
-import { createUploadServer } from "@uploadista/adapters-express";
-import { S3DataStore } from "@uploadista/data-store-s3";
-import { RedisKVStore } from "@uploadista/kv-store-redis";
-import { RedisBroadcaster } from "@uploadista/event-broadcaster-redis";
-import { WebSocketEmitter } from "@uploadista/event-emitter-websocket";
-import jwt from "jsonwebtoken";
 
 const app = express();
 const httpServer = createServer(app);
-const wss = new WebSocketServer({ server: httpServer, path: "/api/stream" });
+const wss = new WebSocketServer({ server: httpServer, path: "/uploadista/ws" });
+
+// Redis clients
+const redisClient = createClient({
+  url: process.env.REDIS_URL,
+});
+await redisClient.connect();
+
+const redisSubscriberClient = createClient({
+  url: process.env.REDIS_URL,
+});
+await redisSubscriberClient.connect();
 
 // Storage
-const storage = new S3DataStore({
-  bucket: process.env.S3_BUCKET,
-  region: process.env.AWS_REGION,
+const storage = s3Store({
+  deliveryUrl: process.env.S3_DELIVERY_URL,
+  s3ClientConfig: {
+    bucket: process.env.S3_BUCKET,
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  },
 });
 
 // State
-const kvStore = new RedisKVStore({
-  url: process.env.REDIS_URL,
+const kvStore = redisKvStore({
+  redis: redisClient,
 });
 
 // Events
-const broadcaster = new RedisBroadcaster({
-  url: process.env.REDIS_URL,
+const broadcaster = redisEventBroadcaster({
+  redis: redisClient,
+  subscriberRedis: redisSubscriberClient,
 });
 
-const emitter = new WebSocketEmitter();
-
-// WebSocket connections
-wss.on("connection", (ws) => {
-  emitter.addConnection(ws);
-  ws.on("close", () => emitter.removeConnection(ws));
-});
-
-// Authentication middleware
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
-
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
-  } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
-  }
+// Flows
+const flows = (flowId: string) => {
+  return createFlow({
+    flowId: "simple-flow",
+    name: "Simple Flow",
+    nodes: {
+      input: createInputNode("input"),
+      output: createStorageNode("output"),
+    },
+    edges: [{ source: "input", target: "output" }],
+  });
 };
 
-app.use(express.json());
-app.use(authMiddleware);
+// Create adapter
+const uploadistaAdapter = await createExpressUploadistaAdapter({
+  dataStore: storage,
+  kvStore,
+  eventBroadcaster: broadcaster,
+  flows,
+  plugins: [imagePlugin],
+});
 
-// Upload routes
-app.use(
-  "/api",
-  createUploadServer({
-    storage,
-    kvStore,
-    broadcaster,
-    emitter,
-    context: async (req) => ({
-      userId: req.user.id,
-      email: req.user.email,
-    }),
-  })
-);
+// Middleware
+app.use(cors());
+app.use(pinoHttp());
+app.use((req, res, next) => {
+  if (req.path.startsWith("/uploadista/")) {
+    return next();
+  }
+  express.json()(req, res, next);
+});
 
-// Health check
+// Routes
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+app.all("/uploadista/api/*splat", uploadistaAdapter.handler);
+
+// WebSocket
+wss.on("connection", uploadistaAdapter.websocketConnectionHandler);
+
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
-  console.log(`WebSocket available at ws://localhost:${PORT}/api/stream`);
+  console.log(`WebSocket available at ws://localhost:${PORT}/uploadista/ws`);
 });
 ```
 
@@ -506,12 +761,10 @@ S3_BUCKET=my-uploads
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
+S3_DELIVERY_URL=https://my-uploads.s3.amazonaws.com
 
 # Redis
 REDIS_URL=redis://redis-1:6379
-
-# Auth
-JWT_SECRET=your-secret-key-here
 ```
 
 **Docker Deployment**:
@@ -538,59 +791,6 @@ HEALTHCHECK --interval=30s --timeout=3s \
 CMD ["node", "dist/server.js"]
 ```
 
-### Hono + Cloudflare Workers
-
-```typescript
-import { Hono } from "hono";
-import { createUploadServer } from "@uploadista/adapters-hono";
-import { S3DataStore } from "@uploadista/data-store-s3";
-import { CloudflareKVStore } from "@uploadista/kv-store-cloudflare-kv";
-import { CloudflareDOKVStore } from "@uploadista/kv-store-cloudflare-do";
-
-export interface Env {
-  UPLOAD_STATE: DurableObjectNamespace;
-  UPLOAD_KV: KVNamespace;
-  S3_BUCKET: string;
-  AWS_REGION: string;
-}
-
-const app = new Hono<{ Bindings: Env }>();
-
-app.post("/api/upload", async (c) => {
-  const storage = new S3DataStore({
-    bucket: c.env.S3_BUCKET,
-    region: c.env.AWS_REGION,
-  });
-
-  const kvStore = new CloudflareDOKVStore(c.env.UPLOAD_STATE);
-
-  const uploadServer = createUploadServer({ storage, kvStore });
-
-  return uploadServer(c);
-});
-
-export default app;
-```
-
-**wrangler.toml**:
-```toml
-name = "uploadista-server"
-type = "service-worker"
-account_id = "your-account-id"
-
-[env.production]
-vars = { ENVIRONMENT = "production" }
-
-[[r2_buckets]]
-binding = "BUCKET"
-bucket_name = "my-uploads"
-
-[[durable_objects.bindings]]
-name = "UPLOAD_STATE"
-class_name = "UploadState"
-script_name = "uploadista-server"
-```
-
 ## Flow Processing Setup
 
 Process uploads through custom pipelines (resize images, compress, etc.).
@@ -598,51 +798,59 @@ Process uploads through custom pipelines (resize images, compress, etc.).
 ### Simple: Single Resize
 
 ```typescript
-import { createFlowProcessor } from "@uploadista/core";
-import { sharpImagePlugin } from "@uploadista/flow-images-sharp";
+import {
+  createFlow,
+  createInputNode,
+  createStorageNode
+} from "@uploadista/core";
+import {
+  createOptimizeNode,
+  createResizeNode
+} from "@uploadista/flow-images-nodes";
 
-const flow = createFlowProcessor({
-  nodes: [
-    { id: "input", type: "input" },
-    {
-      id: "resize",
-      type: "resize",
-      params: { width: 1200, height: 800, fit: "cover" },
-    },
-    { id: "store", type: "s3" },
-    { id: "output", type: "output" },
+const flow = createFlow({
+  flowId: "resize-flow",
+  name: "Resize Flow",
+  nodes: {
+    input: createInputNode("input"),
+    resize: createResizeNode("resize", {
+      width: 1200,
+      height: 800,
+      fit: "cover",
+    }),
+    output: createStorageNode("output"),
+  },
+  edges: [
+    { source: "input", target: "resize" },
+    { source: "resize", target: "output" },
   ],
 });
 ```
 
-### Advanced: Image variants + compression
+### Advanced: Image optimization
 
 ```typescript
-const productImageFlow = createFlowProcessor({
-  nodes: [
-    { id: "input", type: "input" },
-    // Split into 3 variants
-    { id: "split", type: "multiplex", params: { outputCount: 3 } },
-    // Thumbnail
-    {
-      id: "thumb",
-      type: "resize",
-      params: { width: 200, height: 200, fit: "cover" },
-    },
-    // Medium
-    {
-      id: "medium",
-      type: "resize",
-      params: { width: 600, height: 600, fit: "contain" },
-    },
-    // Full size
-    {
-      id: "full",
-      type: "optimize",
-      params: { quality: 90, format: "webp" },
-    },
-    { id: "store", type: "s3" },
-    { id: "output", type: "output" },
+import {
+  createFlow,
+  createInputNode,
+  createStorageNode
+} from "@uploadista/core";
+import { createOptimizeNode } from "@uploadista/flow-images-nodes";
+
+const optimizeFlow = createFlow({
+  flowId: "optimize-flow",
+  name: "Optimize Flow",
+  nodes: {
+    input: createInputNode("input"),
+    optimize: createOptimizeNode("optimize", {
+      quality: 80,
+      format: "webp",
+    }),
+    output: createStorageNode("output"),
+  },
+  edges: [
+    { source: "input", target: "optimize" },
+    { source: "optimize", target: "output" },
   ],
 });
 ```
@@ -783,16 +991,18 @@ app.use(express.raw({ limit: "500mb", type: "application/octet-stream" }));
 ```
 
 **Hono Fix**:
+Hono has no built-in body size limits. Check your hosting platform limits.
+
+**Fastify Fix**:
 ```typescript
-app.post("/api/upload", async (c) => {
-  const body = await c.req.arrayBuffer();
-  // body size can be large
+const fastify = Fastify({
+  bodyLimit: 500 * 1024 * 1024, // 500MB
 });
 ```
 
 ### WebSocket connections drop after 30s
 
-**Cause**: Proxy timeout or CloudFlare timeout
+**Cause**: Proxy timeout or load balancer timeout
 
 **Fix**: Send heartbeat pings
 ```typescript
@@ -815,14 +1025,16 @@ npm install @uploadista/adapters-express @uploadista/data-store-s3
 
 ### S3 uploads extremely slow
 
-**Cause**: Default part size too small, bad AWS configuration
+**Cause**: Network issues or region mismatch
 
-**Fix**:
+**Fix**: Use correct region and ensure network connectivity
 ```typescript
-const storage = new S3DataStore({
-  bucket: "my-uploads",
-  partSize: 50 * 1024 * 1024, // 50MB parts (larger = faster)
-  concurrency: 4, // Parallel uploads
+const storage = s3Store({
+  deliveryUrl: process.env.S3_DELIVERY_URL,
+  s3ClientConfig: {
+    bucket: "my-uploads",
+    region: "us-east-1", // Match your bucket region
+  },
 });
 ```
 
@@ -845,15 +1057,13 @@ redis-cli ping
 ### Optimize for Large File Uploads
 
 ```typescript
-// Increase part size
-const storage = new S3DataStore({
-  partSize: 100 * 1024 * 1024, // 100MB
-});
-
-// Use connection pooling
-const kvStore = new RedisKVStore({
+// Use connection pooling for Redis
+const redisClient = createClient({
   url: process.env.REDIS_URL,
-  maxRetriesPerRequest: null, // Better for high concurrency
+  socket: {
+    keepAlive: true,
+    noDelay: true,
+  },
 });
 
 // Increase Express limits
@@ -864,10 +1074,9 @@ app.use(express.json({ limit: "1gb" }));
 
 ```typescript
 // Increase Redis connections
-const broadcaster = new RedisBroadcaster({
-  url: process.env.REDIS_URL,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
+const broadcaster = redisEventBroadcaster({
+  redis: redisClient,
+  subscriberRedis: redisSubscriberClient,
 });
 
 // Increase Node.js file descriptor limit
@@ -877,13 +1086,10 @@ const broadcaster = new RedisBroadcaster({
 ### Monitor Performance
 
 ```typescript
-import { EventBroadcaster } from "@uploadista/server";
-
 app.get("/metrics", (req, res) => {
   const metrics = {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    activeUploads: store.getActiveUploads(),
   };
   res.json(metrics);
 });
@@ -891,8 +1097,8 @@ app.get("/metrics", (req, res) => {
 
 ## Next Steps
 
-1. **Client Integration**: See [CLIENT_INTEGRATION.md](./CLIENT_INTEGRATION.md) for frontend setup
-2. **Flow Processing**: See [FLOW_NODES.md](./packages/flow/FLOW_NODES.md) for pipeline examples
+1. **Client Integration**: See client documentation for frontend setup
+2. **Flow Processing**: See flow documentation for pipeline examples
 3. **Production Checklist**:
    - [ ] Enable HTTPS/TLS
    - [ ] Configure CORS appropriately
@@ -903,12 +1109,9 @@ app.get("/metrics", (req, res) => {
    - [ ] Monitor storage costs
    - [ ] Plan storage retention policies
 
-## Related Guides
+## Related Documentation
 
-- [DATA_STORES_COMPARISON.md](./packages/data-stores/DATA_STORES_COMPARISON.md) - Storage backends
-- [KV_STORES_COMPARISON.md](./packages/kv-stores/KV_STORES_COMPARISON.md) - State management
-- [EVENT_SYSTEM.md](./packages/EVENT_SYSTEM.md) - Real-time events
-- [FLOW_NODES.md](./packages/flow/FLOW_NODES.md) - Processing pipelines
-- [@uploadista/adapters-express](./packages/servers/adapters-express/README.md)
-- [@uploadista/adapters-hono](./packages/servers/adapters-hono/README.md)
-- [@uploadista/adapters-fastify](./packages/servers/adapters-fastify/README.md)
+- Data Stores Comparison - Storage backends
+- KV Stores Comparison - State management
+- Event System - Real-time events
+- Flow Nodes - Processing pipelines

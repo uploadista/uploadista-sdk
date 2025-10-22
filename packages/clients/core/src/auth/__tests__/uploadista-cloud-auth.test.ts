@@ -1,35 +1,70 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SaasAuthManager } from "../saas-auth";
-import type { SaasAuthConfig } from "../types";
+import type { HttpClient } from "../../services";
+import type { UploadistaCloudAuthConfig } from "../types";
+import { UploadistaCloudAuthManager } from "../uploadista-cloud-auth";
 
-// Mock fetch globally
-global.fetch = vi.fn();
+describe("UploadistaCloudAuthManager", () => {
+  let mockHttpClient: HttpClient;
 
-describe("SaasAuthManager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Create mock HTTP client
+    mockHttpClient = {
+      request: vi.fn(),
+      getMetrics: vi.fn(() => ({
+        activeConnections: 0,
+        totalConnections: 0,
+        reuseRate: 0,
+        averageConnectionTime: 0,
+      })),
+      getDetailedMetrics: vi.fn(() => ({
+        activeConnections: 0,
+        totalConnections: 0,
+        reuseRate: 0,
+        averageConnectionTime: 0,
+        health: {
+          status: "healthy" as const,
+          score: 100,
+          issues: [],
+          recommendations: [],
+        },
+        requestsPerSecond: 0,
+        errorRate: 0,
+        timeouts: 0,
+        retries: 0,
+        fastConnections: 0,
+        slowConnections: 0,
+        http2Info: {
+          supported: true,
+          detected: false,
+          version: "h2",
+          multiplexingActive: false,
+        },
+      })),
+      reset: vi.fn(),
+      close: vi.fn(async () => {}),
+      warmupConnections: vi.fn(async () => {}),
+    };
   });
 
   describe("fetchToken", () => {
     it("should fetch token from auth server", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({
-          username: "user",
-          password: "pass",
-        }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           token: "jwt-token-123",
           expiresIn: 3600,
         }),
-      });
+      } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
       const result = await manager.fetchToken();
 
       expect(result).toEqual({
@@ -37,48 +72,50 @@ describe("SaasAuthManager", () => {
         expiresIn: 3600,
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        "https://auth.example.com/token",
+      expect(mockHttpClient.request).toHaveBeenCalledWith(
+        "https://auth.example.com/token/client-id-123",
         {
-          method: "POST",
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ username: "user", password: "pass" }),
         },
       );
     });
 
     it("should handle auth server errors", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "wrong" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         ok: false,
         status: 401,
+        statusText: "Unauthorized",
         text: async () => JSON.stringify({ error: "Invalid credentials" }),
-      });
+      } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       await expect(manager.fetchToken()).rejects.toThrow(
-        "Failed to fetch auth token: Invalid credentials",
+        "Failed to fetch auth token",
       );
     });
 
     it("should handle network errors", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockRejectedValueOnce(new Error("Network error"));
+      vi.mocked(mockHttpClient.request).mockRejectedValueOnce(
+        new Error("Network error"),
+      );
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       await expect(manager.fetchToken()).rejects.toThrow(
         "Failed to fetch auth token: Network error",
@@ -86,18 +123,18 @@ describe("SaasAuthManager", () => {
     });
 
     it("should validate token response format", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ noToken: "here" }), // Missing token field
-      });
+      } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       await expect(manager.fetchToken()).rejects.toThrow(
         "Auth server response missing 'token' field",
@@ -107,18 +144,18 @@ describe("SaasAuthManager", () => {
 
   describe("attachToken", () => {
     it("should attach token as Bearer header", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: "jwt-token-123" }),
-      });
+      } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
       const result = await manager.attachToken({
         "Content-Type": "application/json",
       });
@@ -130,46 +167,46 @@ describe("SaasAuthManager", () => {
     });
 
     it("should cache token and reuse it", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch).mockResolvedValueOnce({
+      vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ token: "jwt-token-123" }),
-      });
+      } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       // First call - should fetch token
       await manager.attachToken();
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(1);
 
       // Second call - should use cached token
       await manager.attachToken();
-      expect(global.fetch).toHaveBeenCalledTimes(1); // Still 1, not 2
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(1); // Still 1, not 2
     });
 
     it("should cache tokens per job ID", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch)
+      vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        });
+        } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       // Fetch token for job 1
       const result1 = await manager.attachToken({}, "job-1");
@@ -184,31 +221,31 @@ describe("SaasAuthManager", () => {
       expect(result3.Authorization).toBe("Bearer jwt-token-1");
 
       // Should have fetched twice (once per job)
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(2);
     });
 
     it("should refetch expired tokens", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
       // First token expires in 1 second
-      vi.mocked(global.fetch)
+      vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({
             token: "jwt-token-old",
             expiresIn: 0.001, // Expires very soon
           }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-new" }),
-        });
+        } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       // First call - fetch initial token
       await manager.attachToken();
@@ -219,66 +256,66 @@ describe("SaasAuthManager", () => {
       // Second call - should fetch new token because old one expired
       const result = await manager.attachToken();
       expect(result.Authorization).toBe("Bearer jwt-token-new");
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(2);
     });
   });
 
   describe("clearToken", () => {
     it("should clear cached token for specific job", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch)
+      vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        });
+        } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       // Cache token for job
       await manager.attachToken({}, "job-1");
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(1);
 
       // Clear token
       manager.clearToken("job-1");
 
       // Next call should fetch new token
       await manager.attachToken({}, "job-1");
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(2);
     });
   });
 
   describe("clearAllTokens", () => {
     it("should clear all cached tokens", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch)
+      vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-3" }),
-        });
+        } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       // Cache tokens for multiple jobs
       await manager.attachToken({}, "job-1");
@@ -289,33 +326,33 @@ describe("SaasAuthManager", () => {
 
       // Next calls should fetch new tokens
       await manager.attachToken();
-      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(mockHttpClient.request).toHaveBeenCalledTimes(3);
     });
   });
 
   describe("getCacheStats", () => {
     it("should return cache statistics", async () => {
-      const config: SaasAuthConfig = {
-        mode: "saas",
+      const config: UploadistaCloudAuthConfig = {
+        mode: "uploadista-cloud",
         authServerUrl: "https://auth.example.com/token",
-        getCredentials: () => ({ username: "user", password: "pass" }),
+        clientId: "client-id-123",
       };
 
-      vi.mocked(global.fetch)
+      vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        })
+        } as any)
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({ token: "jwt-token-3" }),
-        });
+        } as any);
 
-      const manager = new SaasAuthManager(config);
+      const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
       // Initially empty
       expect(manager.getCacheStats()).toEqual({

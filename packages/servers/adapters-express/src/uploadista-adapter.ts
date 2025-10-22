@@ -36,10 +36,12 @@ import { Effect, Layer } from "effect";
 import type { Request, Response } from "express";
 import type { z } from "zod";
 import {
-  handleContinueFlow,
+  handleCancelFlow,
   handleFlowGet,
   handleFlowPost,
   handleJobStatus,
+  handlePauseFlow,
+  handleResumeFlow,
 } from "./flow-http-handlers";
 import {
   handleUploadGet,
@@ -286,7 +288,7 @@ const createExpressUploadistaAdapterServiceLayer = (
             const needsJsonBody =
               (routeSegments.includes("upload") && req.method === "POST") ||
               (routeSegments.includes("flow") && req.method === "POST") ||
-              (routeSegments.includes("continue") &&
+              (routeSegments.includes("resume") &&
                 req.get("Content-Type")?.includes("application/json"));
 
             if (needsJsonBody && !req.body) {
@@ -349,13 +351,27 @@ const createExpressUploadistaAdapterServiceLayer = (
                 );
               } else if (
                 req.method === "PATCH" &&
-                routeSegments.includes("continue")
+                routeSegments.includes("resume")
               ) {
-                return yield* handleContinueFlow<never>(
+                return yield* handleResumeFlow<never>(
                   req,
                   res,
                   flowServer,
                 ).pipe(Effect.provide(authLayer));
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/pause")
+              ) {
+                return yield* handlePauseFlow(req, res, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/cancel")
+              ) {
+                return yield* handleCancelFlow(req, res, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
               }
               res.status(405).json({ error: "Method not allowed" });
               return;

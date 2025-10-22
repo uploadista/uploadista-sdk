@@ -1,5 +1,5 @@
 export class BaseAuthManager {
-  constructor(private type: "direct" | "saas" | "no-auth") {}
+  constructor(private type: "direct" | "uploadista-cloud" | "no-auth") {}
 
   getType() {
     return this.type;
@@ -56,7 +56,7 @@ export type DirectAuthConfig = {
 };
 
 /**
- * SaaS auth mode configuration.
+ * UploadistaCloud auth mode configuration.
  * Client requests JWT tokens from a user-controlled auth server,
  * which validates credentials and issues tokens using a secure API key.
  *
@@ -69,26 +69,21 @@ export type DirectAuthConfig = {
  * @example
  * ```typescript
  * {
- *   mode: 'saas',
+ *   mode: 'uploadista-cloud',
  *   authServerUrl: 'https://auth.myapp.com/token',
- *   getCredentials: async () => ({
- *     username: await getUsername(),
- *     password: await getPassword()
- *   })
+ *   clientId: 'my-client-id'
  * }
  * ```
  */
-export type SaasAuthConfig = {
-  mode: "saas";
+export type UploadistaCloudAuthConfig = {
+  mode: "uploadista-cloud";
   /**
    * URL of the user's auth server that issues JWT tokens.
    * Should be a GET endpoint that accepts client id and returns { token, expiresIn }.
    */
   authServerUrl: string;
   /**
-   * Function that returns user credentials to send to the auth server.
-   * The auth server will validate these credentials before issuing a token.
-   * Credentials format is client id
+   * Client ID to use for authentication. It will be used to compare the API Key with the client id on the auth server.
    */
   clientId: string;
 };
@@ -97,9 +92,9 @@ export type SaasAuthConfig = {
  * Authentication configuration for the uploadista client.
  * Supports two modes:
  * - Direct: Bring your own auth (any protocol)
- * - SaaS: Standard JWT token exchange with auth server
+ * - UploadistaCloud: Standard JWT token exchange with auth server
  *
  * Use a discriminated union to ensure type safety - TypeScript will
  * enforce that the correct fields are present for each mode.
  */
-export type AuthConfig = DirectAuthConfig | SaasAuthConfig;
+export type AuthConfig = DirectAuthConfig | UploadistaCloudAuthConfig;

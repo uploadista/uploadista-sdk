@@ -22,7 +22,7 @@ function App() {
       chunkSize={1024 * 1024} // 1MB chunks
       storeFingerprintForResuming={true}
       auth={{
-        mode: "saas",
+        mode: "uploadista-cloud",
         authServerUrl: `/api/auth/token`,
         clientId: `${process.env.NEXT_PUBLIC_UPLOADISTA_CLIENT_ID}`,
       }}

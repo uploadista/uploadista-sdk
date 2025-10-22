@@ -98,7 +98,7 @@ export const createUploadistaWebSocketHandler = <TEnv extends Env = Env>(
             let authResult: AuthResult | null = null;
 
             if (token) {
-              // Token-based authentication (for SaaS mode or explicit token auth)
+              // Token-based authentication (for UploadistaCloud mode or explicit token auth)
               // Create a mock request context with the token as Authorization header
               const mockRequest = new Request(c.req.url, {
                 headers: {

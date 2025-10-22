@@ -56,14 +56,13 @@ const getS3Key = (uploadFile: UploadFile): string => {
 };
 
 // Clean implementation using composed services
-export function createS3StoreImplementation(config: S3StoreConfig) {
+export function createS3Store(config: S3StoreConfig) {
   const {
     deliveryUrl,
     partSize,
     minPartSize = 5_242_880,
     useTags = true,
     maxMultipartParts = 10_000,
-    kvStore,
     maxConcurrentPartUploads = 60,
     expirationPeriodInMilliseconds = 1000 * 60 * 60 * 24 * 7, // 1 week
     s3ClientConfig: { bucket },
@@ -71,7 +70,7 @@ export function createS3StoreImplementation(config: S3StoreConfig) {
 
   return Effect.gen(function* () {
     const s3Client = yield* S3ClientService;
-
+    const kvStore = yield* UploadFileKVStore;
     const preferredPartSize = partSize || 8 * 1024 * 1024;
 
     const getUploadId = (
@@ -1034,26 +1033,11 @@ export function createS3StoreImplementation(config: S3StoreConfig) {
 }
 
 // Effect-based factory that uses services
-export const createS3Store = (options: S3StoreConfig) =>
-  Effect.gen(function* () {
-    const kvStore = yield* UploadFileKVStore;
-    const {
-      s3ClientConfig: { bucket, ...restS3ClientConfig },
-    } = options;
-    return yield* createS3StoreImplementation({
-      ...options,
-      kvStore,
-    }).pipe(Effect.provide(S3ClientLayer(restS3ClientConfig, bucket)));
-  });
-
-// Backward compatibility: keep the original function for existing code
-export const s3Store = (config: S3StoreConfig) => {
+export const s3Store = (options: S3StoreConfig) => {
   const {
     s3ClientConfig: { bucket, ...restS3ClientConfig },
-  } = config;
-  return Effect.runPromise(
-    createS3StoreImplementation(config).pipe(
-      Effect.provide(S3ClientLayer(restS3ClientConfig, bucket)),
-    ),
+  } = options;
+  return createS3Store(options).pipe(
+    Effect.provide(S3ClientLayer(restS3ClientConfig, bucket)),
   );
 };

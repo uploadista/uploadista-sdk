@@ -39,10 +39,12 @@ import {
   NoOpMetricsServiceLive,
 } from "@uploadista/observability";
 import {
-  handleContinueFlow,
+  handleCancelFlow,
   handleFlowGet,
   handleFlowPost,
   handleJobStatus,
+  handlePauseFlow,
+  handleResumeFlow,
 } from "./flow-http-handlers";
 import {
   handleUploadGet,
@@ -322,13 +324,27 @@ const createFastifyUploadistaAdapterServiceLayer = (
                 );
               } else if (
                 req.method === "PATCH" &&
-                routeSegments.includes("continue")
+                routeSegments.includes("resume")
               ) {
-                return yield* handleContinueFlow<never>(
+                return yield* handleResumeFlow<never>(
                   req,
                   reply,
                   flowServer,
                 ).pipe(Effect.provide(authLayer));
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/pause")
+              ) {
+                return yield* handlePauseFlow(req, reply, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
+              } else if (
+                req.method === "POST" &&
+                url.pathname.endsWith("/cancel")
+              ) {
+                return yield* handleCancelFlow(req, reply, flowServer).pipe(
+                  Effect.provide(authLayer),
+                );
               }
               reply.status(405).send({ error: "Method not allowed" });
               return;

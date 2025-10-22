@@ -116,7 +116,7 @@ export const handleJobStatus = (
   }).pipe(Effect.catchAll(handleErrorResponse(reply)));
 };
 
-export const handleContinueFlow = <TRequirements = never>(
+export const handleResumeFlow = <TRequirements = never>(
   req: FastifyRequest,
   reply: FastifyReply,
   flowServer: FlowServerShape,
@@ -127,8 +127,8 @@ export const handleContinueFlow = <TRequirements = never>(
 
     const url = new URL(req.url, `http://${req.hostname}`);
     const urlSegments = url.pathname.split("/");
-    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/continue/:nodeId
-    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/continue/:nodeId
+    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/resume/:nodeId
+    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/resume/:nodeId
 
     if (!jobId) {
       console.error("No job id");
@@ -183,12 +183,97 @@ export const handleContinueFlow = <TRequirements = never>(
       );
     }
 
-    const result = yield* flowServer.continueFlow<TRequirements>({
+    const result = yield* flowServer.resumeFlow<TRequirements>({
       jobId,
       nodeId,
       newData,
       clientId,
     });
+
+    return yield* Effect.sync(() => reply.status(200).send(result));
+  }).pipe(Effect.catchAll(handleErrorResponse(reply)));
+};
+export const handlePauseFlow = (
+  req: FastifyRequest,
+  reply: FastifyReply,
+  flowServer: FlowServerShape,
+) => {
+  return Effect.gen(function* () {
+    // Try to get auth from current request or cached auth
+    const authService = yield* AuthContextService;
+    const authCache = yield* AuthCacheService;
+
+    const url = new URL(req.url, `http://${req.hostname}`);
+    const urlSegments = url.pathname.split("/");
+    const jobId = urlSegments[urlSegments.length - 2]; // .../jobs/:jobId/pause
+
+    if (!jobId) {
+      console.error("No job id");
+      return yield* Effect.sync(() =>
+        reply.status(400).send({ error: "No job id" }),
+      );
+    }
+
+    // Try current auth first, fallback to cached auth
+    let clientId = yield* authService.getClientId();
+    if (!clientId) {
+      const cachedAuth = yield* authCache.get(jobId);
+      clientId = cachedAuth?.clientId ?? null;
+    }
+
+    if (clientId) {
+      console.log(`[Flow] Pausing flow: jobId=${jobId}, client: ${clientId}`);
+    }
+
+    const result = yield* flowServer.pauseFlow(jobId, clientId);
+
+    if (clientId) {
+      console.log(`[Flow] Flow paused: ${jobId}, status: ${result.status}`);
+    }
+
+    return yield* Effect.sync(() => reply.status(200).send(result));
+  }).pipe(Effect.catchAll(handleErrorResponse(reply)));
+};
+
+export const handleCancelFlow = (
+  req: FastifyRequest,
+  reply: FastifyReply,
+  flowServer: FlowServerShape,
+) => {
+  return Effect.gen(function* () {
+    // Try to get auth from current request or cached auth
+    const authService = yield* AuthContextService;
+    const authCache = yield* AuthCacheService;
+
+    const url = new URL(req.url, `http://${req.hostname}`);
+    const urlSegments = url.pathname.split("/");
+    const jobId = urlSegments[urlSegments.length - 2]; // .../jobs/:jobId/cancel
+
+    if (!jobId) {
+      console.error("No job id");
+      return yield* Effect.sync(() =>
+        reply.status(400).send({ error: "No job id" }),
+      );
+    }
+
+    // Try current auth first, fallback to cached auth
+    let clientId = yield* authService.getClientId();
+    if (!clientId) {
+      const cachedAuth = yield* authCache.get(jobId);
+      clientId = cachedAuth?.clientId ?? null;
+    }
+
+    if (clientId) {
+      console.log(`[Flow] Cancelling flow: jobId=${jobId}, client: ${clientId}`);
+    }
+
+    const result = yield* flowServer.cancelFlow(jobId, clientId);
+
+    // Clear cache since flow is cancelled
+    yield* authCache.delete(jobId);
+    if (clientId) {
+      console.log(`[Flow] Flow cancelled, cleared auth cache: ${jobId}`);
+    }
 
     return yield* Effect.sync(() => reply.status(200).send(result));
   }).pipe(Effect.catchAll(handleErrorResponse(reply)));

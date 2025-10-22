@@ -211,8 +211,8 @@ export const extractJobIdFromStatus = (
 };
 
 /**
- * Extracts job ID and node ID from URL segments for continue flow endpoint.
- * Expected URL format: `/uploadista/api/jobs/:jobId/continue/:nodeId`
+ * Extracts job ID and node ID from URL segments for resume flow endpoint.
+ * Expected URL format: `/uploadista/api/jobs/:jobId/resume/:nodeId`
  *
  * @param urlSegments - Parsed URL segments (without base path)
  * @returns Object with extracted jobId and nodeId (either can be undefined if not found)
@@ -222,7 +222,7 @@ export const extractJobIdFromStatus = (
  * const { jobId, nodeId } = extractJobAndNodeId([
  *   "jobs",
  *   "job-123",
- *   "continue",
+ *   "resume",
  *   "node-456",
  * ]);
  * // => { jobId: "job-123", nodeId: "node-456" }

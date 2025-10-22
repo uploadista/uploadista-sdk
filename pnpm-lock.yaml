@@ -220,6 +220,9 @@ importers:
       '@hono/node-ws':
         specifier: 1.2.0
         version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.1))(hono@4.10.1)
+      '@redis/client':
+        specifier: 5.8.3
+        version: 5.8.3
       '@uploadista/adapters-hono':
         specifier: workspace:*
         version: link:../../packages/servers/adapters-hono
@@ -229,6 +232,12 @@ importers:
       '@uploadista/data-store-filesystem':
         specifier: workspace:*
         version: link:../../packages/data-stores/filesystem
+      '@uploadista/data-store-s3':
+        specifier: workspace:*
+        version: link:../../packages/data-stores/s3
+      '@uploadista/event-broadcaster-redis':
+        specifier: workspace:*
+        version: link:../../packages/event-broadcasters/redis
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -247,6 +256,9 @@ importers:
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../packages/kv-stores/memory
+      '@uploadista/kv-store-redis':
+        specifier: workspace:*
+        version: link:../../packages/kv-stores/redis
       '@uploadista/server':
         specifier: workspace:*
         version: link:../../packages/servers/server
@@ -279,7 +291,7 @@ importers:
         specifier: 4.20.6
         version: 4.20.6
 
-  examples/next-saas-client:
+  examples/next-cloud-client:
     dependencies:
       '@uploadista/client-browser':
         specifier: workspace:*

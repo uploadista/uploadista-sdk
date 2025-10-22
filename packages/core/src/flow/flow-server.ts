@@ -95,7 +95,9 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  * @property getFlow - Retrieves a flow definition by ID
  * @property getFlowData - Retrieves flow metadata (nodes, edges) without full flow instance
  * @property runFlow - Starts a new flow execution and returns immediately with job ID
- * @property continueFlow - Resumes a paused flow with new data for a specific node
+ * @property resumeFlow - Resumes a paused flow with new data for a specific node
+ * @property pauseFlow - Pauses a running flow (user-initiated pause)
+ * @property cancelFlow - Cancels a running or paused flow and cleans up resources
  * @property getJobStatus - Retrieves current status and results of a flow job
  * @property subscribeToFlowEvents - Subscribes WebSocket to flow execution events
  * @property unsubscribeFromFlowEvents - Unsubscribes from flow events
@@ -121,7 +123,10 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  *
  *   // Poll for status
  *   const status = yield* server.getJobStatus(job.id);
- *   console.log(status.status); // "running", "paused", "completed", or "failed"
+ *   console.log(status.status); // "running", "paused", "completed", "failed", or "cancelled"
+ *
+ *   // User can pause the flow
+ *   yield* server.pauseFlow(job.id, "client123");
  *
  *   return job;
  * });
@@ -131,12 +136,22 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  *   const server = yield* FlowServer;
  *
  *   // Flow paused waiting for user input at node "approval_1"
- *   const job = yield* server.continueFlow({
+ *   const job = yield* server.resumeFlow({
  *     jobId: "job123",
  *     nodeId: "approval_1",
  *     newData: { approved: true },
  *     clientId: "client123"
  *   });
+ *
+ *   return job;
+ * });
+ *
+ * // Cancel a flow
+ * const cancel = Effect.gen(function* () {
+ *   const server = yield* FlowServer;
+ *
+ *   // Cancel flow and cleanup intermediate files
+ *   const job = yield* server.cancelFlow("job123", "client123");
  *
  *   return job;
  * });
@@ -176,7 +191,7 @@ export type FlowServerShape = {
     inputs: any;
   }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
 
-  continueFlow: <TRequirements>({
+  resumeFlow: <TRequirements>({
     jobId,
     nodeId,
     newData,
@@ -187,6 +202,16 @@ export type FlowServerShape = {
     newData: unknown;
     clientId: string | null;
   }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
+
+  pauseFlow: (
+    jobId: string,
+    clientId: string | null,
+  ) => Effect.Effect<FlowJob, UploadistaError>;
+
+  cancelFlow: (
+    jobId: string,
+    clientId: string | null,
+  ) => Effect.Effect<FlowJob, UploadistaError>;
 
   getJobStatus: (jobId: string) => Effect.Effect<FlowJob, UploadistaError>;
 
@@ -498,6 +523,25 @@ function withFlowEvents<
       });
   };
 
+  // Create checkJobStatus callback that reads from KV store
+  const createCheckJobStatusCallback = (executionJobId: string) => {
+    return (jobId: string) =>
+      Effect.gen(function* () {
+        const job = yield* kvStore.get(jobId);
+        if (!job) {
+          return yield* Effect.fail(
+            UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+              cause: `Job ${jobId} not found`,
+            }),
+          );
+        }
+        // Return only the statuses we care about for flow control
+        if (job.status === "paused") return "paused" as const;
+        if (job.status === "cancelled") return "cancelled" as const;
+        return "running" as const;
+      });
+  };
+
   return {
     ...flow,
     run: (args: {
@@ -511,6 +555,7 @@ function withFlowEvents<
         const executionJobId = args.jobId || crypto.randomUUID();
 
         const onEventCallback = createOnEventCallback(executionJobId);
+        const checkJobStatusCallback = createCheckJobStatusCallback(executionJobId);
 
         // Create a new flow with the same configuration but with onEvent callback
         const flowWithEvents = yield* createFlowWithSchema({
@@ -521,6 +566,7 @@ function withFlowEvents<
           inputSchema: flow.inputSchema,
           outputSchema: flow.outputSchema,
           onEvent: onEventCallback,
+          checkJobStatus: checkJobStatusCallback,
         });
 
         // Run the enhanced flow with consistent jobId
@@ -549,6 +595,7 @@ function withFlowEvents<
         const executionJobId = args.jobId;
 
         const onEventCallback = createOnEventCallback(executionJobId);
+        const checkJobStatusCallback = createCheckJobStatusCallback(executionJobId);
 
         // Create a new flow with the same configuration but with onEvent callback
         const flowWithEvents = yield* createFlowWithSchema({
@@ -559,6 +606,7 @@ function withFlowEvents<
           inputSchema: flow.inputSchema,
           outputSchema: flow.outputSchema,
           onEvent: onEventCallback,
+          checkJobStatus: checkJobStatusCallback,
         });
 
         // Resume the enhanced flow
@@ -845,7 +893,7 @@ export function createFlowServer() {
           return job;
         }),
 
-      continueFlow: ({
+      resumeFlow: ({
         jobId,
         nodeId,
         newData,
@@ -857,7 +905,6 @@ export function createFlowServer() {
         clientId: string | null;
       }) =>
         Effect.gen(function* () {
-          console.log("continueFlow", jobId, nodeId, newData);
           // Get the current job
           const job = yield* kvStore.get(jobId);
           if (!job) {
@@ -1065,6 +1112,130 @@ export function createFlowServer() {
             return yield* Effect.fail(
               UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
                 cause: `Job ${jobId} not found after update`,
+              }),
+            );
+          }
+          return updatedJob;
+        }),
+
+      pauseFlow: (jobId: string, clientId: string | null) =>
+        Effect.gen(function* () {
+          // Get the current job
+          const job = yield* kvStore.get(jobId);
+          if (!job) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found`,
+              }),
+            );
+          }
+
+          // Verify authorization if clientId is provided
+          if (clientId !== null && job.clientId !== clientId) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_NOT_AUTHORIZED", {
+                cause: `Client ${clientId} is not authorized to pause job ${jobId}`,
+              }),
+            );
+          }
+
+          // Verify job can be paused (must be running)
+          if (job.status !== "running") {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_ERROR", {
+                cause: `Job ${jobId} cannot be paused (current status: ${job.status})`,
+              }),
+            );
+          }
+
+          // Find the currently running node (if any)
+          const runningTask = job.tasks.find((t) => t.status === "running");
+          const pausedAtNode = runningTask?.nodeId;
+
+          // Update job status to paused
+          yield* updateJob(jobId, {
+            status: "paused",
+            pausedAt: pausedAtNode,
+            updatedAt: new Date(),
+          });
+
+          // Emit FlowPause event
+          yield* eventEmitter.emit(jobId, {
+            jobId,
+            flowId: job.flowId,
+            eventType: EventType.FlowPause,
+            pausedAt: pausedAtNode,
+          });
+
+          // Return updated job
+          const updatedJob = yield* kvStore.get(jobId);
+          if (!updatedJob) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found after pause`,
+              }),
+            );
+          }
+          return updatedJob;
+        }),
+
+      cancelFlow: (jobId: string, clientId: string | null) =>
+        Effect.gen(function* () {
+          // Get the current job
+          const job = yield* kvStore.get(jobId);
+          if (!job) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found`,
+              }),
+            );
+          }
+
+          // Verify authorization if clientId is provided
+          if (clientId !== null && job.clientId !== clientId) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_NOT_AUTHORIZED", {
+                cause: `Client ${clientId} is not authorized to cancel job ${jobId}`,
+              }),
+            );
+          }
+
+          // Verify job can be cancelled (must be running or paused)
+          if (
+            job.status !== "running" &&
+            job.status !== "paused" &&
+            job.status !== "started"
+          ) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_ERROR", {
+                cause: `Job ${jobId} cannot be cancelled (current status: ${job.status})`,
+              }),
+            );
+          }
+
+          // Update job status to cancelled
+          yield* updateJob(jobId, {
+            status: "cancelled",
+            updatedAt: new Date(),
+            endedAt: new Date(),
+          });
+
+          // Emit FlowCancel event
+          yield* eventEmitter.emit(jobId, {
+            jobId,
+            flowId: job.flowId,
+            eventType: EventType.FlowCancel,
+          });
+
+          // Cleanup intermediate files
+          yield* cleanupIntermediateFiles(jobId, clientId);
+
+          // Return updated job
+          const updatedJob = yield* kvStore.get(jobId);
+          if (!updatedJob) {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+                cause: `Job ${jobId} not found after cancellation`,
               }),
             );
           }

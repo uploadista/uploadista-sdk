@@ -1,6 +1,11 @@
+import type { FlowJob } from "@uploadista/core/flow";
 import type { DataStoreCapabilities } from "@uploadista/core/types";
 import type { AuthConfig, AuthManager } from "../auth";
-import { DirectAuthManager, NoAuthManager, SaasAuthManager } from "../auth";
+import {
+  DirectAuthManager,
+  NoAuthManager,
+  UploadistaCloudAuthManager,
+} from "../auth";
 import type { Logger } from "../logger";
 import { createLogger } from "../logger";
 import { defaultClientCapabilities } from "../mock-data-store";
@@ -175,7 +180,7 @@ export type UploadistaClientOptions<UploadInput> = {
    * Optional authentication configuration.
    * Supports two modes:
    * - Direct: Bring your own auth (headers, cookies, custom tokens)
-   * - SaaS: Standard JWT token exchange with auth server
+   * - UploadistaCloud: Standard JWT token exchange with auth server
    *
    * If omitted, client operates in no-auth mode (backward compatible).
    *
@@ -189,10 +194,10 @@ export type UploadistaClientOptions<UploadInput> = {
    * }
    * ```
    *
-   * @example SaaS mode with auth server
+   * @example UploadistaCloud mode with auth server
    * ```typescript
    * auth: {
-   *   mode: 'saas',
+   *   mode: 'uploadista-cloud',
    *   authServerUrl: 'https://auth.myapp.com/token',
    *   getCredentials: () => ({ username: 'user', password: 'pass' })
    * }
@@ -230,7 +235,7 @@ export const defaultConnectionPoolingConfig: ConnectionPoolConfig = {
  * - Smart chunking based on network conditions
  * - Flow-based file processing pipelines
  * - WebSocket support for real-time progress
- * - Authentication (direct, SaaS, or no-auth modes)
+ * - Authentication (direct, uploadista-cloud, or no-auth modes)
  *
  * The client automatically:
  * - Fetches server capabilities and adapts upload strategy
@@ -369,13 +374,13 @@ export function createUploadistaClient<UploadInput>({
   const authManager: AuthManager = auth
     ? auth.mode === "direct"
       ? new DirectAuthManager(auth, platformService, logger)
-      : new SaasAuthManager(auth, httpClient)
+      : new UploadistaCloudAuthManager(auth, httpClient)
     : new NoAuthManager();
 
   // Log auth mode for debugging (without exposing credentials)
   if (auth) {
     logger.log(
-      `Authentication enabled in ${auth.mode} mode${auth.mode === "saas" ? ` (server: ${auth.authServerUrl})` : ""}`,
+      `Authentication enabled in ${auth.mode} mode${auth.mode === "uploadista-cloud" ? ` (server: ${auth.authServerUrl})` : ""}`,
     );
   }
 
@@ -666,7 +671,11 @@ export function createUploadistaClient<UploadInput>({
       UploadistaUploadOptions,
       "uploadLengthDeferred" | "uploadSize" | "metadata"
     > = {},
-  ): Promise<{ abort: () => void; jobId: string }> => {
+  ): Promise<{
+    abort: () => Promise<void>;
+    pause: () => Promise<FlowJob>;
+    jobId: string;
+  }> => {
     const source = await fileReader.openFile(file, chunkSize);
 
     const initializedSmartChunker = await initializeSmartChunker();
@@ -697,7 +706,10 @@ export function createUploadistaClient<UploadInput>({
 
     if (!result) {
       return {
-        abort: () => {},
+        abort: async () => {},
+        pause: async () => {
+          throw new Error("Flow upload not initialized");
+        },
         jobId: "",
       };
     }
@@ -735,7 +747,17 @@ export function createUploadistaClient<UploadInput>({
     });
 
     return {
-      abort: () => {
+      abort: async () => {
+        // First, tell the server to cancel the flow
+        try {
+          await uploadistaApi.cancelFlow(jobId);
+          logger.log(`Flow cancelled on server: ${jobId}`);
+        } catch (err) {
+          // Log but don't throw - client cleanup should still happen
+          logger.log(`Failed to cancel flow on server: ${err}`);
+        }
+
+        // Then do client-side cleanup
         abortController.abort();
         if (timeoutId) {
           platformService.clearTimeout(timeoutId);
@@ -744,6 +766,7 @@ export function createUploadistaClient<UploadInput>({
         wsManager.closeWebSocket(jobId);
         wsManager.closeUploadWebSocket(uploadFile.id);
       },
+      pause: () => uploadistaApi.pauseFlow(jobId),
       jobId,
     };
   };
@@ -777,7 +800,7 @@ export function createUploadistaClient<UploadInput>({
       return { status, job };
     },
 
-    continueFlow: async ({
+    resumeFlow: async ({
       jobId,
       nodeId,
       newData,
@@ -788,9 +811,17 @@ export function createUploadistaClient<UploadInput>({
       newData: unknown;
       contentType?: "application/json" | "application/octet-stream";
     }) => {
-      return uploadistaApi.continueFlow(jobId, nodeId, newData, {
+      return uploadistaApi.resumeFlow(jobId, nodeId, newData, {
         contentType,
       });
+    },
+
+    pauseFlow: async (jobId: string) => {
+      return uploadistaApi.pauseFlow(jobId);
+    },
+
+    cancelFlow: async (jobId: string) => {
+      return uploadistaApi.cancelFlow(jobId);
     },
 
     // Job operations (unified for both uploads and flows)
@@ -874,7 +905,7 @@ export function createUploadistaClient<UploadInput>({
  *
  * The client provides methods for:
  * - **Upload operations**: upload(), uploadWithFlow()
- * - **Flow operations**: getFlow(), runFlow(), continueFlow()
+ * - **Flow operations**: getFlow(), runFlow(), resumeFlow()
  * - **Job management**: getJobStatus()
  * - **WebSocket management**: openUploadWebSocket(), openFlowWebSocket(), closeWebSocket()
  * - **Metrics and diagnostics**: getNetworkMetrics(), getChunkingInsights(), exportMetrics()

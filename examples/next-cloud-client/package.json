@@ -1,5 +1,5 @@
 {
-  "name": "@uploadista/next-saas-client-example",
+  "name": "@uploadista/next-cloud-client-example",
   "version": "0.1.0",
   "private": true,
   "scripts": {

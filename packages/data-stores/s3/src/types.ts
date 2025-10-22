@@ -3,7 +3,6 @@ import type { UploadistaError } from "@uploadista/core/errors";
 import type {
   DataStoreCapabilities,
   DataStoreWriteOptions,
-  KvStore,
   UploadFile,
   UploadStrategy,
 } from "@uploadista/core/types";
@@ -91,6 +90,4 @@ export type S3Store = {
   ) => Effect.Effect<boolean, never>;
 };
 
-export type S3StoreConfig = S3StoreOptions & {
-  kvStore: KvStore<UploadFile>;
-};
+export type S3StoreConfig = S3StoreOptions;

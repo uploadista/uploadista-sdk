@@ -215,7 +215,7 @@ export type UploadistaApi = {
    * @returns Updated job metadata
    * @throws {UploadistaError} If job not found or continuation fails
    */
-  continueFlow: (
+  resumeFlow: (
     jobId: string,
     nodeId: string,
     newData: unknown,
@@ -223,6 +223,31 @@ export type UploadistaApi = {
       contentType?: "application/json" | "application/octet-stream";
     },
   ) => Promise<FlowJob>;
+
+  /**
+   * Pauses a running flow execution.
+   *
+   * The flow will stop at the next node boundary (not mid-node execution).
+   * Can be resumed later using resumeFlow.
+   *
+   * @param jobId - Job identifier for the running flow
+   * @returns Updated job metadata with "paused" status
+   * @throws {UploadistaError} If job not found or cannot be paused
+   */
+  pauseFlow: (jobId: string) => Promise<FlowJob>;
+
+  /**
+   * Cancels a running or paused flow execution.
+   *
+   * The flow will stop at the next node boundary (not mid-node execution).
+   * Intermediate files are automatically cleaned up. This operation is terminal
+   * and cannot be undone.
+   *
+   * @param jobId - Job identifier for the flow to cancel
+   * @returns Updated job metadata with "cancelled" status
+   * @throws {UploadistaError} If job not found or cannot be cancelled
+   */
+  cancelFlow: (jobId: string) => Promise<FlowJob>;
 
   /**
    * Retrieves current job status and outputs.
@@ -390,7 +415,7 @@ export function createUploadistaApi(
 
   /**
    * Helper function to extract auth token for WebSocket connection.
-   * Supports both DirectAuthManager (extracts from headers) and SaasAuthManager (gets cached token).
+   * Supports both DirectAuthManager (extracts from headers) and UploadistaCloudAuthManager (gets cached token).
    */
   const getAuthTokenForWebSocket = async (
     manager: AuthManager,
@@ -398,17 +423,19 @@ export function createUploadistaApi(
   ): Promise<string | null> => {
     logger?.log(`Getting auth token for WebSocket (jobId: ${jobId})`);
 
-    // Check if this is a SaasAuthManager (has attachToken method)
+    // Check if this is a UploadistaCloudAuthManager (has attachToken method)
     if ("attachToken" in manager) {
-      logger?.log("Detected SaasAuthManager, calling attachToken");
+      logger?.log("Detected UploadistaCloudAuthManager, calling attachToken");
       const headers = await manager.attachToken({}, jobId);
       const authHeader = headers.Authorization;
       if (authHeader?.startsWith("Bearer ")) {
-        logger?.log("Successfully extracted Bearer token from SaasAuthManager");
+        logger?.log(
+          "Successfully extracted Bearer token from UploadistaCloudAuthManager",
+        );
         return authHeader.substring(7); // Remove "Bearer " prefix
       }
       logger?.log(
-        `No valid Authorization header from SaasAuthManager: ${authHeader}`,
+        `No valid Authorization header from UploadistaCloudAuthManager: ${authHeader}`,
       );
     }
 
@@ -629,7 +656,7 @@ export function createUploadistaApi(
       return { status: res.status, job: data };
     },
 
-    continueFlow: async (
+    resumeFlow: async (
       jobId: string,
       nodeId: string,
       newData: unknown,
@@ -637,8 +664,6 @@ export function createUploadistaApi(
         contentType?: "application/json" | "application/octet-stream";
       },
     ) => {
-      logger?.log(`continueFlow: ${jobId} at node: ${nodeId}`);
-
       const contentType = options?.contentType || "application/json";
 
       let body: RequestBody;
@@ -651,7 +676,7 @@ export function createUploadistaApi(
       }
 
       const res = await httpClient.request(
-        `${jobsEndpoint}/${jobId}/continue/${nodeId}`,
+        `${jobsEndpoint}/${jobId}/resume/${nodeId}`,
         {
           method: "PATCH",
           headers: {
@@ -665,12 +690,12 @@ export function createUploadistaApi(
         const errorData = (await res.json().catch(() => ({}))) as ErrorResponse;
         const errorName = mapServerErrorCodeToClientName(
           errorData.code,
-          "FLOW_CONTINUE_FAILED",
+          "FLOW_RESUMED_FAILED",
         );
         const errorMessage =
           errorData.error ||
           errorData.message ||
-          `Failed to continue flow for job ${jobId}`;
+          `Failed to resume flow for job ${jobId}`;
 
         throw new UploadistaError({
           name: errorName,
@@ -682,6 +707,66 @@ export function createUploadistaApi(
       }
 
       const data = (await res.json()) as FlowJob;
+      return data;
+    },
+
+    pauseFlow: async (jobId: string) => {
+      const res = await httpClient.request(`${jobsEndpoint}/${jobId}/pause`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => ({}))) as ErrorResponse;
+        const errorName = mapServerErrorCodeToClientName(
+          errorData.code,
+          "FLOW_PAUSE_FAILED",
+        );
+        const errorMessage =
+          errorData.error ||
+          errorData.message ||
+          `Failed to pause flow for job ${jobId}`;
+
+        throw new UploadistaError({
+          name: errorName,
+          message: errorData.code
+            ? `${errorMessage} (${errorData.code})`
+            : errorMessage,
+          status: res.status,
+        });
+      }
+
+      const data = (await res.json()) as FlowJob;
+      logger?.log(`Flow paused: ${jobId}, status: ${data.status}`);
+      return data;
+    },
+
+    cancelFlow: async (jobId: string) => {
+      const res = await httpClient.request(`${jobsEndpoint}/${jobId}/cancel`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const errorData = (await res.json().catch(() => ({}))) as ErrorResponse;
+        const errorName = mapServerErrorCodeToClientName(
+          errorData.code,
+          "FLOW_CANCEL_FAILED",
+        );
+        const errorMessage =
+          errorData.error ||
+          errorData.message ||
+          `Failed to cancel flow for job ${jobId}`;
+
+        throw new UploadistaError({
+          name: errorName,
+          message: errorData.code
+            ? `${errorMessage} (${errorData.code})`
+            : errorMessage,
+          status: res.status,
+        });
+      }
+
+      const data = (await res.json()) as FlowJob;
+      logger?.log(`Flow cancelled: ${jobId}, status: ${data.status}`);
       return data;
     },
 

@@ -342,6 +342,9 @@ export type FlowConfig<
   onEvent?: (
     event: FlowEvent,
   ) => Effect.Effect<{ eventId: string | null }, UploadistaError>;
+  checkJobStatus?: (
+    jobId: string,
+  ) => Effect.Effect<"running" | "paused" | "cancelled", UploadistaError>;
   parallelExecution?: {
     enabled?: boolean;
     maxConcurrency?: number;

@@ -131,7 +131,7 @@ export const handleJobStatus = (req: Request, flowServer: FlowServerShape) => {
   }).pipe(Effect.catchAll(handleErrorResponse));
 };
 
-export const handleContinueFlow = <TRequirements>(
+export const handleResumeFlow = <TRequirements>(
   req: Request,
   flowServer: FlowServerShape,
 ) => {
@@ -142,8 +142,8 @@ export const handleContinueFlow = <TRequirements>(
 
     const url = new URL(req.url);
     const urlSegments = url.pathname.split("/");
-    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/continue/:nodeId
-    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/continue/:nodeId
+    const jobId = urlSegments[urlSegments.length - 3]; // .../jobs/:jobId/resume/:nodeId
+    const nodeId = urlSegments[urlSegments.length - 1]; // .../jobs/:jobId/resume/:nodeId
 
     if (!jobId) {
       console.error("No job id");
@@ -196,7 +196,7 @@ export const handleContinueFlow = <TRequirements>(
       return new Response("Unsupported Content-Type", { status: 415 });
     }
 
-    const result = yield* flowServer.continueFlow<TRequirements>({
+    const result = yield* flowServer.resumeFlow<TRequirements>({
       jobId,
       nodeId,
       newData,
@@ -211,6 +211,85 @@ export const handleContinueFlow = <TRequirements>(
           `[Flow] Flow ${result.status}, cleared auth cache: ${jobId}`,
         );
       }
+    }
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }).pipe(Effect.catchAll(handleErrorResponse));
+};
+export const handlePauseFlow = (req: Request, flowServer: FlowServerShape) => {
+  return Effect.gen(function* () {
+    // Try to get auth from current request or cached auth
+    const authService = yield* AuthContextService;
+    const authCache = yield* AuthCacheService;
+
+    const url = new URL(req.url);
+    const urlSegments = url.pathname.split("/");
+    const jobId = urlSegments[urlSegments.length - 2]; // .../jobs/:jobId/pause
+
+    if (!jobId) {
+      console.error("No job id");
+      return new Response("No job id", { status: 400 });
+    }
+
+    // Try current auth first, fallback to cached auth
+    let clientId = yield* authService.getClientId();
+    if (!clientId) {
+      const cachedAuth = yield* authCache.get(jobId);
+      clientId = cachedAuth?.clientId ?? null;
+    }
+
+    if (clientId) {
+      console.log(`[Flow] Pausing flow: jobId=${jobId}, client: ${clientId}`);
+    }
+
+    const result = yield* flowServer.pauseFlow(jobId, clientId);
+
+    if (clientId) {
+      console.log(`[Flow] Flow paused: ${jobId}, status: ${result.status}`);
+    }
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }).pipe(Effect.catchAll(handleErrorResponse));
+};
+
+export const handleCancelFlow = (req: Request, flowServer: FlowServerShape) => {
+  return Effect.gen(function* () {
+    // Try to get auth from current request or cached auth
+    const authService = yield* AuthContextService;
+    const authCache = yield* AuthCacheService;
+
+    const url = new URL(req.url);
+    const urlSegments = url.pathname.split("/");
+    const jobId = urlSegments[urlSegments.length - 2]; // .../jobs/:jobId/cancel
+
+    if (!jobId) {
+      console.error("No job id");
+      return new Response("No job id", { status: 400 });
+    }
+
+    // Try current auth first, fallback to cached auth
+    let clientId = yield* authService.getClientId();
+    if (!clientId) {
+      const cachedAuth = yield* authCache.get(jobId);
+      clientId = cachedAuth?.clientId ?? null;
+    }
+
+    if (clientId) {
+      console.log(`[Flow] Cancelling flow: jobId=${jobId}, client: ${clientId}`);
+    }
+
+    const result = yield* flowServer.cancelFlow(jobId, clientId);
+
+    // Clear cache since flow is cancelled
+    yield* authCache.delete(jobId);
+    if (clientId) {
+      console.log(`[Flow] Flow cancelled, cleared auth cache: ${jobId}`);
     }
 
     return new Response(JSON.stringify(result), {
