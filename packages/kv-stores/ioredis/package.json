@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "ioredis": "5.8.1",
+    "ioredis": "5.8.2",
     "effect": "catalog:"
   },
   "devDependencies": {
