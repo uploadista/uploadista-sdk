@@ -21,7 +21,7 @@
   "dependencies": {
     "@uploadista/core": "workspace:*",
     "effect": "catalog:",
-    "ioredis": "5.8.1"
+    "ioredis": "5.8.2"
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
