@@ -13,8 +13,8 @@ catalogs:
       specifier: 3.18.4
       version: 3.18.4
     hono:
-      specifier: 4.10.2
-      version: 4.10.2
+      specifier: 4.10.3
+      version: 4.10.3
     react:
       specifier: 19.2.0
       version: 19.2.0
@@ -216,10 +216,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 1.19.5
-        version: 1.19.5(hono@4.10.2)
+        version: 1.19.5(hono@4.10.3)
       '@hono/node-ws':
         specifier: 1.2.0
-        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.2))(hono@4.10.2)
+        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.3))(hono@4.10.3)
       '@redis/client':
         specifier: 5.8.3
         version: 5.8.3
@@ -270,10 +270,10 @@ importers:
         version: 3.18.4
       hono:
         specifier: 'catalog:'
-        version: 4.10.2
+        version: 4.10.3
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.2)(pino@10.0.0)
+        version: 0.10.3(hono@4.10.3)(pino@10.0.0)
       pino:
         specifier: 10.0.0
         version: 10.0.0
@@ -6740,6 +6740,10 @@ packages:
     resolution: {integrity: sha512-p6fyzl+mQo6uhESLxbF5WlBOAJMDh36PljwlKtP5V1v09NxlqGru3ShK+4wKhSuhuYf8qxMmrivHOa/M7q0sMg==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.10.3:
+    resolution: {integrity: sha512-2LOYWUbnhdxdL8MNbNg9XZig6k+cZXm5IjHn2Aviv7honhBMOHb+jxrKIeJRZJRmn+htUCKhaicxwXuUDlchRA==}
+    engines: {node: '>=16.9.0'}
+
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
 
@@ -11757,14 +11761,14 @@ snapshots:
       - encoding
       - supports-color
 
-  '@hono/node-server@1.19.5(hono@4.10.2)':
+  '@hono/node-server@1.19.5(hono@4.10.3)':
     dependencies:
-      hono: 4.10.2
+      hono: 4.10.3
 
-  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.2))(hono@4.10.2)':
+  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.3))(hono@4.10.3)':
     dependencies:
-      '@hono/node-server': 1.19.5(hono@4.10.2)
-      hono: 4.10.2
+      '@hono/node-server': 1.19.5(hono@4.10.3)
+      hono: 4.10.3
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -16528,15 +16532,17 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono-pino@0.10.3(hono@4.10.2)(pino@10.0.0):
+  hono-pino@0.10.3(hono@4.10.3)(pino@10.0.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.2
+      hono: 4.10.3
       pino: 10.0.0
 
   hono@4.10.1: {}
 
   hono@4.10.2: {}
+
+  hono@4.10.3: {}
 
   hookable@5.5.3: {}
 
