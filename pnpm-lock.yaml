@@ -1073,8 +1073,8 @@ importers:
         specifier: 'catalog:'
         version: 3.18.4
       replicate:
-        specifier: 1.3.0
-        version: 1.3.0
+        specifier: 1.3.1
+        version: 1.3.1
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -8349,8 +8349,8 @@ packages:
     resolution: {integrity: sha512-NZQZdC5wOE/H3UT28fVGL+ikOZcEzfMGk/c3iN9UGxzWHMa1op7274oyiUVrAG4B2EuFhus8SvkaYnhvW92p9Q==}
     hasBin: true
 
-  replicate@1.3.0:
-    resolution: {integrity: sha512-Mo25Fw7r1aPSMN+/KhJbLJlzdeLVaGtSRLq8aFH0O6q1fM9LDYipJDC0mobPJ40biBhGk8bUEBVsO1otjTbIdA==}
+  replicate@1.3.1:
+    resolution: {integrity: sha512-o7ij4UZGvKnKb4DKmKorZieWB9QjQ5iEhamrgPYy/Y785YVRh3kKR7LSweR2kkV+dPGqiz6hO09Gwhw8ueHHgw==}
     engines: {git: '>=2.11.0', node: '>=18.0.0', npm: '>=7.19.0', yarn: '>=1.7.0'}
 
   require-directory@2.1.1:
@@ -18715,7 +18715,7 @@ snapshots:
     dependencies:
       jsesc: 3.1.0
 
-  replicate@1.3.0:
+  replicate@1.3.1:
     optionalDependencies:
       readable-stream: 4.7.0
 
