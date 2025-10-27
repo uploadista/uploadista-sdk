@@ -67,7 +67,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "3.2.4"
+    "vitest": "4.0.3"
   },
   "publishConfig": {
     "access": "public",

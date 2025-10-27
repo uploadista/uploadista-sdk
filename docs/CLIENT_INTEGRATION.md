@@ -14,10 +14,101 @@ This guide covers integrating Uploadista across different client platforms:
 
 ## React (Web)
 
+> **Important**: All React hooks (`useUpload`, `useMultiUpload`, `useFlowUpload`, etc.) must be used within an `UploadistaProvider`. Set up the provider first before using any hooks.
+
 ### Basic Setup
 
 ```bash
 npm install @uploadista/react @uploadista/client-browser
+```
+
+### Provider Setup (Required)
+
+**All Uploadista hooks require the `UploadistaProvider` to be setup at the root of your application.** This provider creates a shared upload client instance and manages WebSocket connections for real-time updates.
+
+```tsx
+import { UploadistaProvider } from "@uploadista/react";
+
+function App() {
+  return (
+    <UploadistaProvider
+      baseUrl="https://api.example.com"
+      storageId="default"
+      chunkSize={5 * 1024 * 1024} // 5MB chunks
+      storeFingerprintForResuming={true} // Enable resumable uploads
+      onEvent={(event) => {
+        // Global event handler for all uploads
+        console.log("Upload event:", event);
+      }}
+    >
+      <YourApp />
+    </UploadistaProvider>
+  );
+}
+```
+
+#### Provider Configuration Options
+
+```tsx
+interface UploadistaProviderProps {
+  children: React.ReactNode;
+
+  // Required
+  baseUrl: string; // API base URL (e.g., "https://api.example.com")
+
+  // Optional configuration
+  storageId?: string; // Default storage ID (default: "local")
+  uploadistaBasePath?: string; // API path prefix (default: "uploadista")
+  chunkSize?: number; // Chunk size in bytes (default: 5MB)
+  parallelUploads?: number; // Max parallel uploads (default: 1)
+  parallelChunkSize?: number; // Size for parallel chunk uploads
+  storeFingerprintForResuming?: boolean; // Enable resumable uploads (default: true)
+
+  // Advanced options
+  retryDelays?: number[]; // Retry delays in ms (default: [1000, 3000, 5000])
+  uploadStrategy?: "sequential" | "parallel" | "adaptive"; // Upload strategy
+  smartChunking?: boolean; // Dynamic chunk size adjustment
+  networkMonitoring?: boolean; // Network condition monitoring
+  uploadMetrics?: boolean; // Performance metrics collection
+  connectionPooling?: boolean; // HTTP connection pooling
+
+  // Authentication
+  auth?: {
+    headers?: Record<string, string>; // Custom headers (e.g., Authorization)
+  };
+
+  // Events
+  onEvent?: (event: UploadistaEvent) => void; // Global event handler
+}
+```
+
+#### Example with Authentication
+
+```tsx
+import { UploadistaProvider } from "@uploadista/react";
+
+function App() {
+  const [authToken, setAuthToken] = useState<string>();
+
+  useEffect(() => {
+    // Get auth token from your auth provider
+    getAuthToken().then(setAuthToken);
+  }, []);
+
+  return (
+    <UploadistaProvider
+      baseUrl="https://api.example.com"
+      storageId="s3-bucket"
+      auth={{
+        headers: {
+          Authorization: authToken ? `Bearer ${authToken}` : undefined,
+        },
+      }}
+    >
+      <YourApp />
+    </UploadistaProvider>
+  );
+}
 ```
 
 ### Simple Upload Component
@@ -26,9 +117,10 @@ npm install @uploadista/react @uploadista/client-browser
 import { useUpload } from "@uploadista/react";
 
 export function UploadForm() {
-  const { upload, progress, error, isLoading } = useUpload({
-    serverUrl: "https://api.example.com",
-    onComplete: (result) => console.log("Upload done:", result),
+  const upload = useUpload({
+    onSuccess: (result) => console.log("Upload done:", result),
+    onError: (error) => console.error("Upload failed:", error),
+    onProgress: (progress) => console.log("Progress:", progress + "%"),
   });
 
   return (
@@ -37,11 +129,13 @@ export function UploadForm() {
         type="file"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) upload(file);
+          if (file) upload.upload(file);
         }}
+        disabled={upload.isUploading}
       />
-      {isLoading && <progress value={progress} max={100} />}
-      {error && <p style={{ color: "red" }}>{error.message}</p>}
+      {upload.isUploading && <progress value={upload.state.progress} max={100} />}
+      {upload.state.error && <p style={{ color: "red" }}>{upload.state.error.message}</p>}
+      {upload.canRetry && <button onClick={upload.retry}>Retry</button>}
     </div>
   );
 }
@@ -53,13 +147,11 @@ export function UploadForm() {
 import { useMultiUpload } from "@uploadista/react";
 
 export function MultiUploadForm() {
-  const {
-    uploads,
-    addFiles,
-    cancel,
-    completed,
-  } = useMultiUpload({
-    serverUrl: "https://api.example.com",
+  const multiUpload = useMultiUpload({
+    maxConcurrent: 3,
+    onUploadSuccess: (item, result) => {
+      console.log(`${item.file.name} uploaded successfully`);
+    },
     onComplete: (results) => {
       console.log("All done:", results);
     },
@@ -70,85 +162,138 @@ export function MultiUploadForm() {
       <input
         type="file"
         multiple
-        onChange={(e) => addFiles(Array.from(e.target.files || []))}
+        onChange={(e) => {
+          if (e.target.files) {
+            multiUpload.addFiles(Array.from(e.target.files));
+            multiUpload.startAll();
+          }
+        }}
       />
 
-      {uploads.map((upload) => (
-        <div key={upload.id}>
-          <p>{upload.file.name}</p>
-          <progress value={upload.progress} max={100} />
-          <button onClick={() => cancel(upload.id)}>Cancel</button>
+      <div>Progress: {multiUpload.state.progress}%</div>
+      <div>
+        {multiUpload.state.uploading} uploading,
+        {multiUpload.state.successful} successful,
+        {multiUpload.state.failed} failed
+      </div>
+
+      <button onClick={multiUpload.abortAll} disabled={!multiUpload.state.isUploading}>
+        Abort All
+      </button>
+      <button onClick={multiUpload.retryFailed} disabled={multiUpload.state.failed === 0}>
+        Retry Failed
+      </button>
+
+      {multiUpload.items.map((item) => (
+        <div key={item.id}>
+          <p>{item.file instanceof File ? item.file.name : 'File'}</p>
+          <progress value={item.state.progress} max={100} />
+          <span>{item.state.status}</span>
+          {item.state.status === 'uploading' && (
+            <button onClick={() => multiUpload.abortUpload(item.id)}>Cancel</button>
+          )}
         </div>
       ))}
-
-      <p>{completed} of {uploads.length} complete</p>
     </div>
   );
 }
 ```
 
-### With Authentication (JWT)
+### With Metadata
+
+You can attach custom metadata to individual uploads:
 
 ```tsx
 import { useUpload } from "@uploadista/react";
 
-export function AuthenticatedUpload() {
-  const [token, setToken] = React.useState<string>();
-
-  const { upload } = useUpload({
-    serverUrl: "https://api.example.com",
-    headers: {
-      Authorization: token ? `Bearer ${token}` : undefined,
+export function UploadWithMetadata() {
+  const upload = useUpload({
+    metadata: {
+      userId: "user-123",
+      uploadedBy: "john@example.com",
+      category: "profile-images",
     },
-    onComplete: (result) => {
-      console.log("Upload complete:", result);
+    onSuccess: (result) => {
+      console.log("Upload complete with metadata:", result);
     },
   });
 
-  // Get token from auth service
-  React.useEffect(() => {
-    getAuthToken().then(setToken);
-  }, []);
-
   return (
     <div>
-      {/* Upload UI */}
+      <input
+        type="file"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) upload.upload(file);
+        }}
+      />
     </div>
   );
 }
 ```
 
+> **Note**: For authentication headers (like JWT tokens), configure them at the provider level using the `auth.headers` option. See the Provider Setup section above.
+
 ### Drag & Drop Upload
 
 ```tsx
-import { useDropZone, useUpload } from "@uploadista/react";
+import { useDragDrop, useMultiUpload } from "@uploadista/react";
 
 export function DragDropUpload() {
-  const { upload, progress } = useUpload({
-    serverUrl: "https://api.example.com",
+  const multiUpload = useMultiUpload({
+    maxConcurrent: 3,
+    onComplete: (results) => {
+      console.log("All uploads complete:", results);
+    },
   });
 
-  const { isDragActive, getRootProps, getInputProps } = useDropZone({
-    onDrop: (files) => {
-      files.forEach(upload);
+  const dragDrop = useDragDrop({
+    accept: ["image/*", "video/*", ".pdf"],
+    maxFiles: 10,
+    maxFileSize: 50 * 1024 * 1024, // 50MB
+    onFilesReceived: (files) => {
+      multiUpload.addFiles(files);
+      multiUpload.startAll();
+    },
+    onValidationError: (errors) => {
+      console.error("Validation errors:", errors);
     },
   });
 
   return (
-    <div
-      {...getRootProps()}
-      style={{
-        border: isDragActive ? "2px solid blue" : "2px dashed gray",
-        padding: "20px",
-        textAlign: "center",
-      }}
-    >
-      <input {...getInputProps()} />
-      {isDragActive ? (
-        <p>Drop files here...</p>
-      ) : (
-        <p>Drag files or click to select</p>
-      )}
+    <div>
+      <div
+        {...dragDrop.dragHandlers}
+        onClick={dragDrop.openFilePicker}
+        style={{
+          border: dragDrop.state.isDragging ? "2px solid blue" : "2px dashed gray",
+          padding: "20px",
+          textAlign: "center",
+          cursor: "pointer",
+        }}
+      >
+        <input {...dragDrop.inputProps} />
+        {dragDrop.state.isDragging ? (
+          <p>Drop files here...</p>
+        ) : (
+          <p>Drag files or click to select</p>
+        )}
+
+        {dragDrop.state.errors.length > 0 && (
+          <div style={{ color: "red" }}>
+            {dragDrop.state.errors.map((error, i) => (
+              <p key={i}>{error}</p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {multiUpload.items.map((item) => (
+        <div key={item.id}>
+          <span>{item.file instanceof File ? item.file.name : 'File'}</span>
+          <progress value={item.state.progress} max={100} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -160,17 +305,24 @@ export function DragDropUpload() {
 import { useFlowUpload } from "@uploadista/react";
 
 export function ProcessingUpload() {
-  const {
-    upload,
-    results,
-    error,
-    isProcessing,
-  } = useFlowUpload({
-    serverUrl: "https://api.example.com",
-    flowId: "resize-and-compress", // Server-defined flow
-    onProcessingComplete: (result) => {
-      // result includes processed variants
-      console.log("Variants:", result.variants);
+  const flowUpload = useFlowUpload({
+    flowConfig: {
+      flowId: "optimize-flow",
+      storageId: "local",
+      // Optional: specify which output node's result to use
+      outputNodeId: "optimized-output",
+    },
+    onSuccess: (result) => {
+      // result is from the specified output node (or first output if not specified)
+      console.log("Processed file:", result);
+    },
+    onFlowComplete: (outputs) => {
+      // outputs contains all output nodes' results
+      console.log("All outputs:", outputs);
+      // e.g., { thumbnail: {...}, optimized: {...}, original: {...} }
+    },
+    onError: (error) => {
+      console.error("Flow upload failed:", error);
     },
   });
 
@@ -181,50 +333,40 @@ export function ProcessingUpload() {
         accept="image/*"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) upload(file);
+          if (file) flowUpload.upload(file);
         }}
+        disabled={flowUpload.isUploading}
       />
-      {isProcessing && <p>Processing...</p>}
-      {results && (
+
+      {flowUpload.isUploadingFile && (
+        <div>Uploading... {flowUpload.state.progress}%</div>
+      )}
+
+      {flowUpload.isProcessing && (
         <div>
-          <img src={results.thumbnail} alt="Thumbnail" width={200} />
-          <img src={results.medium} alt="Medium" width={600} />
-          <img src={results.full} alt="Full" width={1200} />
+          Processing...
+          {flowUpload.state.currentNodeName && (
+            <span> (Current: {flowUpload.state.currentNodeName})</span>
+          )}
         </div>
       )}
-      {error && <p style={{ color: "red" }}>{error}</p>}
-    </div>
-  );
-}
-```
 
-### Real-Time Progress with WebSocket
+      {flowUpload.state.jobId && <div>Job ID: {flowUpload.state.jobId}</div>}
 
-```tsx
-import { useUploadStream } from "@uploadista/react";
+      {flowUpload.state.status === "success" && flowUpload.state.result && (
+        <div>
+          <p>Upload complete!</p>
+          <img src={flowUpload.state.result.url} alt="Processed" />
+        </div>
+      )}
 
-export function StreamingUpload() {
-  const { upload, events$ } = useUploadStream({
-    serverUrl: "https://api.example.com",
-    streamUrl: "wss://api.example.com/api/stream",
-  });
+      {flowUpload.state.error && (
+        <p style={{ color: "red" }}>{flowUpload.state.error.message}</p>
+      )}
 
-  React.useEffect(() => {
-    const sub = events$.subscribe((event) => {
-      console.log("Event:", event.type, event.data);
-    });
-    return () => sub.unsubscribe();
-  }, [events$]);
-
-  return (
-    <div>
-      <input
-        type="file"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) upload(file);
-        }}
-      />
+      {flowUpload.isUploading && (
+        <button onClick={flowUpload.abort}>Cancel</button>
+      )}
     </div>
   );
 }
@@ -232,35 +374,133 @@ export function StreamingUpload() {
 
 ### Configuration Options
 
+> **Note**: Most configuration is done at the provider level with `UploadistaProvider`. Individual upload hooks accept only options specific to that upload.
+
 ```tsx
-interface UploadOptions {
-  // Server configuration
-  serverUrl: string; // API endpoint
-  streamUrl?: string; // WebSocket for real-time
-  timeout?: number; // Default: 30000ms
-
-  // Chunks
-  chunkSize?: number; // Default: 5MB
-  concurrentChunks?: number; // Default: 3
-
-  // Headers & Auth
-  headers?: Record<string, string>;
-  credentials?: "include" | "omit" | "same-origin";
-
-  // Callbacks
-  onProgress?: (progress: number) => void;
-  onComplete?: (result: UploadResult) => void;
+// useUpload options
+interface UseUploadOptions {
+  metadata?: Record<string, string>;
+  uploadLengthDeferred?: boolean;
+  uploadSize?: number;
+  onProgress?: (progress: number, bytesUploaded: number, totalBytes: number | null) => void;
+  onChunkComplete?: (chunkSize: number, bytesAccepted: number, bytesTotal: number | null) => void;
+  onSuccess?: (result: UploadFile) => void;
   onError?: (error: Error) => void;
-  onCancel?: () => void;
+  onAbort?: () => void;
+  onShouldRetry?: (error: Error, retryAttempt: number) => boolean;
+}
+
+// useMultiUpload options
+interface MultiUploadOptions {
+  maxConcurrent?: number; // Default: 3
+  metadata?: Record<string, string>;
+  onUploadStart?: (item: UploadItem) => void;
+  onUploadProgress?: (item: UploadItem, progress: number, bytesUploaded: number, totalBytes: number | null) => void;
+  onUploadSuccess?: (item: UploadItem, result: UploadFile) => void;
+  onUploadError?: (item: UploadItem, error: Error) => void;
+  onComplete?: (results: { successful: UploadItem[]; failed: UploadItem[]; total: number }) => void;
+}
+
+// useFlowUpload options
+interface FlowUploadOptions<TOutput> {
+  flowConfig: {
+    flowId: string;
+    storageId: string;
+    outputNodeId?: string; // Optional: specify which output node to use
+  };
+  onProgress?: (progress: number, bytesUploaded: number, totalBytes: number | null) => void;
+  onSuccess?: (result: TOutput) => void;
+  onFlowComplete?: (outputs: Record<string, unknown>) => void;
+  onError?: (error: Error) => void;
+  onAbort?: () => void;
+}
+
+// useDragDrop options
+interface DragDropOptions {
+  accept?: string[]; // MIME types or file extensions
+  maxFiles?: number;
+  maxFileSize?: number; // bytes
+  multiple?: boolean;
+  validator?: (files: File[]) => string[] | null;
+  onFilesReceived?: (files: File[]) => void;
+  onValidationError?: (errors: string[]) => void;
 }
 ```
 
 ## Vue 3
 
+> **Important**: All Vue composables (`useUpload`, `useMultiUpload`, `useFlowUpload`, etc.) must be used within an `UploadistaProvider` component. Set up the provider first before using any composables.
+
 ### Basic Setup
 
 ```bash
 npm install @uploadista/vue @uploadista/client-browser
+```
+
+### Provider Setup (Required)
+
+**All Uploadista composables require the `UploadistaProvider` component to be setup at the root of your application.** This provider creates a shared upload client instance and manages WebSocket connections for real-time updates.
+
+```vue
+<template>
+  <UploadistaProvider
+    :server-url="serverUrl"
+    storage-id="default"
+    :chunk-size="5 * 1024 * 1024"
+    :store-fingerprint-for-resuming="true"
+    @event="handleEvent"
+  >
+    <YourApp />
+  </UploadistaProvider>
+</template>
+
+<script setup lang="ts">
+import { UploadistaProvider } from "@uploadista/vue";
+
+const serverUrl = "https://api.example.com";
+
+const handleEvent = (event) => {
+  console.log("Upload event:", event);
+};
+</script>
+```
+
+#### Provider Props
+
+```typescript
+interface UploadistaProviderProps {
+  // Required
+  serverUrl: string; // API base URL (e.g., "https://api.example.com")
+
+  // Optional configuration
+  storageId?: string; // Default storage ID (default: "local")
+  uploadistaBasePath?: string; // API path prefix (default: "uploadista")
+  chunkSize?: number; // Chunk size in bytes (default: 1MB)
+  parallelUploads?: number; // Max parallel uploads (default: 1)
+  storeFingerprintForResuming?: boolean; // Enable resumable uploads (default: true)
+
+  // Events
+  onEvent?: (event: UploadistaEvent) => void; // Global event handler
+}
+```
+
+#### Example in main.ts/App.vue
+
+```vue
+<!-- App.vue -->
+<template>
+  <UploadistaProvider
+    server-url="https://api.example.com"
+    storage-id="s3-bucket"
+    :chunk-size="5 * 1024 * 1024"
+  >
+    <RouterView />
+  </UploadistaProvider>
+</template>
+
+<script setup lang="ts">
+import { UploadistaProvider } from "@uploadista/vue";
+</script>
 ```
 
 ### Simple Upload
@@ -271,28 +511,33 @@ npm install @uploadista/vue @uploadista/client-browser
     <input
       type="file"
       @change="selectFile"
+      :disabled="upload.isUploading.value"
     />
-    <progress v-if="isLoading" :value="progress" max="100" />
-    <p v-if="error" style="color: red">{{ error }}</p>
+    <progress v-if="upload.isUploading.value" :value="upload.state.value.progress" max="100" />
+    <p v-if="upload.state.value.error" style="color: red">{{ upload.state.value.error.message }}</p>
+    <button v-if="upload.canRetry.value" @click="upload.retry">Retry</button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { useUpload } from "@uploadista/vue";
 
-const { upload, progress, error, isLoading } =
-  useUpload({
-    serverUrl: "https://api.example.com",
-    onComplete: (result) => {
-      console.log("Done:", result);
-    },
-  });
+const upload = useUpload({
+  onSuccess: (result) => {
+    console.log("Done:", result);
+  },
+  onError: (error) => {
+    console.error("Failed:", error);
+  },
+  onProgress: (progress) => {
+    console.log("Progress:", progress + "%");
+  },
+});
 
 const selectFile = (e: Event) => {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
-  if (file) upload(file);
+  if (file) upload.upload(file);
 };
 </script>
 ```
@@ -305,32 +550,53 @@ const selectFile = (e: Event) => {
     <input
       type="file"
       multiple
-      @change="addFiles"
+      @change="handleFileChange"
     />
 
-    <div v-for="item in uploads" :key="item.id">
-      <p>{{ item.file.name }}</p>
-      <progress :value="item.progress" max="100" />
-      <button @click="cancel(item.id)">Cancel</button>
+    <div>Progress: {{ multiUpload.state.value.progress }}%</div>
+    <div>
+      {{ multiUpload.state.value.uploading }} uploading,
+      {{ multiUpload.state.value.successful }} successful,
+      {{ multiUpload.state.value.failed }} failed
     </div>
 
-    <p>{{ completed }} of {{ uploads.length }} complete</p>
+    <button @click="multiUpload.abortAll" :disabled="!multiUpload.state.value.isUploading">
+      Abort All
+    </button>
+    <button @click="multiUpload.retryFailed" :disabled="multiUpload.state.value.failed === 0">
+      Retry Failed
+    </button>
+
+    <div v-for="item in multiUpload.items.value" :key="item.id">
+      <p>{{ item.file instanceof File ? item.file.name : 'File' }}</p>
+      <progress :value="item.state.progress" max="100" />
+      <span>{{ item.state.status }}</span>
+      <button v-if="item.state.status === 'uploading'" @click="multiUpload.abortUpload(item.id)">
+        Cancel
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useMultiUpload } from "@uploadista/vue";
 
-const { uploads, addFiles, cancel, completed } =
-  useMultiUpload({
-    serverUrl: "https://api.example.com",
-    onComplete: (results) => {
-      console.log("All done:", results);
-    },
-  });
+const multiUpload = useMultiUpload({
+  maxConcurrent: 3,
+  onUploadSuccess: (item, result) => {
+    console.log(`${item.file.name} uploaded successfully`);
+  },
+  onComplete: (results) => {
+    console.log("All done:", results);
+  },
+});
 
-const addFiles = (files: FileList) => {
-  addFiles(Array.from(files));
+const handleFileChange = (e: Event) => {
+  const files = Array.from((e.target as HTMLInputElement).files || []);
+  if (files.length) {
+    multiUpload.addFiles(files);
+    multiUpload.startAll();
+  }
 };
 </script>
 ```
@@ -339,32 +605,54 @@ const addFiles = (files: FileList) => {
 
 ```vue
 <template>
-  <div
-    v-bind="getRootProps()"
-    :style="{
-      border: isDragActive ? '2px solid blue' : '2px dashed gray',
-      padding: '20px',
-    }"
-  >
-    <input v-bind="getInputProps()" />
-    <p v-if="isDragActive">Drop files here...</p>
-    <p v-else>Drag files or click to select</p>
+  <div>
+    <div
+      v-bind="dragDrop.dragHandlers.value"
+      @click="dragDrop.openFilePicker"
+      :style="{
+        border: dragDrop.state.value.isDragging ? '2px solid blue' : '2px dashed gray',
+        padding: '20px',
+        cursor: 'pointer',
+      }"
+    >
+      <input v-bind="dragDrop.inputProps.value" />
+      <p v-if="dragDrop.state.value.isDragging">Drop files here...</p>
+      <p v-else>Drag files or click to select</p>
+
+      <div v-if="dragDrop.state.value.errors.length > 0" style="color: red">
+        <p v-for="(error, i) in dragDrop.state.value.errors" :key="i">{{ error }}</p>
+      </div>
+    </div>
+
+    <div v-for="item in multiUpload.items.value" :key="item.id">
+      <span>{{ item.file instanceof File ? item.file.name : 'File' }}</span>
+      <progress :value="item.state.progress" max="100" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useDropZone, useUpload } from "@uploadista/vue";
+import { useDragDrop, useMultiUpload } from "@uploadista/vue";
 
-const { upload } = useUpload({
-  serverUrl: "https://api.example.com",
+const multiUpload = useMultiUpload({
+  maxConcurrent: 3,
+  onComplete: (results) => {
+    console.log("All uploads complete:", results);
+  },
 });
 
-const { isDragActive, getRootProps, getInputProps } =
-  useDropZone({
-    onDrop: (files) => {
-      files.forEach(upload);
-    },
-  });
+const dragDrop = useDragDrop({
+  accept: ["image/*", "video/*", ".pdf"],
+  maxFiles: 10,
+  maxFileSize: 50 * 1024 * 1024, // 50MB
+  onFilesReceived: (files) => {
+    multiUpload.addFiles(files);
+    multiUpload.startAll();
+  },
+  onValidationError: (errors) => {
+    console.error("Validation errors:", errors);
+  },
+});
 </script>
 ```
 
@@ -377,33 +665,63 @@ const { isDragActive, getRootProps, getInputProps } =
       type="file"
       accept="image/*"
       @change="selectFile"
+      :disabled="flowUpload.isUploading.value"
     />
-    <p v-if="isProcessing">Processing...</p>
-    <div v-if="results">
-      <img :src="results.thumbnail" width="200" />
-      <img :src="results.medium" width="600" />
-      <img :src="results.full" width="1200" />
+
+    <div v-if="flowUpload.isUploadingFile.value">
+      Uploading... {{ flowUpload.state.value.progress }}%
     </div>
-    <p v-if="error" style="color: red">{{ error }}</p>
+
+    <div v-if="flowUpload.isProcessing.value">
+      Processing...
+      <span v-if="flowUpload.state.value.currentNodeName">
+        (Current: {{ flowUpload.state.value.currentNodeName }})
+      </span>
+    </div>
+
+    <div v-if="flowUpload.state.value.jobId">
+      Job ID: {{ flowUpload.state.value.jobId }}
+    </div>
+
+    <div v-if="flowUpload.state.value.status === 'success' && flowUpload.state.value.result">
+      <p>Upload complete!</p>
+      <img :src="flowUpload.state.value.result.url" alt="Processed" />
+    </div>
+
+    <p v-if="flowUpload.state.value.error" style="color: red">
+      {{ flowUpload.state.value.error.message }}
+    </p>
+
+    <button v-if="flowUpload.isUploading.value" @click="flowUpload.abort">
+      Cancel
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useFlowUpload } from "@uploadista/vue";
 
-const { upload, results, error, isProcessing } =
-  useFlowUpload({
-    serverUrl: "https://api.example.com",
-    flowId: "resize-and-compress",
-    onProcessingComplete: (result) => {
-      console.log("Variants:", result.variants);
-    },
-  });
+const flowUpload = useFlowUpload({
+  flowConfig: {
+    flowId: "optimize-flow",
+    storageId: "local",
+    outputNodeId: "optimized-output", // Optional
+  },
+  onSuccess: (result) => {
+    console.log("Processed file:", result);
+  },
+  onFlowComplete: (outputs) => {
+    console.log("All outputs:", outputs);
+  },
+  onError: (error) => {
+    console.error("Flow upload failed:", error);
+  },
+});
 
 const selectFile = (e: Event) => {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
-  if (file) upload(file);
+  if (file) flowUpload.upload(file);
 };
 </script>
 ```
@@ -729,31 +1047,24 @@ interface BrowserUploadOptions {
 ### React Example
 
 ```tsx
-import { useUpload, UploadError } from "@uploadista/react";
+import { useUpload } from "@uploadista/react";
 
 export function UploadWithErrorHandling() {
-  const { upload, error, retry } = useUpload({
-    serverUrl: "https://api.example.com",
-    onError: (err) => {
-      if (err instanceof UploadError) {
-        switch (err.code) {
-          case "NETWORK_ERROR":
-            console.log("No internet connection");
-            break;
-          case "SERVER_ERROR":
-            console.log("Server error:", err.statusCode);
-            break;
-          case "TIMEOUT":
-            console.log("Upload timed out");
-            break;
-          case "INVALID_FILE":
-            console.log("File validation failed");
-            break;
-          case "CANCELLED":
-            console.log("Upload cancelled");
-            break;
-        }
+  const upload = useUpload({
+    onError: (error) => {
+      console.error("Upload failed:", error);
+      // Handle error based on message or custom logic
+      if (error.message.includes("network")) {
+        console.log("No internet connection");
+      } else if (error.message.includes("timeout")) {
+        console.log("Upload timed out");
       }
+    },
+    onShouldRetry: (error, retryAttempt) => {
+      // Custom retry logic
+      if (retryAttempt >= 3) return false;
+      // Retry on network errors
+      return error.message.includes("network");
     },
   });
 
@@ -763,14 +1074,22 @@ export function UploadWithErrorHandling() {
         type="file"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) upload(file);
+          if (file) upload.upload(file);
         }}
+        disabled={upload.isUploading}
       />
-      {error && (
+
+      {upload.state.status === "error" && upload.state.error && (
         <div>
-          <p>Error: {error.message}</p>
-          <button onClick={retry}>Retry</button>
+          <p>Error: {upload.state.error.message}</p>
+          {upload.canRetry && (
+            <button onClick={upload.retry}>Retry</button>
+          )}
         </div>
+      )}
+
+      {upload.state.status === "success" && (
+        <p>Upload successful!</p>
       )}
     </div>
   );
@@ -779,53 +1098,30 @@ export function UploadWithErrorHandling() {
 
 ## Monitoring Upload Progress
 
-### WebSocket Real-Time Updates
+> **Note**: Real-time progress updates are automatically handled through the `UploadistaProvider` context. WebSocket connections and event subscriptions are managed internally. You don't need to manually set up WebSocket connections or polling.
 
-```typescript
-export function setupUploadStream(userId: string) {
-  const ws = new WebSocket(
-    "wss://api.example.com/api/stream"
-  );
+All upload hooks (`useUpload`, `useMultiUpload`, `useFlowUpload`) automatically receive real-time progress updates through:
 
-  ws.onmessage = (event) => {
-    const message = JSON.parse(event.data);
+1. **onProgress callbacks**: Called during file upload chunks
+2. **Flow events**: Automatically subscribed when using `useFlowUpload`
+3. **State updates**: All hooks update their `.state` with current progress
 
-    switch (message.type) {
-      case "upload.progress":
-        console.log(
-          `Upload ${message.uploadId}: ${message.progress}%`
-        );
-        break;
-      case "upload.complete":
-        console.log(`Upload complete:`, message.result);
-        break;
-      case "upload.error":
-        console.error(`Upload failed:`, message.error);
-        break;
-    }
-  };
+Example of monitoring progress:
 
-  return ws;
-}
-```
+```tsx
+const upload = useUpload({
+  onProgress: (progress, bytesUploaded, totalBytes) => {
+    console.log(`${progress}% - ${bytesUploaded}/${totalBytes} bytes`);
+  },
+  onChunkComplete: (chunkSize, bytesAccepted, bytesTotal) => {
+    console.log(`Chunk complete: ${chunkSize} bytes`);
+  },
+});
 
-### Polling Fallback
-
-```typescript
-async function monitorUploadPolling(uploadId: string) {
-  const poll = setInterval(async () => {
-    const response = await fetch(
-      `https://api.example.com/uploads/${uploadId}`
-    );
-    const upload = await response.json();
-
-    console.log(`Progress: ${upload.progress}%`);
-
-    if (upload.status === "completed" || upload.status === "error") {
-      clearInterval(poll);
-    }
-  }, 1000); // Poll every second
-}
+// Access progress in state
+console.log(upload.state.progress); // 0-100
+console.log(upload.state.bytesUploaded);
+console.log(upload.state.totalBytes);
 ```
 
 ## Performance Tips
