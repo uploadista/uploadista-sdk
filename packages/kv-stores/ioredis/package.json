@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-ioredis",
   "type": "module",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Redis KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
