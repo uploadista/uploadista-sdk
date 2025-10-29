@@ -26,7 +26,7 @@
     "typescript": "catalog:"
   },
   "volta": {
-    "node": "24.10.0",
+    "node": "24.11.0",
     "pnpm": "10.20.0"
   },
   "workspaces": [
