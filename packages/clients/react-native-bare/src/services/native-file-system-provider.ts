@@ -24,15 +24,18 @@ export class NativeFileSystemProvider implements FileSystemProvider {
       const file = Array.isArray(result) ? result[0] : result;
 
       if (!file) {
-        throw new Error("No document selected");
+        return { status: "cancelled" };
       }
 
       return {
-        uri: file.uri,
-        name: file.name || "document",
-        size: file.size || 0,
-        mimeType: file.type || undefined,
-        localPath: file.uri || undefined,
+        status: "success",
+        data: {
+          uri: file.uri,
+          name: file.name || "document",
+          size: file.size || 0,
+          mimeType: file.type || undefined,
+          localPath: file.uri || undefined,
+        },
       };
     } catch (error) {
       if (
@@ -40,17 +43,23 @@ export class NativeFileSystemProvider implements FileSystemProvider {
         (error.message.includes("cancelled") ||
           error.message.includes("Cancelled"))
       ) {
-        throw error;
+        return { status: "cancelled" };
       }
-      throw new Error(
-        `Failed to pick document: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return {
+        status: "error",
+        error:
+          error instanceof Error
+            ? error
+            : new Error(
+                `Failed to pick document: ${error instanceof Error ? error.message : String(error)}`,
+              ),
+      };
     }
   }
 
   async pickImage(options?: PickerOptions): Promise<FilePickResult> {
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         ImagePicker.launchImageLibrary(
           {
             mediaType: "photo",
@@ -71,37 +80,49 @@ export class NativeFileSystemProvider implements FileSystemProvider {
             };
 
             if (res.didCancel) {
-              reject(new Error("Image picker was cancelled"));
+              resolve({ status: "cancelled" });
             } else if (res.errorCode) {
-              reject(new Error(`Image picker error: ${res.errorCode}`));
+              resolve({
+                status: "error",
+                error: new Error(`Image picker error: ${res.errorCode}`),
+              });
             } else if (res.assets && res.assets.length > 0) {
               const asset = res.assets[0];
               if (asset) {
                 resolve({
-                  uri: asset.uri,
-                  name: asset.fileName || `image-${Date.now()}.jpg`,
-                  size: asset.fileSize || 0,
-                  mimeType: asset.type || "image/jpeg",
+                  status: "success",
+                  data: {
+                    uri: asset.uri,
+                    name: asset.fileName || `image-${Date.now()}.jpg`,
+                    size: asset.fileSize || 0,
+                    mimeType: asset.type || "image/jpeg",
+                  },
                 });
               } else {
-                reject(new Error("No image selected"));
+                resolve({ status: "cancelled" });
               }
             } else {
-              reject(new Error("No image selected"));
+              resolve({ status: "cancelled" });
             }
           },
         );
       });
     } catch (error) {
-      throw new Error(
-        `Failed to pick image: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return {
+        status: "error",
+        error:
+          error instanceof Error
+            ? error
+            : new Error(
+                `Failed to pick image: ${error instanceof Error ? error.message : String(error)}`,
+              ),
+      };
     }
   }
 
   async pickVideo(options?: PickerOptions): Promise<FilePickResult> {
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         ImagePicker.launchImageLibrary(
           {
             mediaType: "video",
@@ -120,37 +141,49 @@ export class NativeFileSystemProvider implements FileSystemProvider {
             };
 
             if (res.didCancel) {
-              reject(new Error("Video picker was cancelled"));
+              resolve({ status: "cancelled" });
             } else if (res.errorCode) {
-              reject(new Error(`Video picker error: ${res.errorCode}`));
+              resolve({
+                status: "error",
+                error: new Error(`Video picker error: ${res.errorCode}`),
+              });
             } else if (res.assets && res.assets.length > 0) {
               const asset = res.assets[0];
               if (asset) {
                 resolve({
-                  uri: asset.uri,
-                  name: asset.fileName || `video-${Date.now()}.mp4`,
-                  size: asset.fileSize || 0,
-                  mimeType: asset.type || "video/mp4",
+                  status: "success",
+                  data: {
+                    uri: asset.uri,
+                    name: asset.fileName || `video-${Date.now()}.mp4`,
+                    size: asset.fileSize || 0,
+                    mimeType: asset.type || "video/mp4",
+                  },
                 });
               } else {
-                reject(new Error("No video selected"));
+                resolve({ status: "cancelled" });
               }
             } else {
-              reject(new Error("No video selected"));
+              resolve({ status: "cancelled" });
             }
           },
         );
       });
     } catch (error) {
-      throw new Error(
-        `Failed to pick video: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return {
+        status: "error",
+        error:
+          error instanceof Error
+            ? error
+            : new Error(
+                `Failed to pick video: ${error instanceof Error ? error.message : String(error)}`,
+              ),
+      };
     }
   }
 
   async pickCamera(options?: CameraOptions): Promise<FilePickResult> {
     try {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         ImagePicker.launchCamera(
           {
             mediaType: "photo",
@@ -171,31 +204,43 @@ export class NativeFileSystemProvider implements FileSystemProvider {
             };
 
             if (res.didCancel) {
-              reject(new Error("Camera was cancelled"));
+              resolve({ status: "cancelled" });
             } else if (res.errorCode) {
-              reject(new Error(`Camera error: ${res.errorCode}`));
+              resolve({
+                status: "error",
+                error: new Error(`Camera error: ${res.errorCode}`),
+              });
             } else if (res.assets && res.assets.length > 0) {
               const asset = res.assets[0];
               if (asset) {
                 resolve({
-                  uri: asset.uri,
-                  name: asset.fileName || `photo-${Date.now()}.jpg`,
-                  size: asset.fileSize || 0,
-                  mimeType: asset.type || "image/jpeg",
+                  status: "success",
+                  data: {
+                    uri: asset.uri,
+                    name: asset.fileName || `photo-${Date.now()}.jpg`,
+                    size: asset.fileSize || 0,
+                    mimeType: asset.type || "image/jpeg",
+                  },
                 });
               } else {
-                reject(new Error("No photo captured"));
+                resolve({ status: "cancelled" });
               }
             } else {
-              reject(new Error("No photo captured"));
+              resolve({ status: "cancelled" });
             }
           },
         );
       });
     } catch (error) {
-      throw new Error(
-        `Failed to capture photo: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return {
+        status: "error",
+        error:
+          error instanceof Error
+            ? error
+            : new Error(
+                `Failed to capture photo: ${error instanceof Error ? error.message : String(error)}`,
+              ),
+      };
     }
   }
 

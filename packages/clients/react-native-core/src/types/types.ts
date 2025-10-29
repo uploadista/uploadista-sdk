@@ -29,9 +29,9 @@ export interface CameraOptions {
 }
 
 /**
- * Result from a file pick operation
+ * Successful file pick result containing file information
  */
-export interface FilePickResult {
+export interface FilePickSuccess {
   /** URI to the file (platform-specific format) */
   uri: string;
   /** File name with extension */
@@ -43,6 +43,14 @@ export interface FilePickResult {
   /** Local file path (if available) */
   localPath?: string;
 }
+
+/**
+ * Result from a file pick operation that can be success, cancelled, or error
+ */
+export type FilePickResult =
+  | { status: "success"; data: FilePickSuccess }
+  | { status: "cancelled" }
+  | { status: "error"; error: Error };
 
 /**
  * Information about a file

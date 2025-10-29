@@ -50,11 +50,30 @@ export type {
   SliceResult,
   StorageService,
 } from "@uploadista/client-core";
+// Export Expo-specific types
+export type {
+  CameraOptions,
+  FileInfo,
+  FilePickResult,
+  FileSystemProvider,
+  PickerOptions,
+} from "@uploadista/react-native-core";
 // Export client factory
 export {
   createUploadistaClient,
   type UploadistaClientOptions,
 } from "./client";
+// Export provider and hooks
+export {
+  UploadistaProvider,
+  type UploadistaProviderProps,
+  useUploadistaContext,
+} from "./components/uploadista-provider";
+export {
+  type UseUploadistaClientOptions,
+  type UseUploadistaClientReturn,
+  useUploadistaClient,
+} from "./hooks/use-uploadista-client";
 // Re-export service implementations and factories
 export {
   createAsyncStorageService,
@@ -65,13 +84,4 @@ export {
   createExpoServices,
   type ExpoServiceOptions,
 } from "./services";
-
 export { ExpoFileSystemProvider } from "./services/expo-file-system-provider";
-// Export Expo-specific types
-export type {
-  CameraOptions,
-  FileInfo,
-  FilePickResult,
-  FileSystemProvider,
-  PickerOptions,
-} from "./types";

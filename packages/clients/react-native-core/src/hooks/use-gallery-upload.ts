@@ -20,41 +20,46 @@ export function useGalleryUpload(options?: UseGalleryUploadOptions) {
 
   // Select and upload media from gallery
   const selectAndUpload = useCallback(async () => {
-    try {
-      let media: FilePickResult | FilePickResult[];
+    let result: FilePickResult;
 
-      // Select appropriate media type
-      if (options?.mediaType === "video") {
-        media = await fileSystemProvider.pickVideo({
-          allowMultiple: options?.allowMultiple ?? true,
-        });
-      } else if (options?.mediaType === "photo") {
-        media = await fileSystemProvider.pickImage({
-          allowMultiple: options?.allowMultiple ?? true,
-        });
-      } else {
-        // For 'mixed' or default, use pickImage first (can be extended to support both)
-        media = await fileSystemProvider.pickImage({
-          allowMultiple: options?.allowMultiple ?? true,
-        });
-      }
-
-      // Handle single or multiple files
-      const files = Array.isArray(media) ? media : [media];
-
-      // Add files and start upload
-      const itemIds = uploadHook.addFiles(files);
-      await uploadHook.startUploads();
-
-      return itemIds;
-    } catch (error) {
-      console.error("Gallery selection error:", error);
-      throw error;
+    // Select appropriate media type
+    if (options?.mediaType === "video") {
+      result = await fileSystemProvider.pickVideo({
+        allowMultiple: options?.allowMultiple ?? true,
+      });
+    } else if (options?.mediaType === "photo") {
+      result = await fileSystemProvider.pickImage({
+        allowMultiple: options?.allowMultiple ?? true,
+      });
+    } else {
+      // For 'mixed' or default, use pickImage first (can be extended to support both)
+      result = await fileSystemProvider.pickImage({
+        allowMultiple: options?.allowMultiple ?? true,
+      });
     }
+
+    // Handle cancelled picker
+    if (result.status === "cancelled") {
+      return [];
+    }
+
+    // Handle picker error
+    if (result.status === "error") {
+      console.error("Gallery selection error:", result.error);
+      options?.onError?.(result.error);
+      return [];
+    }
+
+    // Success - add file and start upload
+    const itemIds = uploadHook.addFiles([result]);
+    await uploadHook.startUploads();
+
+    return itemIds;
   }, [
     fileSystemProvider,
     options?.allowMultiple,
     options?.mediaType,
+    options?.onError,
     uploadHook,
   ]);
 

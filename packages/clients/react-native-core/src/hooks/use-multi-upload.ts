@@ -5,7 +5,7 @@ import { useUploadistaContext } from "./use-uploadista-context";
 
 export interface UploadItemState {
   id: string;
-  file: FilePickResult;
+  file: Extract<FilePickResult, { status: "success" }>;
   status: "idle" | "uploading" | "success" | "error" | "aborted";
   progress: number;
   bytesUploaded: number;
@@ -111,13 +111,19 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
 
   const addFiles = useCallback(
     (files: FilePickResult[]) => {
-      const newItems: UploadItemState[] = files.map((file) => ({
+      // Filter out cancelled and error results, only keep successful picks
+      const successfulFiles = files.filter(
+        (file): file is Extract<FilePickResult, { status: "success" }> =>
+          file.status === "success",
+      );
+
+      const newItems: UploadItemState[] = successfulFiles.map((file) => ({
         id: generateId(),
         file,
         status: "idle" as const,
         progress: 0,
         bytesUploaded: 0,
-        totalBytes: file.size,
+        totalBytes: file.data.size,
         error: null,
         result: null,
       }));
@@ -153,7 +159,9 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         });
 
         // Read file content
-        const fileContent = await fileSystemProvider.readFile(item.file.uri);
+        const fileContent = await fileSystemProvider.readFile(
+          item.file.data.uri,
+        );
 
         // Create a Blob from the file content
         // Convert ArrayBuffer to Uint8Array for better compatibility
@@ -165,7 +173,7 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         // but TypeScript's lib.dom.d.ts Blob type doesn't include it
         // biome-ignore lint/suspicious/noExplicitAny: React Native Blob accepts BufferSource
         const blob = new Blob([data as any], {
-          type: item.file.mimeType || "application/octet-stream",
+          type: item.file.data.mimeType || "application/octet-stream",
           // biome-ignore lint/suspicious/noExplicitAny: BlobPropertyBag type differs by platform
         } as any);
 
