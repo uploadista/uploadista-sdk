@@ -1,24 +1,28 @@
+import type { UploadFile } from "@uploadista/core/types";
 import { useFileUpload } from "@uploadista/react-native-core";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Button from "@/components/ui/Button";
-import ProgressCard from "@/components/ui/ProgressCard";
-import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import Button from "@/components/ui/Button";
+import FilePreview from "@/components/ui/FilePreview";
+import ProgressCard from "@/components/ui/ProgressCard";
 
 export default function SingleUploadScreen() {
   const [selectedFile, setSelectedFile] = useState<{
     name: string;
     size: number;
+    uri: string;
   } | null>(null);
+  const [previewFile, setPreviewFile] = useState<UploadFile | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
 
   console.log("[SingleUpload] Screen mounted");
 
   const { pickAndUpload, state, abort } = useFileUpload({
     onSuccess: () => {
       console.log("[SingleUpload] Upload SUCCESS");
-      setSelectedFile(null);
       Alert.alert("Success", "File uploaded successfully!");
     },
     onError: (error) => {
@@ -43,12 +47,27 @@ export default function SingleUploadScreen() {
       console.log("[SingleUpload] Calling pickAndUpload...");
       await pickAndUpload?.();
       console.log("[SingleUpload] pickAndUpload completed");
-      // File was selected and upload started
-      setSelectedFile({ name: "Uploading...", size: 0 });
     } catch (error) {
       console.error("[SingleUpload] Failed to pick file:", error);
       Alert.alert("Error", `Failed to pick file: ${error}`);
     }
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    abort?.();
+  };
+
+  const handlePreview = () => {
+    if (state.result) {
+      setPreviewFile(state.result);
+      setPreviewVisible(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewVisible(false);
+    setPreviewFile(null);
   };
 
   const handleUpload = async () => {
@@ -73,13 +92,17 @@ export default function SingleUploadScreen() {
           <ThemedText type="sectionTitle">Select File</ThemedText>
           {selectedFile ? (
             <ThemedView variant="card">
-              <ThemedText style={styles.fileName}>{selectedFile.name}</ThemedText>
+              <ThemedText style={styles.fileName}>
+                {selectedFile.name}
+              </ThemedText>
               <ThemedText type="infoText">
                 {(selectedFile.size / 1024).toFixed(2)} KB
               </ThemedText>
             </ThemedView>
           ) : (
-            <ThemedText type="helperText" style={styles.placeholder}>No file selected</ThemedText>
+            <ThemedText type="helperText" style={styles.placeholder}>
+              No file selected
+            </ThemedText>
           )}
           <Button
             title="Pick File"
@@ -89,14 +112,21 @@ export default function SingleUploadScreen() {
           />
         </ThemedView>
 
-        {state.progress > 0 && (
+        {(state.status === "uploading" ||
+          state.status === "success" ||
+          state.status === "error") && (
           <ThemedView variant="section">
             <ThemedText type="sectionTitle">Upload Progress</ThemedText>
             <ProgressCard
-              fileName={selectedFile?.name}
+              fileName={selectedFile?.name || "Unknown file"}
               progress={state.progress}
               status={state.status}
+              fileSize={state.totalBytes || selectedFile?.size}
               error={state.error?.message}
+              onRemove={
+                state.status !== "uploading" ? handleClearFile : undefined
+              }
+              onPreview={state.result ? handlePreview : undefined}
             />
           </ThemedView>
         )}
@@ -137,6 +167,12 @@ export default function SingleUploadScreen() {
           </ThemedText>
         </ThemedView>
       </ScrollView>
+
+      <FilePreview
+        visible={previewVisible}
+        file={previewFile}
+        onClose={handleClosePreview}
+      />
     </SafeAreaView>
   );
 }

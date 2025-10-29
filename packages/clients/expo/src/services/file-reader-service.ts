@@ -3,8 +3,8 @@ import type {
   FileSource,
   SliceResult,
 } from "@uploadista/client-core";
+// import { Blob } from "expo-blob";
 import type { ExpoUploadInput } from "@/types/upload-input";
-
 /**
  * Expo-specific implementation of FileReaderService
  * Handles Blob, File, and URI-based file inputs using Expo FileSystem APIs

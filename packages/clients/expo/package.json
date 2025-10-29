@@ -29,6 +29,7 @@
     "expo-file-system": ">=16.0.0",
     "expo-image-picker": ">=14.0.0",
     "expo-crypto": "15.0.7",
+    "expo-blob": "^0.1.6",
     "react": ">=16.8.0",
     "react-native": ">=0.71.0"
   },

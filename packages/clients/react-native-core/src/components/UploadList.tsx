@@ -32,14 +32,19 @@ export function UploadList({
       onPress={() => onItemPress?.(item)}
     >
       <View style={styles.itemContent}>
-        <View style={styles.itemHeader}>
-          <Text style={styles.fileName} numberOfLines={1}>
-            {item.file.name}
-          </Text>
-          <Text style={styles.fileSize}>
-            {getFileSizeDisplay(item.file.size)}
-          </Text>
-        </View>
+        {item.file.status === "success" && (
+          <View style={styles.itemHeader}>
+            <Text style={styles.fileName} numberOfLines={1}>
+              {item.file.data.name}
+            </Text>
+            <Text style={styles.fileSize}>
+              {getFileSizeDisplay(item.file.data.size)}
+            </Text>
+          </View>
+        )}
+        {item.file.status === "error" && (
+          <Text style={styles.errorText}>{item.progress.error?.message}</Text>
+        )}
         <View style={styles.progressWrapper}>
           <UploadProgress
             state={{
@@ -141,6 +146,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#333333",
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#FF3B30",
   },
   headerSubtext: {
     fontSize: 14,

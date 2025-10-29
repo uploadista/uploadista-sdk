@@ -8,7 +8,8 @@ import {
 import { ThemedText } from "../themed-text";
 
 interface ButtonProps {
-  title: string;
+  title?: string;
+  icon?: React.ReactNode;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -19,6 +20,7 @@ interface ButtonProps {
 
 export default function Button({
   title,
+  icon,
   onPress,
   loading = false,
   disabled = false,
@@ -44,7 +46,8 @@ export default function Button({
         />
       ) : (
         <ThemedText style={[styles.text, styles[`text_${variant}`], textStyle]}>
-          {title}
+          {icon && icon}
+          {title && <ThemedText style={styles.text}>{title}</ThemedText>}
         </ThemedText>
       )}
     </TouchableOpacity>

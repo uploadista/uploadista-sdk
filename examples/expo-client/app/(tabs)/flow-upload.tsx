@@ -1,3 +1,4 @@
+import type { UploadFile } from "@uploadista/core/types";
 import {
   useFlowUpload,
   useUploadistaContext,
@@ -7,13 +8,20 @@ import { Alert, ScrollView, StyleSheet, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import Button from "../../components/ui/Button";
-import ProgressCard from "../../components/ui/ProgressCard";
-import { FLOW_CONFIG } from "../../utils/config";
+import Button from "@/components/ui/Button";
+import FilePreview from "@/components/ui/FilePreview";
+import ProgressCard from "@/components/ui/ProgressCard";
+import { FLOW_CONFIG } from "@/utils/config";
 
 export default function FlowUploadScreen() {
   const [flowId, setFlowId] = useState(FLOW_CONFIG.flowId);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{
+    name: string;
+    size: number;
+  } | null>(null);
+  const [previewFile, setPreviewFile] = useState<UploadFile | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
 
   console.log("[FlowUpload] Screen mounted");
   console.log("[FlowUpload] Flow ID:", flowId);
@@ -30,6 +38,7 @@ export default function FlowUploadScreen() {
     onSuccess: (result) => {
       console.log("[FlowUpload] Flow SUCCESS");
       console.log("[FlowUpload] Result:", result);
+      Alert.alert("Success", "Flow completed successfully!");
     },
     onError: (error) => {
       console.error("[FlowUpload] Flow ERROR:", error);
@@ -38,6 +47,7 @@ export default function FlowUploadScreen() {
         name: error.name,
         stack: error.stack,
       });
+      Alert.alert("Error", `Flow failed: ${error.message}`);
     },
     onProgress: (progress) => {
       console.log("[FlowUpload] Progress:", progress);
@@ -66,7 +76,11 @@ export default function FlowUploadScreen() {
       const file = await fileSystemProvider.pickDocument?.();
       console.log("[FlowUpload] Document picked:", file);
 
-      if (file) {
+      if (file && file.status === "success") {
+        setSelectedFile({
+          name: file.data.name || "Unknown file",
+          size: file.data.size,
+        });
         console.log("[FlowUpload] Starting upload with flow...");
         await upload?.(file);
         console.log("[FlowUpload] Upload initiated");
@@ -77,6 +91,22 @@ export default function FlowUploadScreen() {
       console.error("[FlowUpload] Flow upload failed:", error);
       Alert.alert("Error", `Flow upload failed: ${error}`);
     }
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+  };
+
+  const handlePreview = () => {
+    if (state.result) {
+      setPreviewFile(state.result as UploadFile);
+      setPreviewVisible(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewVisible(false);
+    setPreviewFile(null);
   };
 
   return (
@@ -132,10 +162,15 @@ export default function FlowUploadScreen() {
               </ThemedView>
             )}
             <ProgressCard
-              fileName="Flow Upload"
+              fileName={selectedFile?.name || "Flow Upload"}
               progress={state.progress}
               status={state.status}
+              fileSize={state.totalBytes || selectedFile?.size}
               error={state.error?.message}
+              onRemove={
+                state.status !== "uploading" ? handleClearFile : undefined
+              }
+              onPreview={state.result ? handlePreview : undefined}
             />
           </ThemedView>
         )}
@@ -203,6 +238,12 @@ export default function FlowUploadScreen() {
           </ThemedText>
         </ThemedView>
       </ScrollView>
+
+      <FilePreview
+        visible={previewVisible}
+        file={previewFile}
+        onClose={handleClosePreview}
+      />
     </SafeAreaView>
   );
 }

@@ -52,7 +52,9 @@ export function useGalleryUpload(options?: UseGalleryUploadOptions) {
 
     // Success - add file and start upload
     const itemIds = uploadHook.addFiles([result]);
-    await uploadHook.startUploads();
+    console.log("starting uploads", itemIds);
+    await uploadHook.startUploads(itemIds);
+    console.log("uploads started", itemIds);
 
     return itemIds;
   }, [

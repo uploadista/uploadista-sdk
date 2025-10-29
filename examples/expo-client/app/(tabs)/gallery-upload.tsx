@@ -1,12 +1,18 @@
+import type { UploadFile } from "@uploadista/core/types";
 import { useGalleryUpload } from "@uploadista/react-native-core";
+import { useState } from "react";
 import { Alert, FlatList, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import Button from "@/components/ui/Button";
+import FilePreview from "@/components/ui/FilePreview";
 import ProgressCard from "@/components/ui/ProgressCard";
 
 export default function GalleryUploadScreen() {
+  const [previewFile, setPreviewFile] = useState<UploadFile | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
+
   console.log("[GalleryUpload] Screen mounted");
 
   const { selectAndUpload, removeItem, clear, state } = useGalleryUpload({
@@ -50,6 +56,18 @@ export default function GalleryUploadScreen() {
 
   const handleClearAll = () => {
     clear?.();
+  };
+
+  const handlePreview = (result: UploadFile | null) => {
+    if (result) {
+      setPreviewFile(result);
+      setPreviewVisible(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewVisible(false);
+    setPreviewFile(null);
   };
 
   const items = state.items || [];
@@ -96,26 +114,26 @@ export default function GalleryUploadScreen() {
               data={items}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <ThemedView style={styles.itemContainer}>
-                  <ProgressCard
-                    fileName={`File ${item.id.substring(0, 8)}`}
-                    progress={item.progress || 0}
-                    status={
-                      (item.status === "aborted" ? "error" : item.status) as
-                        | "idle"
-                        | "uploading"
-                        | "success"
-                        | "error"
-                        | undefined
-                    }
-                  />
-                  <Button
-                    title="Remove"
-                    onPress={() => handleRemoveItem(item.id)}
-                    variant="danger"
-                    style={styles.removeButton}
-                  />
-                </ThemedView>
+                <ProgressCard
+                  fileName={
+                    item.file.data.name || `File ${item.id.substring(0, 8)}`
+                  }
+                  progress={item.progress || 0}
+                  status={
+                    (item.status === "aborted" ? "error" : item.status) as
+                      | "idle"
+                      | "uploading"
+                      | "success"
+                      | "error"
+                      | undefined
+                  }
+                  fileSize={item.totalBytes}
+                  onRemove={() => handleRemoveItem(item.id)}
+                  onPreview={
+                    item.result ? () => handlePreview(item.result) : undefined
+                  }
+                  error={item.error?.message}
+                />
               )}
             />
           </ThemedView>
@@ -150,19 +168,17 @@ export default function GalleryUploadScreen() {
           </ThemedText>
         </ThemedView>
       </ScrollView>
+
+      <FilePreview
+        visible={previewVisible}
+        file={previewFile}
+        onClose={handleClosePreview}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  itemContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
-  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -188,27 +204,6 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 12,
-  },
-  gridContainer: {
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  gridItem: {
-    width: "30%",
-  },
-  thumbnail: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 8,
-    backgroundColor: "#f5f5f5",
-    marginBottom: 8,
-  },
-  itemName: {
-    fontSize: 10,
-    marginBottom: 4,
-  },
-  removeButton: {
-    paddingVertical: 4,
   },
   emptyState: {
     padding: 32,

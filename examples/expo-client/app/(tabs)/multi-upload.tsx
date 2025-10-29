@@ -1,17 +1,18 @@
-import {
-  Alert,
-  FlatList,
-  ScrollView,
-  StyleSheet,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import type { UploadFile } from "@uploadista/core/types";
 import { useMultiUpload } from "@uploadista/react-native-core";
+import { useState } from "react";
+import { Alert, FlatList, ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import Button from "../../components/ui/Button";
+import FilePreview from "../../components/ui/FilePreview";
 import ProgressCard from "../../components/ui/ProgressCard";
 
 export default function MultiUploadScreen() {
+  const [previewFile, setPreviewFile] = useState<UploadFile | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(false);
+
   console.log("[MultiUpload] Screen mounted");
 
   const { state, removeItem, clear } = useMultiUpload({
@@ -51,6 +52,18 @@ export default function MultiUploadScreen() {
 
   const handleClearAll = () => {
     clear?.();
+  };
+
+  const handlePreview = (result: UploadFile | null) => {
+    if (result) {
+      setPreviewFile(result);
+      setPreviewVisible(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setPreviewVisible(false);
+    setPreviewFile(null);
   };
 
   const items = state.items || [];
@@ -94,32 +107,34 @@ export default function MultiUploadScreen() {
 
         {items.length > 0 && (
           <ThemedView variant="section">
-            <ThemedText type="sectionTitle">Uploads ({items.length})</ThemedText>
+            <ThemedText type="sectionTitle">
+              Uploads ({items.length})
+            </ThemedText>
             <FlatList
               scrollEnabled={false}
               data={items}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <ThemedView style={styles.uploadItem}>
-                  <ProgressCard
-                    fileName={`File ${item.id.substring(0, 8)}`}
-                    progress={item.progress || 0}
-                    status={
-                      (item.status === "aborted" ? "error" : item.status) as
-                        | "idle"
-                        | "uploading"
-                        | "success"
-                        | "error"
-                        | undefined
-                    }
-                  />
-                  <Button
-                    title="Remove"
-                    onPress={() => handleRemoveItem(item.id)}
-                    variant="danger"
-                    style={styles.removeButton}
-                  />
-                </ThemedView>
+                <ProgressCard
+                  fileName={
+                    item.file?.data?.name || `File ${item.id.substring(0, 8)}`
+                  }
+                  progress={item.progress || 0}
+                  status={
+                    (item.status === "aborted" ? "error" : item.status) as
+                      | "idle"
+                      | "uploading"
+                      | "success"
+                      | "error"
+                      | undefined
+                  }
+                  fileSize={item.totalBytes}
+                  onRemove={() => handleRemoveItem(item.id)}
+                  onPreview={
+                    item.result ? () => handlePreview(item.result) : undefined
+                  }
+                  error={item.error?.message}
+                />
               )}
             />
           </ThemedView>
@@ -153,6 +168,12 @@ export default function MultiUploadScreen() {
           </ThemedText>
         </ThemedView>
       </ScrollView>
+
+      <FilePreview
+        visible={previewVisible}
+        file={previewFile}
+        onClose={handleClosePreview}
+      />
     </SafeAreaView>
   );
 }
@@ -188,12 +209,6 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 12,
-  },
-  uploadItem: {
-    marginBottom: 16,
-  },
-  removeButton: {
-    marginTop: 8,
   },
   emptyState: {
     padding: 32,

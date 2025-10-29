@@ -1,3 +1,4 @@
+// import type { Blob } from "expo-blob";
 /**
  * Expo file input types
  * Can be a Blob, File, URI string, or URI object from Expo APIs

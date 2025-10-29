@@ -70,12 +70,14 @@ const initialState: MultiUploadState = {
  * ```
  */
 export function useMultiUpload(options: UseMultiUploadOptions = {}) {
-  const { client, fileSystemProvider } = useUploadistaContext();
+  const { client } = useUploadistaContext();
   const [state, setState] = useState<MultiUploadState>(initialState);
   const abortControllersRef = useRef<Map<string, { abort: () => void }>>(
     new Map(),
   );
   const nextIdRef = useRef(0);
+  // Use ref to track items synchronously
+  const itemsRef = useRef<UploadItemState[]>([]);
 
   const generateId = useCallback(() => {
     return `upload-${Date.now()}-${nextIdRef.current++}`;
@@ -96,6 +98,9 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
       (item) => item.status === "success",
     ).length;
     const failedCount = items.filter((item) => item.status === "error").length;
+
+    // Update ref synchronously
+    itemsRef.current = items;
 
     setState((prev) => ({
       ...prev,
@@ -128,8 +133,11 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         result: null,
       }));
 
+      // Update ref synchronously
+      const updatedItems = [...itemsRef.current, ...newItems];
+      itemsRef.current = updatedItems;
+
       setState((prev) => {
-        const updatedItems = [...prev.items, ...newItems];
         const totalBytes = updatedItems.reduce(
           (sum, item) => sum + item.totalBytes,
           0,
@@ -149,38 +157,25 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
   const uploadSingleItem = useCallback(
     async (item: UploadItemState) => {
       try {
+        console.log("Uploading item:", item.file.data.name);
         // Update status to uploading
-        setState((prev) => {
-          const updatedItems = prev.items.map((i) =>
-            i.id === item.id ? { ...i, status: "uploading" as const } : i,
-          );
-          updateAggregateStats(updatedItems);
-          return prev;
-        });
-
-        // Read file content
-        const fileContent = await fileSystemProvider.readFile(
-          item.file.data.uri,
+        const updatedItems = itemsRef.current.map((i) =>
+          i.id === item.id ? { ...i, status: "uploading" as const } : i,
         );
+        updateAggregateStats(updatedItems);
 
-        // Create a Blob from the file content
-        // Convert ArrayBuffer to Uint8Array for better compatibility
-        const data =
-          fileContent instanceof ArrayBuffer
-            ? new Uint8Array(fileContent)
-            : fileContent;
-        // Note: Using any cast here because React Native Blob accepts BufferSource
-        // but TypeScript's lib.dom.d.ts Blob type doesn't include it
-        // biome-ignore lint/suspicious/noExplicitAny: React Native Blob accepts BufferSource
-        const blob = new Blob([data as any], {
-          type: item.file.data.mimeType || "application/octet-stream",
-          // biome-ignore lint/suspicious/noExplicitAny: BlobPropertyBag type differs by platform
-        } as any);
+        // Convert file URI to Blob using fetch (React Native compatible)
+        // React Native's Blob doesn't support ArrayBuffer/Uint8Array constructor
+        const response = await fetch(item.file.data.uri);
+        const blob = await response.blob();
 
-        // use the Blob (for React Native)
-        const uploadInput = blob;
+        // Override blob type if we have mimeType from picker
+        const uploadInput = item.file.data.mimeType
+          ? new Blob([blob], { type: item.file.data.mimeType })
+          : blob;
 
         // Start upload using the client
+        console.log("Uploading input:", uploadInput);
         const uploadPromise = client.upload(uploadInput, {
           metadata: options.metadata,
 
@@ -193,53 +188,44 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
               ? Math.round((bytesUploaded / totalBytes) * 100)
               : 0;
 
-            setState((prev) => {
-              const updatedItems = prev.items.map((i) =>
-                i.id === item.id
-                  ? {
-                      ...i,
-                      progress,
-                      bytesUploaded,
-                      totalBytes: totalBytes || i.totalBytes,
-                    }
-                  : i,
-              );
-              updateAggregateStats(updatedItems);
-              return prev;
-            });
+            const updatedItems = itemsRef.current.map((i) =>
+              i.id === item.id
+                ? {
+                    ...i,
+                    progress,
+                    bytesUploaded,
+                    totalBytes: totalBytes || i.totalBytes,
+                  }
+                : i,
+            );
+            updateAggregateStats(updatedItems);
           },
 
           onSuccess: (result: UploadFile) => {
-            setState((prev) => {
-              const updatedItems = prev.items.map((i) =>
-                i.id === item.id
-                  ? {
-                      ...i,
-                      status: "success" as const,
-                      progress: 100,
-                      result,
-                      bytesUploaded: result.size || i.totalBytes,
-                    }
-                  : i,
-              );
-              updateAggregateStats(updatedItems);
-              return prev;
-            });
+            const updatedItems = itemsRef.current.map((i) =>
+              i.id === item.id
+                ? {
+                    ...i,
+                    status: "success" as const,
+                    progress: 100,
+                    result,
+                    bytesUploaded: result.size || i.totalBytes,
+                  }
+                : i,
+            );
+            updateAggregateStats(updatedItems);
 
             options.onSuccess?.(result);
             abortControllersRef.current.delete(item.id);
           },
 
           onError: (error: Error) => {
-            setState((prev) => {
-              const updatedItems = prev.items.map((i) =>
-                i.id === item.id
-                  ? { ...i, status: "error" as const, error }
-                  : i,
-              );
-              updateAggregateStats(updatedItems);
-              return prev;
-            });
+            const updatedItems = itemsRef.current.map((i) =>
+              i.id === item.id
+                ? { ...i, status: "error" as const, error }
+                : i,
+            );
+            updateAggregateStats(updatedItems);
 
             options.onError?.(error);
             abortControllersRef.current.delete(item.id);
@@ -250,37 +236,46 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         const controller = await uploadPromise;
         abortControllersRef.current.set(item.id, controller);
       } catch (error) {
-        setState((prev) => {
-          const updatedItems = prev.items.map((i) =>
-            i.id === item.id
-              ? {
-                  ...i,
-                  status: "error" as const,
-                  error: error as Error,
-                }
-              : i,
-          );
-          updateAggregateStats(updatedItems);
-          return prev;
-        });
+        console.error("Error uploading item:", error);
+        const updatedItems = itemsRef.current.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                status: "error" as const,
+                error: error as Error,
+              }
+            : i,
+        );
+        updateAggregateStats(updatedItems);
 
         options.onError?.(error as Error);
         abortControllersRef.current.delete(item.id);
       }
     },
-    [client, fileSystemProvider, options, updateAggregateStats],
+    [client, options, updateAggregateStats],
   );
 
-  const startUploads = useCallback(async () => {
-    const maxConcurrent = options.maxConcurrent || 3;
-    const itemsToUpload = state.items.filter((item) => item.status === "idle");
+  const startUploads = useCallback(
+    async (itemIds?: string[]) => {
+      const maxConcurrent = options.maxConcurrent || 3;
 
-    // Process items in batches
-    for (let i = 0; i < itemsToUpload.length; i += maxConcurrent) {
-      const batch = itemsToUpload.slice(i, i + maxConcurrent);
-      await Promise.all(batch.map((item) => uploadSingleItem(item)));
-    }
-  }, [state.items, options.maxConcurrent, uploadSingleItem]);
+      // Get items from ref (synchronous access to latest items)
+      const itemsToUpload = itemIds
+        ? itemsRef.current.filter(
+            (item) => itemIds.includes(item.id) && item.status === "idle",
+          )
+        : itemsRef.current.filter((item) => item.status === "idle");
+
+      console.log("Items to upload:", itemsToUpload.length, itemsToUpload);
+
+      // Process items in batches
+      for (let i = 0; i < itemsToUpload.length; i += maxConcurrent) {
+        const batch = itemsToUpload.slice(i, i + maxConcurrent);
+        await Promise.all(batch.map((item) => uploadSingleItem(item)));
+      }
+    },
+    [options.maxConcurrent, uploadSingleItem],
+  );
 
   const removeItem = useCallback(
     (id: string) => {
@@ -290,11 +285,8 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         abortControllersRef.current.delete(id);
       }
 
-      setState((prev) => {
-        const updatedItems = prev.items.filter((item) => item.id !== id);
-        updateAggregateStats(updatedItems);
-        return prev;
-      });
+      const updatedItems = itemsRef.current.filter((item) => item.id !== id);
+      updateAggregateStats(updatedItems);
     },
     [updateAggregateStats],
   );
@@ -307,13 +299,10 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         abortControllersRef.current.delete(id);
       }
 
-      setState((prev) => {
-        const updatedItems = prev.items.map((item) =>
-          item.id === id ? { ...item, status: "aborted" as const } : item,
-        );
-        updateAggregateStats(updatedItems);
-        return prev;
-      });
+      const updatedItems = itemsRef.current.map((item) =>
+        item.id === id ? { ...item, status: "aborted" as const } : item,
+      );
+      updateAggregateStats(updatedItems);
     },
     [updateAggregateStats],
   );
@@ -325,38 +314,38 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
     });
     abortControllersRef.current.clear();
 
+    // Clear ref
+    itemsRef.current = [];
+
     setState(initialState);
   }, []);
 
   const retryItem = useCallback(
     async (id: string) => {
-      const item = state.items.find((i) => i.id === id);
+      const item = itemsRef.current.find((i) => i.id === id);
       if (item && (item.status === "error" || item.status === "aborted")) {
         // Reset item status to idle
-        setState((prev) => {
-          const updatedItems = prev.items.map((i) =>
-            i.id === id
-              ? {
-                  ...i,
-                  status: "idle" as const,
-                  progress: 0,
-                  bytesUploaded: 0,
-                  error: null,
-                }
-              : i,
-          );
-          updateAggregateStats(updatedItems);
-          return prev;
-        });
+        const updatedItems = itemsRef.current.map((i) =>
+          i.id === id
+            ? {
+                ...i,
+                status: "idle" as const,
+                progress: 0,
+                bytesUploaded: 0,
+                error: null,
+              }
+            : i,
+        );
+        updateAggregateStats(updatedItems);
 
-        // Upload it
-        const resetItem = state.items.find((i) => i.id === id);
+        // Upload it (get the reset item from the updated items)
+        const resetItem = itemsRef.current.find((i) => i.id === id);
         if (resetItem) {
           await uploadSingleItem(resetItem);
         }
       }
     },
-    [state.items, uploadSingleItem, updateAggregateStats],
+    [uploadSingleItem, updateAggregateStats],
   );
 
   return {
