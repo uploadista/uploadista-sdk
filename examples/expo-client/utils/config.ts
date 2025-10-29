@@ -8,6 +8,12 @@
 export const API_URL =
   process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.1:3000";
 
+// Log API configuration on startup
+console.log("=== Uploadista Expo Client Configuration ===");
+console.log("API_URL:", API_URL);
+console.log("EXPO_PUBLIC_API_URL env var:", process.env.EXPO_PUBLIC_API_URL);
+console.log("==========================================");
+
 // Flow configuration
 export const FLOW_CONFIG = {
   // Example flow ID - update this based on your server

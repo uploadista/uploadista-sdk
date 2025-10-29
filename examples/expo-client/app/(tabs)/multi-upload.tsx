@@ -1,4 +1,3 @@
-import { useMultiUpload } from "@uploadista/react-native-core";
 import {
   Alert,
   FlatList,
@@ -6,27 +5,42 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useMultiUpload } from "@uploadista/react-native-core";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import Button from "../../components/ui/Button";
 import ProgressCard from "../../components/ui/ProgressCard";
-import { ThemedView } from "@/components/themed-view";
-import { ThemedText } from "@/components/themed-text";
 
 export default function MultiUploadScreen() {
+  console.log("[MultiUpload] Screen mounted");
+
   const { state, removeItem, clear } = useMultiUpload({
     onSuccess: () => {
+      console.log("[MultiUpload] All uploads SUCCESS");
       Alert.alert("Success", "All files uploaded successfully!");
     },
     onError: (error) => {
+      console.error("[MultiUpload] Upload ERROR:", error);
+      console.error("[MultiUpload] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
       Alert.alert("Error", `Upload failed: ${error.message}`);
     },
   });
 
+  console.log("[MultiUpload] Current state:", state);
+
   const handleAddFiles = () => {
+    console.log("[MultiUpload] Add files button pressed");
     try {
       // In a real implementation, you would use a file picker here
       // and then call addFiles with the results
+      console.log("[MultiUpload] File picker not yet implemented");
       Alert.alert("Add Files", "Implement file picker integration");
     } catch (error) {
+      console.error("[MultiUpload] Failed to add files:", error);
       Alert.alert("Error", `Failed to add files: ${error}`);
     }
   };

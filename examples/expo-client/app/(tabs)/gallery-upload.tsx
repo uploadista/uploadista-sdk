@@ -7,21 +7,39 @@ import Button from "@/components/ui/Button";
 import ProgressCard from "@/components/ui/ProgressCard";
 
 export default function GalleryUploadScreen() {
+  console.log("[GalleryUpload] Screen mounted");
+
   const { selectAndUpload, removeItem, clear, state } = useGalleryUpload({
     mediaType: "photo",
     allowMultiple: true,
     onSuccess: () => {
+      console.log("[GalleryUpload] Upload SUCCESS");
       Alert.alert("Success", "Gallery items uploaded successfully!");
     },
     onError: (error) => {
+      console.error("[GalleryUpload] Upload ERROR:", error);
+      console.error("[GalleryUpload] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
       Alert.alert("Gallery Error", `Upload failed: ${error.message}`);
+    },
+    onProgress: (progress) => {
+      console.log("[GalleryUpload] Progress:", progress);
     },
   });
 
+  console.log("[GalleryUpload] Current state:", state);
+
   const handleSelectFromGallery = async () => {
+    console.log("[GalleryUpload] Select from gallery button pressed");
     try {
+      console.log("[GalleryUpload] Calling selectAndUpload...");
       await selectAndUpload?.();
+      console.log("[GalleryUpload] selectAndUpload completed");
     } catch (error) {
+      console.error("[GalleryUpload] Failed to select from gallery:", error);
       Alert.alert("Gallery Error", `Failed to select: ${error}`);
     }
   };

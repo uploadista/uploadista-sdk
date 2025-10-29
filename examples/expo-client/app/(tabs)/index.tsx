@@ -13,22 +13,40 @@ export default function SingleUploadScreen() {
     size: number;
   } | null>(null);
 
+  console.log("[SingleUpload] Screen mounted");
+
   const { pickAndUpload, state, abort } = useFileUpload({
     onSuccess: () => {
+      console.log("[SingleUpload] Upload SUCCESS");
       setSelectedFile(null);
       Alert.alert("Success", "File uploaded successfully!");
     },
     onError: (error) => {
+      console.error("[SingleUpload] Upload ERROR:", error);
+      console.error("[SingleUpload] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
       Alert.alert("Error", `Upload failed: ${error.message}`);
+    },
+    onProgress: (progress) => {
+      console.log("[SingleUpload] Progress:", progress);
     },
   });
 
+  console.log("[SingleUpload] Current state:", state);
+
   const handlePickFile = async () => {
+    console.log("[SingleUpload] Pick file button pressed");
     try {
+      console.log("[SingleUpload] Calling pickAndUpload...");
       await pickAndUpload?.();
+      console.log("[SingleUpload] pickAndUpload completed");
       // File was selected and upload started
       setSelectedFile({ name: "Uploading...", size: 0 });
     } catch (error) {
+      console.error("[SingleUpload] Failed to pick file:", error);
       Alert.alert("Error", `Failed to pick file: ${error}`);
     }
   };

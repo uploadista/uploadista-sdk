@@ -3,45 +3,78 @@ import {
   useUploadistaContext,
 } from "@uploadista/react-native-core";
 import { useState } from "react";
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-} from "react-native";
+import { Alert, ScrollView, StyleSheet, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import Button from "../../components/ui/Button";
 import ProgressCard from "../../components/ui/ProgressCard";
 import { FLOW_CONFIG } from "../../utils/config";
-import { ThemedView } from "@/components/themed-view";
-import { ThemedText } from "@/components/themed-text";
 
 export default function FlowUploadScreen() {
   const [flowId, setFlowId] = useState(FLOW_CONFIG.flowId);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  console.log("[FlowUpload] Screen mounted");
+  console.log("[FlowUpload] Flow ID:", flowId);
+
   const { fileSystemProvider } = useUploadistaContext();
+  console.log(
+    "[FlowUpload] File system provider available:",
+    !!fileSystemProvider,
+  );
 
   const { upload, state, abort } = useFlowUpload({
     flowId,
     storageId: "local",
+    onSuccess: (result) => {
+      console.log("[FlowUpload] Flow SUCCESS");
+      console.log("[FlowUpload] Result:", result);
+    },
+    onError: (error) => {
+      console.error("[FlowUpload] Flow ERROR:", error);
+      console.error("[FlowUpload] Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
+    },
+    onProgress: (progress) => {
+      console.log("[FlowUpload] Progress:", progress);
+    },
   });
 
+  console.log("[FlowUpload] Current state:", state);
+
   const handleStartFlow = async () => {
+    console.log("[FlowUpload] Start flow button pressed");
+    console.log("[FlowUpload] Current flowId:", flowId);
+
     if (!flowId) {
+      console.error("[FlowUpload] No flow ID provided");
       Alert.alert("Error", "Please enter a flow ID");
       return;
     }
     if (!fileSystemProvider) {
+      console.error("[FlowUpload] File system provider not available");
       Alert.alert("Error", "File system provider not available");
       return;
     }
     try {
+      console.log("[FlowUpload] Picking document...");
       // Pick a file first, then upload through flow
       const file = await fileSystemProvider.pickDocument?.();
+      console.log("[FlowUpload] Document picked:", file);
+
       if (file) {
+        console.log("[FlowUpload] Starting upload with flow...");
         await upload?.(file);
+        console.log("[FlowUpload] Upload initiated");
+      } else {
+        console.log("[FlowUpload] No file selected (cancelled?)");
       }
     } catch (error) {
+      console.error("[FlowUpload] Flow upload failed:", error);
       Alert.alert("Error", `Flow upload failed: ${error}`);
     }
   };
@@ -93,7 +126,9 @@ export default function FlowUploadScreen() {
             {state.jobId && (
               <ThemedView variant="card">
                 <ThemedText style={styles.statusLabel}>Job ID:</ThemedText>
-                <ThemedText style={styles.statusValue}>{state.jobId}</ThemedText>
+                <ThemedText style={styles.statusValue}>
+                  {state.jobId}
+                </ThemedText>
               </ThemedView>
             )}
             <ProgressCard
@@ -142,7 +177,9 @@ export default function FlowUploadScreen() {
 
         {state.error && (
           <ThemedView variant="errorBox" style={styles.errorBox}>
-            <ThemedText type="errorText" style={styles.errorTitle}>✗ Flow Error</ThemedText>
+            <ThemedText type="errorText" style={styles.errorTitle}>
+              ✗ Flow Error
+            </ThemedText>
             <ThemedText type="errorText">{state.error.message}</ThemedText>
           </ThemedView>
         )}

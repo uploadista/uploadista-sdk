@@ -17,6 +17,10 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  console.log("=== RootLayout Initialized ===");
+  console.log("UploadistaProvider baseUrl:", API_URL);
+  console.log("==============================");
+
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <UploadistaProvider
@@ -25,10 +29,11 @@ export default function RootLayout() {
         chunkSize={1024 * 1024}
         storeFingerprintForResuming={true}
         onError={(error) => {
-          console.error(error);
+          console.error("[UploadistaProvider] ERROR:", error);
+          console.error("[UploadistaProvider] Error stack:", error instanceof Error ? error.stack : "No stack");
         }}
         onEvent={(event) => {
-          console.log("Event:", event);
+          console.log("[UploadistaProvider] Event:", event);
         }}
       >
         <Stack>
