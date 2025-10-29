@@ -2,7 +2,7 @@
   "name": "uploadista-sdk",
   "private": true,
   "version": "0.0.2",
-  "packageManager": "pnpm@10.19.0",
+  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "build": "turbo run build --filter=\"./packages/**/*\"",
     "dev": "turbo watch build --filter=\"./packages/**/*\"",
@@ -27,7 +27,7 @@
   },
   "volta": {
     "node": "24.10.0",
-    "pnpm": "10.19.0"
+    "pnpm": "10.20.0"
   },
   "workspaces": [
     "packages/**",
