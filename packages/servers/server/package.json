@@ -39,7 +39,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.4"
+    "vitest": "4.0.5"
   },
   "peerDependencies": {
     "express": "^4.0.0 || ^5.0.0",
