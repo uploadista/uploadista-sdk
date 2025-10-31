@@ -24,6 +24,11 @@ export const uploadFileSchema = z.object({
     path: z.string().optional(),
     uploadId: z.string().optional(),
     bucket: z.string().optional(),
+    parts: z.array(z.object({
+      partNumber: z.number(),
+      etag: z.string(),
+      size: z.number(),
+    })).optional(),
   }),
   flow: z
     .object({
@@ -49,6 +54,7 @@ export const uploadFileSchema = z.object({
  * @property storage.path - Optional path prefix within the storage backend
  * @property storage.uploadId - Optional backend-specific upload ID (e.g., S3 multipart upload ID)
  * @property storage.bucket - Optional bucket or container name
+ * @property storage.parts - Optional array of uploaded parts (used by data stores that need to track parts locally, like R2)
  * @property flow - Optional flow processing information (when file is part of a flow)
  * @property flow.flowId - ID of the flow processing this file
  * @property flow.nodeId - ID of the flow node that created this file
@@ -123,6 +129,11 @@ export type UploadFile = {
     path?: string | undefined;
     uploadId?: string | undefined;
     bucket?: string | undefined;
+    parts?: Array<{
+      partNumber: number;
+      etag: string;
+      size: number;
+    }> | undefined;
   };
   flow?: {
     flowId: string;

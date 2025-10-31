@@ -1,0 +1,29 @@
+{
+  "name": "@uploadista/hono-cf-example",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*",
+    "@uploadista/data-store-r2": "workspace:*",
+    "@uploadista/kv-store-cloudflare-kv": "workspace:*",
+    "@uploadista/adapters-hono": "workspace:*",
+    "@uploadista/flow-images-nodes": "workspace:*",
+    "@xmldom/xmldom": "0.8.11",
+    "hono": "catalog:",
+    "hono-pino": "0.10.3",
+    "pino": "10.1.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@uploadista/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/service-worker-mock": "2.0.4",
+    "wrangler": "4.45.3"
+  }
+}

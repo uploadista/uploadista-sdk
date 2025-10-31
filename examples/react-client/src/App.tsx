@@ -8,7 +8,9 @@ import "./App.css";
 import { Card } from "./components/ui/card";
 
 function App() {
-  const [serverUrl, setServerUrl] = useState("http://localhost:3000");
+  const [serverUrl, setServerUrl] = useState(
+    import.meta.env.VITE_API_URL || "http://localhost:3000",
+  );
   const [activeTab, setActiveTab] = useState<
     "basic" | "flow" | "multi" | "dragdrop"
   >("basic");

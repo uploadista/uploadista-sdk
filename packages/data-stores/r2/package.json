@@ -1,8 +1,8 @@
 {
-  "name": "@uploadista/data-store-s3",
+  "name": "@uploadista/data-store-r2",
   "type": "module",
   "version": "0.0.8",
-  "description": "AWS S3 data store for Uploadista",
+  "description": "Cloudflare R2 data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
@@ -23,7 +23,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.921.0",
+    "@cloudflare/workers-types": "4.20251014.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "effect": "catalog:"
