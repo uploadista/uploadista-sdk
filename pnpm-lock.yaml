@@ -798,7 +798,7 @@ importers:
         version: 0.15.12(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.2(typescript@5.9.3))
       unplugin-vue:
         specifier: ^7.0.2
-        version: 7.0.3(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(vue@3.5.22(typescript@5.9.3))(yaml@2.8.1)
+        version: 7.0.4(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(vue@3.5.22(typescript@5.9.3))(yaml@2.8.1)
       vitest:
         specifier: 4.0.5
         version: 4.0.5(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -9246,8 +9246,8 @@ packages:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
 
-  unplugin-vue@7.0.3:
-    resolution: {integrity: sha512-thcqcJ7nefaYSCDRssrwd4YedLjTxPgYxb4yNxXnZPLd1PxG0FU8EkP9VT3oPNMkzEvgNqMNapaRJ8aEfdVkxg==}
+  unplugin-vue@7.0.4:
+    resolution: {integrity: sha512-ZsGLwS07ctePY6PgnlMqPVEzwGFo/NlgXlghr9LUwSy3nW2F87fEqmsCJGSoGChrrCIf9lVfW3Iu+1CimJVcOQ==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       vue: ^3.2.25
@@ -19830,7 +19830,7 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unplugin-vue@7.0.3(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(vue@3.5.22(typescript@5.9.3))(yaml@2.8.1):
+  unplugin-vue@7.0.4(@types/node@24.9.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(vue@3.5.22(typescript@5.9.3))(yaml@2.8.1):
     dependencies:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
