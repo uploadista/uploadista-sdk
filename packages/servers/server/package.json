@@ -29,6 +29,9 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
+    "@uploadista/event-emitter-websocket": "workspace:*",
+    "@uploadista/event-broadcaster-memory": "workspace:*",
     "effect": "catalog:",
     "zod": "catalog:"
   },

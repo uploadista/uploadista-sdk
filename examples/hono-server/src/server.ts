@@ -4,7 +4,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { createClient } from "@redis/client";
-import { createHonoUploadistaAdapter } from "@uploadista/adapters-hono";
+import { createHonoUploadistaAdapter, honoAdapter } from "@uploadista/adapters-hono";
 import { s3Store } from "@uploadista/data-store-s3";
 import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
@@ -15,6 +15,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
 import { flows } from "./flows";
+import { createUploadistaServer } from "@uploadista/server";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -68,12 +69,22 @@ if (!process.env.REPLICATE_API_TOKEN) {
 }
 
 // Create the uploadista adapter
-const uploadistaAdapter = await createHonoUploadistaAdapter({
+// const uploadistaAdapter = await createHonoUploadistaAdapter({
+//   dataStore,
+//   flows,
+//   plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
+//   kvStore,
+//   eventBroadcaster,
+// });
+
+
+const uploadistaServer = await createUploadistaServer({
   dataStore,
   flows,
   plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
   kvStore,
   eventBroadcaster,
+  adapter: honoAdapter(),
 });
 
 app.use(
@@ -114,13 +125,13 @@ app.use("*", async (c, next) => {
 app.on(
   ["HEAD", "POST", "GET", "PATCH"],
   ["/uploadista/api/**", "/uploadista/api"],
-  uploadistaAdapter.handler,
+  (c) => uploadistaServer.handler(c),
 );
 
 app.on(
   ["GET"],
   ["/uploadista/ws/upload/:uploadId", "/uploadista/ws/flow/:jobId"],
-  upgradeWebSocket(uploadistaAdapter.websocketHandler),
+  upgradeWebSocket(uploadistaServer.websocketHandler),
 );
 
 app.use("/uploads/*", serveStatic({ root: join(__dirname, "..") }));

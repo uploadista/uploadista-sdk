@@ -4,13 +4,10 @@ import {
 } from "@uploadista/adapters-hono";
 import { r2Store } from "@uploadista/data-store-r2";
 import { cloudflareKvStore } from "@uploadista/kv-store-cloudflare-kv";
-import { DOMParser as XDOMParser } from "@xmldom/xmldom";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
 import { flows } from "./flows";
-
-globalThis.DOMParser = XDOMParser;
 
 type Env = {
   UPLOADISTA_KV: KVNamespace;

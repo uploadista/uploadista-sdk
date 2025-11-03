@@ -1547,6 +1547,15 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
+      '@uploadista/event-broadcaster-memory':
+        specifier: workspace:*
+        version: link:../../event-broadcasters/memory
+      '@uploadista/event-emitter-websocket':
+        specifier: workspace:*
+        version: link:../../event-emitters/websocket
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../observability
       effect:
         specifier: 'catalog:'
         version: 3.18.4
