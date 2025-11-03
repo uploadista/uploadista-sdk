@@ -18,7 +18,8 @@ export type UploadistaRouteType =
   | "cancel-flow"
   | "not-found"
   | "bad-request"
-  | "method-not-allowed";
+  | "method-not-allowed"
+  | "unsupported-content-type";
 
 export type UploadistaRoute<T extends UploadistaRouteType> = {
   type: T;
@@ -60,6 +61,13 @@ export type BadRequestResponse = UploadistaStandardResponse<
   400
 >;
 
+export type UnsupportedContentTypeRequest = UploadistaRoute<"unsupported-content-type">;
+
+export type UnsupportedContentTypeResponse = UploadistaStandardResponse<
+  "unsupported-content-type",
+  { error: "Unsupported content type" },
+  415
+>;
 export type CreateUploadRequest = UploadistaRoute<"create-upload"> & {
   data: unknown;
 };
@@ -157,7 +165,8 @@ export type UploadistaRequest =
   | CancelFlowRequest
   | NotFoundRequest
   | BadRequestRequest
-  | MethodNotAllowedRequest;
+  | MethodNotAllowedRequest
+  | UnsupportedContentTypeRequest;
 
 export type UploadistaResponse =
   | CreateUploadResponse
@@ -172,4 +181,5 @@ export type UploadistaResponse =
   | CancelFlowResponse
   | NotFoundResponse
   | BadRequestResponse
-  | MethodNotAllowedResponse;
+  | MethodNotAllowedResponse
+  | UnsupportedContentTypeResponse;

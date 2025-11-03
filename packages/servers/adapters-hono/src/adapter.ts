@@ -1,4 +1,4 @@
-import { FlowServer, FlowServerShape, UploadServer, UploadServerShape } from "@uploadista/core";
+import { FlowServer,  UploadServer, } from "@uploadista/core";
 import type {
   AuthResult,
   ServerAdapter,
@@ -178,13 +178,20 @@ export const honoAdapter = <TEnv extends Env = Env>(
                 type: "get-flow",
                 flowId: routeSegments[1],
               } as UploadistaRequest;
-            case "POST":
+            case "POST":{
+              const params = await req.json();
+              if (!params.inputs) {
+                return {
+                  type: "bad-request",
+                  message: "Inputs are required",
+                } as UploadistaRequest;
+              }
               return {
                 type: "run-flow",
                 flowId: routeSegments[1],
                 storageId: routeSegments[2],
-                inputs: await req.json(),
-              } as UploadistaRequest;
+                inputs: params.inputs,
+              } as UploadistaRequest;}
             default:
               return {
                 type: "method-not-allowed",
@@ -217,20 +224,46 @@ export const honoAdapter = <TEnv extends Env = Env>(
                 message: "Job ID is required",
               } as UploadistaRequest;
             }
-            const nodeId = routeSegments[2];
+            const nodeId = routeSegments[3];
             if (!nodeId) {
               return {
                 type: "bad-request",
                 message: "Node ID is required",
               } as UploadistaRequest;
             }
-            const newData = await req.json();
-            if (!newData) {
+
+            const contentType = req.headers.get("Content-Type");
+            let newData: unknown;
+
+            // Handle different content types
+            if (contentType?.includes("application/octet-stream")) {
+              // For streaming data, pass the ReadableStream directly
+              if (!req.body) {
+                return {
+                  type: "bad-request",
+                  message: "Missing body for octet-stream",
+                } as UploadistaRequest;
+              }
+              newData = req.body;
+            } else if (contentType?.includes("application/json")) {
+              // For JSON data, parse the body
+              const body = await req.json();
+               
+
+              if (body.newData === undefined) {
+                return {
+                  type: "bad-request",
+                  message: "Missing newData",
+                } as UploadistaRequest;
+              }
+
+              newData = body.newData;
+            } else {
               return {
-                type: "bad-request",
-                message: "New data is required",
+                type: "unsupported-content-type",
               } as UploadistaRequest;
             }
+
             return {
               type: "resume-flow",
               jobId,

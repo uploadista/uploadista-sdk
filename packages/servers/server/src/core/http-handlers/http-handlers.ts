@@ -61,6 +61,12 @@ export const handleUploadistaRequest = <TRequirements>(
           headers: { "Content-Type": "application/json" },
           body: { error: "Method not allowed" },
         } as UploadistaResponse;
+      case "unsupported-content-type":
+        return {
+          status: 415,
+          headers: { "Content-Type": "application/json" },
+          body: { error: "Unsupported content type" },
+        } as UploadistaResponse;
     }
   });
 };

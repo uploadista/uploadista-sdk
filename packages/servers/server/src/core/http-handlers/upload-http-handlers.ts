@@ -26,7 +26,7 @@ export const handleCreateUpload = (req: CreateUploadRequest) =>
     const clientId = yield* authService.getClientId();
 
     if (clientId) {
-      console.log(`[Upload] Creating upload for client: ${clientId}`);
+      yield* Effect.logInfo(`[Upload] Creating upload for client: ${clientId}`);
     }
 
     const parsedInputFile = yield* Effect.sync(() =>
@@ -63,7 +63,7 @@ export const handleCreateUpload = (req: CreateUploadRequest) =>
     }
 
     if (clientId) {
-      console.log(
+      yield* Effect.logInfo(
         `[Upload] Upload created: ${fileCreated.id} for client: ${clientId}`,
       );
     }
@@ -123,7 +123,7 @@ export const handleUploadChunk = (req: UploadChunkRequest) =>
     }
 
     if (clientId) {
-      console.log(
+      yield* Effect.logInfo(
         `[Upload] Uploading chunk for upload: ${uploadId}, client: ${clientId}`,
       );
     }
@@ -134,7 +134,7 @@ export const handleUploadChunk = (req: UploadChunkRequest) =>
     if (fileResult.size && fileResult.offset >= fileResult.size) {
       yield* authCache.delete(uploadId);
       if (clientId) {
-        console.log(
+        yield* Effect.logInfo(
           `[Upload] Upload completed, cleared auth cache: ${uploadId}`,
         );
       }
@@ -142,21 +142,21 @@ export const handleUploadChunk = (req: UploadChunkRequest) =>
       // Record upload metrics if we have organization ID
 
       if (clientId && fileResult.size) {
-        console.log(
+        yield* Effect.logInfo(
           `[Upload] Recording metrics for org: ${clientId}, size: ${fileResult.size}`,
         );
         yield* Effect.forkDaemon(
           metricsService.recordUpload(clientId, fileResult.size, authMetadata),
         );
       } else {
-        console.warn(
+        yield* Effect.logWarning(
           `[Upload] Cannot record metrics - missing organizationId or size`,
         );
       }
     }
 
     if (clientId) {
-      console.log(
+      yield* Effect.logInfo(
         `[Upload] Chunk uploaded for upload: ${uploadId}, client: ${clientId}`,
       );
     }
