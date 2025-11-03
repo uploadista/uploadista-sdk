@@ -4,7 +4,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { createClient } from "@redis/client";
-import { createHonoUploadistaAdapter, honoAdapter } from "@uploadista/adapters-hono";
+import {  honoAdapter } from "@uploadista/adapters-hono";
 import { s3Store } from "@uploadista/data-store-s3";
 import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
@@ -67,15 +67,6 @@ const dataStore = s3Store({
 if (!process.env.REPLICATE_API_TOKEN) {
   throw new Error("REPLICATE_API_TOKEN is not set");
 }
-
-// Create the uploadista adapter
-// const uploadistaAdapter = await createHonoUploadistaAdapter({
-//   dataStore,
-//   flows,
-//   plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
-//   kvStore,
-//   eventBroadcaster,
-// });
 
 
 const uploadistaServer = await createUploadistaServer({

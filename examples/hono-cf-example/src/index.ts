@@ -1,7 +1,7 @@
 import {
   createHonoUploadistaAdapter,
   type HonoUploadistaAdapter,
-} from "@uploadista/adapters-hono";
+} from "../../../packages/servers/adapters-hono/dist/hono-websocket-handler";
 import { r2Store } from "@uploadista/data-store-r2";
 import { cloudflareKvStore } from "@uploadista/kv-store-cloudflare-kv";
 import { Hono } from "hono";
