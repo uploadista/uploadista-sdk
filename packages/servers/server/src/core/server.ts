@@ -9,7 +9,7 @@ import { GenerateIdLive } from "@uploadista/core/utils";
 import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
 import { NodeSdkLive, NoOpMetricsServiceLive } from "@uploadista/observability";
-import { Effect, Layer, Runtime } from "effect";
+import { Effect, Layer, ManagedRuntime } from "effect";
 import type { z } from "zod";
 import type { StandardResponse } from "../adapter";
 import { AuthCacheServiceLive } from "../cache";
@@ -145,9 +145,10 @@ export const createUploadistaServer = async <
     ...plugins,
   );
 
-  // Create a shared runtime from the server layer
+  // Create a shared managed runtime from the server layer
   // This ensures all requests use the same layer instances (including event broadcaster)
-  const runtime = await Layer.toRuntime(serverLayer).pipe(Effect.scoped, Effect.runPromise);
+  // ManagedRuntime properly handles scoped resources and provides convenient run methods
+  const managedRuntime = ManagedRuntime.make(serverLayer);
 
   /**
    * Main request handler that processes HTTP requests through the adapter.
@@ -290,15 +291,17 @@ export const createUploadistaServer = async <
       }),
     );
 
-    // Use the shared runtime instead of creating a new one per request
+    // Use the shared managed runtime instead of creating a new one per request
     if (withTracing) {
-      return Runtime.runPromise(runtime)(program.pipe(Effect.provide(NodeSdkLive)));
+      return managedRuntime.runPromise(
+        program.pipe(Effect.provide(NodeSdkLive)),
+      );
     }
-    return Runtime.runPromise(runtime)(program);
+    return managedRuntime.runPromise(program);
   };
 
-  // Create WebSocket handler using the shared runtime
-  const websocketHandler = await Runtime.runPromise(runtime)(
+  // Create WebSocket handler using the shared managed runtime
+  const websocketHandler = await managedRuntime.runPromise(
     adapter.webSocketHandler({
       baseUrl,
     }),
@@ -308,5 +311,6 @@ export const createUploadistaServer = async <
     handler,
     websocketHandler,
     baseUrl,
+    dispose: () => managedRuntime.dispose(),
   };
 };

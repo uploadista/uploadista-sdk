@@ -312,4 +312,11 @@ export interface UploadistaServer<
    * Base URL path for Uploadista endpoints.
    */
   baseUrl: string;
+
+  /**
+   * Dispose function for graceful shutdown.
+   * Cleans up all resources associated with the managed runtime.
+   * Should be called when the server is shutting down.
+   */
+  dispose: () => Promise<void>;
 }

@@ -2,7 +2,10 @@ import { UploadistaError } from "@uploadista/core/errors";
 import type { FlowServerShape } from "@uploadista/core/flow";
 import type { UploadServerShape } from "@uploadista/core/upload";
 import { Effect } from "effect";
-import type { WebSocketConnection, WebSocketConnectionRequest } from "../websocket-routes";
+import type {
+  WebSocketConnection,
+  WebSocketConnectionRequest,
+} from "../websocket-routes";
 import {
   handleSubscribeToFlowEvents,
   handleUnsubscribeFromFlowEvents,
@@ -12,7 +15,10 @@ import {
   handleUnsubscribeFromUploadEvents,
 } from "./upload-websocket-handlers";
 
-export type { WebSocketConnection, WebSocketConnectionRequest } from "../websocket-routes";
+export type {
+  WebSocketConnection,
+  WebSocketConnectionRequest,
+} from "../websocket-routes";
 
 /**
  * Handles WebSocket connection opening
@@ -23,7 +29,8 @@ export const handleWebSocketOpen = (
   uploadServer: UploadServerShape,
   flowServer: FlowServerShape,
 ) => {
-  const { connection, isFlowRoute, isUploadRoute, jobId, uploadId, eventId } = request;
+  const { connection, isFlowRoute, isUploadRoute, jobId, uploadId, eventId } =
+    request;
 
   return Effect.gen(function* () {
     // Subscribe to flow events if this is a flow route
@@ -78,7 +85,7 @@ export const handleWebSocketMessage = (
   message: string,
   connection: WebSocketConnection,
 ) => {
-  return Effect.gen(function* () {
+  return Effect.sync(() => {
     try {
       const parsed = JSON.parse(message);
       if (parsed.type === "ping") {
