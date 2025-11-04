@@ -3,13 +3,17 @@ import { fileURLToPath } from "node:url";
 import cors from "@fastify/cors";
 import staticPlugin from "@fastify/static";
 import websocket from "@fastify/websocket";
-import { createFastifyUploadistaAdapter } from "@uploadista/adapters-fastify";
+import { fastifyAdapter } from "@uploadista/adapters-fastify";
 import { fileStore } from "@uploadista/data-store-filesystem";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
 import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createUploadistaServer } from "@uploadista/server";
+import dotenv from "dotenv";
 import Fastify from "fastify";
 import { flows } from "./flows";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -72,12 +76,13 @@ async function startServer() {
     throw new Error("REPLICATE_API_TOKEN is not set");
   }
 
-  // Create the uploadista adapter
-  const uploadistaAdapter = await createFastifyUploadistaAdapter({
+  // Create uploadista server with proper layer-based configuration and fastify adapter
+  const uploadistaServer = await createUploadistaServer({
+    kvStore,
     dataStore,
     flows,
     plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
-    kvStore,
+    adapter: fastifyAdapter({}),
   });
 
   // Add content type parser for binary upload data (PATCH requests)
@@ -108,21 +113,21 @@ async function startServer() {
 
   // Upload endpoints - handle all methods
   fastify.all("/uploadista/api/*", async (request, reply) => {
-    return uploadistaAdapter.handler(request, reply);
+    return uploadistaServer.handler({ request, reply });
   });
 
   // WebSocket endpoint for upload progress
   fastify.get(
     "/uploadista/ws/upload/:uploadId",
     { websocket: true },
-    uploadistaAdapter.websocketHandler,
+    uploadistaServer.websocketHandler,
   );
 
   // WebSocket endpoint for flow job progress
   fastify.get(
     "/uploadista/ws/flow/:jobId",
     { websocket: true },
-    uploadistaAdapter.websocketHandler,
+    uploadistaServer.websocketHandler,
   );
 
   // Error handling

@@ -328,6 +328,12 @@ importers:
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../packages/kv-stores/memory
+      '@uploadista/server':
+        specifier: workspace:*
+        version: link:../../packages/servers/server
+      dotenv:
+        specifier: 17.2.3
+        version: 17.2.3
       effect:
         specifier: 'catalog:'
         version: 3.19.0

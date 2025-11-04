@@ -264,7 +264,9 @@ export const handleCancelFlow = (
     }
 
     if (clientId) {
-      console.log(`[Flow] Cancelling flow: jobId=${jobId}, client: ${clientId}`);
+      console.log(
+        `[Flow] Cancelling flow: jobId=${jobId}, client: ${clientId}`,
+      );
     }
 
     const result = yield* flowServer.cancelFlow(jobId, clientId);

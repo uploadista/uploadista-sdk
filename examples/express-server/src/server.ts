@@ -3,7 +3,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expressAdapter } from "@uploadista/adapters-express";
 import { fileStore } from "@uploadista/data-store-filesystem";
-import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
 import { fileKvStore } from "@uploadista/kv-store-filesystem";
@@ -46,8 +45,6 @@ async function startServer() {
     deliveryUrl: "http://localhost:3000",
   });
 
-  const eventBroadcaster = memoryEventBroadcaster;
-
   if (!process.env.REPLICATE_API_TOKEN) {
     throw new Error("REPLICATE_API_TOKEN is not set");
   }
@@ -58,7 +55,6 @@ async function startServer() {
     dataStore,
     flows,
     plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
-    eventBroadcaster,
     adapter: expressAdapter({}),
   });
 
