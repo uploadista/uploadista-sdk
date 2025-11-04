@@ -4,6 +4,7 @@ import type {
   FlowJob,
   UploadFile,
 } from "@uploadista/core";
+import type { StandardResponse } from "../adapter/types";
 
 export type UploadistaRouteType =
   | "create-upload"
@@ -61,7 +62,8 @@ export type BadRequestResponse = UploadistaStandardResponse<
   400
 >;
 
-export type UnsupportedContentTypeRequest = UploadistaRoute<"unsupported-content-type">;
+export type UnsupportedContentTypeRequest =
+  UploadistaRoute<"unsupported-content-type">;
 
 export type UnsupportedContentTypeResponse = UploadistaStandardResponse<
   "unsupported-content-type",
@@ -182,4 +184,5 @@ export type UploadistaResponse =
   | NotFoundResponse
   | BadRequestResponse
   | MethodNotAllowedResponse
-  | UnsupportedContentTypeResponse;
+  | UnsupportedContentTypeResponse
+  | StandardResponse;

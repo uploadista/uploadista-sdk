@@ -14,6 +14,7 @@ export function createMemoryEventBroadcaster(): EventBroadcaster {
     publish: (channel: string, message: string) =>
       Effect.sync(() => {
         const channelHandlers = handlers.get(channel);
+
         if (channelHandlers) {
           for (const handler of channelHandlers) {
             handler(message);

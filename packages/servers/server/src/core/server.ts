@@ -1,8 +1,4 @@
-import {
-  FlowServer,
-  type UploadistaError,
-  UploadServer,
-} from "@uploadista/core";
+import type { UploadistaError } from "@uploadista/core";
 import { type Flow, FlowProvider } from "@uploadista/core/flow";
 import {
   createDataStoreLayer,
@@ -10,17 +6,17 @@ import {
   type UploadFileKVStore,
 } from "@uploadista/core/types";
 import { GenerateIdLive } from "@uploadista/core/utils";
+import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
 import { NodeSdkLive, NoOpMetricsServiceLive } from "@uploadista/observability";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Runtime } from "effect";
 import type { z } from "zod";
-import type { StandardResponse, WebSocketHandler } from "../adapter";
+import type { StandardResponse } from "../adapter";
 import { AuthCacheServiceLive } from "../cache";
 import { handleFlowError } from "../http-utils";
 import { createFlowServerLayer, createUploadServerLayer } from "../layer-utils";
 import { AuthContextServiceLive } from "../service";
 import type { AuthContext } from "../types";
-import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 import { handleUploadistaRequest } from "./http-handlers/http-handlers";
 import type { NotFoundResponse } from "./routes";
 import type { UploadistaServer, UploadistaServerConfig } from "./types";
@@ -59,28 +55,26 @@ import type { UploadistaServer, UploadistaServerConfig } from "./types";
  * ```
  */
 export const createUploadistaServer = async <
-  TRequest,
+  TContext,
   TResponse,
-  TWebSocket = unknown,
->(
-  {
-    flows,
-    dataStore,
-    kvStore,
-    plugins = [],
-    eventEmitter,
-    eventBroadcaster = memoryEventBroadcaster,
-    withTracing = false,
-    baseUrl: configBaseUrl = "uploadista",
-    generateId = GenerateIdLive,
-    metricsLayer,
-    bufferedDataStore,
-    adapter,
-    authCacheConfig,
-  }: UploadistaServerConfig<TRequest, TResponse, TWebSocket>,
-): Promise<UploadistaServer<TRequest, TResponse, TWebSocket>> => {
-  
-
+  TWebSocketHandler = unknown,
+>({
+  flows,
+  dataStore,
+  kvStore,
+  plugins = [],
+  eventEmitter,
+  eventBroadcaster = memoryEventBroadcaster,
+  withTracing = false,
+  baseUrl: configBaseUrl = "uploadista",
+  generateId = GenerateIdLive,
+  metricsLayer,
+  bufferedDataStore,
+  adapter,
+  authCacheConfig,
+}: UploadistaServerConfig<TContext, TResponse, TWebSocketHandler>): Promise<
+  UploadistaServer<TContext, TResponse, TWebSocketHandler>
+> => {
   // Default eventEmitter to webSocketEventEmitter with the provided eventBroadcaster
   const finalEventEmitter =
     eventEmitter ?? webSocketEventEmitter(eventBroadcaster);
@@ -137,7 +131,6 @@ export const createUploadistaServer = async <
     uploadServer: uploadServerLayer,
   });
 
-
   // Create auth cache layer (always present, even if auth is not enabled)
   const authCacheLayer = AuthCacheServiceLive(authCacheConfig);
 
@@ -152,41 +145,41 @@ export const createUploadistaServer = async <
     ...plugins,
   );
 
+  // Create a shared runtime from the server layer
+  // This ensures all requests use the same layer instances (including event broadcaster)
+  const runtime = await Layer.toRuntime(serverLayer).pipe(Effect.scoped, Effect.runPromise);
+
   /**
    * Main request handler that processes HTTP requests through the adapter.
    * Delegates to adapter's httpHandler if provided, otherwise uses standard flow.
    */
-  const handler = async <TRequirements>(req: TRequest) => {
-    
-
+  const handler = async <TRequirements>(ctx: TContext) => {
     // Fallback: Standard routing logic (for adapters without httpHandler)
     const program = Effect.gen(function* () {
       // Extract standard request from framework-specific request
-      const uploadistaRequest = yield* adapter.extractRequest(req, { baseUrl });
+      const uploadistaRequest = yield* adapter.extractRequest(ctx, { baseUrl });
 
       // Run auth middleware if provided
       let authContext: AuthContext | null = null;
       if (adapter.runAuthMiddleware) {
-        const authMiddlewareWithTimeout = adapter
-          .runAuthMiddleware(req)
-          .pipe(
-            Effect.timeout("5 seconds"),
-            Effect.catchAll(() => {
-              // Timeout error
-              console.error("Auth middleware timeout exceeded (5 seconds)");
-              return Effect.succeed({
-                _tag: "TimeoutError" as const,
-              } as const);
-            }),
-            Effect.catchAllCause((cause) => {
-              // Other errors
-              console.error("Auth middleware error:", cause);
-              return Effect.succeed({
-                _tag: "AuthError" as const,
-                error: cause,
-              } as const);
-            }),
-          );
+        const authMiddlewareWithTimeout = adapter.runAuthMiddleware(ctx).pipe(
+          Effect.timeout("5 seconds"),
+          Effect.catchAll(() => {
+            // Timeout error
+            console.error("Auth middleware timeout exceeded (5 seconds)");
+            return Effect.succeed({
+              _tag: "TimeoutError" as const,
+            } as const);
+          }),
+          Effect.catchAllCause((cause) => {
+            // Other errors
+            console.error("Auth middleware error:", cause);
+            return Effect.succeed({
+              _tag: "AuthError" as const,
+              error: cause,
+            } as const);
+          }),
+        );
 
         const authResult:
           | AuthContext
@@ -211,7 +204,7 @@ export const createUploadistaServer = async <
                 "Authentication took too long to respond. Please try again.",
             },
           };
-          return yield* adapter.sendResponse( errorResponse as any);
+          return yield* adapter.sendResponse(errorResponse, ctx);
         }
 
         // Handle auth error
@@ -229,7 +222,7 @@ export const createUploadistaServer = async <
               message: "An error occurred during authentication",
             },
           };
-          return yield* adapter.sendResponse(errorResponse as any);
+          return yield* adapter.sendResponse(errorResponse, ctx);
         }
 
         // Handle authentication failure (null result)
@@ -242,7 +235,7 @@ export const createUploadistaServer = async <
               message: "Invalid credentials",
             },
           };
-          return yield* adapter.sendResponse(errorResponse as any);
+          return yield* adapter.sendResponse(errorResponse, ctx);
         }
 
         authContext = authResult;
@@ -268,7 +261,7 @@ export const createUploadistaServer = async <
           headers: { "Content-Type": "application/json" },
           body: { error: "Not found" },
         };
-        return yield* adapter.sendResponse( notFoundResponse);
+        return yield* adapter.sendResponse(notFoundResponse, ctx);
       }
 
       // Handle the request
@@ -276,8 +269,7 @@ export const createUploadistaServer = async <
         uploadistaRequest,
       ).pipe(Effect.provide(authLayer));
 
-
-      return yield* adapter.sendResponse( response);
+      return yield* adapter.sendResponse(response, ctx);
     }).pipe(
       // Catch all errors and format them appropriately
       Effect.catchAll((error: unknown) => {
@@ -294,30 +286,23 @@ export const createUploadistaServer = async <
           headers: { "Content-Type": "application/json" },
           body: errorBody,
         };
-        return adapter.sendResponse( errorResponse as any);
+        return adapter.sendResponse(errorResponse, ctx);
       }),
     );
 
-    // Check the type of the program
-    const runnableProgram = program.pipe(
-      Effect.provide(serverLayer),
-    ) as Effect.Effect<TResponse, never, never>;
-
+    // Use the shared runtime instead of creating a new one per request
     if (withTracing) {
-      return Effect.runPromise(
-        runnableProgram.pipe(Effect.provide(NodeSdkLive)),
-      );
+      return Runtime.runPromise(runtime)(program.pipe(Effect.provide(NodeSdkLive)));
     }
-    return Effect.runPromise(runnableProgram);
+    return Runtime.runPromise(runtime)(program);
   };
 
-  // Create WebSocket handler
-  const websocketHandler = await Effect.runPromise(
+  // Create WebSocket handler using the shared runtime
+  const websocketHandler = await Runtime.runPromise(runtime)(
     adapter.webSocketHandler({
-        baseUrl,
-      })
-    .pipe(Effect.provide(serverLayer)),
-  )
+      baseUrl,
+    }),
+  );
 
   return {
     handler,

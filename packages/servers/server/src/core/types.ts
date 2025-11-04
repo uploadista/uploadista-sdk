@@ -293,7 +293,11 @@ export interface UploadistaServerConfig<
  * @template TResponse - Framework-specific response type
  * @template TWebSocket - Framework-specific WebSocket type (optional)
  */
-export interface UploadistaServer<TRequest, TResponse, TWebSocket = unknown> {
+export interface UploadistaServer<
+  TRequest,
+  TResponse,
+  TWebSocketHandler = unknown,
+> {
   /**
    * Main request handler that processes HTTP requests through the adapter.
    */
@@ -302,9 +306,7 @@ export interface UploadistaServer<TRequest, TResponse, TWebSocket = unknown> {
   /**
    * Optional WebSocket handler if the adapter supports WebSocket connections.
    */
-  websocketHandler: (
-    req: TRequest,
-  ) => TWebSocket;
+  websocketHandler: TWebSocketHandler;
 
   /**
    * Base URL path for Uploadista endpoints.

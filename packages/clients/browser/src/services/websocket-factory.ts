@@ -106,6 +106,8 @@ class BrowserWebSocket implements WebSocketLike {
 
     this.native.onmessage = (event) => {
       const messageEvent = event as MessageEvent;
+      console.log('🔵 BrowserWebSocket native.onmessage fired with data:', messageEvent.data);
+      console.log('🔵 this.onmessage is:', this.onmessage ? 'SET' : 'NULL');
       this.onmessage?.({ data: messageEvent.data });
     };
   }

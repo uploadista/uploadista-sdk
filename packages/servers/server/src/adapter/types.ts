@@ -1,4 +1,4 @@
-import type { FlowServer,  UploadServer,  } from "@uploadista/core";
+import type { FlowServer, UploadServer } from "@uploadista/core";
 import type { Effect } from "effect";
 import type { UploadistaRequest, UploadistaResponse } from "../core/routes";
 import type { AuthResult } from "../types";
@@ -144,7 +144,11 @@ export interface WebSocketHandler {
  * };
  * ```
  */
-export interface ServerAdapter<TRequest, TResponse, TWebSocket = unknown> {
+export interface ServerAdapter<
+  TContext,
+  TResponse,
+  TWebSocketHandler = unknown,
+> {
   /**
    * Extract standard request details from framework-specific request.
    *
@@ -155,7 +159,7 @@ export interface ServerAdapter<TRequest, TResponse, TWebSocket = unknown> {
    * @returns Effect that produces UploadistaRequest on success
    */
   extractRequest(
-    req: TRequest,
+    req: TContext,
     { baseUrl }: { baseUrl: string },
   ): Effect.Effect<UploadistaRequest, never, never>;
 
@@ -170,6 +174,7 @@ export interface ServerAdapter<TRequest, TResponse, TWebSocket = unknown> {
    */
   sendResponse(
     response: UploadistaResponse,
+    context: TContext,
   ): Effect.Effect<TResponse, never, never>;
 
   /**
@@ -181,13 +186,11 @@ export interface ServerAdapter<TRequest, TResponse, TWebSocket = unknown> {
    *
    * If not provided, the adapter assumes no authentication is required.
    *
-   * @param req - Framework-specific request object
+   * @param ctx - Framework-specific context object
    * @param res - Framework-specific response object
    * @returns Effect that produces AuthResult (AuthContext or null)
    */
-  runAuthMiddleware?(
-    req: TRequest,
-  ): Effect.Effect<AuthResult, never, never>;
+  runAuthMiddleware?(ctx: TContext): Effect.Effect<AuthResult, never, never>;
 
   /**
    * Optional: Create WebSocket handler for real-time updates.
@@ -196,15 +199,13 @@ export interface ServerAdapter<TRequest, TResponse, TWebSocket = unknown> {
    * real-time upload progress and flow status updates.
    *
    * @param ws - Framework-specific WebSocket object
-   * @param req - Framework-specific request object (for initial handshake)
+   * @param ctx - Framework-specific context object (for initial handshake)
    * @param context - Server context with baseUrl, uploadServer, and flowServer
    * @returns WebSocketHandler with callbacks for message, close, and error events
    */
-  webSocketHandler(
-    context: {
-      baseUrl: string;
-    },
-  ): Effect.Effect<(req: TRequest) => TWebSocket, never, UploadServer | FlowServer>;
+  webSocketHandler(context: {
+    baseUrl: string;
+  }): Effect.Effect<TWebSocketHandler, never, UploadServer | FlowServer>;
 
   /**
    * Optional: Framework-specific extensions.

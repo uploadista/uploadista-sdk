@@ -29,12 +29,15 @@ import {
   AuthContextServiceLive,
   type AuthResult,
   createFlowServerLayer,
+  createUploadistaServer,
   createUploadServerLayer,
   type FlowRequirementsOf,
 } from "@uploadista/server";
 import { Effect, Layer } from "effect";
 import type { Request, Response } from "express";
+import type { WebSocket } from "ws";
 import type { z } from "zod";
+import { type ExpressContext, expressAdapter } from "./express-adapter";
 import {
   handleCancelFlow,
   handleFlowGet,
@@ -55,7 +58,6 @@ import {
   type WebSocketHandlers,
 } from "./uploadista-adapter-layer";
 import { createUploadistaWebSocketHandler } from "./uploadista-websocket-handler";
-
 export type ExpressUploadistaAdapterOptions<
   TFlows extends (
     flowId: string,
@@ -93,7 +95,7 @@ export type ExpressUploadistaAdapterOptions<
   withTracing?: boolean;
 
   // Authentication
-  authMiddleware?: (req: Request, res: Response) => Promise<AuthResult>;
+  authMiddleware?: (ctx: ExpressContext) => Promise<AuthResult>;
   authCacheConfig?: AuthCacheConfig;
 
   // Metrics
@@ -123,7 +125,7 @@ export type InternalExpressUploadistaAdapterOptions<
   withTracing?: boolean;
 
   // Authentication
-  authMiddleware?: (req: Request, res: Response) => Promise<AuthResult>;
+  authMiddleware?: (ctx: ExpressContext) => Promise<AuthResult>;
   authCacheConfig?: AuthCacheConfig;
 
   // Metrics
@@ -132,26 +134,9 @@ export type InternalExpressUploadistaAdapterOptions<
 
 export type ExpressUploadistaAdapter = {
   baseUrl: string;
-  handler: (
-    req: Request,
-    res: Response,
-    next?: (error?: Error) => void,
-  ) => void;
-  websocketHandler: (
-    req: IncomingMessage,
-    connection: WebSocketConnection,
-  ) => WebSocketHandlers;
-  websocketConnectionHandler: (ws: WebSocket, req: IncomingMessage) => void;
+  handler: (ctx: ExpressContext) => void;
+  websocketHandler: (ws: WebSocket, req: IncomingMessage) => void;
 };
-
-// WebSocket type from ws package
-interface WebSocket {
-  readyState: number;
-  OPEN: number;
-  send: (data: string) => void;
-  close: (code?: number, reason?: string) => void;
-  on: (event: string, handler: (...args: any[]) => void) => void;
-}
 
 // Effect-native API
 export type ExpressUploadistaServer = {
@@ -167,7 +152,7 @@ export type ExpressUploadistaServer = {
 // Effect-based service factory for creating the unified adapter layer
 const createExpressUploadistaAdapterServiceLayer = (
   baseUrl: string,
-  authMiddleware?: (req: Request, res: Response) => Promise<AuthResult>,
+  authMiddleware?: (ctx: ExpressContext) => Promise<AuthResult>,
   authCacheConfig?: AuthCacheConfig,
   metricsLayer?: Layer.Layer<MetricsService, never, never>,
 ) =>
@@ -188,7 +173,7 @@ const createExpressUploadistaAdapterServiceLayer = (
             if (authMiddleware) {
               // Run auth middleware with timeout protection (5 seconds default)
               const authMiddlewareWithTimeout = Effect.tryPromise({
-                try: () => authMiddleware(req, res),
+                try: () => authMiddleware({ request: req, response: res }),
                 catch: (error) => {
                   console.error("Auth middleware error:", error);
                   return { _tag: "AuthError" as const, error };
@@ -511,18 +496,18 @@ export const createInternalExpressUploadistaAdapter = async <
 
   return {
     baseUrl,
-    handler: (req: Request, res: Response, next) => {
+    handler: ({ request, response, next }: ExpressContext) => {
       runProgram(
-        uploadistaServer.handler(req, res).pipe(Effect.provide(pluginLayers)),
+        uploadistaServer
+          .handler(request, response)
+          .pipe(Effect.provide(pluginLayers)),
         withTracing,
       ).catch((error) => {
         console.error("Express adapter error:", error);
         if (next) next(error);
       });
     },
-    websocketHandler: (req: IncomingMessage, connection: WebSocketConnection) =>
-      uploadistaServer.websocketHandler(req, connection),
-    websocketConnectionHandler: (ws: WebSocket, req: IncomingMessage) => {
+    websocketHandler: (ws: WebSocket, req: IncomingMessage) => {
       // Filter to only handle uploadista WebSocket paths
       if (!req.url?.startsWith(`/${baseUrl}/ws/`)) {
         ws.close(1008, "Invalid WebSocket path");
@@ -639,4 +624,93 @@ export const createExpressUploadistaAdapter = async <
     authCacheConfig,
     metricsLayer,
   });
+};
+
+/**
+ * Creates an Express Uploadista adapter using the unified core server (V2).
+ *
+ * This is the new implementation that uses the refactored adapter pattern
+ * with the core server. It provides the same functionality as V1 but with
+ * ~80% less code duplication.
+ *
+ * @template TFlows - Flow function type
+ * @template TPlugins - Plugin layers type
+ * @param options - Adapter configuration options
+ * @returns Promise resolving to ExpressUploadistaAdapter
+ *
+ * @example
+ * ```typescript
+ * import { createExpressUploadistaAdapterV2 } from "@uploadista/adapters-express";
+ *
+ * const adapter = await createExpressUploadistaAdapterV2({
+ *   flows: getFlows,
+ *   dataStore: { type: "s3", config: { bucket: "uploads" } },
+ *   kvStore: redisKvStore,
+ *   authMiddleware: async (req, res) => ({ clientId: req.header("x-user-id") || null })
+ * });
+ *
+ * app.use("/uploadista", adapter.handler);
+ * ```
+ */
+export const createExpressUploadistaAdapterV2 = async <
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<
+    Flow<z.ZodSchema<unknown>, z.ZodSchema<unknown>, unknown>,
+    UploadistaError,
+    unknown
+  > = any,
+  TPlugins extends readonly Layer.Layer<any, never, never>[] = Layer.Layer<
+    any,
+    never,
+    never
+  >[],
+>({
+  baseUrl = "uploadista",
+  flows,
+  plugins = [] as unknown as TPlugins,
+  eventBroadcaster = memoryEventBroadcaster,
+  eventEmitter,
+  dataStore,
+  bufferedDataStore,
+  kvStore,
+  generateId = GenerateIdLive,
+  authMiddleware,
+  metricsLayer,
+  withTracing = false,
+  authCacheConfig,
+}: ExpressUploadistaAdapterOptions<
+  TFlows,
+  TPlugins
+>): Promise<ExpressUploadistaAdapter> => {
+  // Create Express adapter
+  const adapter = expressAdapter({
+    authMiddleware,
+  });
+
+  // Create unified server
+  const server = await createUploadistaServer({
+    flows,
+    dataStore,
+    kvStore,
+    plugins,
+    eventEmitter,
+    eventBroadcaster,
+    baseUrl,
+    generateId,
+    withTracing,
+    metricsLayer,
+    bufferedDataStore,
+    adapter,
+    authCacheConfig,
+  });
+
+  // WebSocket handler is already in the correct format
+  // ExpressWebSocketHandler: (ws: WebSocket, req: IncomingMessage) => void
+  return {
+    baseUrl,
+    handler: server.handler,
+    websocketHandler: server.websocketHandler,
+  } satisfies ExpressUploadistaAdapter;
 };

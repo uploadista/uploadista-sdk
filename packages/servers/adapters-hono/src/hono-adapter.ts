@@ -1,12 +1,12 @@
-import type {
-  AuthResult,
-  ServerAdapter,
-} from "@uploadista/server";
+import type { AuthResult, ServerAdapter } from "@uploadista/server";
 import { Effect } from "effect";
 import type { Context, Env } from "hono";
-import type { WSEvents } from "hono/ws";
-import { honoWebSocketHandler, type DurableObjectWebSocketHandlerOptions } from "./hono-websocket-handler";
 import { extractHonoRequest, sendHonoResponse } from "./hono-http-handler";
+import {
+  type DurableObjectWebSocketHandlerOptions,
+  type HonoWebSocketHandler,
+  honoWebSocketHandler,
+} from "./hono-websocket-handler";
 
 /**
  * Options for creating a Hono server adapter.
@@ -68,10 +68,10 @@ export interface HonoAdapterOptions<TEnv extends Env = Env> {
  */
 export const honoAdapter = <TEnv extends Env = Env>(
   options: HonoAdapterOptions<TEnv> = {},
-): ServerAdapter<Context<TEnv>, Response, WSEvents> => {
+): ServerAdapter<Context<TEnv>, Response, HonoWebSocketHandler<TEnv>> => {
   const { authMiddleware, durableObjectWebSocket } = options;
 
-    return {
+  return {
     /**
      * Extract standard request details from Hono Context.
      *
@@ -87,18 +87,9 @@ export const honoAdapter = <TEnv extends Env = Env>(
      * The response is returned from the handler, not sent via the context.
      */
     sendResponse: sendHonoResponse,
-     
 
-    webSocketHandler: (
-      {
-        baseUrl,
-      }: {
-        baseUrl: string;
-      },
-    ) => honoWebSocketHandler(
-        baseUrl,
-        authMiddleware
-      ),
+    webSocketHandler: ({ baseUrl }: { baseUrl: string }) =>
+      honoWebSocketHandler(baseUrl, authMiddleware),
 
     /**
      * Run framework-specific auth middleware.
@@ -124,5 +115,4 @@ export const honoAdapter = <TEnv extends Env = Env>(
      */
     extensions: durableObjectWebSocket,
   };
-
 };

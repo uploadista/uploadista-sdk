@@ -195,6 +195,9 @@ importers:
 
   examples/express-server:
     dependencies:
+      '@redis/client':
+        specifier: 5.8.3
+        version: 5.8.3
       '@uploadista/adapters-express':
         specifier: workspace:*
         version: link:../../packages/servers/adapters-express
@@ -204,6 +207,12 @@ importers:
       '@uploadista/data-store-filesystem':
         specifier: workspace:*
         version: link:../../packages/data-stores/filesystem
+      '@uploadista/event-broadcaster-memory':
+        specifier: workspace:*
+        version: link:../../packages/event-broadcasters/memory
+      '@uploadista/event-broadcaster-redis':
+        specifier: workspace:*
+        version: link:../../packages/event-broadcasters/redis
       '@uploadista/event-emitter-websocket':
         specifier: workspace:*
         version: link:../../packages/event-emitters/websocket
@@ -225,9 +234,18 @@ importers:
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../packages/kv-stores/memory
+      '@uploadista/kv-store-redis':
+        specifier: workspace:*
+        version: link:../../packages/kv-stores/redis
+      '@uploadista/server':
+        specifier: workspace:*
+        version: link:../../packages/servers/server
       cors:
         specifier: 2.8.5
         version: 2.8.5
+      dotenv:
+        specifier: 17.2.3
+        version: 17.2.3
       effect:
         specifier: 3.18.4
         version: 3.18.4
@@ -241,7 +259,7 @@ importers:
         specifier: 11.0.0
         version: 11.0.0
       ws:
-        specifier: ^8.18.0
+        specifier: 8.18.3
         version: 8.18.3
     devDependencies:
       '@types/cors':
@@ -257,7 +275,7 @@ importers:
         specifier: 24.3.1
         version: 24.3.1
       '@types/ws':
-        specifier: ^8.5.13
+        specifier: 8.18.1
         version: 8.18.1
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1427,6 +1445,9 @@ importers:
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
+      ws:
+        specifier: 8.18.3
+        version: 8.18.3
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1437,6 +1458,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.0
+      '@types/ws':
+        specifier: 8.18.1
+        version: 8.18.1
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config

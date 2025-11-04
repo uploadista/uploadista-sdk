@@ -4,18 +4,18 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { createNodeWebSocket } from "@hono/node-ws";
 import { createClient } from "@redis/client";
-import {  honoAdapter } from "@uploadista/adapters-hono";
+import { honoAdapter } from "@uploadista/adapters-hono";
 import { s3Store } from "@uploadista/data-store-s3";
 import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
 import { redisKvStore } from "@uploadista/kv-store-redis";
+import { createUploadistaServer } from "@uploadista/server";
 import dotenv from "dotenv";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
 import { flows } from "./flows";
-import { createUploadistaServer } from "@uploadista/server";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -67,7 +67,6 @@ const dataStore = s3Store({
 if (!process.env.REPLICATE_API_TOKEN) {
   throw new Error("REPLICATE_API_TOKEN is not set");
 }
-
 
 const uploadistaServer = await createUploadistaServer({
   dataStore,

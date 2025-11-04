@@ -13,21 +13,27 @@
     "check": "biome check --write ./src"
   },
   "dependencies": {
+    "@redis/client": "5.8.3",
     "@uploadista/adapters-express": "workspace:*",
     "@uploadista/core": "workspace:*",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/kv-store-filesystem": "workspace:*",
+    "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/data-store-filesystem": "workspace:*",
     "@uploadista/flow-images-nodes": "workspace:*",
     "@uploadista/flow-images-photon": "workspace:*",
     "@uploadista/flow-images-replicate": "workspace:*",
     "@uploadista/flow-images-sharp": "workspace:*",
+    "@uploadista/kv-store-redis": "workspace:*",
+    "@uploadista/event-broadcaster-redis": "workspace:*",
     "@uploadista/event-emitter-websocket": "workspace:*",
+    "@uploadista/server": "workspace:*",
+    "dotenv": "17.2.3",
     "express": "5.1.0",
     "cors": "2.8.5",
     "multer": "2.0.2",
     "pino-http": "11.0.0",
-    "ws": "^8.18.0",
+    "ws": "8.18.3",
     "effect": "3.18.4"
   },
   "devDependencies": {
@@ -35,7 +41,7 @@
     "@types/express": "5.0.3",
     "@types/multer": "2.0.0",
     "@types/node": "24.3.1",
-    "@types/ws": "^8.5.13",
+    "@types/ws": "8.18.1",
     "@uploadista/typescript-config": "workspace:*",
     "tsx": "4.20.5",
     "typescript": "catalog:"

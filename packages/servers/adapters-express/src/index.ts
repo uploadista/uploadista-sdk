@@ -1,4 +1,5 @@
 export * from "./uploadista-adapter";
+export * from "./express-adapter";
 
 // Export types and utilities for WebSocket integration
 export type {
