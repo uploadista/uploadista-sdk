@@ -26,4 +26,5 @@ export * from "./types/flow-file";
 export * from "./types/flow-job";
 export * from "./types/flow-types";
 export * from "./types/run-args";
+export * from "./types/type-utils";
 export * from "./utils/resolve-upload-metadata";

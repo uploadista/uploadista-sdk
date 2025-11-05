@@ -15,35 +15,116 @@ import type { StandardResponse } from "../adapter";
 import { AuthCacheServiceLive } from "../cache";
 import { handleFlowError } from "../http-utils";
 import { createFlowServerLayer, createUploadServerLayer } from "../layer-utils";
-import type { FlowRequirementsOf } from "../plugins-typing";
 import { AuthContextServiceLive } from "../service";
 import type { AuthContext } from "../types";
 import { handleUploadistaRequest } from "./http-handlers/http-handlers";
+import type { ExtractFlowPluginRequirements } from "./plugin-types";
 import type { NotFoundResponse } from "./routes";
 import type { UploadistaServer, UploadistaServerConfig } from "./types";
 
 /**
  * Creates the unified Uploadista server with framework-specific adapter.
  *
- * This function composes all layers (upload server, flow server, auth, metrics)
- * and returns a handler that works with any framework via the provided adapter.
+ * This is the single, unified API for creating an Uploadista server. It handles
+ * all server initialization, layer composition, and runtime setup.
  *
- * The core server handles:
+ * ## Core Responsibilities
+ *
+ * The server handles:
+ * - Layer composition (upload/flow servers, auth cache, metrics, plugins)
  * - Route parsing and matching
  * - Auth middleware execution with timeout protection
- * - Layer composition (upload/flow servers, auth cache, metrics)
  * - Error handling and response formatting
  * - Effect program execution with optional tracing
+ * - Plugin validation and dependency injection
  *
- * @param config - Server configuration including adapter and business logic
- * @returns Object with handler function, optional WebSocket handler, and base URL
+ * ## Plugin Validation
  *
- * @example
+ * The server supports two validation approaches:
+ *
+ * ### 1. Runtime Validation (Recommended for Most Cases)
+ *
+ * The server relies on Effect-TS's dependency injection to validate plugins
+ * at runtime. If a required plugin is missing, Effect will fail with a clear
+ * MissingService error.
+ *
  * ```typescript
- * import { createUploadistaServer, honoAdapter } from "@uploadista/server";
+ * const server = await createUploadistaServer({
+ *   flows: getFlowById,
+ *   plugins: [sharpImagePlugin, zipPlugin],
+ *   dataStore: s3DataStore,
+ *   kvStore: redisKvStore,
+ *   adapter: honoAdapter({ ... })
+ * });
+ * // If plugins don't match flow requirements, Effect fails with clear error
+ * ```
+ *
+ * ### 2. Compile-Time Validation (Optional)
+ *
+ * For IDE feedback during development, use the ValidatePlugins type utility:
+ *
+ * ```typescript
+ * import {
+ *   createUploadistaServer,
+ *   ValidatePlugins,
+ *   ExtractFlowPluginRequirements
+ * } from '@uploadista/server';
+ *
+ * // Extract requirements from flows
+ * type Requirements = ExtractFlowPluginRequirements<typeof getFlowById>;
+ *
+ * // Define plugins
+ * const plugins = [sharpImagePlugin, zipPlugin] as const;
+ *
+ * // Validate at compile time (optional, for IDE feedback)
+ * type Validation = ValidatePlugins<typeof plugins, Requirements>;
+ * // IDE shows error if plugins don't match requirements
  *
  * const server = await createUploadistaServer({
  *   flows: getFlowById,
+ *   plugins,
+ *   // ...
+ * });
+ * ```
+ *
+ * ### 3. Early Runtime Validation (Optional)
+ *
+ * For better error messages before server starts:
+ *
+ * ```typescript
+ * import { validatePluginsOrThrow } from '@uploadista/server/core';
+ *
+ * validatePluginsOrThrow({
+ *   plugins: [sharpImagePlugin],
+ *   expectedServices: ['ImagePlugin', 'ZipPlugin']
+ * });
+ * // Throws with helpful error message including import suggestions
+ * ```
+ *
+ * ## Type Safety
+ *
+ * - Plugin requirements are inferred from flow definitions
+ * - Effect-TS ensures dependencies are satisfied at runtime
+ * - Type casting is intentional (see inline docs for rationale)
+ * - Optional compile-time validation available via type utilities
+ *
+ * @template TContext - Framework-specific context type
+ * @template TResponse - Framework-specific response type
+ * @template TWebSocketHandler - WebSocket handler type (if supported)
+ * @template TFlows - Flow function type with plugin requirements
+ * @template TPlugins - Tuple of plugin layers provided
+ *
+ * @param config - Server configuration including adapter and business logic
+ * @returns Promise resolving to server instance with handler and metadata
+ *
+ * @example Basic Usage
+ * ```typescript
+ * import { createUploadistaServer, honoAdapter } from "@uploadista/server";
+ * import { sharpImagePlugin } from "@uploadista/flow-images-sharp";
+ *
+ * const server = await createUploadistaServer({
+ *   flows: getFlowById,
+ *   plugins: [sharpImagePlugin],
  *   dataStore: { type: "s3", config: { bucket: "uploads" } },
  *   kvStore: redisKvStore,
  *   adapter: honoAdapter({
@@ -54,6 +135,30 @@ import type { UploadistaServer, UploadistaServerConfig } from "./types";
  * // Use with Hono
  * app.all("/uploadista/*", server.handler);
  * ```
+ *
+ * @example With Compile-Time Validation
+ * ```typescript
+ * import {
+ *   createUploadistaServer,
+ *   ValidatePlugins,
+ *   ExtractFlowPluginRequirements
+ * } from "@uploadista/server";
+ *
+ * type Requirements = ExtractFlowPluginRequirements<typeof getFlowById>;
+ * const plugins = [sharpImagePlugin, zipPlugin] as const;
+ * type Validation = ValidatePlugins<typeof plugins, Requirements>;
+ *
+ * const server = await createUploadistaServer({
+ *   flows: getFlowById,
+ *   plugins,
+ *   // ... rest of config
+ * });
+ * ```
+ *
+ * @see ValidatePlugins - Compile-time plugin validation
+ * @see ExtractFlowPluginRequirements - Extract requirements from flows
+ * @see validatePluginRequirements - Runtime validation helper
+ * @see API_DECISION_GUIDE.md - Complete guide for choosing validation approach
  */
 export const createUploadistaServer = async <
   TContext,
@@ -102,7 +207,7 @@ export const createUploadistaServer = async <
     ? configBaseUrl.slice(0, -1)
     : configBaseUrl;
 
-  type FlowReq = FlowRequirementsOf<TFlows>;
+  type FlowReq = ExtractFlowPluginRequirements<TFlows>;
 
   // Create flow provider layer from flows function
   const flowProviderLayer = Layer.effect(
@@ -156,8 +261,12 @@ export const createUploadistaServer = async <
   // Metrics layer (defaults to NoOp if not provided)
   const effectiveMetricsLayer = metricsLayer ?? NoOpMetricsServiceLive;
 
-  // Merge all server layers including plugins
-  // Plugins may have requirements that are provided at runtime or by other plugins
+  /**
+   * Merge all server layers including plugins.
+   *
+   * This combines the core server infrastructure (upload server, flow server,
+   * metrics, auth cache) with user-provided plugin layers.
+   */
   const serverLayerRaw = Layer.mergeAll(
     uploadServerLayer,
     flowServerLayer,
@@ -166,12 +275,85 @@ export const createUploadistaServer = async <
     ...plugins,
   );
 
-  // Type assertion to handle plugin requirements
-  // Plugins are typed with 'any' requirements to allow flexibility
-  // The actual requirements will be satisfied at the layer composition level
-
+  /**
+   * Type Casting Rationale for Plugin System
+   *
+   * The type assertion below is intentional and safe. This is not a bug or workaround,
+   * but follows Effect-TS's design for dynamic dependency injection.
+   *
+   * ## Why Type Casting is Necessary
+   *
+   * 1. **Plugin Requirements are Dynamic**
+   *    Different flows require different plugins (ImagePlugin, ZipPlugin, etc.).
+   *    These requirements are only known when flows are loaded at runtime.
+   *    Flow A might need ImagePlugin, Flow B might need ZipPlugin.
+   *
+   * 2. **TypeScript's Static Limitation**
+   *    TypeScript cannot statically verify that all possible flow combinations
+   *    will have their requirements satisfied. The plugin array is typed as
+   *    `readonly PluginLayer[]` which could be any combination of plugins.
+   *
+   * 3. **Effect-TS Runtime Resolution**
+   *    Effect-TS is designed to resolve service requirements at runtime using
+   *    its dependency injection system. When a flow executes and accesses a service:
+   *
+   *    ```typescript
+   *    const imagePlugin = yield* ImagePlugin;
+   *    ```
+   *
+   *    Effect checks if ImagePlugin exists in the provided layer context.
+   *    If missing, Effect fails with a clear MissingService error.
+   *
+   * 4. **Layer Composition Guarantees**
+   *    Layer.mergeAll() combines all layers. At runtime, Effect ensures that
+   *    when a service is requested, it's either:
+   *    - Provided by one of the merged layers, OR
+   *    - Results in a MissingService error with the service name
+   *
+   * ## Safety Guarantees
+   *
+   * This pattern is safe because:
+   *
+   * 1. **Runtime Validation** (Optional but Recommended)
+   *    We provide validatePluginRequirements() that checks plugins before
+   *    server initialization, giving excellent error messages early.
+   *
+   * 2. **Effect's Built-in Validation**
+   *    If runtime validation is skipped, Effect will fail during flow execution
+   *    with a MissingService error containing the service identifier.
+   *
+   * 3. **Optional Compile-Time Validation**
+   *    Developers can use ValidatePlugins<> type utility for IDE feedback:
+   *
+   *    ```typescript
+   *    type Validation = ValidatePlugins<typeof plugins, Requirements>;
+   *    // Shows compile error if plugins don't match requirements
+   *    ```
+   *
+   * 4. **No Silent Failures**
+   *    There's no scenario where missing plugins cause silent failures.
+   *    Either runtime validation catches it, or Effect fails with clear error.
+   *
+   * ## This is Effect-TS's Idiomatic Pattern
+   *
+   * Effect-TS separates compile-time structure from runtime resolution:
+   * - Compile-time: Types ensure layer structure is correct
+   * - Runtime: Effect resolves actual dependencies and fails if missing
+   *
+   * The type system provides structure and IDE support, while Effect's
+   * runtime handles actual requirement resolution.
+   *
+   * ## Further Reading
+   *
+   * - Effect-TS Context Management: https://effect.website/docs/guides/context-management
+   * - Runtime Validation: See plugin-validation.ts for helper functions
+   * - Type Utilities: See plugin-types.ts for compile-time validation
+   *
+   * @see validatePluginRequirements - Runtime validation helper
+   * @see ValidatePlugins - Compile-time validation type utility
+   */
   const serverLayer = serverLayerRaw as unknown as Layer.Layer<
-    // biome-ignore lint/suspicious/noExplicitAny: Necessary to bridge Effect's strict typing with dynamic plugin system
+    // biome-ignore lint/suspicious/noExplicitAny: Dynamic plugin requirements require any - see comprehensive explanation above
     any,
     never,
     never

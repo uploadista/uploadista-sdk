@@ -49,10 +49,73 @@ export type TypeSafeServerConfig<
 };
 
 /**
- * Creates a type-safe Uploadista server with compile-time plugin validation.
+ * @deprecated Use `createUploadistaServer` with optional type utilities instead.
  *
- * This function provides the same functionality as `createUploadistaServer`
- * but with stricter typing that ensures all plugin requirements are satisfied.
+ * This function is deprecated in favor of the unified `createUploadistaServer` API.
+ * The new approach separates validation concerns from server creation, making the
+ * API simpler while still providing compile-time validation when desired.
+ *
+ * ## Migration Guide
+ *
+ * ### Old Approach (Deprecated)
+ * ```typescript
+ * import { createTypeSafeServer } from "@uploadista/server";
+ *
+ * const server = await createTypeSafeServer({
+ *   plugins: [sharpImagePlugin] as const,
+ *   flows: myFlowFunction,
+ *   // ...
+ * });
+ * ```
+ *
+ * ### New Approach (Recommended)
+ *
+ * **Option 1: Runtime validation only (simplest)**
+ * ```typescript
+ * import { createUploadistaServer } from "@uploadista/server";
+ *
+ * const server = await createUploadistaServer({
+ *   plugins: [sharpImagePlugin, zipPlugin],
+ *   flows: myFlowFunction,
+ *   // ... Effect validates at runtime
+ * });
+ * ```
+ *
+ * **Option 2: With compile-time validation (optional)**
+ * ```typescript
+ * import {
+ *   createUploadistaServer,
+ *   ValidatePlugins,
+ *   ExtractFlowPluginRequirements
+ * } from "@uploadista/server";
+ *
+ * type Requirements = ExtractFlowPluginRequirements<typeof myFlowFunction>;
+ * const plugins = [sharpImagePlugin, zipPlugin] as const;
+ * type Validation = ValidatePlugins<typeof plugins, Requirements>;
+ * // IDE shows error if plugins don't match requirements
+ *
+ * const server = await createUploadistaServer({
+ *   plugins,
+ *   flows: myFlowFunction,
+ *   // ...
+ * });
+ * ```
+ *
+ * ## Why This Changed
+ *
+ * 1. **Simpler API**: One function instead of two reduces confusion
+ * 2. **Separation of Concerns**: Validation is now optional and separate
+ * 3. **Better Flexibility**: Choose validation approach per use case
+ * 4. **Clearer Intent**: Explicit validation via type utilities
+ * 5. **Same Safety**: Effect-TS still validates at runtime
+ *
+ * The new approach trusts Effect-TS's design for dynamic dependency injection
+ * while providing optional compile-time validation through type utilities.
+ *
+ * @see createUploadistaServer - The unified server creation API
+ * @see ValidatePlugins - Compile-time validation type utility
+ * @see ExtractFlowPluginRequirements - Extract requirements from flows
+ * @see API_DECISION_GUIDE.md - Complete migration and usage guide
  *
  * @template TContext - Framework-specific request context type
  * @template TResponse - Framework-specific response type
@@ -62,37 +125,6 @@ export type TypeSafeServerConfig<
  *
  * @param config - Type-safe server configuration
  * @returns Promise resolving to UploadistaServer instance
- *
- * @example
- * ```typescript
- * import { createTypeSafeServer } from "@uploadista/server";
- * import { ImagePlugin } from "@uploadista/core/flow";
- * import { sharpImagePlugin } from "@uploadista/flow-images-sharp";
- *
- * // ✅ Type-safe: ImagePlugin is provided
- * const server = await createTypeSafeServer({
- *   plugins: [sharpImagePlugin] as const,
- *   flows: (flowId, clientId) =>
- *     Effect.gen(function* () {
- *       const imageService = yield* ImagePlugin;
- *       return createFlow({ ... });
- *     }),
- *   adapter: honoAdapter({ ... }),
- *   dataStore: { type: "s3", ... },
- *   kvStore: redisKvStore
- * });
- *
- * // ❌ Compile error: ImagePlugin required but not provided
- * const badServer = await createTypeSafeServer({
- *   plugins: [] as const,  // Missing ImagePlugin!
- *   flows: (flowId, clientId) =>
- *     Effect.gen(function* () {
- *       const imageService = yield* ImagePlugin;  // Error: not provided
- *       return createFlow({ ... });
- *     }),
- *   // ...
- * });
- * ```
  */
 export async function createTypeSafeServer<
   TContext,
