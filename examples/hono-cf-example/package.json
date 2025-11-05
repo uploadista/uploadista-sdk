@@ -1,0 +1,32 @@
+{
+  "name": "@uploadista/hono-cf-example",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "@uploadista/adapters-hono": "workspace:*",
+    "@uploadista/core": "workspace:*",
+    "@uploadista/data-store-r2": "workspace:*",
+    "@uploadista/event-emitter-durable-object": "workspace:*",
+    "@uploadista/flow-images-nodes": "workspace:*",
+    "@uploadista/flow-images-photon": "workspace:*",
+    "@uploadista/kv-store-cloudflare-kv": "workspace:*",
+    "@uploadista/server": "workspace:*",
+    "effect": "catalog:",
+    "hono": "catalog:",
+    "hono-pino": "0.10.3",
+    "pino": "10.1.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/service-worker-mock": "2.0.4",
+    "@uploadista/typescript-config": "workspace:*",
+    "wrangler": "4.45.3"
+  }
+}

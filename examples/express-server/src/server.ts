@@ -1,16 +1,20 @@
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createExpressUploadistaAdapter } from "@uploadista/adapters-express";
-import { createFileStore } from "@uploadista/data-store-filesystem";
+import { expressAdapter } from "@uploadista/adapters-express";
+import { fileStore } from "@uploadista/data-store-filesystem";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
 import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createUploadistaServer } from "@uploadista/server";
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import pinoHttp from "pino-http";
 import { WebSocketServer } from "ws";
 import { flows } from "./flows";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -36,7 +40,7 @@ async function startServer() {
     directory: join(__dirname, "../uploads"),
   });
 
-  const dataStore = createFileStore({
+  const dataStore = fileStore({
     directory: join(__dirname, "../uploads"),
     deliveryUrl: "http://localhost:3000",
   });
@@ -45,12 +49,13 @@ async function startServer() {
     throw new Error("REPLICATE_API_TOKEN is not set");
   }
 
-  // Create upload adapter with proper layer-based configuration
-  const uploadistaAdapter = await createExpressUploadistaAdapter({
+  // Create uploadista server with proper layer-based configuration and express adapter
+  const uploadistaServer = await createUploadistaServer({
     kvStore,
     dataStore,
     flows,
     plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
+    adapter: expressAdapter({}),
   });
 
   // Health check endpoint
@@ -64,14 +69,16 @@ async function startServer() {
 
   // Upload endpoints - support all HTTP methods for upload operations
   // Express 5 requires named wildcards - use /*splat syntax
-  app.all("/uploadista/api/*splat", uploadistaAdapter.handler);
+  app.all("/uploadista/api/*splat", (request, response, next) => {
+    uploadistaServer.handler({ request, response, next });
+  });
 
   // WebSocket server setup for real-time upload progress
   const wss = new WebSocketServer({
     server,
   });
 
-  wss.on("connection", uploadistaAdapter.websocketConnectionHandler);
+  wss.on("connection", uploadistaServer.websocketHandler);
 
   // Error handling middleware
   app.use(
@@ -118,7 +125,7 @@ async function startServer() {
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);
 
-  return { app, server, uploadistaAdapter };
+  return { app, server, uploadistaServer };
 }
 
 // Start the server

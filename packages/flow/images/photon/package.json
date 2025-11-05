@@ -6,12 +6,12 @@
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
-    "node": {
+    "./node": {
       "types": "./dist/node.d.ts",
       "import": "./dist/node.js",
       "default": "./dist/node.js"
     },
-    "serverless": {
+    "./serverless": {
       "types": "./dist/serverless.d.ts",
       "import": "./dist/serverless.js",
       "default": "./dist/serverless.js"

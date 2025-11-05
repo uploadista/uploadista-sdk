@@ -527,6 +527,7 @@ export function createFlowWithSchema<
               // For input nodes, use the mapped flow input
               nodeInput = nodeInputs[nodeId];
               if (nodeInput === undefined) {
+                yield* Effect.logError(`Input node ${nodeId} has no input data`);
                 return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
                   cause: new Error(`Input node ${nodeId} has no input data`),
                 }).toEffect();
@@ -536,6 +537,7 @@ export function createFlowWithSchema<
               nodeInputsForExecution = getNodeInputs(nodeId, nodeResults);
 
               if (Object.keys(nodeInputsForExecution).length === 0) {
+                yield* Effect.logError(`Node ${nodeId} has no input data`);
                 return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
                   cause: new Error(`Node ${nodeId} has no input data`),
                 }).toEffect();

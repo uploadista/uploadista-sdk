@@ -98,7 +98,7 @@ export function GalleryUploadButton({
           error: item.error,
           result: item.result,
         }}
-        label={item.file.name}
+        label={item.file.data.name}
       />
     </View>
   );

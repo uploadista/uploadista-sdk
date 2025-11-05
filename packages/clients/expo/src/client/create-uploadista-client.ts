@@ -19,6 +19,9 @@ export interface UploadistaClientOptions
     | "httpClient"
     | "fileReader"
     | "base64"
+    | "checksumService"
+    | "fingerprintService"
+    | "platformService"
   > {
   connectionPooling?: ConnectionPoolConfig;
 
@@ -63,5 +66,8 @@ export function createUploadistaClient(options: UploadistaClientOptions) {
     generateId: services.idGeneration,
     logger: createLogger(false, () => {}),
     clientStorage: createClientStorage(services.storage),
+    checksumService: services.checksumService,
+    fingerprintService: services.fingerprintService,
+    platformService: services.platform,
   });
 }

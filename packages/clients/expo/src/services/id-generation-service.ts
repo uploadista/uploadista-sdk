@@ -1,5 +1,5 @@
 import type { IdGenerationService } from "@uploadista/client-core";
-import { v4 as uuidv4 } from "uuid";
+import * as Crypto from "expo-crypto";
 
 /**
  * Expo-specific implementation of IdGenerationService using uuid library
@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 export function createExpoIdGenerationService(): IdGenerationService {
   return {
     generate(): string {
-      return uuidv4();
+      return Crypto.randomUUID();
     },
   };
 }

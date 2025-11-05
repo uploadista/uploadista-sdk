@@ -1,10 +1,10 @@
-import type { FlowServerShape } from "@uploadista/core/flow";
-import type { UploadServerShape } from "@uploadista/core/upload";
+import { FlowServer, type FlowServerShape } from "@uploadista/core/flow";
+import { UploadServer, type UploadServerShape } from "@uploadista/core/upload";
 import type { AuthResult } from "@uploadista/server";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createUploadistaWebSocketHandler } from "./uploadista-websocket-handler";
+import { honoWebSocketHandler } from "./hono-websocket-handler";
 
 // Mock upload and flow servers
 const mockUploadServer = {
@@ -17,6 +17,11 @@ const mockFlowServer = {
   unsubscribeFromFlowEvents: vi.fn(() => Effect.succeed(undefined)),
 } as unknown as FlowServerShape;
 
+const serverLayer = Layer.mergeAll(
+  Layer.succeed(UploadServer, mockUploadServer),
+  Layer.succeed(FlowServer, mockFlowServer),
+);
+
 describe("WebSocket Authentication", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -24,18 +29,15 @@ describe("WebSocket Authentication", () => {
 
   describe("with auth middleware configured", () => {
     it("should reject WebSocket connection without token", async () => {
+      // Auth middleware that rejects when no token (simulating cookie auth failure)
       const authMiddleware = vi.fn(
-        async (): Promise<AuthResult> => ({
-          clientId: "user-123",
-        }),
+        async (): Promise<AuthResult> => null, // Return null to simulate auth failure
       );
 
-      const handler = createUploadistaWebSocketHandler(
+      const handler = honoWebSocketHandler(
         "/uploadista",
-        mockUploadServer,
-        mockFlowServer,
         authMiddleware,
-      );
+      ).pipe(Effect.provide(serverLayer));
 
       // Create mock context without token
       const mockContext = {
@@ -50,7 +52,8 @@ describe("WebSocket Authentication", () => {
         },
       } as unknown as Context;
 
-      const wsEvents = handler(mockContext);
+      const wsHandler = await Effect.runPromise(handler);
+      const wsEvents = wsHandler(mockContext);
 
       // Mock WebSocket
       const mockWs = {
@@ -67,27 +70,26 @@ describe("WebSocket Authentication", () => {
       await wsEvents.onOpen?.({} as Event, mockWs as any);
 
       // Should send error and close with auth code
+      // When no token is present, it tries cookie-based auth
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining("Authentication required"),
+        expect.stringContaining("Authentication failed: invalid or expired cookies"),
       );
       expect(mockWs.close).toHaveBeenCalledWith(
         4001,
-        "Authentication required",
+        "Authentication failed: invalid or expired cookies",
       );
 
-      // Auth middleware should NOT be called without token
-      expect(authMiddleware).not.toHaveBeenCalled();
+      // Auth middleware SHOULD be called (cookie-based auth fallback)
+      expect(authMiddleware).toHaveBeenCalled();
     });
 
     it("should reject WebSocket connection with invalid token", async () => {
       const authMiddleware = vi.fn(async (): Promise<AuthResult> => null);
 
-      const handler = createUploadistaWebSocketHandler(
+      const handler = honoWebSocketHandler(
         "/uploadista",
-        mockUploadServer,
-        mockFlowServer,
         authMiddleware,
-      );
+      ).pipe(Effect.provide(serverLayer));
 
       // Create mock context with invalid token
       const mockContext = {
@@ -103,7 +105,8 @@ describe("WebSocket Authentication", () => {
         },
       } as unknown as Context;
 
-      const wsEvents = handler(mockContext);
+      const wsHandler = await Effect.runPromise(handler);
+      const wsEvents = wsHandler(mockContext);
 
       const mockWs = {
         raw: {
@@ -121,7 +124,7 @@ describe("WebSocket Authentication", () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining("Authentication failed"),
       );
-      expect(mockWs.close).toHaveBeenCalledWith(4001, "Authentication failed");
+      expect(mockWs.close).toHaveBeenCalledWith(4001, "Authentication failed: invalid or expired token");
 
       // Auth middleware should have been called
       expect(authMiddleware).toHaveBeenCalledTimes(1);
@@ -132,12 +135,10 @@ describe("WebSocket Authentication", () => {
         async (): Promise<AuthResult> => ({ clientId: "user-123" }),
       );
 
-      const handler = createUploadistaWebSocketHandler(
+      const handler = honoWebSocketHandler(
         "/uploadista",
-        mockUploadServer,
-        mockFlowServer,
         authMiddleware,
-      );
+      ).pipe(Effect.provide(serverLayer));
 
       const mockContext = {
         req: {
@@ -152,7 +153,8 @@ describe("WebSocket Authentication", () => {
         },
       } as unknown as Context;
 
-      const wsEvents = handler(mockContext);
+      const wsHandler = await Effect.runPromise(handler);
+      const wsEvents = wsHandler(mockContext);
 
       const mockWs = {
         raw: {
@@ -183,12 +185,10 @@ describe("WebSocket Authentication", () => {
         throw new Error("Auth service unavailable");
       });
 
-      const handler = createUploadistaWebSocketHandler(
+      const handler = honoWebSocketHandler(
         "/uploadista",
-        mockUploadServer,
-        mockFlowServer,
         authMiddleware,
-      );
+      ).pipe(Effect.provide(serverLayer));
 
       const mockContext = {
         req: {
@@ -203,7 +203,8 @@ describe("WebSocket Authentication", () => {
         },
       } as unknown as Context;
 
-      const wsEvents = handler(mockContext);
+      const wsHandler = await Effect.runPromise(handler);
+      const wsEvents = wsHandler(mockContext);
 
       const mockWs = {
         raw: {
@@ -227,12 +228,10 @@ describe("WebSocket Authentication", () => {
 
   describe("without auth middleware", () => {
     it("should accept WebSocket connection without authentication", async () => {
-      const handler = createUploadistaWebSocketHandler(
+      const handler = honoWebSocketHandler(
         "/uploadista",
-        mockUploadServer,
-        mockFlowServer,
         // No auth middleware
-      );
+      ).pipe(Effect.provide(serverLayer));
 
       const mockContext = {
         req: {
@@ -246,7 +245,8 @@ describe("WebSocket Authentication", () => {
         },
       } as unknown as Context;
 
-      const wsEvents = handler(mockContext);
+      const wsHandler = await Effect.runPromise(handler);
+      const wsEvents = wsHandler(mockContext);
 
       const mockWs = {
         raw: {

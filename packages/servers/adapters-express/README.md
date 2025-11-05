@@ -1,455 +1,388 @@
 # @uploadista/adapters-express
 
-Uploadista adapter for Express - Run upload servers on Node.js with Express.
+Uploadista adapter for Express - The most popular Node.js web framework.
 
-Provides a complete file upload and flow processing server for Express with manual WebSocket setup, authentication middleware, and support for standard Node.js hosting (Heroku, Railway, VPS, etc.).
+Provides a lightweight adapter for integrating Uploadista's file upload and flow processing capabilities with Express applications. Built on the unified adapter pattern for consistent behavior across all frameworks.
 
 ## Features
 
-- **Node.js Compatible** - Run on any Node.js 18+ environment
-- **Express Middleware** - Integrates with Express request/response patterns
-- **WebSocket Support** - Use `ws` package for real-time progress
-- **Authentication** - Flexible middleware for JWT or custom auth
-- **Multi-Cloud Storage** - S3, Azure, GCS, or filesystem
-- **Redis Support** - Distributed deployments with Redis KV store
+- **Express 4 & 5** - Compatible with both major versions
+- **WebSocket Support** - Real-time progress via `ws` package
+- **Authentication** - Flexible middleware for JWT, sessions, or custom auth
+- **Multi-Cloud Storage** - S3, Azure, GCS, or filesystem backends
+- **Event Broadcasting** - Real-time updates via memory or Redis
 - **TypeScript** - Full type safety with comprehensive JSDoc
+- **Lightweight** - Minimal adapter code delegates to core server
 
 ## Installation
 
 ```bash
-npm install @uploadista/adapters-express express ws
+npm install @uploadista/adapters-express @uploadista/server express ws
 # or
-pnpm add @uploadista/adapters-express express ws
+pnpm add @uploadista/adapters-express @uploadista/server express ws
 ```
 
 ## Requirements
 
+- Express 4.x or 5.x
 - Node.js 18+
-- Express 4.0 or 5.0+
+- `ws` package for WebSocket support
 - TypeScript 5.0+ (optional but recommended)
 
 ## Quick Start
 
-### 1. Basic Express Server
+### Basic Server
 
 ```typescript
+import { createServer } from "node:http";
+import { expressAdapter } from "@uploadista/adapters-express";
+import { fileStore } from "@uploadista/data-store-filesystem";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createUploadistaServer } from "@uploadista/server";
 import express from "express";
-import { createExpressUploadistaAdapter } from "@uploadista/adapters-express";
-import { redisKvStore } from "@uploadista/kv-store-redis";
-import { s3DataStore } from "@uploadista/data-store-s3";
-import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
-import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
+import { WebSocketServer } from "ws";
+import { flows } from "./flows";
 
 const app = express();
+const server = createServer(app);
 
-// Create adapter
-const adapter = await createExpressUploadistaAdapter({
-  baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  eventBroadcaster: memoryEventBroadcaster,
-  flows: (flowId, clientId) => createFlowsEffect(flowId, clientId),
+// Middleware
+app.use(express.json());
+
+// Create KV store and data store
+const kvStore = fileKvStore({ directory: "./uploads" });
+const dataStore = fileStore({
+  directory: "./uploads",
+  deliveryUrl: "http://localhost:3000/uploads",
 });
 
-// Mount HTTP handler
-app.use(`/${adapter.baseUrl}`, (req, res) => {
-  adapter.handler(req, res);
+// Create uploadista server with Express adapter
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: expressAdapter({}), // <-- New adapter pattern
 });
 
-// WebSocket server
-import http from "http";
-import WebSocket from "ws";
-
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-wss.on("connection", (ws, req) => {
-  adapter.websocketConnectionHandler(ws, req);
+// Mount HTTP endpoints (Express 5)
+app.all("/uploadista/api/*splat", (request, response, next) => {
+  uploadistaServer.handler({ request, response, next });
 });
 
+// For Express 4, use:
+// app.all("/uploadista/api/*", (request, response, next) => {
+//   uploadistaServer.handler({ request, response, next });
+// });
+
+// WebSocket server setup
+const wss = new WebSocketServer({ server });
+wss.on("connection", uploadistaServer.websocketHandler);
+
+// Start server
 server.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+  console.log("Server running on port 3000");
 });
 ```
 
-### 2. Add Authentication
+### With Authentication
 
 ```typescript
-const adapter = await createExpressUploadistaAdapter({
-  baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  authMiddleware: async (req, res) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return null;
+import { expressAdapter } from "@uploadista/adapters-express";
+import { createUploadistaServer } from "@uploadista/server";
 
-    try {
-      const payload = await verifyToken(token);
-      return {
-        clientId: payload.sub,
-        permissions: payload.permissions,
-      };
-    } catch {
-      res.status(401).json({ error: "Unauthorized" });
-      return null;
-    }
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: expressAdapter({
+    // Optional auth middleware
+    authMiddleware: async ({ request, response }) => {
+      const token = request.headers.authorization?.split(" ")[1];
+      if (!token) return null;
+
+      try {
+        // Verify JWT or session
+        const payload = await verifyToken(token);
+        return {
+          clientId: payload.sub,
+          permissions: payload.permissions,
+          metadata: { tier: payload.tier },
+        };
+      } catch {
+        return null; // Null = authentication failed
+      }
+    },
+  }),
+  // Optional auth caching
+  authCacheConfig: {
+    maxSize: 5000,
+    ttl: 3600000, // 1 hour
   },
-  authCacheConfig: { maxSize: 5000, ttl: 3600000 },
 });
 ```
 
-### 3. Express Middleware Setup
+### With Session-Based Auth
 
 ```typescript
-import express, { Request, Response, NextFunction } from "express";
+import session from "express-session";
 
-const app = express();
+// Configure session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
-// Body parser for JSON
-app.use(express.json({ limit: "50mb" }));
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: expressAdapter({
+    authMiddleware: async ({ request }) => {
+      // Access session from Express request
+      if (!request.session?.userId) {
+        return null;
+      }
 
-// CORS
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(","),
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
-
-// Logging
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
+      return {
+        clientId: request.session.userId,
+        metadata: { sessionId: request.sessionID },
+      };
+    },
+  }),
 });
+```
 
-// Mount adapter
-app.use(`/${adapter.baseUrl}`, (req: Request, res: Response) => {
-  adapter.handler(req, res);
-});
+### With Redis Event Broadcasting
 
-// Error handler
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error(err);
-  res.status(500).json({ error: "Internal server error" });
+```typescript
+import { createClient } from "redis";
+import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
+
+const redisClient = createClient({ url: process.env.REDIS_URL });
+const redisSubscriber = createClient({ url: process.env.REDIS_URL });
+
+await redisClient.connect();
+await redisSubscriber.connect();
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: expressAdapter({}),
+  eventBroadcaster: redisEventBroadcaster({
+    redis: redisClient,
+    subscriberRedis: redisSubscriber,
+  }),
 });
 ```
 
 ## Configuration
 
-### `ExpressUploadistaAdapterOptions`
+### `expressAdapter(options?)`
+
+Creates an Express adapter instance.
+
+**Options:**
+- `authMiddleware?: (ctx: ExpressContext) => Promise<AuthResult>` - Optional authentication middleware
+
+**Returns:** `ServerAdapter<ExpressContext, Response, ExpressWebSocketHandler>`
+
+### ExpressContext
+
+The context object passed to auth middleware:
 
 ```typescript
-type ExpressUploadistaAdapterOptions = {
-  // Required
-  flows: (flowId: string, clientId: string | null) =>
-    Effect.Effect<unknown, unknown, unknown>;
-  dataStore: Layer.Layer<UploadFileDataStores, never, UploadFileKVStore>;
-  kvStore: Layer.Layer<BaseKvStoreService>;
-
-  // Optional
-  baseUrl?: string; // Default: "uploadista"
-  eventEmitter?: Layer.Layer<BaseEventEmitterService>;
-  eventBroadcaster?: Layer.Layer<any>;
-  generateId?: Layer.Layer<GenerateId>;
-  authMiddleware?: (
-    req: IncomingMessage,
-    res: ServerResponse,
-  ) => Promise<AuthResult>;
-  authCacheConfig?: AuthCacheConfig;
-  bufferedDataStore?: Layer.Layer<UploadFileDataStore>;
-};
+interface ExpressContext {
+  request: Request;
+  response: Response;
+  next?: (error?: Error) => void;
+}
 ```
 
-## API Routes
+### Authentication Middleware
 
-Routes are available at `/{baseUrl}/api/`:
-
-```
-POST   /uploadista/api/upload
-       Create new upload
-
-GET    /uploadista/api/upload/:uploadId
-       Get upload status
-
-PATCH  /uploadista/api/upload/:uploadId
-       Upload chunk
-
-POST   /uploadista/api/flow/:flowId/:storageId
-       Execute flow
-
-GET    /uploadista/api/jobs/:jobId/status
-       Get job status
-
-PATCH  /uploadista/api/jobs/:jobId/continue/:nodeId
-       Continue flow
-```
-
-## WebSocket Integration
-
-### Using `ws` Package
+The `authMiddleware` function receives `ExpressContext` and should return:
+- `AuthContext` object on success with `clientId` and optional `permissions`, `metadata`
+- `null` on authentication failure (returns 401 to client)
+- Throws error on system failure (returns 500 to client)
 
 ```typescript
-import WebSocket from "ws";
-import http from "http";
+type AuthResult = AuthContext | null;
 
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+interface AuthContext {
+  clientId: string;
+  permissions?: string[];
+  metadata?: Record<string, unknown>;
+}
+```
 
-// Handle WebSocket connections
-wss.on("connection", (ws, req) => {
-  // Pass to adapter
-  adapter.websocketConnectionHandler(ws, req);
+The middleware has a 5-second timeout to prevent hanging requests.
 
-  ws.on("message", (data) => {
-    // Adapter handles messages internally
-  });
+## WebSocket Support
 
-  ws.on("close", () => {
-    console.log("Client disconnected");
-  });
+### Basic Setup
+
+```typescript
+import { createServer } from "node:http";
+import { WebSocketServer } from "ws";
+
+const app = express();
+const server = createServer(app);
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: expressAdapter({}),
 });
+
+// Create WebSocket server
+const wss = new WebSocketServer({ server });
+
+// Connect uploadista handler
+wss.on("connection", uploadistaServer.websocketHandler);
 
 server.listen(3000);
 ```
 
-### Using Socket.io (Alternative)
+### Path-Based Routing
+
+The WebSocket handler automatically routes based on path:
+- `/uploadista/ws/upload/:uploadId` - Upload progress events
+- `/uploadista/ws/flow/:jobId` - Flow execution events
 
 ```typescript
-import { Server } from "socket.io";
+// Client connects to:
+const ws = new WebSocket("ws://localhost:3000/uploadista/ws/upload/abc123");
+// or
+const ws = new WebSocket("ws://localhost:3000/uploadista/ws/flow/job456");
+```
 
-const io = new Server(server, {
-  cors: { origin: "*" },
-});
+### Authentication
 
-io.on("connection", (socket) => {
-  socket.on("subscribe", (channels) => {
-    channels.forEach((ch) => socket.join(ch));
-  });
+WebSocket connections support both token and cookie-based authentication:
 
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-  });
-});
+**Token-based:**
+```typescript
+// Client sends token in query param
+const ws = new WebSocket(
+  "ws://localhost:3000/uploadista/ws/upload/abc123?token=YOUR_JWT"
+);
+```
 
-// Emit events from adapter
-const eventEmitter = /* ... */;
-eventEmitter.on("upload:progress", (data) => {
-  io.emit(`upload:${data.uploadId}`, data);
+**Cookie-based:**
+```typescript
+// Cookies are automatically sent with WebSocket upgrade request
+// Your auth middleware can read them from request.headers.cookie
+const ws = new WebSocket("ws://localhost:3000/uploadista/ws/upload/abc123");
+```
+
+## Express Version Compatibility
+
+### Express 4
+
+Use wildcard routes without named parameters:
+
+```typescript
+app.all("/uploadista/api/*", (request, response, next) => {
+  uploadistaServer.handler({ request, response, next });
 });
 ```
 
-## Complete Server Example
+### Express 5
+
+Use named wildcards (`*splat`):
 
 ```typescript
-import express, { Express, Request, Response } from "express";
-import http from "http";
-import WebSocket from "ws";
-import cors from "cors";
-import { createExpressUploadistaAdapter } from "@uploadista/adapters-express";
-import { redisKvStore } from "@uploadista/kv-store-redis";
-import { s3DataStore } from "@uploadista/data-store-s3";
-import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
-import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
-import { verify } from "jsonwebtoken";
-
-const app: Express = express();
-
-// Middleware
-app.use(express.json({ limit: "50mb" }));
-app.use(cors());
-
-// Health check
-app.get("/health", (req: Request, res: Response) => {
-  res.json({ status: "ok" });
+app.all("/uploadista/api/*splat", (request, response, next) => {
+  uploadistaServer.handler({ request, response, next });
 });
+```
 
-// Create adapter
+## Example Project
+
+See the complete [Express server example](https://github.com/uploadista/uploadista-sdk/tree/main/examples/express-server) for:
+- Full server setup
+- Authentication middleware
+- WebSocket integration
+- Error handling
+- Graceful shutdown
+
+## API Reference
+
+### Core Server Integration
+
+The Express adapter integrates with `@uploadista/server`:
+
+```typescript
+import { createUploadistaServer } from "@uploadista/server";
+import { expressAdapter } from "@uploadista/adapters-express";
+
+const server = await createUploadistaServer({
+  adapter: expressAdapter(/* options */),
+  // ... other config
+});
+```
+
+See [`@uploadista/server` documentation](../server) for full configuration options.
+
+## Migration from v1
+
+If you're migrating from the legacy `createExpressUploadistaAdapter` API:
+
+**Before (v1):**
+```typescript
 const adapter = await createExpressUploadistaAdapter({
   baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  eventBroadcaster: memoryEventBroadcaster,
-  flows: createFlowsEffect,
-  authMiddleware: async (req, res) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return null;
+  dataStore,
+  kvStore,
+  flows,
+  authMiddleware,
+});
 
-    try {
-      const payload = verify(token, process.env.JWT_SECRET!);
-      return {
-        clientId: (payload as any).sub,
-        permissions: (payload as any).permissions || [],
-      };
-    } catch {
-      res.statusCode = 401;
-      res.end(JSON.stringify({ error: "Unauthorized" }));
-      return null;
-    }
+app.all(`/${adapter.baseUrl}/*`, adapter.handler);
+```
+
+**After (v2 - current):**
+```typescript
+const server = await createUploadistaServer({
+  dataStore,
+  kvStore,
+  flows,
+  adapter: expressAdapter({ authMiddleware }),
+});
+
+app.all("/uploadista/api/*splat", (request, response, next) => {
+  server.handler({ request, response, next });
+});
+```
+
+### Key Changes
+- Configuration moved to `createUploadistaServer()`
+- Adapter only handles Express-specific translation
+- `baseUrl` now configured in `createUploadistaServer()` (defaults to "uploadista")
+- Handler now expects `{ request, response, next }` object
+- WebSocket handler accessed via `server.websocketHandler`
+
+## TypeScript Support
+
+The adapter is fully typed:
+
+```typescript
+import type { Request, Response, NextFunction } from "express";
+
+const adapter = expressAdapter({
+  authMiddleware: async ({ request, response, next }) => {
+    // Full Express types available
+    request.session; // typed
+    response.locals; // typed
+    return { clientId: "user-123" };
   },
-  authCacheConfig: { maxSize: 5000, ttl: 3600000 },
 });
-
-// Mount adapter
-app.use(`/${adapter.baseUrl}`, (req: Request, res: Response) => {
-  adapter.handler(req, res);
-});
-
-// Error handler
-app.use((err: any, req: Request, res: Response) => {
-  console.error(err);
-  res.status(500).json({ error: "Internal server error" });
-});
-
-// HTTP + WebSocket server
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-wss.on("connection", (ws, req) => {
-  adapter.websocketConnectionHandler(ws, req);
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
-export default server;
 ```
-
-## Environment Configuration
-
-### .env File
-
-```env
-NODE_ENV=production
-PORT=3000
-
-# AWS S3
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-AWS_REGION=us-east-1
-S3_BUCKET=uploads-prod
-
-# Redis (for KV store and events)
-REDIS_URL=redis://localhost:6379
-
-# JWT Authentication
-JWT_SECRET=your-jwt-secret
-
-# CORS
-ALLOWED_ORIGINS=https://app.example.com,https://dashboard.example.com
-```
-
-## Docker Deployment
-
-### Dockerfile
-
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY dist ./dist
-
-ENV NODE_ENV=production
-EXPOSE 3000
-
-CMD ["node", "dist/server.js"]
-```
-
-### docker-compose.yml
-
-```yaml
-version: "3.8"
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-```
-
-## Request Examples
-
-### Create Upload
-
-```bash
-curl -X POST http://localhost:3000/uploadista/api/upload \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN" \
-  -d '{
-    "filename": "document.pdf",
-    "size": 5242880,
-    "metadata": {"type": "document"}
-  }'
-```
-
-### Upload Chunk
-
-```bash
-curl -X PATCH http://localhost:3000/uploadista/api/upload/upload-123 \
-  -H "Content-Range: bytes 0-1048575/5242880" \
-  -H "Authorization: Bearer TOKEN" \
-  --data-binary @chunk.bin
-```
-
-## Error Codes
-
-- `400 VALIDATION_ERROR` - Invalid request
-- `404 NOT_FOUND` - Upload/flow not found
-- `409 CONFLICT` - Invalid chunk offset
-- `413 PAYLOAD_TOO_LARGE` - File too large
-- `500 INTERNAL_ERROR` - Server error
-
-## Performance Tips
-
-1. Use clustering for multiple CPU cores
-2. Enable Redis for distributed deployments
-3. Configure appropriate chunk sizes
-4. Use reverse proxy (nginx) for load balancing
-5. Monitor memory and disk usage
-
-## Deployment Options
-
-- **VPS**: Deploy with PM2 or systemd
-- **Heroku**: Use Procfile and Redis add-on
-- **Railway**: Direct GitHub integration
-- **Docker**: Container deployment
-- **AWS**: ECS, Lambda (with custom runtime)
-- **DigitalOcean**: App Platform or VPS
-
-## Related Packages
-
-- **[@uploadista/server](../server/)** - Core server utilities
-- **[@uploadista/adapters-hono](../adapters-hono/)** - Hono adapter
-- **[@uploadista/adapters-fastify](../adapters-fastify/)** - Fastify adapter
-- **[@uploadista/core](../../core/)** - Core engine
-- **[@uploadista/kv-store-redis](../../kv-stores/redis/)** - Redis KV store
-- **[@uploadista/data-store-s3](../../data-stores/s3/)** - AWS S3 storage
-
-## Troubleshooting
-
-### WebSocket Connection Refused
-Ensure `ws` server is created and `websocketConnectionHandler` is called on connection.
-
-### Memory Leaks
-Check WebSocket connections are properly closed. Use `nodejs --inspect` for profiling.
-
-### Slow Uploads
-Use Redis for distributed deployments. Increase chunk size. Monitor network throughput.
 
 ## License
 

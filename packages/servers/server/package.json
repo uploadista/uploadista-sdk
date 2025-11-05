@@ -29,6 +29,9 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
+    "@uploadista/event-emitter-websocket": "workspace:*",
+    "@uploadista/event-broadcaster-memory": "workspace:*",
     "effect": "catalog:",
     "zod": "catalog:"
   },
@@ -39,7 +42,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.3"
+    "vitest": "4.0.7"
   },
   "peerDependencies": {
     "express": "^4.0.0 || ^5.0.0",

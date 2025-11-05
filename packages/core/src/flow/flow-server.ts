@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Option, Runtime } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
 import {
@@ -6,6 +6,7 @@ import {
   EventType,
   type Flow,
   type FlowData,
+  type FlowExecutionResult,
   getFlowData,
   runArgsSchema,
 } from "../flow";
@@ -15,6 +16,40 @@ import type {
   UploadFile,
   WebSocketConnection,
 } from "../types";
+
+/**
+ * WaitUntil callback type for keeping background tasks alive.
+ * Used in serverless environments like Cloudflare Workers to prevent
+ * premature termination of background operations.
+ *
+ * @param promise - Promise representing the background task to keep alive
+ */
+export type WaitUntilCallback = (promise: Promise<unknown>) => void;
+
+/**
+ * Optional WaitUntil service for background task management.
+ * When provided, allows flows to execute beyond the HTTP response lifecycle.
+ *
+ * In Cloudflare Workers, use `ctx.executionCtx.waitUntil()`.
+ * In other environments, this can be undefined (flows execute normally with Effect.fork).
+ *
+ * This service uses Effect's optional service pattern. Access it via:
+ * ```typescript
+ * const waitUntil = yield* FlowWaitUntil.optional;
+ * if (Option.isSome(waitUntil)) {
+ *   // Use waitUntil.value
+ * }
+ * ```
+ *
+ * @see https://effect.website/docs/requirements-management/services/#optional-services
+ */
+export class FlowWaitUntil extends Context.Tag("FlowWaitUntil")<
+  FlowWaitUntil,
+  WaitUntilCallback
+>() {
+  static optional = Effect.serviceOption(FlowWaitUntil);
+}
+
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadServer } from "../upload";
 import type { FlowEvent } from "./event";
@@ -555,7 +590,8 @@ function withFlowEvents<
         const executionJobId = args.jobId || crypto.randomUUID();
 
         const onEventCallback = createOnEventCallback(executionJobId);
-        const checkJobStatusCallback = createCheckJobStatusCallback(executionJobId);
+        const checkJobStatusCallback =
+          createCheckJobStatusCallback(executionJobId);
 
         // Create a new flow with the same configuration but with onEvent callback
         const flowWithEvents = yield* createFlowWithSchema({
@@ -595,7 +631,8 @@ function withFlowEvents<
         const executionJobId = args.jobId;
 
         const onEventCallback = createOnEventCallback(executionJobId);
-        const checkJobStatusCallback = createCheckJobStatusCallback(executionJobId);
+        const checkJobStatusCallback =
+          createCheckJobStatusCallback(executionJobId);
 
         // Create a new flow with the same configuration but with onEvent callback
         const flowWithEvents = yield* createFlowWithSchema({
@@ -697,13 +734,19 @@ export function createFlowServer() {
       inputs: Record<string, any>;
     }) =>
       Effect.gen(function* () {
+        console.log(
+          `[FlowServer] executeFlowInBackground started for job: ${jobId}`,
+        );
+
         // Update job status to running
         yield* updateJob(jobId, {
           status: "running",
         });
 
+        console.log(`[FlowServer] Creating flowWithEvents for job: ${jobId}`);
         const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
 
+        console.log(`[FlowServer] Running flow for job: ${jobId}`);
         // Run the flow with the consistent jobId
         const result = yield* flowWithEvents.run({
           inputs,
@@ -711,6 +754,10 @@ export function createFlowServer() {
           jobId,
           clientId,
         });
+
+        console.log(
+          `[FlowServer] Flow completed for job: ${jobId}, result type: ${result.type}`,
+        );
 
         // Handle result based on type
         if (result.type === "paused") {
@@ -801,7 +848,7 @@ export function createFlowServer() {
               ),
             );
 
-            return Effect.fail(error);
+            throw error;
           }),
         ),
       );
@@ -831,6 +878,8 @@ export function createFlowServer() {
         inputs: unknown;
       }) =>
         Effect.gen(function* () {
+          const waitUntil = yield* FlowWaitUntil.optional;
+
           const parsedParams = yield* Effect.try({
             try: () => runArgsSchema.parse({ inputs }),
             catch: (error) =>
@@ -860,20 +909,46 @@ export function createFlowServer() {
           // Get the flow and start background execution
           const flow = yield* flowProvider.getFlow(flowId, clientId);
 
-          // Fork the flow execution to run in background as daemon
-          yield* Effect.forkDaemon(
-            executeFlowInBackground({
-              jobId,
-              flow,
-              storageId,
-              clientId,
-              inputs: parsedParams.inputs,
-            }).pipe(
-              Effect.tapErrorCause((cause) =>
-                Effect.logError("Flow execution failed", cause),
-              ),
-            ),
+          console.log(
+            `[FlowServer] About to fork flow execution for job: ${jobId}`,
           );
+
+          // Execute flow in background
+          // If waitUntil is provided (Cloudflare Workers), use it to keep execution alive
+          // Otherwise, use Effect.fork for standard environments
+          const flowEffect = executeFlowInBackground({
+            jobId,
+            flow,
+            storageId,
+            clientId,
+            inputs: parsedParams.inputs,
+          }).pipe(
+            Effect.tapErrorCause((cause) =>
+              Effect.logError("Flow execution failed", cause),
+            ),
+          ) as Effect.Effect<
+            FlowExecutionResult<Record<string, any>>,
+            UploadistaError,
+            never
+          >;
+
+          if (Option.isSome(waitUntil)) {
+            // Cloudflare Workers: Use waitUntil to keep execution alive
+            console.log(`[FlowServer] Using waitUntil for job: ${jobId}`);
+            // Get the current runtime to run the effect as a promise
+            const runtime = yield* Effect.runtime();
+            const runnable = Runtime.runPromise(runtime);
+            const promise = runnable(flowEffect);
+            waitUntil.value(promise);
+          } else {
+            // Standard environments: Fork normally
+            console.log(
+              `[FlowServer] Using Effect.forkDaemon for job: ${jobId}`,
+            );
+            yield* Effect.forkDaemon(flowEffect);
+          }
+
+          console.log(`[FlowServer] Flow execution started for job: ${jobId}`);
 
           // Return immediately with jobId
           return job;
@@ -905,6 +980,8 @@ export function createFlowServer() {
         clientId: string | null;
       }) =>
         Effect.gen(function* () {
+          const waitUntil = yield* FlowWaitUntil.optional;
+
           // Get the current job
           const job = yield* kvStore.get(jobId);
           if (!job) {
@@ -1092,19 +1169,39 @@ export function createFlowServer() {
                   ),
                 );
 
-                return Effect.fail(error);
+                throw error;
               }),
             ),
           );
 
-          // Fork the resume execution to run in background as daemon
-          yield* Effect.forkDaemon(
-            resumeFlowInBackground.pipe(
-              Effect.tapErrorCause((cause) =>
-                Effect.logError("Flow resume failed", cause),
-              ),
+          // Fork the resume execution to run in background
+          // Use waitUntil if available (Cloudflare Workers), otherwise fork normally
+          const resumeEffect = resumeFlowInBackground.pipe(
+            Effect.tapErrorCause((cause) =>
+              Effect.logError("Flow resume failed", cause),
             ),
-          );
+          ) as Effect.Effect<
+            FlowExecutionResult<Record<string, any>>,
+            UploadistaError,
+            never
+          >;
+
+          if (Option.isSome(waitUntil)) {
+            // Cloudflare Workers: Use waitUntil to keep execution alive
+            console.log(
+              `[FlowServer] Using waitUntil for resume job: ${jobId}`,
+            );
+            const runtime = yield* Effect.runtime();
+            const runnable = Runtime.runPromise(runtime);
+            const promise = runnable(resumeEffect);
+            waitUntil.value(promise);
+          } else {
+            // Standard environments: Fork normally as daemon
+            console.log(
+              `[FlowServer] Using Effect.forkDaemon for resume job: ${jobId}`,
+            );
+            yield* Effect.forkDaemon(resumeEffect);
+          }
 
           // Return immediately with updated job
           const updatedJob = yield* kvStore.get(jobId);

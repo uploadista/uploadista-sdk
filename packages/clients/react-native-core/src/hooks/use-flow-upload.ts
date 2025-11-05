@@ -102,18 +102,33 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
 
   const upload = useCallback(
     async (file: FilePickResult) => {
+      // Handle cancelled picker
+      if (file.status === "cancelled") {
+        return;
+      }
+
+      // Handle picker error
+      if (file.status === "error") {
+        updateState({
+          status: "error",
+          error: file.error,
+        });
+        options.onError?.(file.error);
+        return;
+      }
+
       // Reset any previous state
       setState({
         ...initialState,
         status: "uploading",
-        totalBytes: file.size,
+        totalBytes: file.data.size,
       });
 
       lastFileRef.current = file;
 
       try {
         // Read file content
-        const fileContent = await fileSystemProvider.readFile(file.uri);
+        const fileContent = await fileSystemProvider.readFile(file.data.uri);
 
         // Create a Blob from the file content
         // Convert ArrayBuffer to Uint8Array for better compatibility
@@ -125,7 +140,7 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
         // but TypeScript's lib.dom.d.ts Blob type doesn't include it
         // biome-ignore lint/suspicious/noExplicitAny: React Native Blob accepts BufferSource
         const blob = new Blob([data as any], {
-          type: file.mimeType || "application/octet-stream",
+          type: file.data.mimeType || "application/octet-stream",
           // biome-ignore lint/suspicious/noExplicitAny: BlobPropertyBag type differs by platform
         } as any);
 
