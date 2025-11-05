@@ -1,4 +1,4 @@
-import type { UploadistaError } from "@uploadista/core";
+import type { PluginLayer, UploadistaError } from "@uploadista/core";
 import { type Flow, FlowProvider, FlowWaitUntil } from "@uploadista/core/flow";
 import {
   createDataStoreLayer,
@@ -15,6 +15,7 @@ import type { StandardResponse } from "../adapter";
 import { AuthCacheServiceLive } from "../cache";
 import { handleFlowError } from "../http-utils";
 import { createFlowServerLayer, createUploadServerLayer } from "../layer-utils";
+import type { FlowRequirementsOf } from "../plugins-typing";
 import { AuthContextServiceLive } from "../service";
 import type { AuthContext } from "../types";
 import { handleUploadistaRequest } from "./http-handlers/http-handlers";
@@ -58,11 +59,24 @@ export const createUploadistaServer = async <
   TContext,
   TResponse,
   TWebSocketHandler = unknown,
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<
+    // biome-ignore lint/suspicious/noExplicitAny: Flow requirements can be any plugin services
+    Flow<z.ZodSchema<unknown>, z.ZodSchema<unknown>, any>,
+    UploadistaError,
+    // biome-ignore lint/suspicious/noExplicitAny: Flow return type allows any requirements
+    any
+    // biome-ignore lint/suspicious/noExplicitAny: Generic type constraint allows any flow function type with any requirements
+  > = any,
+  TPlugins extends readonly PluginLayer[] = readonly PluginLayer[],
 >({
   flows,
   dataStore,
   kvStore,
-  plugins = [],
+  // Default to an empty plugin list while preserving the generic type
+  plugins = [] as unknown as TPlugins,
   eventEmitter,
   eventBroadcaster = memoryEventBroadcaster,
   withTracing = false,
@@ -72,9 +86,13 @@ export const createUploadistaServer = async <
   bufferedDataStore,
   adapter,
   authCacheConfig,
-}: UploadistaServerConfig<TContext, TResponse, TWebSocketHandler>): Promise<
-  UploadistaServer<TContext, TResponse, TWebSocketHandler>
-> => {
+}: UploadistaServerConfig<
+  TContext,
+  TResponse,
+  TWebSocketHandler,
+  TFlows,
+  TPlugins
+>): Promise<UploadistaServer<TContext, TResponse, TWebSocketHandler>> => {
   // Default eventEmitter to webSocketEventEmitter with the provided eventBroadcaster
   const finalEventEmitter =
     eventEmitter ?? webSocketEventEmitter(eventBroadcaster);
@@ -84,6 +102,8 @@ export const createUploadistaServer = async <
     ? configBaseUrl.slice(0, -1)
     : configBaseUrl;
 
+  type FlowReq = FlowRequirementsOf<TFlows>;
+
   // Create flow provider layer from flows function
   const flowProviderLayer = Layer.effect(
     FlowProvider,
@@ -92,9 +112,8 @@ export const createUploadistaServer = async <
         // Cast the flows function to match FlowProvider expectations
         // The context requirements will be provided at the layer level
         return flows(flowId, clientId) as Effect.Effect<
-          Flow<z.ZodSchema<unknown>, z.ZodSchema<unknown>, unknown>,
-          UploadistaError,
-          never
+          Flow<z.ZodSchema<unknown>, z.ZodSchema<unknown>, FlowReq>,
+          UploadistaError
         >;
       },
     }),
@@ -137,7 +156,9 @@ export const createUploadistaServer = async <
   // Metrics layer (defaults to NoOp if not provided)
   const effectiveMetricsLayer = metricsLayer ?? NoOpMetricsServiceLive;
 
-  const serverLayer = Layer.mergeAll(
+  // Merge all server layers including plugins
+  // Plugins may have requirements that are provided at runtime or by other plugins
+  const serverLayerRaw = Layer.mergeAll(
     uploadServerLayer,
     flowServerLayer,
     effectiveMetricsLayer,
@@ -145,9 +166,21 @@ export const createUploadistaServer = async <
     ...plugins,
   );
 
+  // Type assertion to handle plugin requirements
+  // Plugins are typed with 'any' requirements to allow flexibility
+  // The actual requirements will be satisfied at the layer composition level
+
+  const serverLayer = serverLayerRaw as unknown as Layer.Layer<
+    // biome-ignore lint/suspicious/noExplicitAny: Necessary to bridge Effect's strict typing with dynamic plugin system
+    any,
+    never,
+    never
+  >;
+
   // Create a shared managed runtime from the server layer
   // This ensures all requests use the same layer instances (including event broadcaster)
   // ManagedRuntime properly handles scoped resources and provides convenient run methods
+
   const managedRuntime = ManagedRuntime.make(serverLayer);
 
   /**
@@ -247,6 +280,7 @@ export const createUploadistaServer = async <
 
       // Extract waitUntil callback if available (for Cloudflare Workers)
       // This must be extracted per-request since it comes from the framework context
+      // biome-ignore lint/suspicious/noExplicitAny: Layer array needs to accept any service type from waitUntil
       const waitUntilLayers: Layer.Layer<any, never, never>[] = [];
       if (adapter.extractWaitUntil) {
         const waitUntilCallback = adapter.extractWaitUntil(ctx);

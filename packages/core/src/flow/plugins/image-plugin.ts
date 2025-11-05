@@ -1,5 +1,5 @@
 import type { UploadistaError } from "@uploadista/core/errors";
-import { Context, type Effect } from "effect";
+import { Context, type Effect, type Layer } from "effect";
 import type { OptimizeParams } from "./types/optimize-node";
 import type { ResizeParams } from "./types/resize-node";
 
@@ -18,9 +18,9 @@ export type ImagePluginShape = {
    */
   optimize: (
     input: Uint8Array,
-    options: OptimizeParams
+    options: OptimizeParams,
   ) => Effect.Effect<Uint8Array, UploadistaError>;
-  
+
   /**
    * Resizes an image to specified dimensions.
    *
@@ -31,7 +31,7 @@ export type ImagePluginShape = {
    */
   resize: (
     input: Uint8Array,
-    options: ResizeParams
+    options: ResizeParams,
   ) => Effect.Effect<Uint8Array, UploadistaError>;
 };
 
@@ -58,3 +58,5 @@ export class ImagePlugin extends Context.Tag("ImagePlugin")<
   ImagePlugin,
   ImagePluginShape
 >() {}
+
+export type ImagePluginLayer = Layer.Layer<ImagePlugin, never, never>;

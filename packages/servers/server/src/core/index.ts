@@ -5,6 +5,8 @@
  * all framework adapters (Hono, Express, Fastify, etc.).
  */
 
+export * from "./create-type-safe-server";
+export * from "./plugin-types";
 export * from "./routes";
 export * from "./server";
 export * from "./types";

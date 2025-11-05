@@ -1,5 +1,5 @@
 import type { UploadistaError } from "@uploadista/core/errors";
-import { Context, type Effect } from "effect";
+import { Context, type Effect, type Layer } from "effect";
 import type { UploadFile } from "@/types";
 
 /**
@@ -40,7 +40,7 @@ export type ZipPluginShape = {
    */
   zip: (
     inputs: ZipInput[],
-    options: ZipParams
+    options: ZipParams,
   ) => Effect.Effect<Uint8Array, UploadistaError>;
   // unzip: (input: ZipInput) => Effect.Effect<Uint8Array, UploadistaError>;
 };
@@ -67,3 +67,5 @@ export class ZipPlugin extends Context.Tag("ZipPlugin")<
   ZipPlugin,
   ZipPluginShape
 >() {}
+
+export type ZipPluginLayer = Layer.Layer<ZipPlugin, never, never>;

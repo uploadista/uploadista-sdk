@@ -17,6 +17,7 @@ export * from "./parallel-scheduler";
 export * from "./plugins/credential-provider";
 export * from "./plugins/image-ai-plugin";
 export * from "./plugins/image-plugin";
+export * from "./plugins/plugins";
 export * from "./plugins/types";
 export * from "./plugins/zip-plugin";
 export * from "./typed-flow";

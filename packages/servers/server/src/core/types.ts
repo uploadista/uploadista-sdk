@@ -1,4 +1,4 @@
-import type { UploadistaError } from "@uploadista/core";
+import type { PluginLayer, UploadistaError } from "@uploadista/core";
 import type { Flow } from "@uploadista/core/flow";
 import type {
   BaseEventEmitterService,
@@ -9,6 +9,7 @@ import type {
   UploadFileKVStore,
 } from "@uploadista/core/types";
 import type { GenerateId } from "@uploadista/core/utils";
+import type { MetricsService } from "@uploadista/observability";
 import type { Effect, Layer } from "effect";
 import type { z } from "zod";
 import type { ServerAdapter } from "../adapter";
@@ -56,6 +57,8 @@ export type FlowsFunction = (
  * @template TRequest - Framework-specific request type
  * @template TResponse - Framework-specific response type
  * @template TWebSocket - Framework-specific WebSocket type (optional)
+ * @template TFlows - Function type for retrieving flows
+ * @template TPlugins - Tuple of plugin layers that provide requirements for flows
  *
  * @example
  * ```typescript
@@ -84,6 +87,18 @@ export interface UploadistaServerConfig<
   TRequest,
   TResponse,
   TWebSocket = unknown,
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<
+    // biome-ignore lint/suspicious/noExplicitAny: Flow requirements can be any plugin services
+    Flow<z.ZodSchema<unknown>, z.ZodSchema<unknown>, any>,
+    UploadistaError,
+    // biome-ignore lint/suspicious/noExplicitAny: Flow return type allows any requirements
+    any
+    // biome-ignore lint/suspicious/noExplicitAny: Generic type constraint allows any flow function type with any requirements
+  > = any,
+  TPlugins extends readonly PluginLayer[] = readonly PluginLayer[],
 > {
   /**
    * Function for retrieving flows by ID.
@@ -97,7 +112,7 @@ export interface UploadistaServerConfig<
    * flows: (flowId, clientId) => Effect.succeed(myFlows[flowId])
    * ```
    */
-  flows: FlowsFunction;
+  flows: TFlows;
 
   /**
    * Data store configuration for file storage.
@@ -144,8 +159,7 @@ export interface UploadistaServerConfig<
    * plugins: [imageProcessingPlugin, virusScanPlugin]
    * ```
    */
-  // biome-ignore lint/suspicious/noExplicitAny: Permissive constraint allows plugin tuples
-  plugins?: readonly Layer.Layer<any, never, never>[];
+  plugins?: TPlugins;
 
   /**
    * Optional: Event emitter layer for progress notifications.
@@ -227,8 +241,7 @@ export interface UploadistaServerConfig<
    * metricsLayer: prometheusMetrics()
    * ```
    */
-  // biome-ignore lint/suspicious/noExplicitAny: MetricsService is defined in @uploadista/observability
-  metricsLayer?: Layer.Layer<any, never, never>;
+  metricsLayer?: Layer.Layer<MetricsService, never, never>;
 
   /**
    * Optional: Buffered data store layer for performance optimization.
