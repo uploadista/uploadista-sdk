@@ -7,14 +7,16 @@
   "author": "Uploadista",
   "exports": {
     "./node": {
-      "types": "./dist/node.d.ts",
-      "import": "./dist/node.js",
-      "default": "./dist/node.js"
+      "types": "./dist/node.d.mts",
+      "import": "./dist/node.mjs",
+      "require": "./dist/node.cjs",
+      "default": "./dist/node.mjs"
     },
     "./serverless": {
-      "types": "./dist/serverless.d.ts",
-      "import": "./dist/serverless.js",
-      "default": "./dist/serverless.js"
+      "types": "./dist/serverless.d.mts",
+      "import": "./dist/serverless.mjs",
+      "require": "./dist/serverless.cjs",
+      "default": "./dist/serverless.mjs"
     }
   },
   "scripts": {
