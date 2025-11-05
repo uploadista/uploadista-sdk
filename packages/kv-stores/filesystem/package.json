@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-filesystem",
   "type": "module",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "File system KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
