@@ -371,15 +371,24 @@ importers:
       '@uploadista/data-store-r2':
         specifier: workspace:*
         version: link:../../packages/data-stores/r2
+      '@uploadista/event-emitter-durable-object':
+        specifier: workspace:*
+        version: link:../../packages/event-emitters/durable-object
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
+      '@uploadista/flow-images-photon':
+        specifier: workspace:*
+        version: link:../../packages/flow/images/photon
       '@uploadista/kv-store-cloudflare-kv':
         specifier: workspace:*
         version: link:../../packages/kv-stores/cloudflare-kv
-      '@xmldom/xmldom':
-        specifier: 0.8.11
-        version: 0.8.11
+      '@uploadista/server':
+        specifier: workspace:*
+        version: link:../../packages/servers/server
+      effect:
+        specifier: 'catalog:'
+        version: 3.18.4
       hono:
         specifier: 'catalog:'
         version: 4.10.4
@@ -12361,7 +12370,7 @@ snapshots:
       postcss: 8.4.49
       resolve-from: 5.0.0
     optionalDependencies:
-      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.2.2)(react@19.1.0))(react@19.1.0)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -12440,7 +12449,7 @@ snapshots:
       '@expo/json-file': 10.0.7
       '@react-native/normalize-colors': 0.81.5
       debug: 4.4.3
-      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.2.2)(react@19.1.0))(react@19.1.0)
       resolve-from: 5.0.0
       semver: 7.7.3
       xml2js: 0.6.0
@@ -15710,7 +15719,7 @@ snapshots:
       resolve-from: 5.0.0
     optionalDependencies:
       '@babel/runtime': 7.28.4
-      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.2.2)(react@19.1.0))(react@19.1.0)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -16809,7 +16818,7 @@ snapshots:
 
   expo-keep-awake@15.0.7(expo@54.0.21)(react@19.1.0):
     dependencies:
-      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo: 54.0.21(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.2.2)(react@19.1.0))(react@19.1.0)
       react: 19.1.0
 
   expo-linking@8.0.8(expo@54.0.21)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.2.2)(react@19.1.0))(react@19.1.0):

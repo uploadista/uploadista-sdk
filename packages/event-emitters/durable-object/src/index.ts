@@ -1,3 +1,7 @@
-export { uploadEventEmitterDurableObjectStore } from "./do-event-emitter";
-// export { UploadEventDurableObject } from "./durable-object-impl";
+export {
+  durableObjectEventEmitter,
+  durableObjectBaseEventEmitter,
+  type DurableObjectEventEmitterConfig,
+} from "./do-event-emitter";
+export { UploadistaDurableObjectImpl } from "./durable-object-impl";
 export type { EventEmitterDurableObject } from "./event-emitter-durable-object";

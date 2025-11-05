@@ -9,21 +9,24 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@uploadista/adapters-hono": "workspace:*",
     "@uploadista/core": "workspace:*",
     "@uploadista/data-store-r2": "workspace:*",
-    "@uploadista/kv-store-cloudflare-kv": "workspace:*",
-    "@uploadista/adapters-hono": "workspace:*",
+    "@uploadista/event-emitter-durable-object": "workspace:*",
     "@uploadista/flow-images-nodes": "workspace:*",
-    "@xmldom/xmldom": "0.8.11",
+    "@uploadista/flow-images-photon": "workspace:*",
+    "@uploadista/kv-store-cloudflare-kv": "workspace:*",
+    "@uploadista/server": "workspace:*",
+    "effect": "catalog:",
     "hono": "catalog:",
     "hono-pino": "0.10.3",
     "pino": "10.1.0",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@uploadista/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "@types/service-worker-mock": "2.0.4",
+    "@uploadista/typescript-config": "workspace:*",
     "wrangler": "4.45.3"
   }
 }

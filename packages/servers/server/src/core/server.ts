@@ -1,5 +1,5 @@
 import type { UploadistaError } from "@uploadista/core";
-import { type Flow, FlowProvider } from "@uploadista/core/flow";
+import { type Flow, FlowProvider, FlowWaitUntil } from "@uploadista/core/flow";
 import {
   createDataStoreLayer,
   type UploadFileDataStores,
@@ -245,13 +245,24 @@ export const createUploadistaServer = async <
       // Create auth context layer for this request
       const authContextLayer = AuthContextServiceLive(authContext);
 
-      // Combine auth context, auth cache, metrics layers, and plugins
-      // This ensures that flow nodes have access to plugin services
-      const authLayer = Layer.mergeAll(
+      // Extract waitUntil callback if available (for Cloudflare Workers)
+      // This must be extracted per-request since it comes from the framework context
+      const waitUntilLayers: Layer.Layer<any, never, never>[] = [];
+      if (adapter.extractWaitUntil) {
+        const waitUntilCallback = adapter.extractWaitUntil(ctx);
+        if (waitUntilCallback) {
+          waitUntilLayers.push(Layer.succeed(FlowWaitUntil, waitUntilCallback));
+        }
+      }
+
+      // Combine auth context, auth cache, metrics layers, plugins, and waitUntil
+      // This ensures that flow nodes have access to all required services
+      const requestContextLayer = Layer.mergeAll(
         authContextLayer,
         authCacheLayer,
         effectiveMetricsLayer,
         ...plugins,
+        ...waitUntilLayers,
       );
 
       // Check for baseUrl/api/ prefix
@@ -268,7 +279,7 @@ export const createUploadistaServer = async <
       // Handle the request
       const response = yield* handleUploadistaRequest<TRequirements>(
         uploadistaRequest,
-      ).pipe(Effect.provide(authLayer));
+      ).pipe(Effect.provide(requestContextLayer));
 
       return yield* adapter.sendResponse(response, ctx);
     }).pipe(

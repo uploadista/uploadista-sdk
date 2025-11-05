@@ -1,6 +1,4 @@
-import type { Request as CloudflareRequest } from "@cloudflare/workers-types";
-import { FlowServer, type UploadEvent, UploadServer } from "@uploadista/core";
-import type { EventEmitterDurableObject } from "@uploadista/event-emitter-durable-object";
+import { FlowServer, UploadServer } from "@uploadista/core";
 import type { AuthResult } from "@uploadista/server";
 import {
   handleWebSocketClose,
@@ -17,10 +15,6 @@ import type { WSEvents } from "hono/ws";
 export type HonoWebSocketHandler<TEnv extends Env = Env> = (
   c: Context<TEnv>,
 ) => WSEvents;
-
-export type DurableObjectWebSocketHandlerOptions = {
-  durableObject: EventEmitterDurableObject<UploadEvent>;
-};
 
 /**
  * Cache for storing auth context per WebSocket connection
@@ -157,7 +151,14 @@ const authenticateWebSocket = async <TEnv extends Env>(
 };
 
 /**
- * Creates a Hono WebSocket handler that delegates to core WebSocket handlers
+ * Creates a Hono WebSocket handler that delegates to core WebSocket handlers.
+ *
+ * This handler works with standard WebSocket connections and requires an event
+ * broadcaster to synchronize state across multiple worker instances.
+ *
+ * For Cloudflare Durable Objects, use `honoDurableObjectAdapter` instead,
+ * which provides a different architecture better suited for DO's hibernatable
+ * WebSocket pattern.
  *
  * This adapter is responsible for:
  * 1. Extracting WebSocket connection details from Hono's WSEvents
@@ -166,8 +167,6 @@ const authenticateWebSocket = async <TEnv extends Env>(
  * 4. Delegating all business logic to core handlers
  *
  * @param baseUrl - Base URL for WebSocket connections
- * @param uploadServer - Upload server instance
- * @param flowServer - Flow server instance
  * @param authMiddleware - Optional authentication middleware
  * @returns Hono WSEvents handler
  */
@@ -312,36 +311,3 @@ export const honoWebSocketHandler = <TEnv extends Env = Env>(
   });
 };
 
-/**
- * Creates a raw request handler for Durable Object WebSocket delegation
- * This should be used in Cloudflare Workers when you want to delegate
- * WebSocket handling directly to a Durable Object.
- */
-export const createUploadistaDurableObjectWebSocketRequestHandler = ({
-  durableObject,
-}: DurableObjectWebSocketHandlerOptions) => {
-  return async (c: Context): Promise<Response> => {
-    const uploadId = c.req.param("uploadId");
-
-    if (!uploadId) {
-      return c.text("Missing uploadId parameter", 400);
-    }
-
-    const upgradeHeader = c.req.header("Upgrade");
-    if (!upgradeHeader || upgradeHeader !== "websocket") {
-      return c.text("Expected websocket", 400);
-    }
-
-    // Get the Durable Object instance for this upload
-    const id = durableObject.idFromName(uploadId);
-    const stub = durableObject.get(id);
-
-    // Forward the WebSocket upgrade request to the Durable Object
-    const request = c.req.raw as unknown as CloudflareRequest;
-
-    const cfResponse = await stub.fetch(request);
-
-    // Return the response, type-cast to satisfy Hono's Response type
-    return cfResponse as unknown as Response;
-  };
-};

@@ -1,58 +1,132 @@
-// import { DurableObject } from "cloudflare:workers";
-// import { WebSocketPair } from "@cloudflare/workers-types";
-// import type { UploadEvent } from "@uploadista/core/types";
+import { DurableObject } from "cloudflare:workers";
+import type { WebSocketConnection } from "@uploadista/core/types";
 
-// export class UploadEventDurableObject extends DurableObject {
-//   async fetch(_request: Request): Promise<Response> {
-//     // Creates two ends of a WebSocket connection.
-//     const webSocketPair = new WebSocketPair();
-//     const [client, server] = Object.values(webSocketPair);
+// WebSocketPair is available globally in Cloudflare Workers
+declare const WebSocketPair: {
+  new (): { 0: WebSocket; 1: WebSocket };
+};
 
-//     // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
-//     // request within the Durable Object. It has the effect of "accepting" the connection,
-//     // and allowing the WebSocket to send and receive messages.
-//     // Unlike `ws.accept()`, `state.acceptWebSocket(ws)` informs the Workers Runtime that the WebSocket
-//     // is "hibernatable", so the runtime does not need to pin this Durable Object to memory while
-//     // the connection is open. During periods of inactivity, the Durable Object can be evicted
-//     // from memory, but the WebSocket connection will remain open. If at some later point the
-//     // WebSocket receives a message, the runtime will recreate the Durable Object
-//     // (run the `constructor`) and deliver the message to the appropriate handler.
-//     this.ctx.acceptWebSocket(server);
+/**
+ * Base Durable Object implementation for Uploadista event emission.
+ *
+ * This class provides:
+ * - Hibernatable WebSocket connections
+ * - Event broadcasting to all connected clients
+ * - Automatic connection management
+ * - RPC methods for emit/subscribe/unsubscribe
+ *
+ * Extend this class in your Worker to create event emitter Durable Objects:
+ *
+ * @example
+ * ```typescript
+ * export class UploadistaDurableObject extends UploadistaDurableObjectImpl {}
+ * ```
+ */
+export class UploadistaDurableObjectImpl extends DurableObject {
+  /**
+   * Handles WebSocket upgrade requests.
+   * Creates a hibernatable WebSocket connection.
+   */
+  async fetch(request: Request): Promise<Response> {
+    console.log(`[DO fetch] WebSocket connection request: ${request.url}`);
 
-//     return new Response(null, {
-//       status: 101,
-//       webSocket: client,
-//     });
-//   }
+    // Creates two ends of a WebSocket connection
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
 
-//   emit(event: UploadEvent) {
-//     for (const ws of this.ctx.getWebSockets()) {
-//       ws.send(JSON.stringify(event satisfies UploadEvent));
-//     }
-//   }
+    // Accept WebSocket with hibernation support
+    // This allows the DO to be evicted from memory during idle periods
+    this.ctx.acceptWebSocket(server);
 
-//   async webSocketMessage(ws: WebSocket, message: ArrayBuffer | string) {
-//     // Upon receiving a message from the client, the server replies with the same message,
-//     // and the total number of connections with the "[Durable Object]: " prefix
-//     ws.send(
-//       `[Durable Object] message: ${message}, connections: ${this.ctx.getWebSockets().length}`,
-//     );
-//   }
+    console.log(`[DO fetch] WebSocket accepted, total connections: ${this.ctx.getWebSockets().length}`);
 
-//   async webSocketClose(
-//     ws: WebSocket,
-//     code: number,
-//     _reason: string,
-//     _wasClean: boolean,
-//   ) {
-//     // If the client closes the connection, the runtime will invoke the webSocketClose() handler.
-//     // Don't try to close an already closed WebSocket or use reserved close codes
-//     if (ws.readyState === WebSocket.OPEN) {
-//       // Use a valid close code instead of the potentially reserved one from the client
-//       // 1000 = Normal Closure, 1001 = Going Away are safe codes to use
-//       const validCloseCode =
-//         code === 1006 || code < 1000 || code > 4999 ? 1000 : code;
-//       ws.close(validCloseCode, "Durable Object is closing WebSocket");
-//     }
-//   }
-// }
+    return new Response(null, {
+      status: 101,
+      webSocket: client as unknown,
+    } as ResponseInit);
+  }
+
+  /**
+   * RPC method: Emit a message to all connected WebSocket clients.
+   *
+   * @param message - The message to broadcast (typically a JSON string)
+   */
+  async emit(message: string): Promise<void> {
+    const websockets = this.ctx.getWebSockets();
+    console.log(`[DO emit] Broadcasting message to ${websockets.length} WebSocket(s):`, message.substring(0, 200));
+
+    for (const ws of websockets) {
+      try {
+        ws.send(message);
+      } catch (error) {
+        console.error("Failed to send message to WebSocket:", error);
+      }
+    }
+  }
+
+  /**
+   * RPC method: Subscribe a WebSocket connection.
+   *
+   * Note: This is called via RPC, the actual WebSocket connection
+   * is established via the fetch() handler.
+   */
+  async subscribe(_connection: WebSocketConnection): Promise<void> {
+    // The connection is already established via fetch()
+    // This method exists for API compatibility
+    return;
+  }
+
+  /**
+   * RPC method: Unsubscribe from events.
+   *
+   * Closes all WebSocket connections for this DO instance.
+   */
+  async unsubscribe(): Promise<void> {
+    const websockets = this.ctx.getWebSockets();
+    for (const ws of websockets) {
+      ws.close(1000, "Unsubscribed");
+    }
+  }
+
+  /**
+   * Hibernation API: Handle incoming WebSocket messages.
+   *
+   * Called automatically when a message arrives on a hibernated WebSocket.
+   */
+  async webSocketMessage(_ws: WebSocket, message: ArrayBuffer | string) {
+    // Log message for debugging
+    console.log(`WebSocket message received: ${message}`);
+  }
+
+  /**
+   * Hibernation API: Handle WebSocket close events.
+   *
+   * Called automatically when a WebSocket connection closes.
+   */
+  async webSocketClose(
+    ws: WebSocket,
+    code: number,
+    _reason: string,
+    _wasClean: boolean,
+  ) {
+    // Clean up the connection
+    if (ws.readyState === WebSocket.OPEN) {
+      // Use a valid close code instead of potentially reserved ones
+      const validCloseCode =
+        code === 1006 || code < 1000 || code > 4999 ? 1000 : code;
+      ws.close(validCloseCode, "Durable Object closing WebSocket");
+    }
+  }
+
+  /**
+   * Hibernation API: Handle WebSocket errors.
+   *
+   * Called automatically when a WebSocket error occurs.
+   */
+  async webSocketError(ws: WebSocket, error: unknown) {
+    console.error("WebSocket error:", error);
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.close(1011, "WebSocket error occurred");
+    }
+  }
+}

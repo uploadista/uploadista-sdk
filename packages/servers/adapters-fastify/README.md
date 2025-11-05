@@ -2,477 +2,413 @@
 
 Uploadista adapter for Fastify - High-performance upload servers on Node.js.
 
-Provides a complete file upload and flow processing server for Fastify with built-in WebSocket support via `@fastify/websocket`, authentication middleware, and optimization for fast uploads on modern Node.js.
+Provides a lightweight adapter for integrating Uploadista's file upload and flow processing capabilities with Fastify applications. Built on the unified adapter pattern for consistent behavior across all frameworks.
 
 ## Features
 
 - **High Performance** - Fastify's speed with zero-overhead abstractions
 - **WebSocket Built-in** - Native `@fastify/websocket` plugin integration
-- **TypeScript First** - Full type safety and IDE support
-- **Multi-Cloud** - S3, Azure, GCS, filesystem storage
-- **Distributed** - Redis support for multi-instance deployments
-- **Comprehensive Logging** - Built-in request logging
-- **Effect Layers** - Pure functional dependency injection
+- **Authentication** - Flexible middleware for JWT, OAuth, or custom auth
+- **Multi-Cloud Storage** - S3, Azure, GCS, or filesystem backends
+- **Event Broadcasting** - Real-time updates via memory or Redis
+- **TypeScript** - Full type safety with comprehensive JSDoc
+- **Lightweight** - Minimal adapter code (~310 lines) delegates to core server
 
 ## Installation
 
 ```bash
-npm install @uploadista/adapters-fastify fastify @fastify/websocket
+npm install @uploadista/adapters-fastify @uploadista/server fastify @fastify/websocket
 # or
-pnpm add @uploadista/adapters-fastify fastify @fastify/websocket
+pnpm add @uploadista/adapters-fastify @uploadista/server fastify @fastify/websocket
 ```
 
 ## Requirements
 
+- Fastify 4.x or 5.x
+- `@fastify/websocket` 10.x or 11.x
 - Node.js 18+
-- Fastify 4.0 or 5.0+
-- @fastify/websocket 10.0+
-- TypeScript 5.0+ (optional)
+- TypeScript 5.0+ (optional but recommended)
 
 ## Quick Start
 
-### 1. Create Fastify Server
+### Basic Server
 
 ```typescript
+import websocket from "@fastify/websocket";
+import { fastifyAdapter } from "@uploadista/adapters-fastify";
+import { fileStore } from "@uploadista/data-store-filesystem";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+import { createUploadistaServer } from "@uploadista/server";
 import Fastify from "fastify";
-import WebSocket from "@fastify/websocket";
-import { createFastifyUploadistaAdapter } from "@uploadista/adapters-fastify";
-import { redisKvStore } from "@uploadista/kv-store-redis";
-import { s3DataStore } from "@uploadista/data-store-s3";
-import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
-import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
+import { flows } from "./flows";
 
-const fastify = Fastify({
-  logger: true,
-});
+const fastify = Fastify({ logger: true });
 
 // Register WebSocket plugin
-await fastify.register(WebSocket);
+await fastify.register(websocket);
 
-// Create adapter
-const adapter = await createFastifyUploadistaAdapter({
-  baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  eventBroadcaster: memoryEventBroadcaster,
-  flows: (flowId, clientId) => createFlowsEffect(flowId, clientId),
+// Create KV store and data store
+const kvStore = fileKvStore({ directory: "./uploads" });
+const dataStore = fileStore({
+  directory: "./uploads",
+  deliveryUrl: "http://localhost:3000/uploads",
 });
 
-// Register HTTP routes
-fastify.all(`/${adapter.baseUrl}/*`, async (req, res) => {
-  await adapter.handler(req, res);
+// Create uploadista server with Fastify adapter
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: fastifyAdapter({}), // <-- New adapter pattern
 });
 
-// Register WebSocket route
-fastify.get("/ws", { websocket: true }, (socket, req) => {
-  adapter.websocketHandler(socket, req);
+// Add content type parser for binary upload data (PATCH requests)
+fastify.addContentTypeParser(
+  "application/octet-stream",
+  (_req, _payload, done) => {
+    done(null);
+  }
+);
+
+// Mount HTTP endpoints
+fastify.all("/uploadista/api/*", async (request, reply) => {
+  return uploadistaServer.handler({ request, reply });
 });
+
+// Mount WebSocket endpoints
+fastify.get(
+  "/uploadista/ws/upload/:uploadId",
+  { websocket: true },
+  uploadistaServer.websocketHandler
+);
+
+fastify.get(
+  "/uploadista/ws/flow/:jobId",
+  { websocket: true },
+  uploadistaServer.websocketHandler
+);
 
 // Start server
-await fastify.listen({ port: 3000 });
+await fastify.listen({ port: 3000, host: "0.0.0.0" });
 ```
 
-### 2. Add Authentication
+### With Authentication
 
 ```typescript
-const adapter = await createFastifyUploadistaAdapter({
-  baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  authMiddleware: async (req, reply) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return null;
+import { fastifyAdapter } from "@uploadista/adapters-fastify";
+import { createUploadistaServer } from "@uploadista/server";
 
-    try {
-      const payload = await fastify.jwt.verify(token);
-      return {
-        clientId: payload.sub as string,
-        permissions: (payload.permissions as string[]) ?? [],
-      };
-    } catch {
-      reply.code(401).send({ error: "Unauthorized" });
-      return null;
-    }
-  },
-  authCacheConfig: { maxSize: 5000, ttl: 3600000 },
-});
-```
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: fastifyAdapter({
+    // Optional auth middleware
+    authMiddleware: async ({ request, reply }) => {
+      const token = request.headers.authorization?.split(" ")[1];
+      if (!token) return null;
 
-### 3. Full Example with Plugins
-
-```typescript
-import Fastify, { FastifyInstance } from "fastify";
-import WebSocket from "@fastify/websocket";
-import JwT from "@fastify/jwt";
-import Cors from "@fastify/cors";
-import { createFastifyUploadistaAdapter } from "@uploadista/adapters-fastify";
-
-const fastify = Fastify({
-  logger: {
-    level: process.env.LOG_LEVEL || "info",
-    transport: {
-      target: "pino-pretty",
+      try {
+        // Verify JWT
+        const payload = await verifyToken(token);
+        return {
+          clientId: payload.sub,
+          permissions: payload.permissions,
+          metadata: { tier: payload.tier },
+        };
+      } catch {
+        return null; // Null = authentication failed
+      }
     },
+  }),
+  // Optional auth caching
+  authCacheConfig: {
+    maxSize: 5000,
+    ttl: 3600000, // 1 hour
   },
 });
+```
 
-// Register plugins
-await fastify.register(Cors, {
-  origin: process.env.ALLOWED_ORIGINS?.split(","),
+### With Decorators
+
+Fastify decorators work seamlessly with the adapter:
+
+```typescript
+// Add custom decorator
+fastify.decorateRequest("customData", "");
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: fastifyAdapter({
+    authMiddleware: async ({ request }) => {
+      // Access decorated properties
+      const userId = request.customData;
+
+      if (!userId) return null;
+
+      return { clientId: userId };
+    },
+  }),
 });
-await fastify.register(JwT, {
-  secret: process.env.JWT_SECRET!,
+```
+
+### With Redis Event Broadcasting
+
+```typescript
+import { createClient } from "redis";
+import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
+
+const redisClient = createClient({ url: process.env.REDIS_URL });
+const redisSubscriber = createClient({ url: process.env.REDIS_URL });
+
+await redisClient.connect();
+await redisSubscriber.connect();
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: fastifyAdapter({}),
+  eventBroadcaster: redisEventBroadcaster({
+    redis: redisClient,
+    subscriberRedis: redisSubscriber,
+  }),
 });
-await fastify.register(WebSocket);
-
-// Create adapter
-const adapter = await createFastifyUploadistaAdapter({
-  baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  eventBroadcaster: memoryEventBroadcaster,
-  flows: createFlowsEffect,
-  authMiddleware: async (req, reply) => {
-    try {
-      await req.jwtVerify();
-      const payload = req.user as any;
-      return {
-        clientId: payload.sub,
-        permissions: payload.permissions || [],
-      };
-    } catch {
-      return null;
-    }
-  },
-  authCacheConfig: { maxSize: 5000, ttl: 3600000 },
-});
-
-// Health check
-fastify.get("/health", async (req, reply) => {
-  return { status: "ok" };
-});
-
-// Mount adapter
-fastify.all(`/${adapter.baseUrl}/*`, async (req, res) => {
-  return adapter.handler(req, res);
-});
-
-// WebSocket
-fastify.get("/ws", { websocket: true }, (socket, req) => {
-  adapter.websocketHandler(socket, req);
-});
-
-// Start
-const start = async () => {
-  await fastify.listen({ port: 3000, host: "0.0.0.0" });
-  fastify.log.info("Server running on http://localhost:3000");
-};
-
-start().catch(fastify.log.error);
 ```
 
 ## Configuration
 
-### `FastifyUploadistaAdapterOptions`
+### `fastifyAdapter(options?)`
+
+Creates a Fastify adapter instance.
+
+**Options:**
+- `authMiddleware?: (ctx: FastifyContext) => Promise<AuthResult>` - Optional authentication middleware
+
+**Returns:** `ServerAdapter<FastifyContext, FastifyReply, FastifyWebSocketHandler>`
+
+### FastifyContext
+
+The context object passed to auth middleware:
 
 ```typescript
-type FastifyUploadistaAdapterOptions = {
-  // Required
-  flows: (flowId: string, clientId: string | null) =>
-    Effect.Effect<unknown, unknown, unknown>;
-  dataStore: Layer.Layer<UploadFileDataStores, never, UploadFileKVStore>;
-  kvStore: Layer.Layer<BaseKvStoreService>;
-
-  // Optional
-  baseUrl?: string; // Default: "uploadista"
-  eventEmitter?: Layer.Layer<BaseEventEmitterService>;
-  eventBroadcaster?: Layer.Layer<any>;
-  generateId?: Layer.Layer<GenerateId>;
-  authMiddleware?: (
-    req: FastifyRequest,
-    reply: FastifyReply,
-  ) => Promise<AuthResult>;
-  authCacheConfig?: AuthCacheConfig;
-  bufferedDataStore?: Layer.Layer<UploadFileDataStore>;
-};
+interface FastifyContext {
+  request: FastifyRequest;
+  reply: FastifyReply;
+}
 ```
 
-## API Routes
+### Authentication Middleware
 
-```
-POST   /uploadista/api/upload           Create upload
-GET    /uploadista/api/upload/:id       Get status
-PATCH  /uploadista/api/upload/:id       Upload chunk
-
-POST   /uploadista/api/flow/:id/:storage  Execute flow
-GET    /uploadista/api/jobs/:id/status    Get job status
-PATCH  /uploadista/api/jobs/:id/continue  Continue flow
-
-WS     /ws                              WebSocket events
-```
-
-## WebSocket Events
-
-### Subscribe to Events
+The `authMiddleware` function receives `FastifyContext` and should return:
+- `AuthContext` object on success with `clientId` and optional `permissions`, `metadata`
+- `null` on authentication failure (returns 401 to client)
+- Throws error on system failure (returns 500 to client)
 
 ```typescript
-socket.send(JSON.stringify({
-  type: "subscribe",
-  channels: ["upload:*", "flow:*", "job:*"],
-}));
+type AuthResult = AuthContext | null;
+
+interface AuthContext {
+  clientId: string;
+  permissions?: string[];
+  metadata?: Record<string, unknown>;
+}
 ```
 
-### Receive Events
+The middleware has a 5-second timeout to prevent hanging requests.
+
+## WebSocket Support
+
+### Basic Setup
 
 ```typescript
-socket.on("message", (data) => {
-  const message = JSON.parse(data.toString());
+import websocket from "@fastify/websocket";
 
-  if (message.type === "upload.progress") {
-    // { uploadId, progress, bytesUploaded, totalBytes }
-  }
+const fastify = Fastify();
 
-  if (message.type === "upload.complete") {
-    // { uploadId, result }
-  }
+// Register WebSocket plugin first
+await fastify.register(websocket);
 
-  if (message.type === "flow.progress") {
-    // { jobId, nodeId, progress }
-  }
-
-  if (message.type === "flow.complete") {
-    // { jobId, result }
-  }
-});
-```
-
-## Complete Server Example
-
-```typescript
-import Fastify from "fastify";
-import WebSocket from "@fastify/websocket";
-import JwT from "@fastify/jwt";
-import cors from "@fastify/cors";
-import helmet from "@fastify/helmet";
-import rateLimit from "@fastify/rate-limit";
-import { createFastifyUploadistaAdapter } from "@uploadista/adapters-fastify";
-
-const fastify = Fastify({
-  logger: {
-    level: process.env.LOG_LEVEL || "info",
-  },
+const uploadistaServer = await createUploadistaServer({
+  dataStore,
+  flows,
+  kvStore,
+  adapter: fastifyAdapter({}),
 });
 
-// Security & Performance
-await fastify.register(helmet);
-await fastify.register(rateLimit, {
-  max: 100,
-  timeWindow: "15 minutes",
-});
-await fastify.register(cors, {
-  origin: process.env.ALLOWED_ORIGINS?.split(","),
-});
-
-// Authentication
-await fastify.register(JwT, {
-  secret: process.env.JWT_SECRET!,
-});
-
-// WebSocket
-await fastify.register(WebSocket);
-
-// Create adapter
-const adapter = await createFastifyUploadistaAdapter({
-  baseUrl: "uploadista",
-  dataStore: s3DataStore,
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  eventBroadcaster: memoryEventBroadcaster,
-  flows: createFlowsEffect,
-  authMiddleware: async (req, reply) => {
-    try {
-      await req.jwtVerify();
-      return {
-        clientId: (req.user as any).sub,
-        permissions: (req.user as any).permissions || [],
-      };
-    } catch {
-      return null;
-    }
-  },
-});
-
-// Routes
-fastify.get("/health", () => ({ status: "ok" }));
-
-fastify.all(`/${adapter.baseUrl}/*`, (req, res) =>
-  adapter.handler(req, res),
+// Mount WebSocket routes with { websocket: true } option
+fastify.get(
+  "/uploadista/ws/upload/:uploadId",
+  { websocket: true },
+  uploadistaServer.websocketHandler
 );
 
-fastify.get("/ws", { websocket: true }, (socket, req) => {
-  adapter.websocketHandler(socket, req);
-});
-
-// Start
-const start = async () => {
-  await fastify.listen({ port: 3000, host: "0.0.0.0" });
-};
-
-start().catch(fastify.log.error);
+fastify.get(
+  "/uploadista/ws/flow/:jobId",
+  { websocket: true },
+  uploadistaServer.websocketHandler
+);
 ```
 
-## Docker Deployment
+### Path-Based Routing
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist ./dist
-ENV NODE_ENV=production
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-```
-
-## Performance Configuration
-
-### Production Settings
+The WebSocket handler automatically routes based on path:
+- `/uploadista/ws/upload/:uploadId` - Upload progress events
+- `/uploadista/ws/flow/:jobId` - Flow execution events
 
 ```typescript
-const fastify = Fastify({
-  bodyLimit: 50 * 1024 * 1024, // 50MB
-  requestTimeout: 300000, // 5 minutes
-  logger: {
-    level: "info",
-    serializers: {
-      req: (req) => ({
-        method: req.method,
-        path: req.url,
-      }),
-    },
+// Client connects to:
+const ws = new WebSocket("ws://localhost:3000/uploadista/ws/upload/abc123");
+// or
+const ws = new WebSocket("ws://localhost:3000/uploadista/ws/flow/job456");
+```
+
+### Authentication
+
+WebSocket connections support both token and cookie-based authentication:
+
+**Token-based:**
+```typescript
+// Client sends token in query param
+const ws = new WebSocket(
+  "ws://localhost:3000/uploadista/ws/upload/abc123?token=YOUR_JWT"
+);
+```
+
+**Cookie-based:**
+```typescript
+// Cookies are automatically sent with WebSocket upgrade request
+const ws = new WebSocket("ws://localhost:3000/uploadista/ws/upload/abc123");
+```
+
+## Binary Upload Handling
+
+For chunked uploads (PATCH requests), configure Fastify to not parse the body:
+
+```typescript
+fastify.addContentTypeParser(
+  "application/octet-stream",
+  (_req, _payload, done) => {
+    done(null); // Don't parse, allow raw stream access
+  }
+);
+```
+
+This allows the adapter to properly convert Node.js streams to Web ReadableStreams.
+
+## Example Project
+
+See the complete [Fastify server example](https://github.com/uploadista/uploadista-sdk/tree/main/examples/fastify-server) for:
+- Full server setup
+- Authentication middleware
+- WebSocket integration
+- Error handling
+- Graceful shutdown
+- Binary upload handling
+
+## API Reference
+
+### Core Server Integration
+
+The Fastify adapter integrates with `@uploadista/server`:
+
+```typescript
+import { createUploadistaServer } from "@uploadista/server";
+import { fastifyAdapter } from "@uploadista/adapters-fastify";
+
+const server = await createUploadistaServer({
+  adapter: fastifyAdapter(/* options */),
+  // ... other config
+});
+```
+
+See [`@uploadista/server` documentation](../server) for full configuration options.
+
+## Migration from v1
+
+If you're migrating from the legacy `createFastifyUploadistaAdapter` API:
+
+**Before (v1):**
+```typescript
+const adapter = await createFastifyUploadistaAdapter({
+  baseUrl: "uploadista",
+  dataStore,
+  kvStore,
+  flows,
+  authMiddleware,
+});
+
+fastify.all(`/${adapter.baseUrl}/*`, adapter.handler);
+```
+
+**After (v2 - current):**
+```typescript
+const server = await createUploadistaServer({
+  dataStore,
+  kvStore,
+  flows,
+  adapter: fastifyAdapter({ authMiddleware }),
+});
+
+fastify.all("/uploadista/api/*", async (request, reply) => {
+  return server.handler({ request, reply });
+});
+```
+
+### Key Changes
+- Configuration moved to `createUploadistaServer()`
+- Adapter only handles Fastify-specific translation
+- `baseUrl` now configured in `createUploadistaServer()` (defaults to "uploadista")
+- Handler now expects `{ request, reply }` object
+- WebSocket handler accessed via `server.websocketHandler`
+- Binary upload stream handling fixed (no more "getReader is not a function" error)
+
+## TypeScript Support
+
+The adapter is fully typed with Fastify generics:
+
+```typescript
+import type { FastifyInstance } from "fastify";
+
+const fastify: FastifyInstance = Fastify();
+
+const adapter = fastifyAdapter({
+  authMiddleware: async ({ request, reply }) => {
+    // Full Fastify types available
+    request.id; // typed
+    request.log; // typed
+    reply.code(200); // typed
+    return { clientId: "user-123" };
   },
 });
 ```
 
-### Connection Limits
+## Performance Tips
 
+1. **Enable Logging**: Fastify's pino logger is very fast
 ```typescript
-// Prevent too many concurrent connections
-fastify.register(rateLimit, {
-  max: 1000,
-  cache: 10000,
-  timeWindow: "1 minute",
+const fastify = Fastify({
+  logger: true // or configure pino options
 });
 ```
 
-## Request Examples
-
-### Create Upload
-
-```bash
-curl -X POST http://localhost:3000/uploadista/api/upload \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN" \
-  -d '{"filename": "doc.pdf", "size": 1024000}'
-```
-
-### Upload Chunk
-
-```bash
-curl -X PATCH http://localhost:3000/uploadista/api/upload/upload-123 \
-  -H "Content-Range: bytes 0-1047/1024000" \
-  -H "Authorization: Bearer TOKEN" \
-  --data-binary @chunk
-```
-
-## Environment Configuration
-
-```env
-NODE_ENV=production
-LOG_LEVEL=info
-
-PORT=3000
-HOST=0.0.0.0
-
-JWT_SECRET=your-secret-key
-ALLOWED_ORIGINS=https://app.example.com
-
-AWS_ACCESS_KEY_ID=key
-AWS_SECRET_ACCESS_KEY=secret
-AWS_REGION=us-east-1
-S3_BUCKET=uploads
-
-REDIS_URL=redis://localhost:6379
-```
-
-## Fastify Plugins Ecosystem
-
-### Useful Plugins
-
+2. **Use Binary Parser**: Configure content type parser for uploads
 ```typescript
-// Compression
-await fastify.register(require("@fastify/compress"));
-
-// Request ID
-await fastify.register(require("@fastify/request-idlogger"));
-
-// Multipart
-await fastify.register(require("@fastify/multipart"), {
-  limits: { fileSize: 50 * 1024 * 1024 },
-});
-
-// Swagger (optional API docs)
-await fastify.register(require("@fastify/swagger"));
+fastify.addContentTypeParser("application/octet-stream", ...);
 ```
 
-## Error Handling
-
+3. **Connection Pooling**: Reuse Redis/database connections
 ```typescript
-// Global error handler
-fastify.setErrorHandler((error, request, reply) => {
-  fastify.log.error(error);
-  reply.status(500).send({
-    error: "Internal server error",
-    code: "INTERNAL_ERROR",
-  });
-});
+const redisClient = createClient({ /* ... */ });
+await redisClient.connect(); // Connect once, reuse
 ```
 
-## Monitoring & Logging
-
+4. **Caching**: Enable auth caching for repeat requests
 ```typescript
-// Custom logging
-fastify.log.info({ uploadId: "123" }, "Upload started");
-fastify.log.error({ err: error }, "Upload failed");
-
-// Prometheus metrics (optional)
-await fastify.register(require("@fastify/metrics-plugin"));
-fastify.get("/metrics", async (req, reply) => {
-  return reply.type("text/plain").send(fastify.metrics.client.register.metrics());
-});
+authCacheConfig: { maxSize: 5000, ttl: 3600000 }
 ```
-
-## Related Packages
-
-- **[@uploadista/server](../server/)** - Core utilities
-- **[@uploadista/adapters-hono](../adapters-hono/)** - Hono adapter
-- **[@uploadista/adapters-express](../adapters-express/)** - Express adapter
-- **[@uploadista/core](../../core/)** - Core engine
-- **[@uploadista/kv-store-redis](../../kv-stores/redis/)** - Redis KV store
-- **[@uploadista/data-store-s3](../../data-stores/s3/)** - AWS S3 storage
-
-## Troubleshooting
-
-### WebSocket Connection Issues
-Ensure `@fastify/websocket` is registered before routes.
-
-### High Memory Usage
-Reduce concurrent uploads. Increase chunk size. Use streaming.
-
-### Connection Timeouts
-Increase `requestTimeout` for large files.
 
 ## License
 

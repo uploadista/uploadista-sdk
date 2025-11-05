@@ -3,7 +3,6 @@ import { Effect } from "effect";
 import type { Context, Env } from "hono";
 import { extractHonoRequest, sendHonoResponse } from "./hono-http-handler";
 import {
-  type DurableObjectWebSocketHandlerOptions,
   type HonoWebSocketHandler,
   honoWebSocketHandler,
 } from "./hono-websocket-handler";
@@ -22,12 +21,6 @@ export interface HonoAdapterOptions<TEnv extends Env = Env> {
    * @returns Promise resolving to AuthResult (AuthContext or null)
    */
   authMiddleware?: (c: Context<TEnv>) => Promise<AuthResult>;
-
-  /**
-   * Optional Durable Object WebSocket configuration.
-   * Used for Cloudflare Workers with Durable Objects.
-   */
-  durableObjectWebSocket?: DurableObjectWebSocketHandlerOptions;
 }
 
 /**
@@ -38,8 +31,7 @@ export interface HonoAdapterOptions<TEnv extends Env = Env> {
  * - Request extraction from Hono Context
  * - Response sending via Web API Response
  * - Optional authentication middleware
- * - WebSocket handling
- * - Cloudflare Durable Objects integration
+ * - WebSocket handling (standard WebSocket pattern with event broadcaster)
  *
  * @template TEnv - Hono environment type
  * @param options - Adapter configuration options
@@ -49,6 +41,8 @@ export interface HonoAdapterOptions<TEnv extends Env = Env> {
  * ```typescript
  * import { honoAdapter } from "@uploadista/adapters-hono";
  * import { createUploadistaServer } from "@uploadista/server";
+ * import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
+ * import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
  *
  * const adapter = honoAdapter({
  *   authMiddleware: async (c) => {
@@ -62,14 +56,19 @@ export interface HonoAdapterOptions<TEnv extends Env = Env> {
  *   dataStore: { type: "s3", config: { bucket: "uploads" } },
  *   kvStore: redisKvStore,
  *   eventEmitter: webSocketEventEmitter(),
+ *   eventBroadcaster: redisEventBroadcaster(), // Sync state across workers
  *   adapter
  * });
+ *
+ * // Use with Hono
+ * app.all("/uploadista/*", server.handler);
+ * app.get("/uploadista/ws/*", upgradeWebSocket(server.websocketHandler));
  * ```
  */
 export const honoAdapter = <TEnv extends Env = Env>(
   options: HonoAdapterOptions<TEnv> = {},
 ): ServerAdapter<Context<TEnv>, Response, HonoWebSocketHandler<TEnv>> => {
-  const { authMiddleware, durableObjectWebSocket } = options;
+  const { authMiddleware } = options;
 
   return {
     /**
@@ -107,12 +106,5 @@ export const honoAdapter = <TEnv extends Env = Env>(
             }),
           )
       : undefined,
-
-    /**
-     * Framework-specific extensions for Hono.
-     *
-     * Includes Durable Object configuration for Cloudflare Workers.
-     */
-    extensions: durableObjectWebSocket,
   };
 };

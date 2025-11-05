@@ -1,10 +1,13 @@
-import {
-  createHonoUploadistaAdapter,
-  type HonoUploadistaAdapter,
-} from "../../../packages/servers/adapters-hono/dist/hono-websocket-handler";
+import { honoDurableObjectAdapter } from "@uploadista/adapters-hono";
 import { r2Store } from "@uploadista/data-store-r2";
+import { durableObjectEventEmitter } from "@uploadista/event-emitter-durable-object";
+import { imagePluginServerless } from "@uploadista/flow-images-photon/serverless";
 import { cloudflareKvStore } from "@uploadista/kv-store-cloudflare-kv";
-import { Hono } from "hono";
+import {
+  createUploadistaServer,
+  type UploadistaServer,
+} from "@uploadista/server";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
 import { flows } from "./flows";
@@ -12,6 +15,7 @@ import { flows } from "./flows";
 type Env = {
   UPLOADISTA_KV: KVNamespace;
   UPLOADISTA_BUCKET: R2Bucket;
+  UPLOADISTA_DO: DurableObjectNamespace;
   R2_DELIVERY_URL: string;
   R2_BUCKET: string;
   R2_ACCESS_KEY_ID: string;
@@ -21,7 +25,11 @@ type Env = {
 };
 
 type Variables = {
-  uploadistaAdapter: HonoUploadistaAdapter;
+  uploadistaServer: UploadistaServer<
+    Context,
+    Response,
+    (c: Context) => Promise<Response>
+  >;
 };
 
 const app = new Hono<{ Variables: Variables; Bindings: Env }>();
@@ -74,34 +82,47 @@ app.use("*", async (c, next) => {
     r2Bucket: bucket as any,
   });
 
-  // Create the uploadista adapter
-  const uploadistaAdapter = await createHonoUploadistaAdapter({
+  // Create the uploadista server with Durable Objects adapter
+  const uploadistaServer = await createUploadistaServer({
     dataStore,
     flows,
-    plugins: [],
+    plugins: [imagePluginServerless],
+    eventEmitter: durableObjectEventEmitter({
+      durableObject: c.env.UPLOADISTA_DO as any,
+    }),
     kvStore,
+    adapter: honoDurableObjectAdapter<{ Variables: Variables; Bindings: Env }>({
+      durableObjectNamespace: (ctx) => ctx.env.UPLOADISTA_DO as any,
+    }),
   });
 
-  c.set("uploadistaAdapter", uploadistaAdapter);
+  c.set("uploadistaServer", uploadistaServer);
 
   return next();
 });
 
+// HTTP API routes
 app.on(
   ["HEAD", "POST", "GET", "PATCH"],
   ["/uploadista/api/**", "/uploadista/api"],
-  (c) => c.get("uploadistaAdapter").handler(c),
+  (c) => c.get("uploadistaServer").handler(c),
 );
 
-// app.on(
-//   ["GET"],
-//   ["/uploadista/ws/upload/:uploadId", "/uploadista/ws/flow/:jobId"],
-//   (c) => upgradeWebSocket(c.get("uploadistaAdapter").websocketHandler),
-// );
+// WebSocket routes - Handled by adapter, which routes to Durable Objects
+app.on(
+  ["GET"],
+  ["/uploadista/ws/upload/:uploadId", "/uploadista/ws/flow/:jobId"],
+  (c) => {
+    return c.get("uploadistaServer").websocketHandler(c);
+  },
+);
 
 const routes = app;
 
 export type AppType = typeof routes;
+
+// Export the Durable Object class
+export { UploadistaDurableObject } from "./durable-object";
 
 export default {
   fetch: app.fetch,

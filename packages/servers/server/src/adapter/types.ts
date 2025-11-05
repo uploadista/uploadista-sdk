@@ -208,23 +208,22 @@ export interface ServerAdapter<
   }): Effect.Effect<TWebSocketHandler, never, UploadServer | FlowServer>;
 
   /**
-   * Optional: Framework-specific extensions.
+   * Optional: Extract waitUntil callback from the framework context.
    *
-   * Used for features that don't fit the standard adapter model, such as:
-   * - Hono's Durable Objects WebSocket support
-   * - Framework-specific optimizations
-   * - Custom middleware hooks
+   * When provided, allows flows to execute beyond the HTTP response lifecycle.
+   * This function is called per-request to extract the waitUntil callback from
+   * the framework-specific context.
    *
-   * The core server can check for and use extensions when available.
+   * @param ctx - Framework-specific context object
+   * @returns The waitUntil callback or undefined if not available
    *
    * @example
    * ```typescript
-   * {
-   *   durableObjectWebSocket: {
-   *     // Hono-specific Durable Object configuration
-   *   }
-   * }
+   * // Cloudflare Workers with Hono:
+   * extractWaitUntil: (c) => c.executionCtx.waitUntil.bind(c.executionCtx)
    * ```
    */
-  extensions?: Record<string, unknown>;
+  extractWaitUntil?: (
+    ctx: TContext,
+  ) => ((promise: Promise<unknown>) => void) | undefined;
 }
