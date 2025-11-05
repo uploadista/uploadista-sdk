@@ -7,16 +7,16 @@
   "author": "Uploadista",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
     "./components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js"
+      "types": "./dist/components/index.d.mts",
+      "import": "./dist/components/index.mjs"
     },
     "./hooks": {
-      "types": "./dist/hooks/index.d.ts",
-      "import": "./dist/hooks/index.js"
+      "types": "./dist/hooks/index.d.mts",
+      "import": "./dist/hooks/index.mjs"
     }
   },
   "scripts": {

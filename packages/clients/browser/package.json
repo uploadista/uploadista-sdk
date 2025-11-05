@@ -7,20 +7,20 @@
   "author": "Uploadista",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
     "./flow": {
-      "types": "./dist/flow/index.d.ts",
-      "import": "./dist/flow/index.js"
+      "types": "./dist/flow/index.d.mts",
+      "import": "./dist/flow/index.mjs"
     },
     "./upload": {
-      "types": "./dist/upload/index.d.ts",
-      "import": "./dist/upload/index.js"
+      "types": "./dist/upload/index.d.mts",
+      "import": "./dist/upload/index.mjs"
     },
     "./framework-utils": {
-      "types": "./dist/framework-utils.d.ts",
-      "import": "./dist/framework-utils.js"
+      "types": "./dist/framework-utils.d.mts",
+      "import": "./dist/framework-utils.mjs"
     }
   },
   "scripts": {
