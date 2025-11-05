@@ -1,5 +1,5 @@
 import type { UploadistaError } from "@uploadista/core/errors";
-import { Context, type Effect } from "effect";
+import { Context, type Effect, type Layer } from "effect";
 
 /**
  * Context information for AI image processing operations.
@@ -25,7 +25,7 @@ export type ImageAiPluginShape = {
    */
   removeBackground: (
     inputUrl: string,
-    context: ImageAiContext
+    context: ImageAiContext,
   ) => Effect.Effect<{ outputUrl: string }, UploadistaError>;
 
   /**
@@ -38,7 +38,7 @@ export type ImageAiPluginShape = {
    */
   describeImage: (
     inputUrl: string,
-    context: ImageAiContext
+    context: ImageAiContext,
   ) => Effect.Effect<{ description: string }, UploadistaError>;
 };
 
@@ -64,3 +64,5 @@ export class ImageAiPlugin extends Context.Tag("ImageAiPlugin")<
   ImageAiPlugin,
   ImageAiPluginShape
 >() {}
+
+export type ImageAiPluginLayer = Layer.Layer<ImageAiPlugin, never, never>;

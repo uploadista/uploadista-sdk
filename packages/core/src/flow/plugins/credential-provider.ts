@@ -1,4 +1,4 @@
-import { Context, type Effect } from "effect";
+import { Context, type Effect, type Layer } from "effect";
 import type { UploadistaError } from "@/errors";
 
 /**
@@ -46,3 +46,9 @@ export class CredentialProvider extends Context.Tag("CredentialProvider")<
   CredentialProvider,
   CredentialProviderShape
 >() {}
+
+export type CredentialProviderLayer = Layer.Layer<
+  CredentialProvider,
+  never,
+  never
+>;
