@@ -7,6 +7,7 @@
 
 export * from "./create-type-safe-server";
 export * from "./plugin-types";
+export * from "./plugin-validation";
 export * from "./routes";
 export * from "./server";
 export * from "./types";

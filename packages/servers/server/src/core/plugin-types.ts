@@ -1,40 +1,29 @@
 import type { UploadistaError } from "@uploadista/core";
 import type {
-  CredentialProviderLayer,
-  Flow,
-  ImageAiPluginLayer,
-  ImagePluginLayer,
-  ZipPluginLayer,
+	CredentialProviderLayer,
+	ExtractLayerServices,
+	Flow,
+	ImageAiPluginLayer,
+	ImagePluginLayer,
+	ZipPluginLayer,
 } from "@uploadista/core/flow";
 import type { Effect, Layer } from "effect";
 import type { z } from "zod";
 
 /**
- * Utility type to extract the service type from a Layer.
- * Given Layer.Layer<ServiceA, never, never>, extracts ServiceA.
- */
-// biome-ignore lint/suspicious/noExplicitAny: Utility type needs to work with any layer configuration
-export type ExtractLayerService<T> = T extends Layer.Layer<infer S, any, any>
-  ? S
-  : never;
-
-/**
  * Utility type to extract all services from a tuple of layers.
  * Given [Layer<A>, Layer<B>], extracts A | B.
+ *
+ * This is a wrapper around the shared ExtractLayerServices utility from @uploadista/core.
+ *
+ * @deprecated Use ExtractLayerServices from @uploadista/core/flow/types instead.
+ *   This will be removed in a future version.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Utility type for extracting services from any layer tuple
 export type ExtractServicesFromLayers<
-  // biome-ignore lint/suspicious/noExplicitAny: Generic constraint must accept any layer configuration
-  T extends readonly Layer.Layer<any, any, any>[],
-> = T extends readonly [infer First, ...infer Rest]
-  ? // biome-ignore lint/suspicious/noExplicitAny: Pattern matching requires any
-    First extends Layer.Layer<any, any, any>
-    ? // biome-ignore lint/suspicious/noExplicitAny: Recursive constraint needs any
-      Rest extends readonly Layer.Layer<any, any, any>[]
-      ? ExtractLayerService<First> | ExtractServicesFromLayers<Rest>
-      : ExtractLayerService<First>
-    : never
-  : never;
+	// biome-ignore lint/suspicious/noExplicitAny: Generic constraint must accept any layer configuration
+	T extends readonly Layer.Layer<any, any, any>[],
+> = ExtractLayerServices<T>;
 
 /**
  * Known plugin layer types for better type inference.
@@ -55,6 +44,8 @@ export type PluginTuple = readonly KnownPluginLayer[];
 /**
  * Extracts the union of all plugin services from a plugin tuple.
  *
+ * Uses the shared ExtractLayerServices utility from @uploadista/core for consistency.
+ *
  * @example
  * ```typescript
  * type Plugins = [ImagePluginLayer, ZipPluginLayer];
@@ -63,7 +54,7 @@ export type PluginTuple = readonly KnownPluginLayer[];
  * ```
  */
 export type PluginServices<TPlugins extends PluginTuple> =
-  ExtractServicesFromLayers<TPlugins>;
+	ExtractLayerServices<TPlugins>;
 
 /**
  * Type-safe flow function that declares its plugin requirements.
@@ -93,6 +84,8 @@ export type TypeSafeFlowFunction<TRequirements = never> = (
  * Validates that plugins satisfy flow requirements.
  *
  * This type creates a compile-time error if required plugins are missing.
+ * When validation fails, it returns an error object with detailed information
+ * including a human-readable message.
  *
  * @template TPlugins - The plugin tuple provided
  * @template TRequirements - The services required by flows
@@ -101,24 +94,34 @@ export type TypeSafeFlowFunction<TRequirements = never> = (
  * ```typescript
  * // ✅ Valid: ImagePlugin is provided and required
  * type Valid = ValidatePlugins<[ImagePluginLayer], ImagePlugin>;
+ * // Result: true
  *
  * // ❌ Error: ImagePlugin required but not provided
  * type Invalid = ValidatePlugins<[], ImagePlugin>;
+ * // Result: {
+ * //   __error: "MISSING_REQUIRED_PLUGINS";
+ * //   __message: "Missing required plugins: ...";
+ * //   __required: ImagePlugin;
+ * //   __provided: never;
+ * //   __missing: ImagePlugin;
+ * // }
  * ```
  */
 export type ValidatePlugins<
-  TPlugins extends PluginTuple,
-  TRequirements,
+	TPlugins extends PluginTuple,
+	TRequirements,
 > = TRequirements extends never
-  ? true // No requirements, always valid
-  : TRequirements extends PluginServices<TPlugins>
-    ? true // All requirements satisfied
-    : {
-        __error: "Missing required plugins";
-        __required: TRequirements;
-        __provided: PluginServices<TPlugins>;
-        __missing: Exclude<TRequirements, PluginServices<TPlugins>>;
-      };
+	? true // No requirements, always valid
+	: TRequirements extends PluginServices<TPlugins>
+		? true // All requirements satisfied
+		: {
+				readonly __error: "MISSING_REQUIRED_PLUGINS";
+				readonly __message: "Missing required plugins. Check __missing field for details.";
+				readonly __required: TRequirements;
+				readonly __provided: PluginServices<TPlugins>;
+				readonly __missing: Exclude<TRequirements, PluginServices<TPlugins>>;
+				readonly __hint: "Add the missing plugins to your server configuration's plugins array.";
+			};
 
 /**
  * Type-safe server configuration with compile-time plugin validation.
@@ -160,6 +163,36 @@ export type TypeSafePluginConfig<
   : ValidatePlugins<TPlugins, TFlowRequirements>; // Returns error object
 
 /**
+ * Extracts plugin requirements from a flow function type.
+ *
+ * This navigates through the flow function signature to extract the requirements
+ * from the Flow type it returns, excluding UploadServer (provided by runtime).
+ *
+ * @template TFlowFn - The flow function type to extract requirements from
+ *
+ * @example
+ * ```typescript
+ * const myFlow = (flowId: string, clientId: string | null) =>
+ *   Effect.succeed(
+ *     createFlow({ ... }) // Returns Flow<..., ..., ImagePlugin | ZipPlugin>
+ *   );
+ *
+ * type Requirements = ExtractFlowPluginRequirements<typeof myFlow>;
+ * // Requirements = ImagePlugin | ZipPlugin
+ * ```
+ */
+export type ExtractFlowPluginRequirements<
+	TFlowFn extends (
+		flowId: string,
+		clientId: string | null,
+	) => Effect.Effect<unknown, unknown, unknown>,
+> = ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, any, any>
+	? TFlow extends Flow<any, any, infer TRequirements>
+		? Exclude<TRequirements, never> // Exclude UploadServer is handled by FlowPluginRequirements in core
+		: never
+	: never;
+
+/**
  * Helper type to infer plugin requirements from a flow function.
  *
  * @example
@@ -170,8 +203,8 @@ export type TypeSafePluginConfig<
  * ```
  */
 export type InferFlowRequirements<T> = T extends TypeSafeFlowFunction<infer R>
-  ? R
-  : never;
+	? R
+	: never;
 
 /**
  * Converts PluginLayer types to Layer.Layer<any, never, any> for runtime use.

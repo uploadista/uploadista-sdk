@@ -11,58 +11,163 @@ import type { Flow, FlowExecutionResult } from "./flow";
 import { createFlowWithSchema } from "./flow";
 import { NodeType } from "./node";
 import type {
-  FlowEdge,
-  FlowNode,
-  TypeCompatibilityChecker,
+	FlowEdge,
+	FlowNode,
+	TypeCompatibilityChecker,
 } from "./types/flow-types";
+import type { ExtractEffectRequirements, ResolveEffect } from "./types";
 
+/**
+ * Defines a node that can be used in a typed flow.
+ *
+ * A node definition can be either:
+ * - A plain FlowNode object
+ * - An Effect that resolves to a FlowNode (for nodes requiring dependencies)
+ *
+ * @template TNodeError - The error types that the node can produce
+ * @template TNodeRequirements - The services/dependencies the node requires
+ */
 export type NodeDefinition<TNodeError = never, TNodeRequirements = never> =
-  | FlowNode<any, any, CoreUploadistaError>
-  | Effect.Effect<
-      FlowNode<any, any, CoreUploadistaError>,
-      TNodeError,
-      TNodeRequirements
-    >;
+	| FlowNode<any, any, CoreUploadistaError>
+	| Effect.Effect<
+			FlowNode<any, any, CoreUploadistaError>,
+			TNodeError,
+			TNodeRequirements
+		>;
 
+/**
+ * A record mapping node IDs to their definitions.
+ *
+ * This is the primary type used for defining the nodes in a typed flow,
+ * allowing TypeScript to infer input/output schemas and requirements.
+ *
+ * @example
+ * ```typescript
+ * const nodes = {
+ *   input: fileInputNode,
+ *   resize: Effect.succeed(imageResizeNode),
+ *   output: s3OutputNode
+ * } satisfies NodeDefinitionsRecord;
+ * ```
+ */
 export type NodeDefinitionsRecord = Record<string, NodeDefinition<any, any>>;
 
+/**
+ * Extracts the error type from a NodeDefinition.
+ *
+ * If the node is an Effect, extracts its error type.
+ * If the node is a plain FlowNode, returns never (no errors).
+ */
 type NodeDefinitionError<T> = T extends Effect.Effect<
-  FlowNode<any, any, CoreUploadistaError>,
-  infer TError,
-  any
+	FlowNode<any, any, CoreUploadistaError>,
+	infer TError,
+	any
 >
-  ? TError
-  : never;
+	? TError
+	: never;
 
-type NodeDefinitionRequirements<T> = T extends Effect.Effect<
-  FlowNode<any, any, CoreUploadistaError>,
-  any,
-  infer TRequirements
->
-  ? TRequirements
-  : never;
+/**
+ * Extracts the requirements (dependencies) from a NodeDefinition.
+ *
+ * Uses the shared ExtractEffectRequirements utility for consistency.
+ */
+type NodeDefinitionRequirements<T> = ExtractEffectRequirements<T>;
 
+/**
+ * Extracts all possible errors from all nodes in a flow as a union.
+ *
+ * This iterates through all nodes in the record and combines their
+ * error types into a single union type.
+ */
 type NodesErrorUnion<TNodes extends NodeDefinitionsRecord> = {
-  [K in keyof TNodes]: NodeDefinitionError<TNodes[K]>;
+	[K in keyof TNodes]: NodeDefinitionError<TNodes[K]>;
 }[keyof TNodes];
 
+/**
+ * Extracts all service requirements from all nodes in a flow as a union.
+ *
+ * This iterates through all nodes in the record and combines their
+ * requirement types into a single union type representing all services
+ * needed by the flow.
+ *
+ * @template TNodes - The record of node definitions
+ *
+ * @example
+ * ```typescript
+ * const nodes = {
+ *   resize: imageResizeNode, // requires ImagePlugin
+ *   zip: zipNode,           // requires ZipPlugin
+ * };
+ * type Requirements = NodesRequirementsUnion<typeof nodes>;
+ * // Requirements = ImagePlugin | ZipPlugin
+ * ```
+ */
 type NodesRequirementsUnion<TNodes extends NodeDefinitionsRecord> = {
-  [K in keyof TNodes]: NodeDefinitionRequirements<TNodes[K]>;
+	[K in keyof TNodes]: NodeDefinitionRequirements<TNodes[K]>;
 }[keyof TNodes];
 
+/**
+ * Extracts all service requirements from a flow's nodes.
+ *
+ * This includes all services required by any node in the flow,
+ * including UploadServer (which is provided by the runtime).
+ *
+ * @template TNodes - The record of node definitions
+ *
+ * @example
+ * ```typescript
+ * const myFlow = createFlow({
+ *   nodes: {
+ *     input: fileInputNode,
+ *     process: imageProcessNode, // requires ImagePlugin
+ *   },
+ *   edges: [...]
+ * });
+ * type AllRequirements = FlowRequirements<typeof myFlow.nodes>;
+ * // AllRequirements = ImagePlugin | UploadServer
+ * ```
+ */
 export type FlowRequirements<TNodes extends NodeDefinitionsRecord> =
-  NodesRequirementsUnion<TNodes>;
+	NodesRequirementsUnion<TNodes>;
 
+/**
+ * Extracts plugin service requirements from a flow, excluding UploadServer.
+ *
+ * This type is useful for determining which plugin layers need to be
+ * provided when creating a server, as UploadServer is automatically
+ * provided by the runtime.
+ *
+ * @template TNodes - The record of node definitions
+ *
+ * @example
+ * ```typescript
+ * const myFlow = createFlow({
+ *   nodes: {
+ *     resize: imageResizeNode, // requires ImagePlugin
+ *     upload: s3OutputNode,   // requires UploadServer
+ *   },
+ *   edges: [...]
+ * });
+ * type PluginRequirements = FlowPluginRequirements<typeof myFlow.nodes>;
+ * // PluginRequirements = ImagePlugin (UploadServer excluded)
+ * ```
+ */
 export type FlowPluginRequirements<TNodes extends NodeDefinitionsRecord> =
-  Exclude<FlowRequirements<TNodes>, UploadServer>;
+	Exclude<FlowRequirements<TNodes>, UploadServer>;
 
+/**
+ * Infers the concrete FlowNode type from a NodeDefinition.
+ *
+ * If the definition is already a FlowNode, returns it as-is.
+ * If the definition is an Effect, extracts the FlowNode from the Effect's success type.
+ *
+ * Uses the shared ResolveEffect utility for consistency.
+ */
 type InferNode<T> = T extends FlowNode<any, any, CoreUploadistaError>
-  ? T
-  : T extends Effect.Effect<infer R, any, any>
-    ? R extends FlowNode<any, any, CoreUploadistaError>
-      ? R
-      : never
-    : never;
+	? T
+	: ResolveEffect<T> extends FlowNode<any, any, CoreUploadistaError>
+		? ResolveEffect<T>
+		: never;
 
 type ResolvedNodesRecord<TNodes extends NodeDefinitionsRecord> = {
   [K in keyof TNodes]: InferNode<TNodes[K]>;
@@ -138,37 +243,71 @@ declare const typedFlowInputsSymbol: unique symbol;
 declare const typedFlowOutputsSymbol: unique symbol;
 declare const typedFlowPluginsSymbol: unique symbol;
 
+/**
+ * A type-safe Flow that infers input/output types and requirements from its nodes.
+ *
+ * TypedFlow extends the base Flow type with additional type information that
+ * allows TypeScript to verify inputs, outputs, and plugin requirements at compile time.
+ *
+ * The phantom type properties (using unique symbols) enable type-level metadata
+ * without affecting runtime behavior, allowing other type utilities to extract
+ * this information for validation purposes.
+ *
+ * @template TNodes - Record of node definitions used in the flow
+ * @template TInputSchema - Zod schema for flow inputs (inferred from input nodes)
+ * @template TOutputSchema - Zod schema for flow outputs (inferred from output nodes)
+ *
+ * @example
+ * ```typescript
+ * const myFlow = createFlow({
+ *   nodes: {
+ *     input: fileInputNode,
+ *     resize: imageResizeNode,
+ *     output: s3OutputNode
+ *   },
+ *   edges: [
+ *     { source: 'input', target: 'resize' },
+ *     { source: 'resize', target: 'output' }
+ *   ]
+ * });
+ *
+ * // TypeScript infers:
+ * // - Input types from fileInputNode.inputSchema
+ * // - Output types from s3OutputNode.outputSchema
+ * // - Requirements: ImagePlugin (from resize node)
+ * ```
+ */
 export type TypedFlow<
-  TNodes extends NodeDefinitionsRecord,
-  TInputSchema extends z.ZodTypeAny,
-  TOutputSchema extends z.ZodTypeAny,
+	TNodes extends NodeDefinitionsRecord,
+	TInputSchema extends z.ZodTypeAny,
+	TOutputSchema extends z.ZodTypeAny,
 > = Flow<TInputSchema, TOutputSchema, FlowRequirements<TNodes>> & {
-  run: (args: {
-    inputs?: Partial<FlowInputMap<TNodes>>;
-    storageId: string;
-    jobId: string;
-  }) => Effect.Effect<
-    FlowExecutionResult<FlowOutputMap<TNodes>>,
-    CoreUploadistaError,
-    FlowRequirements<TNodes>
-  >;
-  resume: (args: {
-    jobId: string;
-    storageId: string;
-    nodeResults: Record<string, unknown>;
-    executionState: {
-      executionOrder: string[];
-      currentIndex: number;
-      inputs: Partial<FlowInputMap<TNodes>>;
-    };
-  }) => Effect.Effect<
-    FlowExecutionResult<FlowOutputMap<TNodes>>,
-    CoreUploadistaError,
-    FlowRequirements<TNodes>
-  >;
-  readonly [typedFlowInputsSymbol]?: FlowInputMap<TNodes>;
-  readonly [typedFlowOutputsSymbol]?: FlowOutputMap<TNodes>;
-  readonly [typedFlowPluginsSymbol]?: FlowPluginRequirements<TNodes>;
+	run: (args: {
+		inputs?: Partial<FlowInputMap<TNodes>>;
+		storageId: string;
+		jobId: string;
+	}) => Effect.Effect<
+		FlowExecutionResult<FlowOutputMap<TNodes>>,
+		CoreUploadistaError,
+		FlowRequirements<TNodes>
+	>;
+	resume: (args: {
+		jobId: string;
+		storageId: string;
+		nodeResults: Record<string, unknown>;
+		executionState: {
+			executionOrder: string[];
+			currentIndex: number;
+			inputs: Partial<FlowInputMap<TNodes>>;
+		};
+	}) => Effect.Effect<
+		FlowExecutionResult<FlowOutputMap<TNodes>>,
+		CoreUploadistaError,
+		FlowRequirements<TNodes>
+	>;
+	readonly [typedFlowInputsSymbol]?: FlowInputMap<TNodes>;
+	readonly [typedFlowOutputsSymbol]?: FlowOutputMap<TNodes>;
+	readonly [typedFlowPluginsSymbol]?: FlowPluginRequirements<TNodes>;
 };
 
 const buildUnionSchema = (
