@@ -1,5 +1,11 @@
 import {
+  adjust_brightness,
+  adjust_contrast,
   crop,
+  fliph,
+  flipv,
+  gaussian_blur,
+  grayscale,
   PhotonImage,
   padding_bottom,
   padding_left,
@@ -7,7 +13,10 @@ import {
   padding_top,
   Rgba,
   resize,
+  sepia,
+  sharpen,
 } from "@cf-wasm/photon/node";
+import { UploadistaError } from "@uploadista/core/errors";
 import { ImagePlugin } from "@uploadista/core/flow";
 import { Effect, Layer } from "effect";
 import type tinycolor from "tinycolor2";
@@ -171,6 +180,117 @@ export const imagePluginNode = Layer.succeed(
       outputImage.free();
 
       return Effect.succeed(outputBytes);
+    },
+    transform: (inputBytes, transformation) => {
+      return Effect.gen(function* () {
+        // List of unsupported transformations in photon
+        const unsupportedTransformations: string[] = [
+          "watermark",
+          "logo",
+          "text",
+        ];
+
+        if (unsupportedTransformations.includes(transformation.type)) {
+          return yield* Effect.fail(
+            UploadistaError.fromCode("UNKNOWN_ERROR", {
+              body: `Photon plugin does not support '${transformation.type}'. Use sharp plugin or remove this transformation.`,
+            }),
+          );
+        }
+
+        // Create a PhotonImage instance
+        let image = PhotonImage.new_from_byteslice(inputBytes);
+
+        try {
+          switch (transformation.type) {
+            case "resize": {
+              image = autoResize(
+                image,
+                transformation.width,
+                transformation.height,
+                { fit: transformation.fit },
+              );
+              break;
+            }
+
+            case "blur": {
+              // Photon uses a radius parameter for gaussian blur
+              // Convert sigma to a rough radius approximation
+              const radius = Math.round(transformation.sigma);
+              gaussian_blur(image, radius);
+              break;
+            }
+
+            case "rotate": {
+              // Photon doesn't have a straightforward rotate with angle function
+              // We'll need to implement this using available functions or mark as unsupported
+              return yield* Effect.fail(
+                UploadistaError.fromCode("UNKNOWN_ERROR", {
+                  body: "Rotate transformation is not fully supported in photon plugin. Use sharp plugin instead.",
+                }),
+              );
+            }
+
+            case "flip": {
+              // Photon has fliph() and flipv() functions
+              if (transformation.direction === "horizontal") {
+                fliph(image);
+              } else {
+                flipv(image);
+              }
+              break;
+            }
+
+            case "grayscale": {
+              grayscale(image);
+              break;
+            }
+
+            case "sepia": {
+              sepia(image);
+              break;
+            }
+
+            case "brightness": {
+              // Photon's adjust_brightness function takes a value to add to each pixel
+              // Convert our -100 to +100 range to photon's expected range
+              const adjustValue = Math.round(transformation.value * 2.55);
+              adjust_brightness(image, adjustValue);
+              break;
+            }
+
+            case "contrast": {
+              // Photon's adjust_contrast takes a contrast value
+              // Convert our -100 to +100 range to a suitable value
+              const contrastValue = transformation.value;
+              adjust_contrast(image, contrastValue);
+              break;
+            }
+
+            case "sharpen": {
+              sharpen(image);
+              break;
+            }
+
+            default: {
+              // TypeScript exhaustiveness check
+              return yield* Effect.fail(
+                UploadistaError.fromCode("UNKNOWN_ERROR", {
+                  body: `Unknown transformation type: ${(transformation as { type: string }).type}`,
+                }),
+              );
+            }
+          }
+
+          // Get output bytes (using webp format)
+          const outputBytes = image.get_bytes_webp();
+
+          return outputBytes;
+        } finally {
+          // Always free the image to prevent memory leaks
+          image.free();
+        }
+      });
     },
   }),
 );

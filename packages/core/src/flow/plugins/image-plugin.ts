@@ -2,6 +2,7 @@ import type { UploadistaError } from "@uploadista/core/errors";
 import { Context, type Effect, type Layer } from "effect";
 import type { OptimizeParams } from "./types/optimize-node";
 import type { ResizeParams } from "./types/resize-node";
+import type { Transformation } from "./types/transform-image-node";
 
 /**
  * Shape definition for the Image Plugin interface.
@@ -32,6 +33,45 @@ export type ImagePluginShape = {
   resize: (
     input: Uint8Array,
     options: ResizeParams,
+  ) => Effect.Effect<Uint8Array, UploadistaError>;
+
+  /**
+   * Applies a single transformation to an image.
+   *
+   * This method is used by the transform image node to apply individual transformations
+   * in a chain. Each transformation receives the output of the previous transformation.
+   *
+   * @param input - The input image as a Uint8Array
+   * @param transformation - The transformation to apply (discriminated union)
+   * @returns An Effect that resolves to the transformed image as a Uint8Array
+   * @throws {UploadistaError} When transformation fails or is unsupported by the plugin
+   *
+   * @example
+   * ```typescript
+   * const program = Effect.gen(function* () {
+   *   const imagePlugin = yield* ImagePlugin;
+   *
+   *   // Apply a single transformation
+   *   const blurred = yield* imagePlugin.transform(imageData, {
+   *     type: 'blur',
+   *     sigma: 5.0
+   *   });
+   *
+   *   // Chain multiple transformations
+   *   const resized = yield* imagePlugin.transform(blurred, {
+   *     type: 'resize',
+   *     width: 800,
+   *     height: 600,
+   *     fit: 'cover'
+   *   });
+   *
+   *   return resized;
+   * });
+   * ```
+   */
+  transform: (
+    input: Uint8Array,
+    transformation: Transformation,
   ) => Effect.Effect<Uint8Array, UploadistaError>;
 };
 
