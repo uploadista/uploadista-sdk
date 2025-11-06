@@ -26,7 +26,7 @@
     "check": "biome check --write ./src"
   },
   "dependencies": {
-    "@cf-wasm/photon": "0.2.0",
+    "@cf-wasm/photon": "0.2.1",
     "@uploadista/core": "workspace:*",
     "effect": "catalog:",
     "tinycolor2": "1.6.0",
