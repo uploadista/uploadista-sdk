@@ -1155,8 +1155,8 @@ importers:
   packages/flow/images/photon:
     dependencies:
       '@cf-wasm/photon':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.2.1
+        version: 0.2.1
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
@@ -2663,8 +2663,8 @@ packages:
   '@cf-wasm/internals@0.1.0':
     resolution: {integrity: sha512-JTLXSEqKdcRp58CY3TtFO44BMwCUvhDWKNLT+gdha8JIXecK5cGLvK/iVaaW75JD0KG4HrpV2Mw/UqXi0Ga5SA==}
 
-  '@cf-wasm/photon@0.2.0':
-    resolution: {integrity: sha512-5Aq1Rrji+ybkDJV27ulavN7O6Ud+SfxPIS0cCFX6X1bCVWrbwqZcccQKXxHX3GHbO1kKoDe+biiQ/6G4ySJHOw==}
+  '@cf-wasm/photon@0.2.1':
+    resolution: {integrity: sha512-uJpfCkJ8zy8Nsh7HdtjF21IP4l6VzCWWbCEpa3IidNbXF+wwKBcIjuCZ3yVyIxzHVFyUnGo/1sUDY1JOPC4zIg==}
 
   '@cloudflare/kv-asset-handler@0.4.0':
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
@@ -11838,7 +11838,7 @@ snapshots:
 
   '@cf-wasm/internals@0.1.0': {}
 
-  '@cf-wasm/photon@0.2.0':
+  '@cf-wasm/photon@0.2.1':
     dependencies:
       '@cf-wasm/internals': 0.1.0
 
