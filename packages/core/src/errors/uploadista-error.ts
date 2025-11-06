@@ -40,7 +40,12 @@ export type UploadistaErrorCode =
   | "FLOW_INPUT_VALIDATION_ERROR"
   | "CHECKSUM_MISMATCH"
   | "MIMETYPE_MISMATCH"
-  | "UNSUPPORTED_CHECKSUM_ALGORITHM";
+  | "UNSUPPORTED_CHECKSUM_ALGORITHM"
+  | "VIDEO_PROCESSING_FAILED"
+  | "INVALID_VIDEO_FORMAT"
+  | "CODEC_NOT_SUPPORTED"
+  | "VIDEO_METADATA_EXTRACTION_FAILED"
+  | "FFMPEG_NOT_INSTALLED";
 
 /**
  * Catalog of all predefined errors in the Uploadista system.
@@ -187,6 +192,26 @@ export const ERROR_CATALOG: Readonly<
   UNSUPPORTED_CHECKSUM_ALGORITHM: {
     status: 400,
     body: "The specified checksum algorithm is not supported\n",
+  },
+  VIDEO_PROCESSING_FAILED: {
+    status: 500,
+    body: "Video processing operation failed\n",
+  },
+  INVALID_VIDEO_FORMAT: {
+    status: 400,
+    body: "The video format is not supported\n",
+  },
+  CODEC_NOT_SUPPORTED: {
+    status: 400,
+    body: "The specified video codec is not supported\n",
+  },
+  VIDEO_METADATA_EXTRACTION_FAILED: {
+    status: 500,
+    body: "Failed to extract video metadata\n",
+  },
+  FFMPEG_NOT_INSTALLED: {
+    status: 500,
+    body: "FFmpeg is not installed or not available in PATH\n",
   },
 } as const;
 
