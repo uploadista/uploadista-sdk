@@ -2,14 +2,7 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { UploadistaError } from "@uploadista/core/errors";
-import type {
-  ExtractFrameParams,
-  TranscodeParams,
-  TrimParams,
-  VideoMetadata,
-  VideoPluginShape,
-  VideoResizeParams,
-} from "@uploadista/core/flow";
+import type { VideoMetadata, VideoPluginShape } from "@uploadista/core/flow";
 import { Effect } from "effect";
 import ffmpeg from "fluent-ffmpeg";
 import {
@@ -68,7 +61,7 @@ export function createFFmpegVideoPlugin(): VideoPluginShape {
                     height: videoStream.height || 0,
                     codec: videoStream.codec_name || "unknown",
                     format: data.format.format_name || "unknown",
-                    bitrate: Number.parseInt(data.format.bit_rate || "0", 10),
+                    bitrate: data.format.bit_rate || 0,
                     frameRate,
                     aspectRatio: videoStream.display_aspect_ratio || "unknown",
                     hasAudio: !!audioStream,
@@ -76,7 +69,7 @@ export function createFFmpegVideoPlugin(): VideoPluginShape {
                     audioBitrate: audioStream
                       ? Number.parseInt(audioStream.bit_rate || "0", 10)
                       : undefined,
-                    size: Number.parseInt(data.format.size || "0", 10),
+                    size: data.format.size || 0,
                   });
                 });
               },

@@ -1,5 +1,5 @@
 import { VideoPlugin } from "@uploadista/core/flow";
-import { Layer } from "effect";
+import { Effect, Layer } from "effect";
 import { checkFFmpegAvailable } from "./utils/ffmpeg-check";
 import { createFFmpegVideoPlugin } from "./video-plugin";
 

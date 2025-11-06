@@ -63,7 +63,7 @@ export function createTrimNode(id: string, params: TrimParams) {
       id,
       name: "Trim Video",
       description: "Extracts a segment from the video",
-      transform: (inputBytes, file) =>
+      transform: (inputBytes, _file) =>
         Effect.map(videoService.trim(inputBytes, params), (trimmedBytes) => {
           // Pass through video bytes
           return {

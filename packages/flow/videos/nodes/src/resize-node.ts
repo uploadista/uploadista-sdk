@@ -32,7 +32,7 @@ export function createResizeNode(id: string, params: VideoResizeParams) {
       id,
       name: "Resize Video",
       description: "Changes video resolution",
-      transform: (inputBytes, file) =>
+      transform: (inputBytes, _file) =>
         Effect.map(videoService.resize(inputBytes, params), (resizedBytes) => {
           // Pass through video bytes (no metadata changes needed)
           return {
