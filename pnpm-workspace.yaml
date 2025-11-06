@@ -15,16 +15,17 @@ catalog:
   typescript: 5.9.3
   zod: 4.1.12
 
-
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@prisma/client'
   - '@prisma/engines'
+  - '@seydx/node-av-darwin-arm64'
   - '@swc/core'
   - '@tailwindcss/oxide'
   - core-js-pure
   - esbuild
   - msgpackr-extract
+  - node-av
   - nx
   - oxc-resolver
   - sharp
