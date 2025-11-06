@@ -10,8 +10,8 @@ catalogs:
       specifier: 24.10.0
       version: 24.10.0
     effect:
-      specifier: 3.19.0
-      version: 3.19.0
+      specifier: 3.19.1
+      version: 3.19.1
     hono:
       specifier: 4.10.4
       version: 4.10.4
@@ -336,7 +336,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       fastify:
         specifier: 5.6.1
         version: 5.6.1
@@ -388,7 +388,7 @@ importers:
         version: link:../../packages/servers/server
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       hono:
         specifier: 'catalog:'
         version: 4.10.4
@@ -470,7 +470,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       hono:
         specifier: 'catalog:'
         version: 4.10.4
@@ -629,13 +629,13 @@ importers:
         version: 2.1.1
       lucide-vue-next:
         specifier: 0.469.0
-        version: 0.469.0(vue@3.5.23(typescript@5.9.3))
+        version: 0.469.0(vue@3.5.22(typescript@5.9.3))
       tailwind-merge:
         specifier: 3.3.1
         version: 3.3.1
       vue:
         specifier: 3.5.22
-        version: 3.5.23(typescript@5.9.3)
+        version: 3.5.22(typescript@5.9.3)
     devDependencies:
       '@tailwindcss/vite':
         specifier: 4.1.14
@@ -645,7 +645,7 @@ importers:
         version: link:../../packages/typescript-config
       '@vitejs/plugin-vue':
         specifier: 6.0.1
-        version: 6.0.1(vite@7.1.10(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vue@3.5.23(typescript@5.9.3))
+        version: 6.0.1(vite@7.1.10(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vue@3.5.22(typescript@5.9.3))
       tailwindcss:
         specifier: 4.1.14
         version: 4.1.14
@@ -895,7 +895,7 @@ importers:
     dependencies:
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -932,7 +932,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -951,7 +951,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -976,7 +976,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -998,7 +998,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1023,7 +1023,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1042,7 +1042,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
@@ -1064,7 +1064,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1083,7 +1083,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1105,7 +1105,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1121,7 +1121,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1137,7 +1137,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1162,7 +1162,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       tinycolor2:
         specifier: 1.6.0
         version: 1.6.0
@@ -1190,7 +1190,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       replicate:
         specifier: 1.3.1
         version: 1.3.1
@@ -1215,7 +1215,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       sharp:
         specifier: 0.34.4
         version: 0.34.4
@@ -1246,7 +1246,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1268,7 +1268,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       jszip:
         specifier: 3.10.1
         version: 3.10.1
@@ -1296,7 +1296,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1315,7 +1315,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1331,7 +1331,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1350,7 +1350,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
@@ -1369,7 +1369,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1388,7 +1388,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1401,7 +1401,7 @@ importers:
     dependencies:
       '@effect/opentelemetry':
         specifier: 0.59.0
-        version: 0.59.0(@effect/platform@0.92.1(effect@3.19.0))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.207.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.0)
+        version: 0.59.0(@effect/platform@0.92.1(effect@3.19.1))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.207.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.1)
       '@opentelemetry/sdk-logs':
         specifier: 0.207.0
         version: 0.207.0(@opentelemetry/api@1.9.0)
@@ -1419,7 +1419,7 @@ importers:
         version: 2.2.0(@opentelemetry/api@1.9.0)
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 4.20251014.0
@@ -1456,7 +1456,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
@@ -1508,7 +1508,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       fastify:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.6.1
@@ -1554,7 +1554,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1597,7 +1597,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.0
+        version: 3.19.1
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
@@ -5534,8 +5534,14 @@ packages:
   '@vue/compiler-dom@3.5.23':
     resolution: {integrity: sha512-AT8RMw0vEzzzO0JU5gY0F6iCzaWUIh/aaRVordzMBKXRpoTllTT4kocHDssByPsvodNCfump/Lkdow2mT/O5KQ==}
 
+  '@vue/compiler-sfc@3.5.22':
+    resolution: {integrity: sha512-tbTR1zKGce4Lj+JLzFXDq36K4vcSZbJ1RBu8FxcDv1IGRz//Dh2EBqksyGVypz3kXpshIfWKGOCcqpSbyGWRJQ==}
+
   '@vue/compiler-sfc@3.5.23':
     resolution: {integrity: sha512-3QTEUo4qg7FtQwaDJa8ou1CUikx5WTtZlY61rRRDu3lK2ZKrGoAGG8mvDgOpDsQ4A1bez9s+WtBB6DS2KuFCPw==}
+
+  '@vue/compiler-ssr@3.5.22':
+    resolution: {integrity: sha512-GdgyLvg4R+7T8Nk2Mlighx7XGxq/fJf9jaVofc3IL0EPesTE86cP/8DD1lT3h1JeZr2ySBvyqKQJgbS54IX1Ww==}
 
   '@vue/compiler-ssr@3.5.23':
     resolution: {integrity: sha512-Hld2xphbMjXs9Q9WKxPf2EqmE+Rq/FEDnK/wUBtmYq74HCV4XDdSCheAaB823OQXIIFGq9ig/RbAZkF9s4U0Ow==}
@@ -5565,11 +5571,22 @@ packages:
   '@vue/reactivity@3.5.23':
     resolution: {integrity: sha512-ji5w0qvrPyBmBx5Ldv4QGNsw0phgRreEvjt0iUf1lei2Sm8//9ZAi78uM2ZjsT5gk0YZilLuoRCIMvtuZlHMJw==}
 
+  '@vue/runtime-core@3.5.22':
+    resolution: {integrity: sha512-EHo4W/eiYeAzRTN5PCextDUZ0dMs9I8mQ2Fy+OkzvRPUYQEyK9yAjbasrMCXbLNhF7P0OUyivLjIy0yc6VrLJQ==}
+
   '@vue/runtime-core@3.5.23':
     resolution: {integrity: sha512-LMB0S6/G7mFJcpQeQaZrbsthFbWrIX8FVTzu5x9U3Ec8YW5MY1CGAnBBHNj+TPOBu3pIbtPpjrXtcaN04X+aBw==}
 
+  '@vue/runtime-dom@3.5.22':
+    resolution: {integrity: sha512-Av60jsryAkI023PlN7LsqrfPvwfxOd2yAwtReCjeuugTJTkgrksYJJstg1e12qle0NarkfhfFu1ox2D+cQotww==}
+
   '@vue/runtime-dom@3.5.23':
     resolution: {integrity: sha512-r/PYc8W9THzEL0UExpTkV+d31zO+Jid/RMZIDG6aS/NekOEUHuCJkJgftySWZw7JTJO/+q9Kxkg8p+i7Q7Q+ew==}
+
+  '@vue/server-renderer@3.5.22':
+    resolution: {integrity: sha512-gXjo+ao0oHYTSswF+a3KRHZ1WszxIqO7u6XwNHqcqb9JfyIL/pbWrrh/xLv7jeDqla9u+LK7yfZKHih1e1RKAQ==}
+    peerDependencies:
+      vue: 3.5.22
 
   '@vue/server-renderer@3.5.23':
     resolution: {integrity: sha512-NiWZsNCsXA20/VufcrW5u+Trt/PyFlpMmxaB2KERYM8eZgUoKUjXxJQb9ypq+LZ0Sp3XHJGNBR8DkhRnkKAMUw==}
@@ -6440,8 +6457,8 @@ packages:
   effect@3.18.4:
     resolution: {integrity: sha512-b1LXQJLe9D11wfnOKAk3PKxuqYshQ0Heez+y5pnkd3jLj1yx9QhM72zZ9uUrOQyNvrs2GZZd/3maL0ZV18YuDA==}
 
-  effect@3.19.0:
-    resolution: {integrity: sha512-eFvvryWkbXvQ4Gak1Nadv9CW6U35+UUS/fIkF4c/Th8rs2u47g+tNkViYeVGliglNnR6Ai5Otl9tLbav3yZjXg==}
+  effect@3.19.1:
+    resolution: {integrity: sha512-SColjj+hRzL4bPxuE4s5aBBx3jbG5AX28fzHQosB8YzUxCQUUfBILsVW9HOJbXewHajzyFggtrJoK+xyvQYn+g==}
 
   ejs@3.1.10:
     resolution: {integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==}
@@ -10036,6 +10053,14 @@ packages:
     peerDependencies:
       typescript: '>=5.0.0'
 
+  vue@3.5.22:
+    resolution: {integrity: sha512-toaZjQ3a/G/mYaLSbV+QsQhIdMo9x5rrqIpYRObsJ6T/J+RyCSFwN2LHNVH9v8uIcljDNa3QzPVdv3Y6b9hAJQ==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   vue@3.5.23:
     resolution: {integrity: sha512-CfvZv/vI52xUhumUvHtD6iFIS78nGWfX4IJnHfBGhpqMI0CwDq2YEngXOeaBFMRmiArcqczuVrLxurvesTYT9w==}
     peerDependencies:
@@ -11848,11 +11873,11 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@effect/opentelemetry@0.59.0(@effect/platform@0.92.1(effect@3.19.0))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.207.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.0)':
+  '@effect/opentelemetry@0.59.0(@effect/platform@0.92.1(effect@3.19.1))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.207.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.1)':
     dependencies:
-      '@effect/platform': 0.92.1(effect@3.19.0)
+      '@effect/platform': 0.92.1(effect@3.19.1)
       '@opentelemetry/semantic-conventions': 1.37.0
-      effect: 3.19.0
+      effect: 3.19.1
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
@@ -11862,9 +11887,9 @@ snapshots:
       '@opentelemetry/sdk-trace-node': 2.2.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-web': 2.2.0(@opentelemetry/api@1.9.0)
 
-  '@effect/platform@0.92.1(effect@3.19.0)':
+  '@effect/platform@0.92.1(effect@3.19.1)':
     dependencies:
-      effect: 3.19.0
+      effect: 3.19.1
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
@@ -15214,11 +15239,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@6.0.1(vite@7.1.10(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vue@3.5.23(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.1(vite@7.1.10(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))(vue@3.5.22(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
       vite: 7.1.10(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
-      vue: 3.5.23(typescript@5.9.3)
+      vue: 3.5.22(typescript@5.9.3)
 
   '@vitest/expect@4.0.7':
     dependencies:
@@ -15297,6 +15322,18 @@ snapshots:
       '@vue/compiler-core': 3.5.23
       '@vue/shared': 3.5.23
 
+  '@vue/compiler-sfc@3.5.22':
+    dependencies:
+      '@babel/parser': 7.28.5
+      '@vue/compiler-core': 3.5.22
+      '@vue/compiler-dom': 3.5.22
+      '@vue/compiler-ssr': 3.5.22
+      '@vue/shared': 3.5.22
+      estree-walker: 2.0.2
+      magic-string: 0.30.21
+      postcss: 8.5.6
+      source-map-js: 1.2.1
+
   '@vue/compiler-sfc@3.5.23':
     dependencies:
       '@babel/parser': 7.28.5
@@ -15308,6 +15345,11 @@ snapshots:
       magic-string: 0.30.21
       postcss: 8.5.6
       source-map-js: 1.2.1
+
+  '@vue/compiler-ssr@3.5.22':
+    dependencies:
+      '@vue/compiler-dom': 3.5.22
+      '@vue/shared': 3.5.22
 
   '@vue/compiler-ssr@3.5.23':
     dependencies:
@@ -15352,10 +15394,22 @@ snapshots:
     dependencies:
       '@vue/shared': 3.5.23
 
+  '@vue/runtime-core@3.5.22':
+    dependencies:
+      '@vue/reactivity': 3.5.22
+      '@vue/shared': 3.5.22
+
   '@vue/runtime-core@3.5.23':
     dependencies:
       '@vue/reactivity': 3.5.23
       '@vue/shared': 3.5.23
+
+  '@vue/runtime-dom@3.5.22':
+    dependencies:
+      '@vue/reactivity': 3.5.22
+      '@vue/runtime-core': 3.5.22
+      '@vue/shared': 3.5.22
+      csstype: 3.1.3
 
   '@vue/runtime-dom@3.5.23':
     dependencies:
@@ -15363,6 +15417,12 @@ snapshots:
       '@vue/runtime-core': 3.5.23
       '@vue/shared': 3.5.23
       csstype: 3.1.3
+
+  '@vue/server-renderer@3.5.22(vue@3.5.22(typescript@5.9.3))':
+    dependencies:
+      '@vue/compiler-ssr': 3.5.22
+      '@vue/shared': 3.5.22
+      vue: 3.5.22(typescript@5.9.3)
 
   '@vue/server-renderer@3.5.23(vue@3.5.23(typescript@5.9.3))':
     dependencies:
@@ -16321,7 +16381,7 @@ snapshots:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
 
-  effect@3.19.0:
+  effect@3.19.1:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
@@ -18225,9 +18285,9 @@ snapshots:
     dependencies:
       react: 19.2.0
 
-  lucide-vue-next@0.469.0(vue@3.5.23(typescript@5.9.3)):
+  lucide-vue-next@0.469.0(vue@3.5.22(typescript@5.9.3)):
     dependencies:
-      vue: 3.5.23(typescript@5.9.3)
+      vue: 3.5.22(typescript@5.9.3)
 
   magic-string@0.30.19:
     dependencies:
@@ -21001,6 +21061,16 @@ snapshots:
     dependencies:
       '@volar/typescript': 2.4.23
       '@vue/language-core': 3.1.3(typescript@5.9.3)
+      typescript: 5.9.3
+
+  vue@3.5.22(typescript@5.9.3):
+    dependencies:
+      '@vue/compiler-dom': 3.5.22
+      '@vue/compiler-sfc': 3.5.22
+      '@vue/runtime-dom': 3.5.22
+      '@vue/server-renderer': 3.5.22(vue@3.5.22(typescript@5.9.3))
+      '@vue/shared': 3.5.22
+    optionalDependencies:
       typescript: 5.9.3
 
   vue@3.5.23(typescript@5.9.3):
