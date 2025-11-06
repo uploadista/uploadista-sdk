@@ -297,7 +297,7 @@ export class UploadistaError extends Data.TaggedError("UploadistaError") {
     overrides?: Partial<Pick<UploadistaError, "status" | "body">> & {
       details?: unknown;
       cause?: unknown;
-    }
+    },
   ): UploadistaError {
     const base = ERROR_CATALOG[code];
     return new UploadistaError({
@@ -398,7 +398,7 @@ export function httpFailure(
   overrides?: Partial<Pick<UploadistaError, "status" | "body">> & {
     details?: unknown;
     cause?: unknown;
-  }
+  },
 ): Effect.Effect<never, UploadistaError> {
   return UploadistaError.fromCode(code, overrides).toEffect();
 }

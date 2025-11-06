@@ -36,7 +36,7 @@ import type z from "zod";
  * ```
  */
 export type LayerSuccessUnion<
-	Layers extends readonly Layer.Layer<any, never, never>[],
+  Layers extends readonly Layer.Layer<any, never, never>[],
 > = ExtractLayerServices<Layers>;
 
 /**
@@ -45,13 +45,13 @@ export type LayerSuccessUnion<
  * Extracts the success type from a flow function's Effect return value.
  */
 export type FlowSuccess<
-	TFlows extends (
-		flowId: string,
-		clientId: string | null,
-	) => Effect.Effect<unknown, unknown, unknown>,
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<unknown, unknown, unknown>,
 > = ReturnType<TFlows> extends Effect.Effect<infer Success, unknown, unknown>
-	? Success
-	: never;
+  ? Success
+  : never;
 
 /**
  * @deprecated Use `ExtractFlowPluginRequirements` from `@uploadista/server/core/plugin-types` instead.
@@ -70,17 +70,17 @@ export type FlowSuccess<
  * ```
  */
 export type FlowRequirementsOf<
-	TFlows extends (
-		flowId: string,
-		clientId: string | null,
-	) => Effect.Effect<unknown, unknown, unknown>,
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<unknown, unknown, unknown>,
 > = FlowSuccess<TFlows> extends Flow<
-	z.ZodSchema<unknown>,
-	z.ZodSchema<unknown>,
-	infer R
+  z.ZodSchema<unknown>,
+  z.ZodSchema<unknown>,
+  infer R
 >
-	? Exclude<R, UploadServer>
-	: never;
+  ? Exclude<R, UploadServer>
+  : never;
 
 /**
  * @deprecated Use `ExtractFlowPluginRequirements` from `@uploadista/server/core/plugin-types` instead.
@@ -99,10 +99,10 @@ export type FlowRequirementsOf<
  * ```
  */
 export type RequiredPluginsOf<
-	TFlows extends (
-		flowId: string,
-		clientId: string | null,
-	) => Effect.Effect<unknown, unknown, unknown>,
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<unknown, unknown, unknown>,
 > = Exclude<FlowRequirementsOf<TFlows>, UploadServer>;
 
 /**
@@ -123,17 +123,20 @@ export type RequiredPluginsOf<
  * ```
  */
 export type PluginAssertion<
-	TFlows extends (
-		flowId: string,
-		clientId: string | null,
-	) => Effect.Effect<unknown, unknown, unknown>,
-	// biome-ignore lint/suspicious/noExplicitAny: Permissive constraint allows plugin tuples where each plugin provides subset of requirements
-	TPlugins extends readonly Layer.Layer<any, never, never>[],
-> = Exclude<RequiredPluginsOf<TFlows>, LayerSuccessUnion<TPlugins>> extends never
-	? unknown
-	: {
-			__missingPlugins: Exclude<
-				RequiredPluginsOf<TFlows>,
-				LayerSuccessUnion<TPlugins>
-			>;
-		};
+  TFlows extends (
+    flowId: string,
+    clientId: string | null,
+  ) => Effect.Effect<unknown, unknown, unknown>,
+  // biome-ignore lint/suspicious/noExplicitAny: Permissive constraint allows plugin tuples where each plugin provides subset of requirements
+  TPlugins extends readonly Layer.Layer<any, never, never>[],
+> = Exclude<
+  RequiredPluginsOf<TFlows>,
+  LayerSuccessUnion<TPlugins>
+> extends never
+  ? unknown
+  : {
+      __missingPlugins: Exclude<
+        RequiredPluginsOf<TFlows>,
+        LayerSuccessUnion<TPlugins>
+      >;
+    };

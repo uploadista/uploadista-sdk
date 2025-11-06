@@ -12,7 +12,9 @@ export const uploadFileSchema = z.object({
   id: z.string(),
   size: z.number().optional(),
   offset: z.number(),
-  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
+  metadata: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+    .optional(),
   creationDate: z.string().optional(),
   url: z.string().optional(),
   sizeIsDeferred: z.boolean().optional(),
@@ -24,11 +26,15 @@ export const uploadFileSchema = z.object({
     path: z.string().optional(),
     uploadId: z.string().optional(),
     bucket: z.string().optional(),
-    parts: z.array(z.object({
-      partNumber: z.number(),
-      etag: z.string(),
-      size: z.number(),
-    })).optional(),
+    parts: z
+      .array(
+        z.object({
+          partNumber: z.number(),
+          etag: z.string(),
+          size: z.number(),
+        }),
+      )
+      .optional(),
   }),
   flow: z
     .object({
@@ -129,11 +135,13 @@ export type UploadFile = {
     path?: string | undefined;
     uploadId?: string | undefined;
     bucket?: string | undefined;
-    parts?: Array<{
-      partNumber: number;
-      etag: string;
-      size: number;
-    }> | undefined;
+    parts?:
+      | Array<{
+          partNumber: number;
+          etag: string;
+          size: number;
+        }>
+      | undefined;
   };
   flow?: {
     flowId: string;

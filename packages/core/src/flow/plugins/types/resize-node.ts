@@ -16,7 +16,7 @@ export const resizeParamsSchema = z
   })
   .refine(
     (data) => data.width || data.height,
-    "Either width or height must be specified for resize"
+    "Either width or height must be specified for resize",
   );
 
 /**

@@ -1,6 +1,6 @@
 import type {
-  R2Bucket,
   R2UploadedPart as CloudflareR2UploadedPart,
+  R2Bucket,
   ReadableStream,
 } from "@cloudflare/workers-types";
 import type { UploadistaError } from "@uploadista/core/errors";

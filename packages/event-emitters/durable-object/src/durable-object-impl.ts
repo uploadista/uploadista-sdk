@@ -38,7 +38,9 @@ export class UploadistaDurableObjectImpl extends DurableObject {
     // This allows the DO to be evicted from memory during idle periods
     this.ctx.acceptWebSocket(server);
 
-    console.log(`[DO fetch] WebSocket accepted, total connections: ${this.ctx.getWebSockets().length}`);
+    console.log(
+      `[DO fetch] WebSocket accepted, total connections: ${this.ctx.getWebSockets().length}`,
+    );
 
     return new Response(null, {
       status: 101,
@@ -53,7 +55,10 @@ export class UploadistaDurableObjectImpl extends DurableObject {
    */
   async emit(message: string): Promise<void> {
     const websockets = this.ctx.getWebSockets();
-    console.log(`[DO emit] Broadcasting message to ${websockets.length} WebSocket(s):`, message.substring(0, 200));
+    console.log(
+      `[DO emit] Broadcasting message to ${websockets.length} WebSocket(s):`,
+      message.substring(0, 200),
+    );
 
     for (const ws of websockets) {
       try {

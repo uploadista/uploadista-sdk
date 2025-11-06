@@ -204,10 +204,15 @@ export const expressWebSocketHandler = (
         id: `conn_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         send: (data: string) => {
           if (ws.readyState === ws.OPEN) {
-            console.log(`📤 Sending WebSocket message to connection ${connection.id}:`, data.substring(0, 100));
+            console.log(
+              `📤 Sending WebSocket message to connection ${connection.id}:`,
+              data.substring(0, 100),
+            );
             ws.send(data);
           } else {
-            console.warn(`⚠️ Cannot send message, WebSocket not open. State: ${ws.readyState}`);
+            console.warn(
+              `⚠️ Cannot send message, WebSocket not open. State: ${ws.readyState}`,
+            );
           }
         },
         close: (code?: number, reason?: string) => ws.close(code, reason),

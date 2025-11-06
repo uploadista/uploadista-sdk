@@ -50,7 +50,7 @@ export type StorageParams = z.infer<typeof storageParamsSchema>;
 export function createStorageNode(
   id: string,
   postProcessFile: (file: UploadFile) => Effect.Effect<UploadFile> = (file) =>
-    Effect.succeed(file)
+    Effect.succeed(file),
 ) {
   return Effect.gen(function* () {
     const uploadServer = yield* UploadServer;
@@ -77,14 +77,14 @@ export function createStorageNode(
             return yield* Effect.fail(
               UploadistaError.fromCode(
                 "FILE_READ_ERROR",
-                new Error("Upload Key is undefined")
-              )
+                new Error("Upload Key is undefined"),
+              ),
             );
           }
           // If the upload is already in the correct storage, return the file, just update the flow
           if (upload.storage.id === storageId) {
             return completeNodeExecution(
-              yield* postProcessFile({ ...normalizedFile, flow })
+              yield* postProcessFile({ ...normalizedFile, flow }),
             );
           }
 
@@ -107,17 +107,17 @@ export function createStorageNode(
               flow,
             },
             clientId,
-            stream
+            stream,
           );
 
           const resolvedUploadResult = resolveUploadMetadata(
-            uploadResult.metadata
+            uploadResult.metadata,
           );
 
           const postProcessed = yield* postProcessFile(
             resolvedUploadResult.metadata
               ? { ...uploadResult, metadata: resolvedUploadResult.metadata }
-              : uploadResult
+              : uploadResult,
           );
 
           return completeNodeExecution(postProcessed);

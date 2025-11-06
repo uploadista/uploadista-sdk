@@ -2,8 +2,6 @@
 export type { FlowCondition } from "./flow-file";
 // Export all flow types
 export * from "./flow-types";
-
-export * from "./type-validator";
-
 // Export shared type utilities
 export * from "./type-utils";
+export * from "./type-validator";

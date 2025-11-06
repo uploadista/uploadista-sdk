@@ -39,7 +39,6 @@ export function createZipNode(
             );
           }
 
-
           const zipInputs = yield* Effect.forEach(
             Object.values(inputs),
             (input) =>
@@ -51,10 +50,13 @@ export function createZipNode(
                   metadata: input.metadata,
                 };
               }),
-            { concurrency: "unbounded" }
+            { concurrency: "unbounded" },
           );
 
-          const zipBytes = yield* zipPlugin.zip(zipInputs, { zipName, includeMetadata });
+          const zipBytes = yield* zipPlugin.zip(zipInputs, {
+            zipName,
+            includeMetadata,
+          });
 
           // Create a stream from the zip bytes
           const stream = new ReadableStream({

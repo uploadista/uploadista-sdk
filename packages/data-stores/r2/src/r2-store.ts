@@ -124,11 +124,14 @@ export function createR2Store(config: R2StoreConfig) {
 
           // Store part metadata in KV (R2 doesn't provide listParts API)
           const existingParts = uploadFile.storage.parts || [];
-          const updatedParts = [...existingParts, {
-            partNumber,
-            etag,
-            size: data.length,
-          }];
+          const updatedParts = [
+            ...existingParts,
+            {
+              partNumber,
+              etag,
+              size: data.length,
+            },
+          ];
 
           yield* kvStore.set(uploadFile.id, {
             ...uploadFile,

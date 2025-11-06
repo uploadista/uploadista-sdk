@@ -11,11 +11,13 @@ export enum UploadEventType {
   UPLOAD_VALIDATION_WARNING = "upload-validation-warning",
 }
 
-const flowContextSchema = z.object({
-  flowId: z.string(),
-  nodeId: z.string(),
-  jobId: z.string(),
-}).optional();
+const flowContextSchema = z
+  .object({
+    flowId: z.string(),
+    nodeId: z.string(),
+    jobId: z.string(),
+  })
+  .optional();
 
 export const uploadEventSchema = z.union([
   z.object({

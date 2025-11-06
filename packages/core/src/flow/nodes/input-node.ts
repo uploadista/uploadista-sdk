@@ -93,7 +93,7 @@ export type InputNodeParams = z.infer<typeof inputNodeParamsSchema>;
  */
 function validateFile(
   file: { type: string; size: number },
-  params?: InputNodeParams
+  params?: InputNodeParams,
 ): Effect.Effect<void, UploadistaError> {
   return Effect.gen(function* () {
     if (!params) return;
@@ -115,8 +115,8 @@ function validateFile(
             `File type "${
               file.type
             }" is not allowed. Allowed types: ${params.allowedMimeTypes.join(
-              ", "
-            )}`
+              ", ",
+            )}`,
           ),
         }).toEffect();
       }
@@ -126,7 +126,7 @@ function validateFile(
     if (params.minSize !== undefined && file.size < params.minSize) {
       throw yield* UploadistaError.fromCode("VALIDATION_ERROR", {
         cause: new Error(
-          `File size (${file.size} bytes) is below minimum (${params.minSize} bytes)`
+          `File size (${file.size} bytes) is below minimum (${params.minSize} bytes)`,
         ),
       }).toEffect();
     }
@@ -135,7 +135,7 @@ function validateFile(
     if (params.maxSize !== undefined && file.size > params.maxSize) {
       throw yield* UploadistaError.fromCode("VALIDATION_ERROR", {
         cause: new Error(
-          `File size (${file.size} bytes) exceeds maximum (${params.maxSize} bytes)`
+          `File size (${file.size} bytes) exceeds maximum (${params.maxSize} bytes)`,
         ),
       }).toEffect();
     }
@@ -200,7 +200,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
 
               const uploadFile = yield* uploadServer.createUpload(
                 inputFile,
-                clientId
+                clientId,
               );
 
               // Return waiting state with the upload file
@@ -211,7 +211,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
             case "finalize": {
               // Get final upload file from upload server's KV store
               const finalUploadFile = yield* uploadServer.getUpload(
-                data.uploadId
+                data.uploadId,
               );
 
               // Extract type and size from metadata for validation
@@ -270,7 +270,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
               const uploadFile = yield* uploadServer.upload(
                 inputFile,
                 clientId,
-                stream
+                stream,
               );
 
               // Complete the node execution with the upload file

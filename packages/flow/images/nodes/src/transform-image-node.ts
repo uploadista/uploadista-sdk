@@ -19,10 +19,8 @@ function applyTransformationChain(
   inputBytes: Uint8Array,
   transformations: TransformImageParams["transformations"],
 ) {
-  return Effect.reduce(
-    transformations,
-    inputBytes,
-    (bytes, transformation) => imageService.transform(bytes, transformation),
+  return Effect.reduce(transformations, inputBytes, (bytes, transformation) =>
+    imageService.transform(bytes, transformation),
   );
 }
 

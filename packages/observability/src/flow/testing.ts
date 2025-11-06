@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
-import { FlowObservability } from "../core/layers.js";
 import type { FlowObservabilityService } from "../core/layers.js";
+import { FlowObservability } from "../core/layers.js";
 
 // ============================================================================
 // Test Flow Observability Layers

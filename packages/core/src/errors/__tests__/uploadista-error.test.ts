@@ -1,5 +1,5 @@
+import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-
 import {
   ERROR_CATALOG,
   httpFailure,
@@ -7,7 +7,6 @@ import {
   UploadistaError,
   type UploadistaErrorCode,
 } from "../uploadista-error";
-import { Effect } from "effect";
 
 describe("ERROR_CATALOG", () => {
   it("should contain all error codes with status and body", () => {

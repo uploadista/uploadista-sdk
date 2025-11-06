@@ -527,7 +527,9 @@ export function createFlowWithSchema<
               // For input nodes, use the mapped flow input
               nodeInput = nodeInputs[nodeId];
               if (nodeInput === undefined) {
-                yield* Effect.logError(`Input node ${nodeId} has no input data`);
+                yield* Effect.logError(
+                  `Input node ${nodeId} has no input data`,
+                );
                 return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
                   cause: new Error(`Input node ${nodeId} has no input data`),
                 }).toEffect();
@@ -763,8 +765,7 @@ export function createFlowWithSchema<
         const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
         // Determine execution strategy
-        const useParallelExecution =
-          config.parallelExecution?.enabled ?? false;
+        const useParallelExecution = config.parallelExecution?.enabled ?? false;
 
         if (useParallelExecution) {
           // Parallel execution using execution levels
@@ -802,41 +803,45 @@ export function createFlowWithSchema<
             );
 
             // Create executor functions for all nodes in this level
-            const nodeExecutors = level.nodes.map((nodeId) => () =>
-              Effect.gen(function* () {
-                // Emit NodeResume event if we're resuming from a paused state at this node
-                if (resumeFrom && nodeId === resumeFrom.executionOrder[startIndex] && onEvent) {
-                  const node = nodeMap.get(nodeId);
-                  if (node) {
-                    yield* onEvent({
-                      jobId,
-                      flowId,
-                      nodeId,
-                      eventType: EventType.NodeResume,
-                      nodeName: node.name,
-                      nodeType: node.type,
-                    });
+            const nodeExecutors = level.nodes.map(
+              (nodeId) => () =>
+                Effect.gen(function* () {
+                  // Emit NodeResume event if we're resuming from a paused state at this node
+                  if (
+                    resumeFrom &&
+                    nodeId === resumeFrom.executionOrder[startIndex] &&
+                    onEvent
+                  ) {
+                    const node = nodeMap.get(nodeId);
+                    if (node) {
+                      yield* onEvent({
+                        jobId,
+                        flowId,
+                        nodeId,
+                        eventType: EventType.NodeResume,
+                        nodeName: node.name,
+                        nodeType: node.type,
+                      });
+                    }
                   }
-                }
 
-                const nodeResult = yield* executeNode(
-                  nodeId,
-                  storageId,
-                  nodeInputs,
-                  nodeResults,
-                  nodeMap,
-                  jobId,
-                  clientId,
-                );
+                  const nodeResult = yield* executeNode(
+                    nodeId,
+                    storageId,
+                    nodeInputs,
+                    nodeResults,
+                    nodeMap,
+                    jobId,
+                    clientId,
+                  );
 
-                return { nodeId, nodeResult };
-              }),
+                  return { nodeId, nodeResult };
+                }),
             );
 
             // Execute all nodes in this level in parallel
-            const levelResults = yield* scheduler.executeNodesInParallel(
-              nodeExecutors,
-            );
+            const levelResults =
+              yield* scheduler.executeNodesInParallel(nodeExecutors);
 
             // Process results and check for waiting nodes
             for (const { nodeId, nodeResult } of levelResults) {
@@ -864,7 +869,9 @@ export function createFlowWithSchema<
           }
         } else {
           // Sequential execution (original behavior)
-          yield* Effect.logDebug(`Flow ${flowId}: Executing in sequential mode`);
+          yield* Effect.logDebug(
+            `Flow ${flowId}: Executing in sequential mode`,
+          );
 
           for (let i = startIndex; i < executionOrder.length; i++) {
             const nodeId = executionOrder[i];

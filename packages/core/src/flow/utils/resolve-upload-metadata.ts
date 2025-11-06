@@ -23,7 +23,7 @@ export function resolveUploadMetadata(
 
   const normalized = { ...metadata };
   const type = String(
-    normalized.type || normalized.mimeType || normalized["content-type"] || ""
+    normalized.type || normalized.mimeType || normalized["content-type"] || "",
   );
   if (type) {
     normalized.type ||= type;
@@ -31,7 +31,7 @@ export function resolveUploadMetadata(
   }
 
   const fileName = String(
-    normalized.fileName || normalized.originalName || normalized.name || ""
+    normalized.fileName || normalized.originalName || normalized.name || "",
   );
   if (fileName) {
     normalized.fileName ||= fileName;
