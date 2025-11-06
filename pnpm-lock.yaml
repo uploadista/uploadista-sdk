@@ -388,7 +388,7 @@ importers:
         version: link:../../packages/servers/server
       effect:
         specifier: 'catalog:'
-        version: 3.18.4
+        version: 3.19.0
       hono:
         specifier: 'catalog:'
         version: 4.10.4
@@ -1155,8 +1155,8 @@ importers:
   packages/flow/images/photon:
     dependencies:
       '@cf-wasm/photon':
-        specifier: 0.1.31
-        version: 0.1.31
+        specifier: 0.2.0
+        version: 0.2.0
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
@@ -2660,11 +2660,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cf-wasm/internals@0.0.3':
-    resolution: {integrity: sha512-v6PmiQnJIrVvL2IdPg5aCqARSKw/U1JvFsms2cCt3Szx3/3EvtVVhN9MALCh6kZ2CV2fvzs3tmiYezRQ6JyqcQ==}
+  '@cf-wasm/internals@0.1.0':
+    resolution: {integrity: sha512-JTLXSEqKdcRp58CY3TtFO44BMwCUvhDWKNLT+gdha8JIXecK5cGLvK/iVaaW75JD0KG4HrpV2Mw/UqXi0Ga5SA==}
 
-  '@cf-wasm/photon@0.1.31':
-    resolution: {integrity: sha512-czB1kvK8L1oKsBcQxNhWn5JyIlXrXF+Fd61kQSZSwxi+ol7ikqf9SPnEVQ//C3MW9bzp62eCVMetoB5+9iMsvw==}
+  '@cf-wasm/photon@0.2.0':
+    resolution: {integrity: sha512-5Aq1Rrji+ybkDJV27ulavN7O6Ud+SfxPIS0cCFX6X1bCVWrbwqZcccQKXxHX3GHbO1kKoDe+biiQ/6G4ySJHOw==}
 
   '@cloudflare/kv-asset-handler@0.4.0':
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
@@ -11799,11 +11799,11 @@ snapshots:
   '@biomejs/cli-win32-x64@2.3.3':
     optional: true
 
-  '@cf-wasm/internals@0.0.3': {}
+  '@cf-wasm/internals@0.1.0': {}
 
-  '@cf-wasm/photon@0.1.31':
+  '@cf-wasm/photon@0.2.0':
     dependencies:
-      '@cf-wasm/internals': 0.0.3
+      '@cf-wasm/internals': 0.1.0
 
   '@cloudflare/kv-asset-handler@0.4.0':
     dependencies:
