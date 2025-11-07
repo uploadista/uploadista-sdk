@@ -1,12 +1,12 @@
 import {
   createTransformNode,
-  type TranscodeParams,
+  type TranscodeVideoParams,
   VideoPlugin,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
 
 // Map video format to MIME type
-const formatToMimeType: Record<TranscodeParams["format"], string> = {
+const formatToMimeType: Record<TranscodeVideoParams["format"], string> = {
   mp4: "video/mp4",
   webm: "video/webm",
   mov: "video/quicktime",
@@ -14,7 +14,7 @@ const formatToMimeType: Record<TranscodeParams["format"], string> = {
 };
 
 // Map video format to file extension
-const formatToExtension: Record<TranscodeParams["format"], string> = {
+const formatToExtension: Record<TranscodeVideoParams["format"], string> = {
   mp4: "mp4",
   webm: "webm",
   mov: "mov",
@@ -39,7 +39,10 @@ const formatToExtension: Record<TranscodeParams["format"], string> = {
  * });
  * ```
  */
-export function createTranscodeNode(id: string, params: TranscodeParams) {
+export function createTranscodeVideoNode(
+  id: string,
+  params: TranscodeVideoParams,
+) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
 

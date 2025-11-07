@@ -1,7 +1,7 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import {
   createTransformNode,
-  type TrimParams,
+  type TrimVideoParams,
   VideoPlugin,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -29,7 +29,7 @@ import { Effect } from "effect";
  * });
  * ```
  */
-export function createTrimNode(id: string, params: TrimParams) {
+export function createTrimVideoNode(id: string, params: TrimVideoParams) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
 

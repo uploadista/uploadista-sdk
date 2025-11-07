@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { UploadistaError } from "@uploadista/core/errors";
-import type { VideoMetadata, VideoPluginShape } from "@uploadista/core/flow";
+import type {
+  DescribeVideoMetadata,
+  VideoPluginShape,
+} from "@uploadista/core/flow";
 import { Effect } from "effect";
 import ffmpeg from "fluent-ffmpeg";
 import {
@@ -26,7 +29,7 @@ export function createFFmpegVideoPlugin(): VideoPluginShape {
           const inputPath = await bytesToTempFile(input, "input");
 
           try {
-            const metadata = await new Promise<VideoMetadata>(
+            const metadata = await new Promise<DescribeVideoMetadata>(
               (resolve, reject) => {
                 ffmpeg.ffprobe(inputPath, (err, data) => {
                   if (err) {

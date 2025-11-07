@@ -1,7 +1,7 @@
 import {
   createTransformNode,
+  type ResizeVideoParams,
   VideoPlugin,
-  type VideoResizeParams,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
 
@@ -24,7 +24,7 @@ import { Effect } from "effect";
  * });
  * ```
  */
-export function createResizeNode(id: string, params: VideoResizeParams) {
+export function createVideoResizeNode(id: string, params: ResizeVideoParams) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
 

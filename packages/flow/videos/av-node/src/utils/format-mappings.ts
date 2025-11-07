@@ -1,4 +1,4 @@
-import type { TranscodeParams } from "@uploadista/core/flow";
+import type { TranscodeVideoParams } from "@uploadista/core/flow";
 import type { FFEncoderCodec } from "node-av/constants";
 import {
   FF_ENCODER_AAC,
@@ -16,28 +16,30 @@ import {
 /**
  * Maps video format to MIME type
  */
-export const formatToMimeType: Record<TranscodeParams["format"], string> = {
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  avi: "video/x-msvideo",
-};
+export const formatToMimeType: Record<TranscodeVideoParams["format"], string> =
+  {
+    mp4: "video/mp4",
+    webm: "video/webm",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
+  };
 
 /**
  * Maps video format to file extension
  */
-export const formatToExtension: Record<TranscodeParams["format"], string> = {
-  mp4: "mp4",
-  webm: "webm",
-  mov: "mov",
-  avi: "avi",
-};
+export const formatToExtension: Record<TranscodeVideoParams["format"], string> =
+  {
+    mp4: "mp4",
+    webm: "webm",
+    mov: "mov",
+    avi: "avi",
+  };
 
 /**
  * Maps codec parameter to node-av codec constant
  */
 export const codecToAVName: Record<
-  NonNullable<TranscodeParams["codec"]>,
+  NonNullable<TranscodeVideoParams["codec"]>,
   FFEncoderCodec
 > = {
   h264: FF_ENCODER_LIBX264,
@@ -50,7 +52,7 @@ export const codecToAVName: Record<
  * Maps audio codec parameter to node-av audio codec constant
  */
 export const audioCodecToAVName: Record<
-  NonNullable<TranscodeParams["audioCodec"]>,
+  NonNullable<TranscodeVideoParams["audioCodec"]>,
   FFEncoderCodec
 > = {
   aac: FF_ENCODER_AAC,

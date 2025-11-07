@@ -3,7 +3,10 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { UploadistaError } from "@uploadista/core/errors";
-import type { VideoMetadata, VideoPluginShape } from "@uploadista/core/flow";
+import type {
+  DescribeVideoMetadata,
+  VideoPluginShape,
+} from "@uploadista/core/flow";
 import { Effect } from "effect";
 import { Decoder, Encoder, MediaInput, MediaOutput } from "node-av/api";
 import type { Packet } from "node-av/lib";
@@ -57,7 +60,7 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             // Get file size
             const stats = await fs.stat(inputPath);
 
-            const metadata: VideoMetadata = {
+            const metadata: DescribeVideoMetadata = {
               duration: mediaInput.duration || 0,
               width: videoCodecParams.width || 0,
               height: videoCodecParams.height || 0,

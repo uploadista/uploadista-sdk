@@ -2,14 +2,14 @@
 
 // Re-export types from core for convenience
 export type {
-  ExtractFrameParams,
-  TranscodeParams,
-  TrimParams,
-  VideoMetadata,
-  VideoResizeParams,
+  DescribeVideoMetadata,
+  ExtractFrameVideoParams,
+  ResizeVideoParams,
+  TranscodeVideoParams,
+  TrimVideoParams,
 } from "@uploadista/core/flow";
 export { createDescribeVideoNode } from "./describe-video-node";
-export { createResizeNode } from "./resize-node";
-export { createThumbnailNode } from "./thumbnail-node";
-export { createTranscodeNode } from "./transcode-node";
-export { createTrimNode } from "./trim-node";
+export { createVideoResizeNode } from "./resize-node";
+export { createVideoThumbnailNode } from "./thumbnail-node";
+export { createTranscodeVideoNode } from "./transcode-node";
+export { createTrimVideoNode } from "./trim-node";

@@ -1,6 +1,6 @@
 import {
   createTransformNode,
-  type ExtractFrameParams,
+  type ExtractFrameVideoParams,
   VideoPlugin,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -23,7 +23,10 @@ import { Effect } from "effect";
  * });
  * ```
  */
-export function createThumbnailNode(id: string, params: ExtractFrameParams) {
+export function createVideoThumbnailNode(
+  id: string,
+  params: ExtractFrameVideoParams,
+) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
 
