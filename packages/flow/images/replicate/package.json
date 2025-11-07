@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-images-replicate",
   "type": "module",
-  "version": "0.0.13-beta.1",
+  "version": "0.0.13-beta.2",
   "description": "Replicate image AI processing service for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
