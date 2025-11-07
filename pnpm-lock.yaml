@@ -10,8 +10,8 @@ catalogs:
       specifier: 24.10.0
       version: 24.10.0
     effect:
-      specifier: 3.19.1
-      version: 3.19.1
+      specifier: 3.19.2
+      version: 3.19.2
     hono:
       specifier: 4.10.4
       version: 4.10.4
@@ -336,7 +336,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       fastify:
         specifier: 5.6.1
         version: 5.6.1
@@ -388,7 +388,7 @@ importers:
         version: link:../../packages/servers/server
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       hono:
         specifier: 'catalog:'
         version: 4.10.4
@@ -470,7 +470,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       hono:
         specifier: 'catalog:'
         version: 4.10.4
@@ -895,7 +895,7 @@ importers:
     dependencies:
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -932,7 +932,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -951,7 +951,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -976,7 +976,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -998,7 +998,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1023,7 +1023,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1042,7 +1042,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
@@ -1064,7 +1064,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1083,7 +1083,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1105,7 +1105,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1121,7 +1121,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1137,7 +1137,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1162,7 +1162,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       tinycolor2:
         specifier: 1.6.0
         version: 1.6.0
@@ -1190,7 +1190,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       replicate:
         specifier: 1.3.1
         version: 1.3.1
@@ -1215,7 +1215,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       sharp:
         specifier: 0.34.5
         version: 0.34.5
@@ -1246,7 +1246,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1268,7 +1268,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       jszip:
         specifier: 3.10.1
         version: 3.10.1
@@ -1293,7 +1293,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       node-av:
         specifier: ^3.1.3
         version: 3.1.3
@@ -1321,7 +1321,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       fluent-ffmpeg:
         specifier: ^2.1.3
         version: 2.1.3
@@ -1349,7 +1349,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1374,7 +1374,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1393,7 +1393,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1409,7 +1409,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1428,7 +1428,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
@@ -1447,7 +1447,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1466,7 +1466,7 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -1479,7 +1479,7 @@ importers:
     dependencies:
       '@effect/opentelemetry':
         specifier: 0.59.0
-        version: 0.59.0(@effect/platform@0.92.1(effect@3.19.1))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.1)
+        version: 0.59.0(@effect/platform@0.92.1(effect@3.19.2))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.2)
       '@opentelemetry/sdk-logs':
         specifier: 0.208.0
         version: 0.208.0(@opentelemetry/api@1.9.0)
@@ -1497,7 +1497,7 @@ importers:
         version: 2.2.0(@opentelemetry/api@1.9.0)
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 4.20251106.1
@@ -1534,7 +1534,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
@@ -1586,7 +1586,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       fastify:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.6.1
@@ -1632,7 +1632,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1675,7 +1675,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.1
+        version: 3.19.2
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
@@ -6815,8 +6815,8 @@ packages:
   effect@3.18.4:
     resolution: {integrity: sha512-b1LXQJLe9D11wfnOKAk3PKxuqYshQ0Heez+y5pnkd3jLj1yx9QhM72zZ9uUrOQyNvrs2GZZd/3maL0ZV18YuDA==}
 
-  effect@3.19.1:
-    resolution: {integrity: sha512-SColjj+hRzL4bPxuE4s5aBBx3jbG5AX28fzHQosB8YzUxCQUUfBILsVW9HOJbXewHajzyFggtrJoK+xyvQYn+g==}
+  effect@3.19.2:
+    resolution: {integrity: sha512-AHkxfzl5RbWfHO9HOdLE4oZ0c3nxqkXKHc69t83GWYoAquZmSeoCjmLP5rPgbHvwv4DcfLr8WW8PWbtNIQI+vw==}
 
   ejs@3.1.10:
     resolution: {integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==}
@@ -12352,11 +12352,11 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@effect/opentelemetry@0.59.0(@effect/platform@0.92.1(effect@3.19.1))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.1)':
+  '@effect/opentelemetry@0.59.0(@effect/platform@0.92.1(effect@3.19.2))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.2)':
     dependencies:
-      '@effect/platform': 0.92.1(effect@3.19.1)
+      '@effect/platform': 0.92.1(effect@3.19.2)
       '@opentelemetry/semantic-conventions': 1.37.0
-      effect: 3.19.1
+      effect: 3.19.2
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
@@ -12366,9 +12366,9 @@ snapshots:
       '@opentelemetry/sdk-trace-node': 2.2.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-web': 2.2.0(@opentelemetry/api@1.9.0)
 
-  '@effect/platform@0.92.1(effect@3.19.1)':
+  '@effect/platform@0.92.1(effect@3.19.2)':
     dependencies:
-      effect: 3.19.1
+      effect: 3.19.2
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
@@ -17144,7 +17144,7 @@ snapshots:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
 
-  effect@3.19.1:
+  effect@3.19.2:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
