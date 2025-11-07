@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@effect/opentelemetry": "0.59.0",
-    "@opentelemetry/sdk-logs": "0.207.0",
+    "@opentelemetry/sdk-logs": "0.208.0",
     "@opentelemetry/sdk-metrics": "2.2.0",
     "@opentelemetry/sdk-trace-base": "2.2.0",
     "@opentelemetry/sdk-trace-node": "2.2.0",
@@ -30,7 +30,7 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20251014.0",
+    "@cloudflare/workers-types": "4.20251106.1",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",

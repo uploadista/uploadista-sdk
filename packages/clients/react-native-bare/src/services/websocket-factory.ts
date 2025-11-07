@@ -1,7 +1,4 @@
-import type {
-  WebSocketFactory,
-  WebSocketLike,
-} from "@uploadista/client-core";
+import type { WebSocketFactory, WebSocketLike } from "@uploadista/client-core";
 
 /**
  * React Native WebSocket implementation that wraps native WebSocket

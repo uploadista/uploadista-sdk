@@ -48,6 +48,52 @@ export default {
 - ✅ **Auto-Scaling**: Handles any traffic
 - ✅ **Multiple Formats**: Automatic optimization
 
+## Transformation Support
+
+### Supported vs Unsupported Transformations
+
+Photon supports most common image transformations but has limitations compared to Sharp. Use this matrix to determine which plugin to use for your workflow:
+
+| Transformation | Photon Support | Sharp Support | Notes |
+|---------------|----------------|---------------|-------|
+| **Basic Transformations** |
+| Resize | ✅ Full | ✅ Full | Both support width, height, fit modes |
+| Blur | ✅ Full | ✅ Full | Gaussian blur with sigma parameter |
+| Rotate | ❌ Not supported | ✅ Full | Use Sharp for rotation |
+| Flip | ✅ Full | ✅ Full | Horizontal and vertical flip |
+| **Filter Transformations** |
+| Grayscale | ✅ Full | ✅ Full | Convert to grayscale |
+| Sepia | ✅ Full | ✅ Full | Apply sepia tone |
+| Brightness | ✅ Full | ✅ Full | Adjust brightness (-100 to +100) |
+| Contrast | ✅ Full | ✅ Full | Adjust contrast (-100 to +100) |
+| **Effect Transformations** |
+| Sharpen | ✅ Full | ✅ Full | Image sharpening |
+| **Advanced Transformations** |
+| Watermark | ❌ Not supported | ✅ Full | Use Sharp for watermarks |
+| Logo overlay | ❌ Not supported | ✅ Full | Use Sharp for logo overlays |
+| Text overlay | ❌ Not supported | ✅ Full | Use Sharp for text rendering |
+
+### Unsupported Transformations
+
+When using the `transform` method with unsupported transformation types, Photon will return a clear error:
+
+```typescript
+// This will fail with Photon plugin
+const result = await imagePlugin.transform(imageBytes, {
+  type: 'watermark',
+  imagePath: '/watermark.png',
+  position: 'bottom-right',
+  opacity: 0.5
+});
+// Error: "Photon plugin does not support 'watermark'. Use sharp plugin or remove this transformation."
+```
+
+### Recommendation
+
+- **Use Photon when**: You need edge deployment, global performance, and only use basic transformations (resize, blur, flip, filters)
+- **Use Sharp when**: You need advanced features (watermarks, logos, text, rotation) or running in Node.js environment
+- **Hybrid approach**: Use both! Deploy Photon for fast basic operations at edge, and Sharp for advanced transformations in your origin server
+
 ## Node Types
 
 ### Resize (Edge)

@@ -221,9 +221,7 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
 
           onError: (error: Error) => {
             const updatedItems = itemsRef.current.map((i) =>
-              i.id === item.id
-                ? { ...i, status: "error" as const, error }
-                : i,
+              i.id === item.id ? { ...i, status: "error" as const, error } : i,
             );
             updateAggregateStats(updatedItems);
 

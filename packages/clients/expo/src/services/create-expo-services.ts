@@ -6,14 +6,14 @@ import {
 import type { ReactNativeUploadInput } from "@uploadista/react-native-core";
 import { createExpoAbortControllerFactory } from "./abort-controller-factory";
 import { createExpoBase64Service } from "./base64-service";
+import { createExpoChecksumService } from "./checksum-service";
 import { createExpoFileReaderService } from "./file-reader-service";
+import { createExpoFingerprintService } from "./fingerprint-service";
 import { createExpoHttpClient } from "./http-client";
 import { createExpoIdGenerationService } from "./id-generation-service";
 import { createExpoPlatformService } from "./platform-service";
 import { createAsyncStorageService } from "./storage-service";
 import { createExpoWebSocketFactory } from "./websocket-factory";
-import { createExpoChecksumService } from "./checksum-service";
-import { createExpoFingerprintService } from "./fingerprint-service";
 
 export interface ExpoServiceOptions {
   /**

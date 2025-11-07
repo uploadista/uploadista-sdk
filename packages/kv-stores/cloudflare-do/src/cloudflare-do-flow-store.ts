@@ -1,6 +1,6 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import type { FlowJob } from "@uploadista/core/flow";
-import { type KvStore, FlowJobKVStore } from "@uploadista/core/types";
+import { FlowJobKVStore, type KvStore } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
 import type {
   FlowJobDurableObject,

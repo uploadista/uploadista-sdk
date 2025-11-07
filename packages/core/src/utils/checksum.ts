@@ -10,7 +10,9 @@ export type ChecksumAlgorithm = (typeof SUPPORTED_ALGORITHMS)[number];
 /**
  * Check if a checksum algorithm is supported
  */
-export function isSupportedAlgorithm(algorithm: string): algorithm is ChecksumAlgorithm {
+export function isSupportedAlgorithm(
+  algorithm: string,
+): algorithm is ChecksumAlgorithm {
   return SUPPORTED_ALGORITHMS.includes(algorithm as ChecksumAlgorithm);
 }
 
@@ -41,7 +43,8 @@ export function computeChecksum(
     // Compute hash using Web Crypto API (available in browsers, Node.js 15+, Deno, Bun, Cloudflare Workers)
     // Pass Uint8Array directly - it's a valid BufferSource
     const hashBuffer = yield* Effect.tryPromise({
-      try: () => crypto.subtle.digest(webCryptoAlgorithm, bytes as BufferSource),
+      try: () =>
+        crypto.subtle.digest(webCryptoAlgorithm, bytes as BufferSource),
       catch: (error) =>
         UploadistaError.fromCode("UNKNOWN_ERROR", {
           body: `Failed to compute checksum: ${error instanceof Error ? error.message : "Unknown error"}`,

@@ -35,14 +35,22 @@ export function durableObjectBaseEventEmitter({
     emit: (eventKey: string, message: string) => {
       return Effect.tryPromise({
         try: async () => {
-          console.log(`[DO EventEmitter] Emitting to eventKey: ${eventKey}`, message.substring(0, 200));
+          console.log(
+            `[DO EventEmitter] Emitting to eventKey: ${eventKey}`,
+            message.substring(0, 200),
+          );
           const stub = getStub(eventKey);
           // Call the emit RPC method on the Durable Object
           await (stub as any).emit(message);
-          console.log(`[DO EventEmitter] Successfully emitted to eventKey: ${eventKey}`);
+          console.log(
+            `[DO EventEmitter] Successfully emitted to eventKey: ${eventKey}`,
+          );
         },
         catch: (cause) => {
-          console.error(`[DO EventEmitter] Failed to emit to eventKey: ${eventKey}`, cause);
+          console.error(
+            `[DO EventEmitter] Failed to emit to eventKey: ${eventKey}`,
+            cause,
+          );
           return UploadistaError.fromCode("UNKNOWN_ERROR", { cause });
         },
       });
@@ -92,7 +100,4 @@ export function durableObjectBaseEventEmitter({
 export const durableObjectEventEmitter = (
   config: DurableObjectEventEmitterConfig,
 ) =>
-  Layer.succeed(
-    BaseEventEmitterService,
-    durableObjectBaseEventEmitter(config),
-  );
+  Layer.succeed(BaseEventEmitterService, durableObjectBaseEventEmitter(config));

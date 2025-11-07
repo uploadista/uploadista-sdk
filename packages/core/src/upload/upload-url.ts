@@ -59,7 +59,7 @@ export const fetchFile = (url: string) => {
         yield* Metric.increment(
           Metric.counter("upload_from_url_total", {
             description: "Total number of URL-based uploads",
-          })
+          }),
         );
 
         // Track success/failure
@@ -67,10 +67,10 @@ export const fetchFile = (url: string) => {
           yield* Metric.increment(
             Metric.counter("upload_from_url_success_total", {
               description: "Total number of successful URL-based uploads",
-            })
+            }),
           );
         }
-      })
+      }),
     ),
     // Add structured logging
     Effect.tap((response) =>
@@ -81,8 +81,8 @@ export const fetchFile = (url: string) => {
           "response.ok": response.ok.toString(),
           "response.content_length":
             response.headers.get("content-length") ?? "unknown",
-        })
-      )
+        }),
+      ),
     ),
     // Handle errors with logging and metrics
     Effect.tapError((error) =>
@@ -91,7 +91,7 @@ export const fetchFile = (url: string) => {
         yield* Metric.increment(
           Metric.counter("upload_from_url_failed_total", {
             description: "Total number of failed URL-based uploads",
-          })
+          }),
         );
 
         // Log error
@@ -99,10 +99,10 @@ export const fetchFile = (url: string) => {
           Effect.annotateLogs({
             "upload.url": url,
             error: String(error),
-          })
+          }),
         );
-      })
-    )
+      }),
+    ),
   );
 };
 
@@ -158,16 +158,16 @@ export const arrayBuffer = (response: Response) => {
       Effect.logDebug("Response converted to array buffer").pipe(
         Effect.annotateLogs({
           "buffer.size": buffer.byteLength.toString(),
-        })
-      )
+        }),
+      ),
     ),
     // Handle errors with logging
     Effect.tapError((error) =>
       Effect.logError("Failed to convert response to array buffer").pipe(
         Effect.annotateLogs({
           error: String(error),
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 };

@@ -20,7 +20,7 @@ export interface TransformNodeConfig {
   /** Function that transforms file bytes */
   transform: (
     bytes: Uint8Array,
-    file: UploadFile
+    file: UploadFile,
   ) => Effect.Effect<
     Uint8Array | { bytes: Uint8Array; type?: string; fileName?: string },
     UploadistaError
@@ -136,7 +136,7 @@ export function createTransformNode({
               flow,
             },
             clientId,
-            stream
+            stream,
           );
 
           return completeNodeExecution(
@@ -145,7 +145,7 @@ export function createTransformNode({
                   ...result,
                   metadata,
                 }
-              : result
+              : result,
           );
         });
       },

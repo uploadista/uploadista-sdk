@@ -16,20 +16,20 @@ import { Effect } from "effect";
  * Result of plugin validation.
  */
 export type PluginValidationResult =
-	| {
-			success: true;
-	  }
-	| {
-			success: false;
-			required: string[];
-			provided: string[];
-			missing: string[];
-			suggestions: Array<{
-				name: string;
-				packageName: string;
-				importStatement: string;
-			}>;
-	  };
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      required: string[];
+      provided: string[];
+      missing: string[];
+      suggestions: Array<{
+        name: string;
+        packageName: string;
+        importStatement: string;
+      }>;
+    };
 
 /**
  * Known plugin mapping for generating helpful error messages.
@@ -38,25 +38,25 @@ export type PluginValidationResult =
  * for generating import suggestions.
  */
 const KNOWN_PLUGINS: Record<
-	string,
-	{ packageName: string; variableName: string }
+  string,
+  { packageName: string; variableName: string }
 > = {
-	ImagePlugin: {
-		packageName: "@uploadista/flow-images-sharp",
-		variableName: "sharpImagePlugin",
-	},
-	ImageAiPlugin: {
-		packageName: "@uploadista/flow-images-replicate",
-		variableName: "replicateImagePlugin",
-	},
-	ZipPlugin: {
-		packageName: "@uploadista/flow-utility-zipjs",
-		variableName: "zipPlugin",
-	},
-	CredentialProvider: {
-		packageName: "@uploadista/core",
-		variableName: "credentialProviderLayer",
-	},
+  ImagePlugin: {
+    packageName: "@uploadista/flow-images-sharp",
+    variableName: "sharpImagePlugin",
+  },
+  ImageAiPlugin: {
+    packageName: "@uploadista/flow-images-replicate",
+    variableName: "replicateImagePlugin",
+  },
+  ZipPlugin: {
+    packageName: "@uploadista/flow-utility-zipjs",
+    variableName: "zipPlugin",
+  },
+  CredentialProvider: {
+    packageName: "@uploadista/core",
+    variableName: "credentialProviderLayer",
+  },
 };
 
 /**
@@ -70,41 +70,41 @@ const KNOWN_PLUGINS: Record<
  * @returns Service identifier string or null if not identifiable
  */
 function extractServiceIdentifier(layer: PluginLayer): string | null {
-	// Attempt to extract service identifier from layer
-	// Note: Effect-TS doesn't expose this information in a standard way,
-	// so we use Symbol.toStringTag or constructor name as fallbacks
+  // Attempt to extract service identifier from layer
+  // Note: Effect-TS doesn't expose this information in a standard way,
+  // so we use Symbol.toStringTag or constructor name as fallbacks
 
-	try {
-		// Try to get the service tag if available
-		// biome-ignore lint/suspicious/noExplicitAny: Layer introspection requires accessing internal properties
-		const layerAny = layer as any;
+  try {
+    // Try to get the service tag if available
+    // biome-ignore lint/suspicious/noExplicitAny: Layer introspection requires accessing internal properties
+    const layerAny = layer as any;
 
-		// Check for common patterns in Effect layers
-		if (layerAny._tag) {
-			return layerAny._tag;
-		}
+    // Check for common patterns in Effect layers
+    if (layerAny._tag) {
+      return layerAny._tag;
+    }
 
-		if (layerAny.constructor?.name) {
-			return layerAny.constructor.name;
-		}
+    if (layerAny.constructor?.name) {
+      return layerAny.constructor.name;
+    }
 
-		// Try to extract from the layer's context if available
-		if (layerAny.context?.services) {
-			const services = Array.from(layerAny.context.services.keys());
-			if (services.length > 0) {
-				// biome-ignore lint/suspicious/noExplicitAny: Service introspection requires accessing internal properties
-				const firstService = services[0] as any;
-				if (firstService.key) {
-					return firstService.key;
-				}
-			}
-		}
+    // Try to extract from the layer's context if available
+    if (layerAny.context?.services) {
+      const services = Array.from(layerAny.context.services.keys());
+      if (services.length > 0) {
+        // biome-ignore lint/suspicious/noExplicitAny: Service introspection requires accessing internal properties
+        const firstService = services[0] as any;
+        if (firstService.key) {
+          return firstService.key;
+        }
+      }
+    }
 
-		return null;
-	} catch {
-		// If we can't extract the identifier, return null
-		return null;
-	}
+    return null;
+  } catch {
+    // If we can't extract the identifier, return null
+    return null;
+  }
 }
 
 /**
@@ -114,11 +114,11 @@ function extractServiceIdentifier(layer: PluginLayer): string | null {
  * @returns Array of service identifier strings
  */
 export function extractServiceIdentifiers(
-	plugins: readonly PluginLayer[],
+  plugins: readonly PluginLayer[],
 ): string[] {
-	return plugins
-		.map((plugin) => extractServiceIdentifier(plugin))
-		.filter((id): id is string => id !== null);
+  return plugins
+    .map((plugin) => extractServiceIdentifier(plugin))
+    .filter((id): id is string => id !== null);
 }
 
 /**
@@ -149,46 +149,46 @@ export function extractServiceIdentifiers(
  * ```
  */
 export function validatePluginRequirements(config: {
-	plugins: readonly PluginLayer[];
-	expectedServices?: string[];
+  plugins: readonly PluginLayer[];
+  expectedServices?: string[];
 }): PluginValidationResult {
-	const { plugins, expectedServices = [] } = config;
+  const { plugins, expectedServices = [] } = config;
 
-	// Extract identifiers from provided plugins
-	const providedServices = extractServiceIdentifiers(plugins);
+  // Extract identifiers from provided plugins
+  const providedServices = extractServiceIdentifiers(plugins);
 
-	// Check for missing services
-	const missing = expectedServices.filter(
-		(required) => !providedServices.includes(required),
-	);
+  // Check for missing services
+  const missing = expectedServices.filter(
+    (required) => !providedServices.includes(required),
+  );
 
-	if (missing.length === 0) {
-		return { success: true };
-	}
+  if (missing.length === 0) {
+    return { success: true };
+  }
 
-	// Generate suggestions for missing plugins
-	const suggestions = missing
-		.map((service) => {
-			const knownPlugin = KNOWN_PLUGINS[service];
-			if (!knownPlugin) {
-				return null;
-			}
+  // Generate suggestions for missing plugins
+  const suggestions = missing
+    .map((service) => {
+      const knownPlugin = KNOWN_PLUGINS[service];
+      if (!knownPlugin) {
+        return null;
+      }
 
-			return {
-				name: service,
-				packageName: knownPlugin.packageName,
-				importStatement: `import { ${knownPlugin.variableName} } from '${knownPlugin.packageName}';`,
-			};
-		})
-		.filter((s): s is NonNullable<typeof s> => s !== null);
+      return {
+        name: service,
+        packageName: knownPlugin.packageName,
+        importStatement: `import { ${knownPlugin.variableName} } from '${knownPlugin.packageName}';`,
+      };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
 
-	return {
-		success: false,
-		required: expectedServices,
-		provided: providedServices,
-		missing,
-		suggestions,
-	};
+  return {
+    success: false,
+    required: expectedServices,
+    provided: providedServices,
+    missing,
+    suggestions,
+  };
 }
 
 /**
@@ -214,38 +214,36 @@ export function validatePluginRequirements(config: {
  * ```
  */
 export function formatPluginValidationError(
-	result: Extract<PluginValidationResult, { success: false }>,
+  result: Extract<PluginValidationResult, { success: false }>,
 ): string {
-	const lines: string[] = [
-		"Server initialization failed: Missing required plugins",
-		"",
-		`Required: ${result.required.join(", ")}`,
-		`Provided: ${result.provided.length > 0 ? result.provided.join(", ") : "(none)"}`,
-		`Missing:  ${result.missing.join(", ")}`,
-		"",
-	];
+  const lines: string[] = [
+    "Server initialization failed: Missing required plugins",
+    "",
+    `Required: ${result.required.join(", ")}`,
+    `Provided: ${result.provided.length > 0 ? result.provided.join(", ") : "(none)"}`,
+    `Missing:  ${result.missing.join(", ")}`,
+    "",
+  ];
 
-	if (result.suggestions.length > 0) {
-		lines.push("Add the missing plugins to your configuration:");
-		lines.push("");
-		for (const suggestion of result.suggestions) {
-			lines.push(`  ${suggestion.importStatement}`);
-		}
-		lines.push("");
-		lines.push("  const server = await createUploadistaServer({");
-		lines.push(
-			`    plugins: [${[...result.provided, ...result.missing.map((m) => KNOWN_PLUGINS[m]?.variableName || m)].join(", ")}],`,
-		);
-		lines.push("    // ...");
-		lines.push("  });");
-	} else {
-		lines.push(
-			"Note: Could not determine package names for missing plugins.",
-		);
-		lines.push("Please ensure all required plugin layers are provided.");
-	}
+  if (result.suggestions.length > 0) {
+    lines.push("Add the missing plugins to your configuration:");
+    lines.push("");
+    for (const suggestion of result.suggestions) {
+      lines.push(`  ${suggestion.importStatement}`);
+    }
+    lines.push("");
+    lines.push("  const server = await createUploadistaServer({");
+    lines.push(
+      `    plugins: [${[...result.provided, ...result.missing.map((m) => KNOWN_PLUGINS[m]?.variableName || m)].join(", ")}],`,
+    );
+    lines.push("    // ...");
+    lines.push("  });");
+  } else {
+    lines.push("Note: Could not determine package names for missing plugins.");
+    lines.push("Please ensure all required plugin layers are provided.");
+  }
 
-	return lines.join("\n");
+  return lines.join("\n");
 }
 
 /**
@@ -270,17 +268,17 @@ export function formatPluginValidationError(
  * ```
  */
 export function validatePluginRequirementsEffect(config: {
-	plugins: readonly PluginLayer[];
-	expectedServices?: string[];
+  plugins: readonly PluginLayer[];
+  expectedServices?: string[];
 }): Effect.Effect<void, Error> {
-	return Effect.sync(() => {
-		const result = validatePluginRequirements(config);
+  return Effect.sync(() => {
+    const result = validatePluginRequirements(config);
 
-		if (!result.success) {
-			const message = formatPluginValidationError(result);
-			throw new Error(message);
-		}
-	});
+    if (!result.success) {
+      const message = formatPluginValidationError(result);
+      throw new Error(message);
+    }
+  });
 }
 
 /**
@@ -307,13 +305,13 @@ export function validatePluginRequirementsEffect(config: {
  * ```
  */
 export function validatePluginsOrThrow(config: {
-	plugins: readonly PluginLayer[];
-	expectedServices?: string[];
+  plugins: readonly PluginLayer[];
+  expectedServices?: string[];
 }): void {
-	const result = validatePluginRequirements(config);
+  const result = validatePluginRequirements(config);
 
-	if (!result.success) {
-		const message = formatPluginValidationError(result);
-		throw new Error(message);
-	}
+  if (!result.success) {
+    const message = formatPluginValidationError(result);
+    throw new Error(message);
+  }
 }

@@ -173,7 +173,9 @@ export const imagePlugin = Layer.succeed(
               try: async () => {
                 const response = await fetch(transformation.imagePath);
                 if (!response.ok) {
-                  throw new Error(`Failed to fetch watermark: ${response.statusText}`);
+                  throw new Error(
+                    `Failed to fetch watermark: ${response.statusText}`,
+                  );
                 }
                 const arrayBuffer = await response.arrayBuffer();
                 return Buffer.from(arrayBuffer);
@@ -277,7 +279,9 @@ export const imagePlugin = Layer.succeed(
               try: async () => {
                 const response = await fetch(transformation.imagePath);
                 if (!response.ok) {
-                  throw new Error(`Failed to fetch logo: ${response.statusText}`);
+                  throw new Error(
+                    `Failed to fetch logo: ${response.statusText}`,
+                  );
                 }
                 const arrayBuffer = await response.arrayBuffer();
                 return Buffer.from(arrayBuffer);

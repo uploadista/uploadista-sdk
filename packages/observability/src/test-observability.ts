@@ -13,12 +13,12 @@ import { Effect, Layer, Metric } from "effect";
 import {
   classifyStorageError,
   createStorageMetrics,
+  logStorageOperation,
+  logUploadCompletion,
   makeStorageObservabilityLayer,
   StorageObservability,
   trackStorageError,
   withStorageSpan,
-  logStorageOperation,
-  logUploadCompletion,
 } from "./index.js";
 
 // ============================================================================
@@ -50,14 +50,14 @@ const simulateUpload = (fileSize: number, shouldFail: boolean) =>
       testStorageType,
       "uploadFile",
       "test-upload-123",
-      { file_size: fileSize }
+      { file_size: fileSize },
     );
 
     // Simulate upload with tracing
     const uploadEffect = Effect.gen(function* () {
       // Track upload request
       yield* obs.metrics.uploadRequestsTotal.pipe(
-        Metric.tagged("upload_id", "test-upload-123")
+        Metric.tagged("upload_id", "test-upload-123"),
       )(Effect.succeed(1));
 
       // Track file size
@@ -67,12 +67,14 @@ const simulateUpload = (fileSize: number, shouldFail: boolean) =>
       yield* Effect.sleep("100 millis");
 
       if (shouldFail) {
-        return yield* Effect.fail(new Error("NetworkError: Connection timeout"));
+        return yield* Effect.fail(
+          new Error("NetworkError: Connection timeout"),
+        );
       }
 
       // Track success
       yield* obs.metrics.uploadSuccessTotal.pipe(
-        Metric.tagged("upload_id", "test-upload-123")
+        Metric.tagged("upload_id", "test-upload-123"),
       )(Effect.succeed(1));
 
       return { uploadId: "test-upload-123", key: "test-file.jpg" };
@@ -83,7 +85,7 @@ const simulateUpload = (fileSize: number, shouldFail: boolean) =>
       withStorageSpan("uploadFile", testStorageType, {
         "file.size": fileSize,
         "upload.id": "test-upload-123",
-      })
+      }),
     );
 
     // Log completion
@@ -116,7 +118,9 @@ const testErrorClassification = Effect.gen(function* () {
   for (const { error, expected } of testErrors) {
     const category = classifyStorageError(error);
     const status = category === expected ? "✅" : "❌";
-    console.log(`  ${status} ${error.code} -> ${category} (expected: ${expected})`);
+    console.log(
+      `  ${status} ${error.code} -> ${category} (expected: ${expected})`,
+    );
   }
 });
 
@@ -132,13 +136,10 @@ const testErrorTracking = Effect.gen(function* () {
   const error = new Error("ECONNRESET: Connection reset by peer");
   (error as any).code = "ECONNRESET";
 
-  yield* trackStorageError(
-    testStorageType,
-    obs.metrics,
-    "uploadPart",
-    error,
-    { upload_id: "test-upload-456", part_number: 1 }
-  );
+  yield* trackStorageError(testStorageType, obs.metrics, "uploadPart", error, {
+    upload_id: "test-upload-456",
+    part_number: 1,
+  });
 
   console.log("  ✅ Error tracked with metrics and logs");
 });
@@ -177,7 +178,7 @@ const testFailedUpload = Effect.gen(function* () {
       obs.metrics,
       "uploadFile",
       error,
-      { upload_id: "test-upload-789" }
+      { upload_id: "test-upload-789" },
     );
 
     console.log("  ✅ Error handled and tracked successfully");
@@ -198,7 +199,9 @@ const testMetricsSnapshot = Effect.gen(function* () {
 
   // Display some metrics
   for (const metric of snapshot.slice(0, 5)) {
-    console.log(`     - ${metric.metricKey.name}: ${JSON.stringify(metric.metricState)}`);
+    console.log(
+      `     - ${metric.metricKey.name}: ${JSON.stringify(metric.metricState)}`,
+    );
   }
 });
 

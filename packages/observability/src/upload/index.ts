@@ -1,12 +1,13 @@
 // Upload observability exports
-export * from "./metrics.js";
-export * from "./tracing.js";
+
+export * from "./errors.js";
 export {
+  getUploadMetrics,
   makeUploadObservabilityLive,
   UploadObservabilityLive,
-  getUploadMetrics,
-  withUploadDuration,
   withChunkDuration,
+  withUploadDuration,
 } from "./layers.js";
-export * from "./errors.js";
+export * from "./metrics.js";
 export * from "./testing.js";
+export * from "./tracing.js";

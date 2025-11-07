@@ -103,6 +103,7 @@ class BrowserAbortController implements AbortControllerLike {
  * controller.abort();
  * ```
  */
-export const createBrowserAbortControllerFactory = (): AbortControllerFactory => ({
-  create: (): AbortControllerLike => new BrowserAbortController(),
-});
+export const createBrowserAbortControllerFactory =
+  (): AbortControllerFactory => ({
+    create: (): AbortControllerLike => new BrowserAbortController(),
+  });

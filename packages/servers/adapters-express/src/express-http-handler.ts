@@ -5,7 +5,9 @@ import type { ExpressContext } from "./express-adapter";
 /**
  * Helper to parse JSON body if not already parsed
  */
-const parseJsonBody = async (req: ExpressContext["request"]): Promise<unknown> => {
+const parseJsonBody = async (
+  req: ExpressContext["request"],
+): Promise<unknown> => {
   // If body is already parsed, return it
   if (req.body && typeof req.body === "object") {
     return req.body;

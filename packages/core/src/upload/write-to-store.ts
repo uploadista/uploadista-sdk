@@ -149,13 +149,13 @@ export function writeToStore({
                       }
                       return Effect.void;
                     }),
-                    Effect.runPromise
+                    Effect.runPromise,
                   )
                   .catch(() => {
                     // Ignore errors during progress emission
                   });
               },
-            }
+            },
           );
 
           return offset;
@@ -168,14 +168,14 @@ export function writeToStore({
               return Effect.fail(error);
             }
             return Effect.fail(
-              UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error })
+              UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error }),
             );
-          })
+          }),
         ),
       ({ onAbort }) =>
         Effect.sync(() => {
           controller.signal.removeEventListener("abort", onAbort);
-        })
+        }),
     );
   }).pipe(
     // Add tracing span for write operation
@@ -194,8 +194,8 @@ export function writeToStore({
           "upload.id": upload.id,
           "write.offset": offset.toString(),
           "write.bytes_written": (offset - upload.offset).toString(),
-        })
-      )
+        }),
+      ),
     ),
     // Handle errors with logging
     Effect.tapError((error) =>
@@ -204,8 +204,8 @@ export function writeToStore({
           "upload.id": upload.id,
           "upload.offset": upload.offset.toString(),
           error: error instanceof UploadistaError ? error.code : String(error),
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 }

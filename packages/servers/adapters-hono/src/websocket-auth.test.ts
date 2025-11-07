@@ -34,10 +34,9 @@ describe("WebSocket Authentication", () => {
         async (): Promise<AuthResult> => null, // Return null to simulate auth failure
       );
 
-      const handler = honoWebSocketHandler(
-        "/uploadista",
-        authMiddleware,
-      ).pipe(Effect.provide(serverLayer));
+      const handler = honoWebSocketHandler("/uploadista", authMiddleware).pipe(
+        Effect.provide(serverLayer),
+      );
 
       // Create mock context without token
       const mockContext = {
@@ -72,7 +71,9 @@ describe("WebSocket Authentication", () => {
       // Should send error and close with auth code
       // When no token is present, it tries cookie-based auth
       expect(mockWs.send).toHaveBeenCalledWith(
-        expect.stringContaining("Authentication failed: invalid or expired cookies"),
+        expect.stringContaining(
+          "Authentication failed: invalid or expired cookies",
+        ),
       );
       expect(mockWs.close).toHaveBeenCalledWith(
         4001,
@@ -86,10 +87,9 @@ describe("WebSocket Authentication", () => {
     it("should reject WebSocket connection with invalid token", async () => {
       const authMiddleware = vi.fn(async (): Promise<AuthResult> => null);
 
-      const handler = honoWebSocketHandler(
-        "/uploadista",
-        authMiddleware,
-      ).pipe(Effect.provide(serverLayer));
+      const handler = honoWebSocketHandler("/uploadista", authMiddleware).pipe(
+        Effect.provide(serverLayer),
+      );
 
       // Create mock context with invalid token
       const mockContext = {
@@ -124,7 +124,10 @@ describe("WebSocket Authentication", () => {
       expect(mockWs.send).toHaveBeenCalledWith(
         expect.stringContaining("Authentication failed"),
       );
-      expect(mockWs.close).toHaveBeenCalledWith(4001, "Authentication failed: invalid or expired token");
+      expect(mockWs.close).toHaveBeenCalledWith(
+        4001,
+        "Authentication failed: invalid or expired token",
+      );
 
       // Auth middleware should have been called
       expect(authMiddleware).toHaveBeenCalledTimes(1);
@@ -135,10 +138,9 @@ describe("WebSocket Authentication", () => {
         async (): Promise<AuthResult> => ({ clientId: "user-123" }),
       );
 
-      const handler = honoWebSocketHandler(
-        "/uploadista",
-        authMiddleware,
-      ).pipe(Effect.provide(serverLayer));
+      const handler = honoWebSocketHandler("/uploadista", authMiddleware).pipe(
+        Effect.provide(serverLayer),
+      );
 
       const mockContext = {
         req: {
@@ -185,10 +187,9 @@ describe("WebSocket Authentication", () => {
         throw new Error("Auth service unavailable");
       });
 
-      const handler = honoWebSocketHandler(
-        "/uploadista",
-        authMiddleware,
-      ).pipe(Effect.provide(serverLayer));
+      const handler = honoWebSocketHandler("/uploadista", authMiddleware).pipe(
+        Effect.provide(serverLayer),
+      );
 
       const mockContext = {
         req: {

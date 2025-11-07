@@ -1,11 +1,12 @@
-import type {
-  R2Bucket,
-  ReadableStream,
-} from "@cloudflare/workers-types";
+import type { R2Bucket, ReadableStream } from "@cloudflare/workers-types";
 import type { UploadistaError } from "@uploadista/core/errors";
 import { withS3ApiMetrics } from "@uploadista/observability";
 import { Context, Effect, Layer } from "effect";
-import type { MultipartUploadInfo, R2OperationContext, R2UploadedPart } from "../types";
+import type {
+  MultipartUploadInfo,
+  R2OperationContext,
+  R2UploadedPart,
+} from "../types";
 import { handleR2Error, handleR2NotFoundError, partKey } from "../utils";
 
 export class R2ClientService extends Context.Tag("R2ClientService")<

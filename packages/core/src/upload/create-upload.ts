@@ -81,13 +81,13 @@ export const createUpload = (
     kvStore: KvStore<UploadFile>;
     eventEmitter: EventEmitter<UploadEvent>;
     generateId: GenerateIdShape;
-  }
+  },
 ) =>
   Effect.gen(function* () {
     // Get datastore using Effect
     const dataStore = yield* dataStoreService.getDataStore(
       inputFile.storageId,
-      clientId
+      clientId,
     );
 
     const id = yield* generateId.generateId();
@@ -159,7 +159,7 @@ export const createUpload = (
         yield* Metric.increment(
           Metric.counter("upload_created_total", {
             description: "Total number of uploads created",
-          })
+          }),
         );
 
         // Record file size
@@ -170,7 +170,7 @@ export const createUpload = (
               start: 1024,
               factor: 2,
               count: 25,
-            })
+            }),
           );
           yield* Metric.update(fileSizeHistogram, file.size);
         }
@@ -178,7 +178,7 @@ export const createUpload = (
         // Track active uploads gauge
         const activeUploadsGauge = Metric.gauge("active_uploads");
         yield* Metric.increment(activeUploadsGauge);
-      })
+      }),
     ),
     // Add structured logging
     Effect.tap((file) =>
@@ -188,8 +188,8 @@ export const createUpload = (
           "upload.file_name": inputFile.fileName ?? "unknown",
           "upload.file_size": inputFile.size?.toString() ?? "0",
           "upload.storage_id": inputFile.storageId,
-        })
-      )
+        }),
+      ),
     ),
     // Handle errors with logging and metrics
     Effect.tapError((error) =>
@@ -200,15 +200,15 @@ export const createUpload = (
             "upload.file_name": inputFile.fileName ?? "unknown",
             "upload.storage_id": inputFile.storageId,
             error: String(error),
-          })
+          }),
         );
 
         // Track failed upload metric
         yield* Metric.increment(
           Metric.counter("upload_failed_total", {
             description: "Total number of uploads that failed",
-          })
+          }),
         );
-      })
-    )
+      }),
+    ),
   );

@@ -74,7 +74,7 @@ export const uploadChunk = (
     dataStoreService: UploadFileDataStoresShape;
     kvStore: KvStore<UploadFile>;
     eventEmitter: EventEmitter<UploadEvent>;
-  }
+  },
 ) =>
   Effect.gen(function* () {
     // Get file from KV store
@@ -83,7 +83,7 @@ export const uploadChunk = (
     // Get datastore
     const dataStore = yield* dataStoreService.getDataStore(
       file.storage.id,
-      clientId
+      clientId,
     );
 
     // Note: AbortController could be used for cancellation if needed
@@ -142,7 +142,7 @@ export const uploadChunk = (
         yield* Metric.increment(
           Metric.counter("chunk_uploaded_total", {
             description: "Total number of chunks uploaded",
-          })
+          }),
         );
 
         // Record chunk size
@@ -153,7 +153,7 @@ export const uploadChunk = (
             start: 262_144,
             width: 262_144,
             count: 20,
-          })
+          }),
         );
         yield* Metric.update(chunkSizeHistogram, chunkSize);
 
@@ -161,11 +161,11 @@ export const uploadChunk = (
         if (file.size && file.size > 0) {
           const throughput = chunkSize; // bytes processed
           const throughputGauge = Metric.gauge(
-            "upload_throughput_bytes_per_second"
+            "upload_throughput_bytes_per_second",
           );
           yield* Metric.set(throughputGauge, throughput);
         }
-      })
+      }),
     ),
     // Add structured logging for chunk progress
     Effect.tap((file) =>
@@ -178,8 +178,8 @@ export const uploadChunk = (
               ? ((file.offset / file.size) * 100).toFixed(2)
               : "0",
           "upload.total_size": file.size?.toString() ?? "0",
-        })
-      )
+        }),
+      ),
     ),
     // Handle errors with logging
     Effect.tapError((error) =>
@@ -187,9 +187,9 @@ export const uploadChunk = (
         Effect.annotateLogs({
           "upload.id": uploadId,
           error: String(error),
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 
 /**
@@ -262,7 +262,7 @@ const validateUpload = ({
     if (file.checksum && file.checksumAlgorithm) {
       const computedChecksum = yield* computeChecksum(
         fileBytes,
-        file.checksumAlgorithm
+        file.checksumAlgorithm,
       );
 
       if (computedChecksum !== file.checksum) {
@@ -360,5 +360,5 @@ const validateUpload = ({
           ? "true"
           : "false",
       },
-    })
+    }),
   );

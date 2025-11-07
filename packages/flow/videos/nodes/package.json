@@ -1,0 +1,32 @@
+{
+  "name": "@uploadista/flow-videos-nodes",
+  "type": "module",
+  "version": "0.0.12",
+  "description": "Video processing nodes for Uploadista Flow",
+  "license": "MIT",
+  "author": "Uploadista",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*",
+    "effect": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@uploadista/flow-videos-ffmpeg",
+  "type": "module",
+  "version": "0.0.12",
+  "description": "FFmpeg video processing plugin for Uploadista Flow",
+  "license": "MIT",
+  "author": "Uploadista",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.3",
+    "@uploadista/core": "workspace:*",
+    "effect": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "^2.1.28",
+    "@types/node": "catalog:",
+    "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:"
+  }
+}

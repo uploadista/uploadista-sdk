@@ -310,4 +310,3 @@ export const honoWebSocketHandler = <TEnv extends Env = Env>(
     };
   });
 };
-

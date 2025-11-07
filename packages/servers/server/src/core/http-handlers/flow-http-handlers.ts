@@ -25,7 +25,9 @@ export const handleGetFlow = ({ flowId }: GetFlowRequest) => {
     const clientId = yield* authService.getClientId();
 
     if (clientId) {
-      yield* Effect.logInfo(`[Flow] Getting flow data: ${flowId}, client: ${clientId}`);
+      yield* Effect.logInfo(
+        `[Flow] Getting flow data: ${flowId}, client: ${clientId}`,
+      );
     }
 
     const flowData = yield* flowServer.getFlowData(flowId, clientId);
@@ -55,23 +57,31 @@ export const handleRunFlow = <TRequirements>({
       );
       yield* Effect.logInfo(JSON.stringify(inputs, null, 2));
     } else {
-      yield* Effect.logInfo(`[Flow] Executing flow: ${flowId}, storage: ${storageId}`);
-      yield* Effect.logInfo(`[Flow] Inputs: ${JSON.stringify(inputs, null, 2)}`);
+      yield* Effect.logInfo(
+        `[Flow] Executing flow: ${flowId}, storage: ${storageId}`,
+      );
+      yield* Effect.logInfo(
+        `[Flow] Inputs: ${JSON.stringify(inputs, null, 2)}`,
+      );
     }
 
     // Run flow returns immediately with jobId
     yield* Effect.logInfo(`[Flow] Calling flowServer.runFlow...`);
-    const result = yield* flowServer.runFlow<TRequirements>({
-      flowId,
-      storageId,
-      clientId,
-      inputs,
-    }).pipe(
-      Effect.tap(() => Effect.logInfo(`[Flow] runFlow completed successfully`)),
-      Effect.tapError((error) =>
-        Effect.logError(`[Flow] runFlow failed with error: ${error}`)
-      ),
-    );
+    const result = yield* flowServer
+      .runFlow<TRequirements>({
+        flowId,
+        storageId,
+        clientId,
+        inputs,
+      })
+      .pipe(
+        Effect.tap(() =>
+          Effect.logInfo(`[Flow] runFlow completed successfully`),
+        ),
+        Effect.tapError((error) =>
+          Effect.logError(`[Flow] runFlow failed with error: ${error}`),
+        ),
+      );
 
     // Cache auth context for subsequent flow operations (continue, status)
     const authContext = yield* authService.getAuthContext();
@@ -101,7 +111,9 @@ export const handleJobStatus = ({ jobId }: GetJobStatusRequest) => {
     }
 
     if (clientId) {
-      yield* Effect.logInfo(`[Flow] Getting job status: ${jobId}, client: ${clientId}`);
+      yield* Effect.logInfo(
+        `[Flow] Getting job status: ${jobId}, client: ${clientId}`,
+      );
     }
 
     const result = yield* flowServer.getJobStatus(jobId);
@@ -189,13 +201,17 @@ export const handlePauseFlow = ({ jobId }: PauseFlowRequest) => {
     }
 
     if (clientId) {
-      yield* Effect.logInfo(`[Flow] Pausing flow: jobId=${jobId}, client: ${clientId}`);
+      yield* Effect.logInfo(
+        `[Flow] Pausing flow: jobId=${jobId}, client: ${clientId}`,
+      );
     }
 
     const result = yield* flowServer.pauseFlow(jobId, clientId);
 
     if (clientId) {
-      yield* Effect.logInfo(`[Flow] Flow paused: ${jobId}, status: ${result.status}`);
+      yield* Effect.logInfo(
+        `[Flow] Flow paused: ${jobId}, status: ${result.status}`,
+      );
     }
 
     return {
@@ -234,7 +250,9 @@ export const handleCancelFlow = ({ jobId }: CancelFlowRequest) => {
     // Clear cache since flow is cancelled
     yield* authCache.delete(jobId);
     if (clientId) {
-      yield* Effect.logInfo(`[Flow] Flow cancelled, cleared auth cache: ${jobId}`);
+      yield* Effect.logInfo(
+        `[Flow] Flow cancelled, cleared auth cache: ${jobId}`,
+      );
     }
 
     return {

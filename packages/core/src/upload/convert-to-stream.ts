@@ -43,6 +43,6 @@ export function convertToStream<T>(data: ReadableStream<T>) {
         code: "UNKNOWN_ERROR",
         status: 500,
         body: String(error),
-      })
+      }),
   );
 }

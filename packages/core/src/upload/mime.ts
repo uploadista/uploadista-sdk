@@ -13,11 +13,7 @@ function checkBytes(
 /**
  * Helper to check if buffer matches a string pattern at given offset
  */
-function checkString(
-  buffer: Uint8Array,
-  str: string,
-  offset = 0,
-): boolean {
+function checkString(buffer: Uint8Array, str: string, offset = 0): boolean {
   if (buffer.length < offset + str.length) return false;
   for (let i = 0; i < str.length; i++) {
     if (buffer[offset + i] !== str.charCodeAt(i)) return false;
@@ -113,7 +109,10 @@ export const detectMimeType = (
     const text = new TextDecoder("utf-8", { fatal: false }).decode(
       buffer.slice(0, Math.min(1024, buffer.length)),
     );
-    if (text.includes("<svg") || (text.includes("<?xml") && text.includes("<svg"))) {
+    if (
+      text.includes("<svg") ||
+      (text.includes("<?xml") && text.includes("<svg"))
+    ) {
       return "image/svg+xml";
     }
   }
@@ -157,10 +156,7 @@ export const detectMimeType = (
   }
 
   // MKV: 1A 45 DF A3 (same as WebM but check for Matroska)
-  if (
-    checkBytes(buffer, [0x1a, 0x45, 0xdf, 0xa3]) &&
-    buffer.length >= 100
-  ) {
+  if (checkBytes(buffer, [0x1a, 0x45, 0xdf, 0xa3]) && buffer.length >= 100) {
     const text = new TextDecoder("utf-8", { fatal: false }).decode(
       buffer.slice(0, 100),
     );
@@ -228,9 +224,12 @@ export const detectMimeType = (
     // Check for Office formats
     if (buffer.length >= 1024) {
       const text = new TextDecoder("utf-8", { fatal: false }).decode(buffer);
-      if (text.includes("word/")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      if (text.includes("xl/")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-      if (text.includes("ppt/")) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+      if (text.includes("word/"))
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      if (text.includes("xl/"))
+        return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      if (text.includes("ppt/"))
+        return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
     }
     return "application/zip";
   }
