@@ -216,6 +216,9 @@ importers:
       '@uploadista/event-emitter-websocket':
         specifier: workspace:*
         version: link:../../packages/event-emitters/websocket
+      '@uploadista/example-flows':
+        specifier: workspace:*
+        version: link:../flows
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -310,6 +313,9 @@ importers:
       '@uploadista/event-emitter-websocket':
         specifier: workspace:*
         version: link:../../packages/event-emitters/websocket
+      '@uploadista/example-flows':
+        specifier: workspace:*
+        version: link:../flows
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -360,6 +366,31 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  examples/flows:
+    dependencies:
+      '@uploadista/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@uploadista/flow-images-nodes':
+        specifier: workspace:*
+        version: link:../../packages/flow/images/nodes
+      '@uploadista/flow-utility-nodes':
+        specifier: workspace:*
+        version: link:../../packages/flow/utility/nodes
+      '@uploadista/flow-videos-nodes':
+        specifier: workspace:*
+        version: link:../../packages/flow/videos/nodes
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.0
+      '@uploadista/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.16.0(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+
   examples/hono-cf-example:
     dependencies:
       '@uploadista/adapters-hono':
@@ -374,6 +405,9 @@ importers:
       '@uploadista/event-emitter-durable-object':
         specifier: workspace:*
         version: link:../../packages/event-emitters/durable-object
+      '@uploadista/example-flows':
+        specifier: workspace:*
+        version: link:../flows
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -441,6 +475,9 @@ importers:
       '@uploadista/event-broadcaster-redis':
         specifier: workspace:*
         version: link:../../packages/event-broadcasters/redis
+      '@uploadista/example-flows':
+        specifier: workspace:*
+        version: link:../flows
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -1043,9 +1080,6 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 3.19.2
-      ioredis:
-        specifier: 5.8.2
-        version: 5.8.2
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1053,6 +1087,9 @@ importers:
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
+      ioredis:
+        specifier: 5.8.2
+        version: 5.8.2
       tsdown:
         specifier: 'catalog:'
         version: 0.16.0(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
@@ -1075,9 +1112,6 @@ importers:
 
   packages/event-broadcasters/redis:
     dependencies:
-      '@redis/client':
-        specifier: 5.9.0
-        version: 5.9.0
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1085,6 +1119,9 @@ importers:
         specifier: 'catalog:'
         version: 3.19.2
     devDependencies:
+      '@redis/client':
+        specifier: 5.9.0
+        version: 5.9.0
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.0
@@ -1429,13 +1466,13 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 3.19.2
-      ioredis:
-        specifier: 5.8.2
-        version: 5.8.2
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
+      ioredis:
+        specifier: 5.8.2
+        version: 5.8.2
       tsdown:
         specifier: 'catalog:'
         version: 0.16.0(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
@@ -1458,9 +1495,6 @@ importers:
 
   packages/kv-stores/redis:
     dependencies:
-      '@redis/client':
-        specifier: 5.9.0
-        version: 5.9.0
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1468,6 +1502,9 @@ importers:
         specifier: 'catalog:'
         version: 3.19.2
     devDependencies:
+      '@redis/client':
+        specifier: 5.9.0
+        version: 5.9.0
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config

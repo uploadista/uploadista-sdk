@@ -19,6 +19,7 @@
     "@uploadista/core": "workspace:*",
     "@uploadista/data-store-filesystem": "workspace:*",
     "@uploadista/data-store-s3": "workspace:*",
+    "@uploadista/example-flows": "workspace:*",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/kv-store-filesystem": "workspace:*",
     "@uploadista/kv-store-redis": "workspace:*",

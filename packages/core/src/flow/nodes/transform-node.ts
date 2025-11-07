@@ -76,7 +76,7 @@ export function createTransformNode({
   return Effect.gen(function* () {
     const uploadServer = yield* UploadServer;
 
-    return yield* createFlowNode({
+    return yield* createFlowNode<UploadFile, UploadFile>({
       id,
       name,
       description,

@@ -13,6 +13,7 @@
     "@uploadista/core": "workspace:*",
     "@uploadista/data-store-r2": "workspace:*",
     "@uploadista/event-emitter-durable-object": "workspace:*",
+    "@uploadista/example-flows": "workspace:*",
     "@uploadista/flow-images-nodes": "workspace:*",
     "@uploadista/flow-images-photon": "workspace:*",
     "@uploadista/kv-store-cloudflare-kv": "workspace:*",

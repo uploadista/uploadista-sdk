@@ -1,10 +1,11 @@
 {
-  "name": "@uploadista/kv-store-redis",
-  "type": "module",
-  "version": "0.0.13-beta.4",
-  "description": "Redis KV store for Uploadista",
+  "name": "@uploadista/example-flows",
+  "version": "0.0.1",
+  "description": "Example flow definitions for Uploadista SDK server examples",
   "license": "MIT",
   "author": "Uploadista",
+  "type": "module",
+  "private": true,
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
@@ -15,20 +16,21 @@
   },
   "scripts": {
     "build": "tsdown",
+    "dev": "tsc -b",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "check": "biome check --write ./src",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "effect": "catalog:"
-  },
-  "peerDependencies": {
-    "@redis/client": ">=5.8.0 <6.0.0"
+    "@uploadista/flow-images-nodes": "workspace:*",
+    "@uploadista/flow-videos-nodes": "workspace:*",
+    "@uploadista/flow-utility-nodes": "workspace:*"
   },
   "devDependencies": {
-    "@redis/client": "5.9.0",
     "@uploadista/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "tsdown": "catalog:"
   }
 }
