@@ -6,7 +6,7 @@ import {
   isUploadistaError,
   UploadistaError,
   type UploadistaErrorCode,
-} from "../uploadista-error";
+} from "../../src/errors";
 
 describe("ERROR_CATALOG", () => {
   it("should contain all error codes with status and body", () => {

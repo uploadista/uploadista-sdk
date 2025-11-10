@@ -2,9 +2,9 @@ import { UploadistaError } from "@uploadista/core/errors";
 import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect, Option, Stream } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createS3Store } from "../s3-store";
-import type { S3ClientService } from "../services";
-import type { S3Store } from "../types";
+import { createS3Store } from "../../src/s3-store";
+import type { S3ClientService } from "../../src/services";
+import type { S3Store } from "../../src/types";
 import {
   createTestDataStream,
   TEST_FILE_SIZES,

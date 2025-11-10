@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFlowEdge, type FlowEdge } from "./edge";
+import { createFlowEdge, type FlowEdge } from "../../src/flow/edge";
 
 describe("FlowEdge", () => {
   describe("createFlowEdge", () => {

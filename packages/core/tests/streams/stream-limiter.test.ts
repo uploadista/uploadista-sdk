@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { UploadistaError } from "../errors/uploadista-error";
-import { streamLimiter } from "./stream-limiter";
+import { UploadistaError } from "../../src/errors";
+import { streamLimiter } from "../../src/streams/stream-limiter";
 
 // Helper function to convert stream to array
 async function streamToArray(

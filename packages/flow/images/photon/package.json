@@ -23,7 +23,10 @@
     "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
     "@cf-wasm/photon": "0.2.1",
@@ -33,9 +36,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@types/tinycolor2": "1.4.6",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

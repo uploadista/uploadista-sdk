@@ -4,7 +4,7 @@ import type { AuthResult } from "@uploadista/server";
 import { Effect, Layer } from "effect";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { honoWebSocketHandler } from "./hono-websocket-handler";
+import { honoWebSocketHandler } from "../src/hono-websocket-handler";
 
 // Mock upload and flow servers
 const mockUploadServer = {

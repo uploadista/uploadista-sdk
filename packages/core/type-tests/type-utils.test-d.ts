@@ -8,6 +8,25 @@
 
 import { Effect, Layer } from "effect";
 import { expectType } from "tsd";
+
+import {
+  type UploadistaError,
+  VideoPlugin,
+  type ZipInput,
+  type ZipParams,
+  ZipPlugin,
+} from "../src";
+import { ImagePlugin } from "../src/flow/plugins/image-plugin";
+import type {
+  DescribeVideoMetadata,
+  ExtractFrameVideoParams,
+  ResizeParams,
+  ResizeVideoParams,
+  TranscodeVideoParams,
+  TrimVideoParams,
+} from "../src/flow/plugins/types";
+import type { OptimizeParams } from "../src/flow/plugins/types/optimize-node";
+import type { Transformation } from "../src/flow/plugins/types/transform-image-node";
 import type {
   ExtractEffectError,
   ExtractEffectRequirements,
@@ -20,40 +39,56 @@ import type {
 // Test Services and Layers
 // ============================================================================
 
-class ImageService {
-  readonly _tag = "ImageService";
-  resize(data: Buffer, width: number): Buffer {
-    return data;
-  }
-}
-
-class ZipService {
-  readonly _tag = "ZipService";
-  compress(files: Buffer[]): Buffer {
-    return Buffer.from([]);
-  }
-}
-
-class LogService {
-  readonly _tag = "LogService";
-  log(message: string): void {
-    console.log(message);
-  }
-}
-
 // Create test layers
-const ImageLayer = Layer.succeed(ImageService, new ImageService());
-const ZipLayer = Layer.succeed(ZipService, new ZipService());
-const LogLayer = Layer.succeed(LogService, new LogService());
+const ImageLayer = Layer.succeed(
+  ImagePlugin,
+  ImagePlugin.of({
+    optimize: (input: Uint8Array, _options: OptimizeParams) =>
+      Effect.succeed(input),
+    resize: (input: Uint8Array, _options: ResizeParams) =>
+      Effect.succeed(input),
+    transform: (input: Uint8Array, _options: Transformation) =>
+      Effect.succeed(input),
+  }),
+);
+const ZipLayer = Layer.succeed(
+  ZipPlugin,
+  ZipPlugin.of({
+    zip: (_inputs: ZipInput[], _options: ZipParams) =>
+      Effect.succeed(new Uint8Array([])),
+  }),
+);
+const VideoLayer = Layer.succeed(
+  VideoPlugin,
+  VideoPlugin.of({
+    transcode: (input: Uint8Array, _options: TranscodeVideoParams) =>
+      Effect.succeed(input),
+    resize: (input: Uint8Array, _options: ResizeVideoParams) =>
+      Effect.succeed(input),
+    trim: (input: Uint8Array, _options: TrimVideoParams) =>
+      Effect.succeed(input),
+    extractFrame: (
+      _input: Uint8Array,
+      _options: ExtractFrameVideoParams,
+    ): Effect.Effect<Uint8Array, UploadistaError> => {
+      throw new Error("Function not implemented.");
+    },
+    describe: (
+      _input: Uint8Array,
+    ): Effect.Effect<DescribeVideoMetadata, UploadistaError> => {
+      throw new Error("Function not implemented.");
+    },
+  }),
+);
 
 // ============================================================================
 // ExtractLayerService Tests
 // ============================================================================
 
 // Test: Should extract service from a single layer
-expectType<ImageService>({} as ExtractLayerService<typeof ImageLayer>);
+expectType<ImagePlugin>({} as ExtractLayerService<typeof ImageLayer>);
 
-expectType<ZipService>({} as ExtractLayerService<typeof ZipLayer>);
+expectType<ZipPlugin>({} as ExtractLayerService<typeof ZipLayer>);
 
 // Test: Should return never for non-layer types
 expectType<never>({} as ExtractLayerService<string>);
@@ -65,24 +100,26 @@ expectType<never>({} as ExtractLayerService<{}>);
 // ============================================================================
 
 // Test: Should extract union of services from layer tuple
-expectType<ImageService | ZipService>(
+expectType<ImagePlugin | ZipPlugin>(
   {} as ExtractLayerServices<[typeof ImageLayer, typeof ZipLayer]>,
 );
 
-expectType<ImageService | ZipService | LogService>(
+expectType<ImagePlugin | ZipPlugin | VideoPlugin>(
   {} as ExtractLayerServices<
-    [typeof ImageLayer, typeof ZipLayer, typeof LogLayer]
+    [typeof ImageLayer, typeof ZipLayer, typeof VideoLayer]
   >,
 );
 
 // Test: Should handle single layer in tuple
-expectType<ImageService>({} as ExtractLayerServices<[typeof ImageLayer]>);
+expectType<ImagePlugin>({} as ExtractLayerServices<[typeof ImageLayer]>);
 
 // Test: Should return never for empty tuple
-expectType<never>({} as ExtractLayerServices<[]>);
+type EmptyTuple = [];
+type EmptyTupleExtracted = ExtractLayerServices<EmptyTuple>;
+expectType<never>({} as EmptyTupleExtracted);
 
 // Test: Should work with readonly arrays
-expectType<ImageService | ZipService>(
+expectType<ImagePlugin | ZipPlugin>(
   {} as ExtractLayerServices<readonly [typeof ImageLayer, typeof ZipLayer]>,
 );
 
@@ -95,14 +132,14 @@ expectType<string>({} as ResolveEffect<Effect.Effect<string, Error, never>>);
 
 expectType<number>({} as ResolveEffect<Effect.Effect<number, never, never>>);
 
-expectType<ImageService>(
-  {} as ResolveEffect<Effect.Effect<ImageService, Error, ZipService>>,
+expectType<ImagePlugin>(
+  {} as ResolveEffect<Effect.Effect<ImagePlugin, Error, ImagePlugin>>,
 );
 
 // Test: Should return the type itself if not an Effect
 expectType<string>({} as ResolveEffect<string>);
 expectType<number>({} as ResolveEffect<number>);
-expectType<ImageService>({} as ResolveEffect<ImageService>);
+expectType<ImagePlugin>({} as ResolveEffect<ImagePlugin>);
 
 // Test: Should work with nested structures
 expectType<{ data: string }>(
@@ -141,12 +178,12 @@ expectType<Error | TypeError>(
 // ============================================================================
 
 // Test: Should extract requirements type from Effect
-expectType<ImageService>(
-  {} as ExtractEffectRequirements<Effect.Effect<string, Error, ImageService>>,
+expectType<ImagePlugin>(
+  {} as ExtractEffectRequirements<Effect.Effect<string, Error, ImagePlugin>>,
 );
 
-expectType<ZipService>(
-  {} as ExtractEffectRequirements<Effect.Effect<number, never, ZipService>>,
+expectType<ZipPlugin>(
+  {} as ExtractEffectRequirements<Effect.Effect<number, never, ZipPlugin>>,
 );
 
 // Test: Should extract never for Effects with no requirements
@@ -159,20 +196,20 @@ expectType<never>({} as ExtractEffectRequirements<string>);
 expectType<never>({} as ExtractEffectRequirements<number>);
 
 // Test: Should handle union requirement types
-expectType<ImageService | ZipService>(
+expectType<ImagePlugin | ZipPlugin>(
   {} as ExtractEffectRequirements<
-    Effect.Effect<string, Error, ImageService | ZipService>
+    Effect.Effect<string, Error, ImagePlugin | ZipPlugin>
   >,
 );
 
 // Test: Should work with complex Effect chains
 const complexEffect = Effect.gen(function* () {
-  const imageService = yield* ImageService;
-  const zipService = yield* ZipService;
+  const imageService = yield* ImagePlugin;
+  const zipService = yield* ZipPlugin;
   return { imageService, zipService };
 });
 
-expectType<ImageService | ZipService>(
+expectType<ImagePlugin | ZipPlugin>(
   {} as ExtractEffectRequirements<typeof complexEffect>,
 );
 
@@ -184,10 +221,10 @@ expectType<ImageService | ZipService>(
 const pluginLayers = [ImageLayer, ZipLayer] as const;
 
 type PluginServices = ExtractLayerServices<typeof pluginLayers>;
-expectType<ImageService | ZipService>({} as PluginServices);
+expectType<ImagePlugin | ZipPlugin>({} as PluginServices);
 
 // Test: Realistic flow scenario - validate Effect requirements match plugins
-type FlowEffect = Effect.Effect<Buffer, Error, ImageService | ZipService>;
+type FlowEffect = Effect.Effect<Buffer, Error, ImagePlugin | ZipPlugin>;
 type FlowRequirements = ExtractEffectRequirements<FlowEffect>;
 
 // This should compile: flow requirements are subset of plugin services
@@ -196,7 +233,7 @@ expectType<true>({} as ValidationTest);
 
 // Test: Should detect missing requirements
 type IncompletePlugins = ExtractLayerServices<[typeof ImageLayer]>;
-type MissingTest = ImageService | ZipService extends IncompletePlugins
+type MissingTest = ImagePlugin | ZipPlugin extends IncompletePlugins
   ? true
   : false;
 expectType<false>({} as MissingTest);
@@ -229,7 +266,13 @@ expectType<Promise<string>>(
 function genericTest<T>() {
   expectType<T>({} as ResolveEffect<Effect.Effect<T, Error, never>>);
   expectType<Error>({} as ExtractEffectError<Effect.Effect<T, Error, never>>);
-  expectType<ImageService>(
-    {} as ExtractEffectRequirements<Effect.Effect<T, Error, ImageService>>,
+  expectType<ImagePlugin>(
+    {} as ExtractEffectRequirements<Effect.Effect<T, Error, ImagePlugin>>,
   );
 }
+
+genericTest<string>();
+genericTest<number>();
+genericTest<ImagePlugin>();
+genericTest<ZipPlugin>();
+genericTest<VideoPlugin>();
