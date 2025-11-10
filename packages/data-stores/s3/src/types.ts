@@ -1,8 +1,7 @@
 import type { S3ClientConfig } from "@aws-sdk/client-s3";
-import type { UploadistaError } from "@uploadista/core/errors";
+import type { UploadistaError } from "@uploadista/core";
 import type {
-  DataStoreCapabilities,
-  DataStoreWriteOptions,
+  DataStore,
   UploadFile,
   UploadStrategy,
 } from "@uploadista/core/types";
@@ -67,18 +66,8 @@ export type UploadProgress = {
   currentOffset: number;
 };
 
-export type S3Store = {
-  bucket: string;
-  create: (upload: UploadFile) => Effect.Effect<UploadFile, UploadistaError>;
-  remove: (id: string) => Effect.Effect<void, UploadistaError>;
-  write: (
-    options: DataStoreWriteOptions,
-    dependencies: { onProgress?: (chunkSize: number) => void },
-  ) => Effect.Effect<number, UploadistaError>;
+export type S3Store = DataStore<UploadFile> & {
   getUpload: (id: string) => Effect.Effect<UploadFile, UploadistaError>;
-  read: (id: string) => Effect.Effect<ReadableStream, UploadistaError>;
-  deleteExpired: Effect.Effect<number, UploadistaError>;
-  getCapabilities: () => DataStoreCapabilities;
   getChunkerConstraints: () => {
     minChunkSize: number;
     maxChunkSize: number;

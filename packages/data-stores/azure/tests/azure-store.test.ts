@@ -1,4 +1,8 @@
-import { UploadFileKVStore } from "@uploadista/core/types";
+import {
+  TypedKvStore,
+  type UploadFile,
+  UploadFileKVStore,
+} from "@uploadista/core/types";
 import { makeMemoryBaseKvStore } from "@uploadista/kv-store-memory";
 import { Effect, Layer } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -206,7 +210,15 @@ const runTestWithTimeout = <A, E>(
 const TestLayersWithMemoryKV = () =>
   Layer.effect(
     UploadFileKVStore,
-    Effect.sync(() => makeMemoryBaseKvStore()),
+    Effect.sync(
+      () =>
+        new TypedKvStore<UploadFile>(
+          makeMemoryBaseKvStore(),
+          "uploadista:upload-file:",
+          JSON.stringify,
+          JSON.parse,
+        ),
+    ),
   );
 
 describe("AzureStore - Basic Upload Tests", () => {
@@ -228,7 +240,7 @@ describe("AzureStore - Basic Upload Tests", () => {
           minBlockSize: 1024, // 1KB
           maxBlocks: 50_000,
           maxConcurrentBlockUploads: 10,
-        });
+        }).pipe(Effect.map((store) => store as AzureStore));
       }).pipe(Effect.provide(TestLayersWithMemoryKV())),
     );
   });
@@ -724,7 +736,7 @@ describe("AzureStore - Basic Upload Tests", () => {
   describe("Capabilities", () => {
     it("should report correct capabilities", async () => {
       await runTestWithTimeout(
-        Effect.gen(function* () {
+        Effect.sync(() => {
           const capabilities = store.getCapabilities();
 
           expect(capabilities.supportsParallelUploads).toBe(true);

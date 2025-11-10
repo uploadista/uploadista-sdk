@@ -4,8 +4,8 @@ import {
   AuthCacheService,
   AuthCacheServiceLive,
   NoAuthCacheServiceLive,
-} from "./cache";
-import type { AuthContext } from "./types";
+} from "../src/cache";
+import type { AuthContext } from "../src/types";
 
 describe("AuthCacheService", () => {
   describe("AuthCacheServiceLive", () => {

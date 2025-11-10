@@ -266,7 +266,7 @@ describe("Flow Node", () => {
             // Return incomplete output
             Effect.succeed({
               type: "complete",
-              data: { value: data.value } as any,
+              data: { value: data.value },
             }),
         });
 
@@ -346,8 +346,7 @@ describe("Flow Node", () => {
           run: ({ data }) =>
             Effect.succeed({
               type: "waiting" as const,
-              data: { value: data.value },
-              reason: "Waiting for external input",
+              partialData: { value: data.value, reason: "Waiting for external input" },
             }),
           pausable: true,
         });
@@ -488,7 +487,7 @@ describe("Flow Node", () => {
           type: NodeType.process,
           inputSchema: z.object({ value: z.string() }),
           outputSchema: z.object({ value: z.string() }),
-          run: ({ data }) =>
+          run: () =>
             Effect.gen(function* () {
               attempts++;
               // Always fail

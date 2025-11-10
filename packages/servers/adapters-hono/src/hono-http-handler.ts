@@ -119,13 +119,14 @@ export const extractHonoRequest = <TEnv extends Env>(
       }
     } else if (routeSegments[0] === "jobs" || routeSegments.includes("jobs")) {
       if (req.method === "GET" && url.pathname.endsWith("/status")) {
-        const jobId = routeSegments[1];
-        if (!jobId) {
+        // Need at least 3 segments: jobs, jobId, status
+        if (routeSegments.length < 3) {
           return {
             type: "bad-request",
             message: "Job ID is required",
           } as UploadistaRequest;
         }
+        const jobId = routeSegments[1];
         return {
           type: "job-status",
           jobId,

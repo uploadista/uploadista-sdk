@@ -93,7 +93,7 @@ expectType<ZipPlugin>({} as ExtractLayerService<typeof ZipLayer>);
 // Test: Should return never for non-layer types
 expectType<never>({} as ExtractLayerService<string>);
 expectType<never>({} as ExtractLayerService<number>);
-expectType<never>({} as ExtractLayerService<{}>);
+expectType<never>({} as ExtractLayerService<Record<string, never>>);
 
 // ============================================================================
 // ExtractLayerServices Tests
@@ -227,8 +227,18 @@ expectType<ImagePlugin | ZipPlugin>({} as PluginServices);
 type FlowEffect = Effect.Effect<Buffer, Error, ImagePlugin | ZipPlugin>;
 type FlowRequirements = ExtractEffectRequirements<FlowEffect>;
 
+// Debug: Check if both types are the same
+type DebugPluginServices = PluginServices;
+type DebugFlowRequirements = FlowRequirements;
+
+// Both should be ImagePlugin | ZipPlugin
+expectType<ImagePlugin | ZipPlugin>({} as DebugPluginServices);
+expectType<ImagePlugin | ZipPlugin>({} as DebugFlowRequirements);
+
 // This should compile: flow requirements are subset of plugin services
-type ValidationTest = FlowRequirements extends PluginServices ? true : false;
+// Note: This tests that the union is compatible
+type ValidationTest =
+  [FlowRequirements] extends [PluginServices] ? true : false;
 expectType<true>({} as ValidationTest);
 
 // Test: Should detect missing requirements

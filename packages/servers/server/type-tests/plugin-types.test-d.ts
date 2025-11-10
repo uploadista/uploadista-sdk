@@ -5,6 +5,22 @@
  * requirements and generate appropriate error messages at compile time.
  */
 
+import {
+  type DescribeVideoMetadata,
+  type ExtractFrameVideoParams,
+  ImagePlugin,
+  type OptimizeParams,
+  type ResizeParams,
+  type ResizeVideoParams,
+  type TranscodeVideoParams,
+  type Transformation,
+  type TrimVideoParams,
+  type UploadistaError,
+  VideoPlugin,
+  type ZipInput,
+  type ZipParams,
+  ZipPlugin,
+} from "@uploadista/core";
 import { Effect, Layer } from "effect";
 import { expectType } from "tsd";
 import type {
@@ -20,31 +36,46 @@ import type {
 // Test Services and Layers
 // ============================================================================
 
-class ImagePlugin {
-  readonly _tag = "ImagePlugin";
-  resize(data: Buffer, width: number): Buffer {
-    return data;
-  }
-}
-
-class ZipPlugin {
-  readonly _tag = "ZipPlugin";
-  compress(files: Buffer[]): Buffer {
-    return Buffer.from([]);
-  }
-}
-
-class VideoPlugin {
-  readonly _tag = "VideoPlugin";
-  transcode(data: Buffer): Buffer {
-    return data;
-  }
-}
-
-// Create test layers
-const imageLayer = Layer.succeed(ImagePlugin, new ImagePlugin());
-const zipLayer = Layer.succeed(ZipPlugin, new ZipPlugin());
-const videoLayer = Layer.succeed(VideoPlugin, new VideoPlugin());
+const imageLayer = Layer.succeed(
+  ImagePlugin,
+  ImagePlugin.of({
+    optimize: (input: Uint8Array, _options: OptimizeParams) =>
+      Effect.succeed(input),
+    resize: (input: Uint8Array, _options: ResizeParams) =>
+      Effect.succeed(input),
+    transform: (input: Uint8Array, _options: Transformation) =>
+      Effect.succeed(input),
+  }),
+);
+const zipLayer = Layer.succeed(
+  ZipPlugin,
+  ZipPlugin.of({
+    zip: (_inputs: ZipInput[], _options: ZipParams) =>
+      Effect.succeed(new Uint8Array([])),
+  }),
+);
+const videoLayer = Layer.succeed(
+  VideoPlugin,
+  VideoPlugin.of({
+    transcode: (input: Uint8Array, _options: TranscodeVideoParams) =>
+      Effect.succeed(input),
+    resize: (input: Uint8Array, _options: ResizeVideoParams) =>
+      Effect.succeed(input),
+    trim: (input: Uint8Array, _options: TrimVideoParams) =>
+      Effect.succeed(input),
+    extractFrame: (
+      _input: Uint8Array,
+      _options: ExtractFrameVideoParams,
+    ): Effect.Effect<Uint8Array, UploadistaError> => {
+      throw new Error("Function not implemented.");
+    },
+    describe: (
+      _input: Uint8Array,
+    ): Effect.Effect<DescribeVideoMetadata, UploadistaError> => {
+      throw new Error("Function not implemented.");
+    },
+  }),
+);
 
 // ============================================================================
 // PluginTuple Tests

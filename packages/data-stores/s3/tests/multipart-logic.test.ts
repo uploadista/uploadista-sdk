@@ -5,7 +5,7 @@ import {
   getExpirationDate,
   partKey,
   shouldUseExpirationTags,
-} from "../utils/calculations";
+} from "../src/utils/calculations";
 
 describe("Multipart Upload Logic", () => {
   describe("calcOffsetFromParts", () => {

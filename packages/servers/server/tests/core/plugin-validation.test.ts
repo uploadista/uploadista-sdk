@@ -4,43 +4,76 @@
  * These tests verify runtime plugin validation behavior.
  */
 
-import { Layer } from "effect";
+import {
+  type DescribeVideoMetadata,
+  type ExtractFrameVideoParams,
+  ImagePlugin,
+  type OptimizeParams,
+  type ResizeParams,
+  type ResizeVideoParams,
+  type TranscodeVideoParams,
+  type Transformation,
+  type TrimVideoParams,
+  type UploadistaError,
+  VideoPlugin,
+  type ZipInput,
+  type ZipParams,
+  ZipPlugin,
+} from "@uploadista/core";
+import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   extractServiceIdentifiers,
   formatPluginValidationError,
   validatePluginRequirements,
   validatePluginsOrThrow,
-} from "../plugin-validation";
+} from "../../src/core/plugin-validation";
 
 // ============================================================================
 // Test Fixtures
 // ============================================================================
 
-class TestImagePlugin {
-  readonly _tag = "ImagePlugin";
-  resize(data: Buffer, width: number): Buffer {
-    return data;
-  }
-}
-
-class TestZipPlugin {
-  readonly _tag = "ZipPlugin";
-  compress(files: Buffer[]): Buffer {
-    return Buffer.from([]);
-  }
-}
-
-class TestVideoPlugin {
-  readonly _tag = "VideoPlugin";
-  transcode(data: Buffer): Buffer {
-    return data;
-  }
-}
-
-const imagePluginLayer = Layer.succeed(TestImagePlugin, new TestImagePlugin());
-const zipPluginLayer = Layer.succeed(TestZipPlugin, new TestZipPlugin());
-const videoPluginLayer = Layer.succeed(TestVideoPlugin, new TestVideoPlugin());
+// Create test layers
+const imagePluginLayer = Layer.succeed(
+  ImagePlugin,
+  ImagePlugin.of({
+    optimize: (input: Uint8Array, _options: OptimizeParams) =>
+      Effect.succeed(input),
+    resize: (input: Uint8Array, _options: ResizeParams) =>
+      Effect.succeed(input),
+    transform: (input: Uint8Array, _options: Transformation) =>
+      Effect.succeed(input),
+  }),
+);
+const zipPluginLayer = Layer.succeed(
+  ZipPlugin,
+  ZipPlugin.of({
+    zip: (_inputs: ZipInput[], _options: ZipParams) =>
+      Effect.succeed(new Uint8Array([])),
+  }),
+);
+const videoPluginLayer = Layer.succeed(
+  VideoPlugin,
+  VideoPlugin.of({
+    transcode: (input: Uint8Array, _options: TranscodeVideoParams) =>
+      Effect.succeed(input),
+    resize: (input: Uint8Array, _options: ResizeVideoParams) =>
+      Effect.succeed(input),
+    trim: (input: Uint8Array, _options: TrimVideoParams) =>
+      Effect.succeed(input),
+    extractFrame: (
+      _input: Uint8Array,
+      _options: ExtractFrameVideoParams,
+    ): Effect.Effect<Uint8Array, UploadistaError> => {
+      throw new Error("Function not implemented.");
+    },
+    describe: (
+      _input: Uint8Array,
+    ): Effect.Effect<DescribeVideoMetadata, UploadistaError> => {
+      throw new Error("Function not implemented.");
+    },
+  }),
+);
 
 // ============================================================================
 // extractServiceIdentifiers Tests

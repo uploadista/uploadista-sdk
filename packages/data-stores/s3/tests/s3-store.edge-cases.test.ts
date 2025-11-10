@@ -2,9 +2,9 @@ import { UploadistaError } from "@uploadista/core/errors";
 import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect, Option, Stream } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createS3Store } from "../../src/s3-store";
-import type { S3ClientService } from "../../src/services";
-import type { S3Store } from "../../src/types";
+import { createS3Store } from "../src/s3-store";
+import type { S3ClientService } from "../src/services/s3-client.service";
+import type { S3Store } from "../src/types";
 import {
   createTestDataStream,
   TEST_FILE_SIZES,
@@ -29,13 +29,11 @@ describe("S3Store - Edge Cases and Error Handling", () => {
       Effect.gen(function* () {
         mockService = yield* setupTestEnvironment();
 
-        const kvStore = yield* UploadFileKVStore;
         const config = createTestS3StoreConfig();
 
         s3Store = yield* createS3Store({
           ...config,
-          kvStore,
-        });
+        }).pipe(Effect.map((store) => store as S3Store));
       }).pipe(Effect.provide(TestLayersWithMockS3())),
     );
   });
@@ -450,7 +448,6 @@ describe("S3Store - Edge Cases and Error Handling", () => {
       await runTestWithTimeout(
         Effect.gen(function* () {
           // Create store with very small part size to exceed part limits
-          const kvStore = yield* UploadFileKVStore;
           const config = createTestS3StoreConfig({
             partSize: 1024 * 1024, // 1MB parts
             maxMultipartParts: 5, // Very low limit
@@ -458,8 +455,7 @@ describe("S3Store - Edge Cases and Error Handling", () => {
 
           const limitedStore = yield* createS3Store({
             ...config,
-            kvStore,
-          });
+          }).pipe(Effect.map((store) => store as S3Store));
 
           yield* limitedStore.create(testFile);
 
@@ -546,7 +542,9 @@ describe("S3Store - Edge Cases and Error Handling", () => {
           yield* s3Store.create(testFile2);
 
           // Run cleanup
-          const deletedCount = yield* s3Store.deleteExpired;
+          if (!s3Store.deleteExpired)
+            throw new Error("deleteExpired not supported");
+          const deletedCount = yield* s3Store.deleteExpired();
 
           // The mock doesn't simulate actual expiration, so this tests the mechanism
           expect(deletedCount).toBeGreaterThanOrEqual(0);

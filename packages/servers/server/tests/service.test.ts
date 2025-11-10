@@ -4,8 +4,8 @@ import {
   AuthContextService,
   AuthContextServiceLive,
   NoAuthContextServiceLive,
-} from "./service";
-import type { AuthContext } from "./types";
+} from "../src/service";
+import type { AuthContext } from "../src/types";
 
 describe("AuthContextService", () => {
   describe("AuthContextServiceLive", () => {

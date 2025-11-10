@@ -247,46 +247,46 @@ export function createS3Store(config: S3StoreConfig) {
       UploadistaError
     > =>
       Effect.gen(function* () {
-        try {
-          const result = yield* s3Client.listParts({
-            bucket: s3Client.bucket,
-            key: s3Key,
+        const result = yield* s3Client.listParts({
+          bucket: s3Client.bucket,
+          key: s3Key,
+          uploadId,
+          partNumberMarker,
+        });
+
+        let parts = result.parts;
+
+        if (result.isTruncated) {
+          const rest = yield* retrievePartsRecursive(
+            s3Key,
             uploadId,
-            partNumberMarker,
-          });
+            uploadFileId,
+            result.nextPartNumberMarker,
+          );
+          parts = [...parts, ...rest.parts];
+        }
 
-          let parts = result.parts;
+        if (!partNumberMarker) {
+          parts.sort((a, b) => (a.PartNumber ?? 0) - (b.PartNumber ?? 0));
+        }
 
-          if (result.isTruncated) {
-            const rest = yield* retrievePartsRecursive(
-              s3Key,
-              uploadId,
-              uploadFileId,
-              result.nextPartNumberMarker,
-            );
-            parts = [...parts, ...rest.parts];
-          }
-
-          if (!partNumberMarker) {
-            parts.sort((a, b) => (a.PartNumber ?? 0) - (b.PartNumber ?? 0));
-          }
-
-          return { uploadFound: true, parts };
-        } catch (error) {
+        return { uploadFound: true, parts };
+      }).pipe(
+        Effect.catchAll((error) => {
           if (isUploadNotFoundError(error)) {
-            yield* Effect.logWarning(
+            return Effect.logWarning(
               "S3 upload not found during listParts",
             ).pipe(
               Effect.annotateLogs({
                 upload_id: uploadFileId,
                 error_code: error.code,
               }),
+              Effect.as({ uploadFound: false, parts: [] }),
             );
-            return { uploadFound: false, parts: [] };
           }
-          throw error;
-        }
-      });
+          return Effect.fail(error);
+        }),
+      );
 
     const retrieveParts = (id: string, partNumberMarker?: string) =>
       Effect.gen(function* () {
@@ -497,10 +497,9 @@ export function createS3Store(config: S3StoreConfig) {
 
             const newOffset = offset + bytesUploaded;
 
-            if (newOffset > maxConcurrentPartUploads)
-              if (uploadFile.size === newOffset) {
-                yield* finishUpload(file_id, uploadFile, startTime);
-              }
+            if (uploadFile.size === newOffset) {
+              yield* finishUpload(file_id, uploadFile, startTime);
+            }
 
             return newOffset;
           }).pipe(Effect.ensuring(activeUploadsGauge(Effect.succeed(0)))),
@@ -663,72 +662,73 @@ export function createS3Store(config: S3StoreConfig) {
         ),
       );
 
-    const deleteExpired = Effect.gen(function* () {
-      if (expirationPeriodInMilliseconds === 0) {
-        return 0;
-      }
+    const deleteExpired = (): Effect.Effect<number, UploadistaError> =>
+      Effect.gen(function* () {
+        if (expirationPeriodInMilliseconds === 0) {
+          return 0;
+        }
 
-      let keyMarker: string | undefined;
-      let uploadIdMarker: string | undefined;
-      let isTruncated = true;
-      let deleted = 0;
+        let keyMarker: string | undefined;
+        let uploadIdMarker: string | undefined;
+        let isTruncated = true;
+        let deleted = 0;
 
-      while (isTruncated) {
-        const listResponse = yield* s3Client.listMultipartUploads(
-          keyMarker,
-          uploadIdMarker,
-        );
+        while (isTruncated) {
+          const listResponse = yield* s3Client.listMultipartUploads(
+            keyMarker,
+            uploadIdMarker,
+          );
 
-        const expiredUploads =
-          listResponse.Uploads?.filter((multiPartUpload) => {
-            const initiatedDate = multiPartUpload.Initiated;
-            return (
-              initiatedDate &&
-              Date.now() >
-                getExpirationDate(
-                  initiatedDate.toISOString(),
-                  expirationPeriodInMilliseconds,
-                ).getTime()
-            );
-          }) || [];
+          const expiredUploads =
+            listResponse.Uploads?.filter((multiPartUpload) => {
+              const initiatedDate = multiPartUpload.Initiated;
+              return (
+                initiatedDate &&
+                Date.now() >
+                  getExpirationDate(
+                    initiatedDate.toISOString(),
+                    expirationPeriodInMilliseconds,
+                  ).getTime()
+              );
+            }) || [];
 
-        const objectsToDelete = expiredUploads
-          .filter((upload): upload is { Key: string } => {
-            return !!upload.Key;
-          })
-          .map((upload) => upload.Key);
+          const objectsToDelete = expiredUploads
+            .filter((upload): upload is { Key: string } => {
+              return !!upload.Key;
+            })
+            .map((upload) => upload.Key);
 
-        if (objectsToDelete.length > 0) {
-          yield* s3Client.deleteObjects(objectsToDelete);
+          if (objectsToDelete.length > 0) {
+            yield* s3Client.deleteObjects(objectsToDelete);
 
-          // Abort multipart uploads
-          yield* Effect.forEach(expiredUploads, (upload) => {
-            return Effect.gen(function* () {
-              if (!upload.Key || !upload.UploadId) {
+            // Abort multipart uploads
+            yield* Effect.forEach(expiredUploads, (upload) => {
+              return Effect.gen(function* () {
+                if (!upload.Key || !upload.UploadId) {
+                  return;
+                }
+                yield* s3Client.abortMultipartUpload({
+                  bucket,
+                  key: upload.Key,
+                  uploadId: upload.UploadId,
+                });
                 return;
-              }
-              yield* s3Client.abortMultipartUpload({
-                bucket,
-                key: upload.Key,
-                uploadId: upload.UploadId,
               });
-              return;
             });
-          });
 
-          deleted += objectsToDelete.length;
+            deleted += objectsToDelete.length;
+          }
+
+          isTruncated = listResponse.IsTruncated ?? false;
+
+          if (isTruncated) {
+            keyMarker = listResponse.NextKeyMarker;
+            uploadIdMarker = listResponse.NextUploadIdMarker;
+          }
         }
 
-        isTruncated = listResponse.IsTruncated ?? false;
-
-        if (isTruncated) {
-          keyMarker = listResponse.NextKeyMarker;
-          uploadIdMarker = listResponse.NextUploadIdMarker;
-        }
-      }
-
-      return deleted;
-    });
+        return deleted;
+      });
 
     // Proper single-pass chunking using Effect's async stream constructor
     // Ensures all parts except the final part are exactly the same size (S3 requirement)

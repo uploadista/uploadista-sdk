@@ -1,15 +1,11 @@
 import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createR2Store } from "../src/r2-store";
-import type { R2ClientService } from "../src/services/r2-client.service";
-import type { R2Store } from "../src/types";
 import {
   compareArrays,
   createStandardTestFiles,
   createTestDataStream,
   generateData,
-  streamToArray,
   TEST_FILE_SIZES,
 } from "../../s3/tests/utils/test-data-generator";
 import {
@@ -21,6 +17,9 @@ import {
   setupTestEnvironment,
   TestLayersWithMockS3,
 } from "../../s3/tests/utils/test-setup";
+import { createR2Store } from "../src/r2-store";
+import type { R2ClientService } from "../src/services/r2-client.service";
+import type { R2Store } from "../src/types";
 
 // Type alias for R2 client that extends S3 client
 type MockR2TestMethods = MockS3TestMethods;
@@ -722,9 +721,8 @@ describe("R2Store - Basic Upload Tests", () => {
     it("should validate upload strategies correctly", async () => {
       await runTestWithTimeout(
         Effect.gen(function* () {
-          const parallelValid = yield* r2Store.validateUploadStrategy(
-            "parallel",
-          );
+          const parallelValid =
+            yield* r2Store.validateUploadStrategy("parallel");
           const singleValid = yield* r2Store.validateUploadStrategy("single");
 
           expect(parallelValid).toBe(true);

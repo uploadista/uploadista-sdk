@@ -322,9 +322,7 @@ describe("Flow Engine", () => {
 
         expect(result.type).toBe("completed");
         if (result.type === "completed") {
-          expect(
-            (result.result as Record<string, unknown>)["output-node"],
-          ).toEqual({
+          expect(result.result["output-node"]).toEqual({
             result: "processed-test",
           });
         }
@@ -399,10 +397,7 @@ describe("Flow Engine", () => {
         // Expected: (5 + 1) * 2 + 10 = 6 * 2 + 10 = 12 + 10 = 22
         expect(result.type).toBe("completed");
         if (result.type === "completed") {
-          expect(
-            (result.result as Record<string, { value: number }>)["seq-node-3"]
-              .value,
-          ).toBe(22);
+          expect(result.result["seq-node-3"].value).toBe(22);
         }
       }).pipe(Effect.runPromise));
 
@@ -514,9 +509,7 @@ describe("Flow Engine", () => {
 
         expect(result.type).toBe("completed");
         if (result.type === "completed") {
-          expect(
-            (result.result as Record<string, { result: string }>).target.result,
-          ).toBe("hello (processed)");
+          expect(result.result.target.result).toBe("hello (processed)");
         }
       }).pipe(Effect.runPromise));
 
@@ -657,14 +650,8 @@ describe("Flow Engine", () => {
 
         expect(result.type).toBe("completed");
         if (result.type === "completed") {
-          const successNode = (
-            result.result as Record<
-              string,
-              { result: string; status: "success" }
-            >
-          )["success-node"];
-          expect(successNode?.status).toBe("success");
-          expect(successNode?.result).toBe("test");
+          expect(result.result["success-node"]?.status).toBe("success");
+          expect(result.result["success-node"]?.result).toBe("test");
         }
       }).pipe(Effect.runPromise));
 

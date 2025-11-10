@@ -2,13 +2,12 @@ import { UploadistaError } from "@uploadista/core/errors";
 import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect, Stream } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createS3Store } from "../../../src/s3-store";
-import type { S3Store } from "../../../src/types";
+import { createS3Store } from "../../src/s3-store";
+import type { S3Store } from "../../src/types";
 import {
   compareArrays,
   createTestDataStream,
   generateData,
-  streamToArray,
   TEST_FILE_SIZES,
 } from "../utils/test-data-generator";
 import {
@@ -29,13 +28,11 @@ describe("S3Store - Integration Tests", () => {
       Effect.gen(function* () {
         mockService = yield* setupTestEnvironment();
 
-        const kvStore = yield* UploadFileKVStore;
         const config = createTestS3StoreConfig();
 
         s3Store = yield* createS3Store({
           ...config,
-          kvStore,
-        });
+        }).pipe(Effect.map((store) => store as S3Store));
       }).pipe(Effect.provide(TestLayersWithMockS3())),
     );
   });
@@ -114,10 +111,7 @@ describe("S3Store - Integration Tests", () => {
           expect(completedUploadInfo.offset).toBe(testFile.size);
 
           // Step 4: Read back data and verify integrity
-          const readStream = yield* s3Store.read(testFile.id);
-          const readData = yield* Effect.promise(
-            async () => await streamToArray(readStream),
-          );
+          const readData = yield* s3Store.read(testFile.id);
 
           expect(compareArrays(readData, originalData)).toBe(true);
 
@@ -168,10 +162,7 @@ describe("S3Store - Integration Tests", () => {
           expect(finalOffset).toBe(testFile.size);
 
           // Verify data integrity for large file
-          const readStream = yield* s3Store.read(testFile.id);
-          const readData = yield* Effect.promise(
-            async () => await streamToArray(readStream),
-          );
+          const readData = yield* s3Store.read(testFile.id);
 
           expect(readData.length).toBe(originalData.length);
           expect(compareArrays(readData, originalData)).toBe(true);
@@ -243,10 +234,7 @@ describe("S3Store - Integration Tests", () => {
           expect(finalOffset).toBe(testFile.size);
 
           // Step 4: Verify complete file integrity
-          const readStream = yield* s3Store.read(testFile.id);
-          const readData = yield* Effect.promise(
-            async () => await streamToArray(readStream),
-          );
+          const readData = yield* s3Store.read(testFile.id);
 
           expect(compareArrays(readData, fullData)).toBe(true);
         }).pipe(Effect.provide(TestLayersWithMockS3())),
@@ -537,7 +525,9 @@ describe("S3Store - Integration Tests", () => {
           yield* s3Store.create(testFile2);
 
           // The mock implementation will handle this gracefully
-          const deletedCount = yield* s3Store.deleteExpired;
+          if (!s3Store.deleteExpired)
+            throw new Error("deleteExpired not supported");
+          const deletedCount = yield* s3Store.deleteExpired();
 
           // Should complete without error
           expect(deletedCount).toBeGreaterThanOrEqual(0);

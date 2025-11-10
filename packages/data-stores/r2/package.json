@@ -32,6 +32,7 @@
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "@uploadista/kv-store-memory": "workspace:*",
     "tsdown": "catalog:",
     "vitest": "4.0.8"
   }

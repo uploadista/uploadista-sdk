@@ -36,6 +36,7 @@ import type z from "zod";
  * ```
  */
 export type LayerSuccessUnion<
+  // biome-ignore lint/suspicious/noExplicitAny: Deprecated type kept for backward compatibility
   Layers extends readonly Layer.Layer<any, never, never>[],
 > = ExtractLayerServices<Layers>;
 

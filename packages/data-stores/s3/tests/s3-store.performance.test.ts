@@ -1,8 +1,7 @@
-import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createS3Store } from "../../src/s3-store";
-import type { S3Store } from "../../src/types";
+import { createS3Store } from "../src/s3-store";
+import type { S3Store } from "../src/types";
 import {
   benchmarkUpload,
   createPerformanceBenchmarks,
@@ -38,13 +37,11 @@ describe("S3Store - Performance Tests", () => {
       Effect.gen(function* () {
         mockService = yield* setupTestEnvironment();
 
-        const kvStore = yield* UploadFileKVStore;
         const config = createTestS3StoreConfig();
 
         s3Store = yield* createS3Store({
           ...config,
-          kvStore,
-        });
+        }).pipe(Effect.map((store) => store as S3Store));
       }).pipe(Effect.provide(TestLayersWithMockS3())),
     );
   });

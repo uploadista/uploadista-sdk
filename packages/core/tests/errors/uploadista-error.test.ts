@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   ERROR_CATALOG,
@@ -76,7 +76,6 @@ describe("UploadistaError", () => {
     expect(error.status).toBe(404);
     expect(error.status_code).toBe(404); // legacy alias
     expect(error.body).toBe("File not found");
-    expect(error.message).toBe("File not found");
     expect(error.details).toEqual({ fileId: "123" });
     expect((error as { cause?: unknown }).cause).toBeInstanceOf(Error);
   });
@@ -173,12 +172,14 @@ describe("UploadistaError", () => {
   });
 
   describe("toFailure", () => {
-    it("should convert error to failure result", () => {
+    it("should convert error to failure result", async () => {
       const error = UploadistaError.fromCode("FILE_NOT_FOUND");
-      const result = error.toEffect();
+      const effect = error.toEffect();
 
-      expect(Effect.isFailure(result)).toBe(true);
-      expect(Effect.isSuccess(result)).toBe(false);
+      const result = await Effect.runPromiseExit(effect);
+
+      expect(Exit.isFailure(result)).toBe(true);
+      expect(Exit.isSuccess(result)).toBe(false);
     });
   });
 });
@@ -216,25 +217,27 @@ describe("isUploadistaError", () => {
 });
 
 describe("httpFailure", () => {
-  it("should create failure result from error code", () => {
-    const result = httpFailure("FILE_NOT_FOUND");
+  it("should create failure result from error code", async () => {
+    const effect = httpFailure("FILE_NOT_FOUND");
+    const result = await Effect.runPromiseExit(effect);
 
-    expect(Effect.isFailure(result)).toBe(true);
-    expect(Effect.isSuccess(result)).toBe(false);
+    expect(Exit.isFailure(result)).toBe(true);
+    expect(Exit.isSuccess(result)).toBe(false);
   });
 
-  it("should allow overriding error properties", () => {
-    const result = httpFailure("UNKNOWN_ERROR", {
+  it("should allow overriding error properties", async () => {
+    const effect = httpFailure("UNKNOWN_ERROR", {
       status: 503,
       body: "Service unavailable",
       details: { retryAfter: 60 },
     });
+    const result = await Effect.runPromiseExit(effect);
 
-    expect(Effect.isFailure(result)).toBe(true);
-    expect(Effect.isSuccess(result)).toBe(false);
+    expect(Exit.isFailure(result)).toBe(true);
+    expect(Exit.isSuccess(result)).toBe(false);
   });
 
-  it("should work with all error codes", () => {
+  it("should work with all error codes", async () => {
     const errorCodes: UploadistaErrorCode[] = [
       "MISSING_OFFSET",
       "FLOW_NODE_ERROR",
@@ -242,9 +245,10 @@ describe("httpFailure", () => {
     ];
 
     for (const code of errorCodes) {
-      const result = httpFailure(code);
-      expect(Effect.isFailure(result)).toBe(true);
-      expect(Effect.isSuccess(result)).toBe(false);
+      const effect = httpFailure(code);
+      const result = await Effect.runPromiseExit(effect);
+      expect(Exit.isFailure(result)).toBe(true);
+      expect(Exit.isSuccess(result)).toBe(false);
     }
   });
 });

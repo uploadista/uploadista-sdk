@@ -1,18 +1,21 @@
 import type { UploadFile } from "@uploadista/core/types";
-import { UploadFileKVStore } from "@uploadista/core/types";
+import {
+  type UploadFileKVStore,
+  uploadFileKvStore,
+} from "@uploadista/core/types";
 import { memoryKvStore } from "@uploadista/kv-store-memory";
 import { Effect, Layer } from "effect";
 import {
   MockS3ClientLayer,
   type MockS3Config,
   type MockS3TestMethods,
-} from "../../services/__mocks__/s3-client-mock.service";
-import { S3ClientService } from "../../services/s3-client.service";
+} from "../../src/services/__mocks__/s3-client-mock.service";
+import { S3ClientService } from "../../src/services/s3-client.service";
 
 // Re-export types for tests
 export type { MockS3TestMethods };
 
-import type { S3StoreConfig } from "../../types";
+import type { S3StoreConfig } from "../../src/types";
 
 // Default test configuration
 export const DEFAULT_TEST_CONFIG: MockS3Config = {
@@ -48,22 +51,18 @@ export const createTestS3StoreConfig = (
 // Creates a fresh isolated KV store for each test
 export const TestLayersWithMockS3 = (
   mockConfig: MockS3Config = DEFAULT_TEST_CONFIG,
-) =>
-  Layer.mergeAll(
-    Layer.effect(
-      UploadFileKVStore,
-      Effect.sync(() => memoryKvStore<UploadFile>()),
-    ),
-    MockS3ClientLayer(TEST_BUCKET, mockConfig),
-  );
+) => {
+  // First provide the base KV store, then build the typed store from it
+  const kvLayer = uploadFileKvStore.pipe(Layer.provide(memoryKvStore));
+  // Merge the KV layer with the mock S3 layer
+  return Layer.merge(kvLayer, MockS3ClientLayer(TEST_BUCKET, mockConfig));
+};
 
 // Not implemented : Layer with real S3 client (for integration tests with LocalStack/Minio)
-export const TestLayersWithRealS3 = () =>
-  Layer.mergeAll(
-    Layer.effect(
-      UploadFileKVStore,
-      Effect.sync(() => memoryKvStore<UploadFile>()),
-    ),
+export const TestLayersWithRealS3 = () => {
+  const kvLayer = uploadFileKvStore.pipe(Layer.provide(memoryKvStore));
+  return Layer.merge(
+    kvLayer,
     Layer.succeed(S3ClientService, {
       bucket: TEST_BUCKET,
       // Add dummy implementations for the interface
@@ -85,12 +84,13 @@ export const TestLayersWithRealS3 = () =>
       deleteIncompletePart: () => Effect.die("Not implemented in test setup"),
     }),
   );
+};
 
 // Helper to get the mock service with testing methods
 export const getMockS3Service = (): Effect.Effect<
   S3ClientService["Type"] & MockS3TestMethods,
   never,
-  S3ClientService
+  S3ClientService | UploadFileKVStore
 > =>
   Effect.gen(function* () {
     const service = yield* S3ClientService;

@@ -1,15 +1,14 @@
 import { UploadFileKVStore } from "@uploadista/core/types";
 import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createS3Store } from "../../src/s3-store";
-import type { S3ClientService } from "../../src/services";
-import type { S3Store } from "../../src/types";
+import { createS3Store } from "../src/s3-store";
+import type { S3ClientService } from "../src/services/s3-client.service";
+import type { S3Store } from "../src/types";
 import {
   compareArrays,
   createStandardTestFiles,
   createTestDataStream,
   generateData,
-  streamToArray,
   TEST_FILE_SIZES,
 } from "./utils/test-data-generator";
 import {
@@ -34,13 +33,12 @@ describe("S3Store - Basic Upload Tests", () => {
         mockService = yield* setupTestEnvironment();
 
         // Create S3 store with test configuration
-        const kvStore = yield* UploadFileKVStore;
+
         const config = createTestS3StoreConfig();
 
         s3Store = yield* createS3Store({
           ...config,
-          kvStore,
-        });
+        }).pipe(Effect.map((store) => store as S3Store));
       }).pipe(Effect.provide(TestLayersWithMockS3())),
     );
   });
@@ -567,10 +565,7 @@ describe("S3Store - Basic Upload Tests", () => {
           );
 
           // Read file data
-          const readStream = yield* s3Store.read(testFile.id);
-          const readData = yield* Effect.promise(
-            async () => await streamToArray(readStream),
-          );
+          const readData = yield* s3Store.read(testFile.id);
 
           expect(compareArrays(readData, originalData)).toBe(true);
         }).pipe(Effect.provide(TestLayersWithMockS3())),

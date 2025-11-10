@@ -43,6 +43,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "tsd": "0.33.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "4.0.8"

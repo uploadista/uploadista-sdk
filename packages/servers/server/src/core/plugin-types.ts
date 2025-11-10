@@ -1,4 +1,4 @@
-import type { UploadistaError } from "@uploadista/core";
+import type { UploadistaError, VideoPluginLayer } from "@uploadista/core";
 import type {
   CredentialProviderLayer,
   ExtractLayerServices,
@@ -19,7 +19,6 @@ import type { z } from "zod";
  * @deprecated Use ExtractLayerServices from @uploadista/core/flow/types instead.
  *   This will be removed in a future version.
  */
-// biome-ignore lint/suspicious/noExplicitAny: Utility type for extracting services from any layer tuple
 export type ExtractServicesFromLayers<
   // biome-ignore lint/suspicious/noExplicitAny: Generic constraint must accept any layer configuration
   T extends readonly Layer.Layer<any, any, any>[],
@@ -31,6 +30,7 @@ export type ExtractServicesFromLayers<
  */
 export type KnownPluginLayer =
   | ImagePluginLayer
+  | VideoPluginLayer
   | ImageAiPluginLayer
   | CredentialProviderLayer
   | ZipPluginLayer;
@@ -186,8 +186,10 @@ export type ExtractFlowPluginRequirements<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
+  // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for error and requirements parameters
 > = ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, any, any>
-  ? TFlow extends Flow<any, any, infer TRequirements>
+  ? // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for input and output schema parameters
+    TFlow extends Flow<any, any, infer TRequirements>
     ? Exclude<TRequirements, never> // Exclude UploadServer is handled by FlowPluginRequirements in core
     : never
   : never;

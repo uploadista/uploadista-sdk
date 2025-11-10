@@ -21,7 +21,7 @@ describe("Filesystem KV Store", () => {
     // Clean up test directory
     try {
       await fs.rm(testDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
   });
@@ -70,10 +70,12 @@ describe("Filesystem KV Store", () => {
         Effect.gen(function* () {
           yield* store.set("key1", "value1");
           const filePath = path.join(testDir, "key1.json");
-          const exists = await fs
-            .access(filePath)
-            .then(() => true)
-            .catch(() => false);
+          const exists = yield* Effect.promise(() =>
+            fs
+              .access(filePath)
+              .then(() => true)
+              .catch(() => false),
+          );
           expect(exists).toBe(true);
         }),
       );
@@ -90,7 +92,8 @@ describe("Filesystem KV Store", () => {
           yield* store.set("key2", "value2");
           yield* store.set("key3", "value3");
 
-          const keys = yield* store.list!("");
+          if (!store.list) throw new Error("list not supported");
+          const keys = yield* store.list("");
           expect(keys).toHaveLength(3);
           expect(keys).toContain("key1");
           expect(keys).toContain("key2");
@@ -108,7 +111,8 @@ describe("Filesystem KV Store", () => {
           yield* store.set("user:2", "Jane");
           yield* store.set("post:1", "Post content");
 
-          const userKeys = yield* store.list!("user:");
+          if (!store.list) throw new Error("list not supported");
+          const userKeys = yield* store.list("user:");
           expect(userKeys).toHaveLength(2);
           expect(userKeys).toContain("user:1");
           expect(userKeys).toContain("user:2");
@@ -123,7 +127,8 @@ describe("Filesystem KV Store", () => {
       await Effect.runPromise(
         Effect.gen(function* () {
           yield* store.set("key1", "value1");
-          const keys = yield* store.list!("nonexistent:");
+          if (!store.list) throw new Error("list not supported");
+          const keys = yield* store.list("nonexistent:");
           expect(keys).toHaveLength(0);
         }),
       );
@@ -138,7 +143,8 @@ describe("Filesystem KV Store", () => {
           yield* store.set("a", "value");
           yield* store.set("m", "value");
 
-          const keys = yield* store.list!("");
+          if (!store.list) throw new Error("list not supported");
+          const keys = yield* store.list("");
           expect(keys).toEqual(["a", "m", "z"]);
         }),
       );
@@ -154,7 +160,8 @@ describe("Filesystem KV Store", () => {
           const obj = { name: "John", age: 30 };
           yield* store.set("user1", JSON.stringify(obj));
           const retrieved = yield* store.get("user1");
-          expect(JSON.parse(retrieved!)).toEqual(obj);
+          expect(retrieved).not.toBeNull();
+          expect(JSON.parse(retrieved as string)).toEqual(obj);
         }),
       );
     });
@@ -332,7 +339,8 @@ describe("Filesystem KV Store", () => {
             yield* store.set(`key${i}`, `value${i}`);
           }
 
-          const keys = yield* store.list!("");
+          if (!store.list) throw new Error("list not supported");
+          const keys = yield* store.list("");
           expect(keys).toHaveLength(keyCount);
         }),
       );
@@ -360,7 +368,7 @@ describe("Filesystem KV Store", () => {
       await Effect.runPromise(
         Effect.gen(function* () {
           yield* store.set("test", "value");
-          const files = await fs.readdir(testDir);
+          const files = yield* Effect.promise(() => fs.readdir(testDir));
           expect(files).toContain("test.json");
         }),
       );
@@ -373,9 +381,12 @@ describe("Filesystem KV Store", () => {
         Effect.gen(function* () {
           yield* store.set("key1", "value1");
           // Create a non-.json file manually
-          await fs.writeFile(path.join(testDir, "other.txt"), "content");
+          yield* Effect.promise(() =>
+            fs.writeFile(path.join(testDir, "other.txt"), "content"),
+          );
 
-          const keys = yield* store.list!("");
+          if (!store.list) throw new Error("list not supported");
+          const keys = yield* store.list("");
           expect(keys).toHaveLength(1);
           expect(keys).toContain("key1");
           expect(keys).not.toContain("other");
