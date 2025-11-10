@@ -35,6 +35,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",

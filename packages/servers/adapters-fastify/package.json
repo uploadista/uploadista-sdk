@@ -15,10 +15,13 @@
   },
   "scripts": {
     "build": "tsdown",
+    "check": "biome check --write ./src",
+    "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src",
-    "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
@@ -30,10 +33,12 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "4.0.8"
   },
   "peerDependencies": {
     "fastify": "^4.0.0 || ^5.0.0",

@@ -4,6 +4,7 @@ packages:
   - examples/**/*
 
 catalog:
+  '@effect/vitest': 0.17.1
   '@types/node': 24.10.0
   effect: 3.19.3
   hono: 4.10.4

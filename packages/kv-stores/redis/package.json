@@ -15,9 +15,12 @@
   },
   "scripts": {
     "build": "tsdown",
+    "check": "biome check --write ./src",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
@@ -27,8 +30,10 @@
     "@redis/client": ">=5.8.0 <6.0.0"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@redis/client": "5.9.0",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

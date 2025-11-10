@@ -72,6 +72,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
