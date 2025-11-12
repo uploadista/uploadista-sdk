@@ -41,7 +41,7 @@ import { AVNodeVideoPluginWithCheck } from "@uploadista/flow-videos-av-node";
 const result = await Effect.runPromise(
   flowProgram.pipe(Effect.provide(AVNodeVideoPluginWithCheck))
 );
-// Logs: "✓ node-av 3.x detected" or warning if not found
+// Logs: "✓ node-av 4.x detected" or warning if not found
 ```
 
 ## Supported Formats

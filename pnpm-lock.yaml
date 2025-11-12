@@ -1446,8 +1446,8 @@ importers:
         specifier: 'catalog:'
         version: 3.19.3
       node-av:
-        specifier: ^3.1.3
-        version: 3.1.3
+        specifier: 4.0.0
+        version: 4.0.0
       zod:
         specifier: 'catalog:'
         version: 4.1.12
@@ -1455,9 +1455,6 @@ importers:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.27.0(effect@3.19.3)(vitest@4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
-      '@types/fluent-ffmpeg':
-        specifier: ^2.1.28
-        version: 2.1.28
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -5457,50 +5454,50 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
-  '@seydx/node-av-darwin-arm64@3.1.3':
-    resolution: {integrity: sha512-DAZC06kcMtkt0KjX6Ho8Au2MA3zYKVosXz3HchG1ksvBpjxgKdNj7p0uMv1fDPS4X3QyJZjZNMNX9hptIZFGCQ==}
+  '@seydx/node-av-darwin-arm64@4.0.0':
+    resolution: {integrity: sha512-iMquoi2kRjKnFvggFICfHygqcOnK4nFzytmPFmzOiN+J321GQjZ7x4bDZ72DJkKHfG2CmxiMvWkWoDiJRoV+1g==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [darwin]
 
-  '@seydx/node-av-darwin-x64@3.1.3':
-    resolution: {integrity: sha512-VakpKssEI9H/0Us0RKjDXJDrap2bNwED08N0v01opMlb9i3cZMu9kU8he7dg2CGP1EgwKwlKcFyrIkfMbRxrzw==}
+  '@seydx/node-av-darwin-x64@4.0.0':
+    resolution: {integrity: sha512-SzeBeYmWt6s5aWVom6qBJrX2MmHuIy/faV9RvS3BAuilVbAqCMrQqeqM6K2MUmygEeES5SRljbgapUeL3QyuLQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [darwin]
 
-  '@seydx/node-av-linux-arm64@3.1.3':
-    resolution: {integrity: sha512-VReZb7gXXUycgBf0M43YnP724zTxjkRXe/erP/PP3n4gRXxDvtDC5RgGfgskcKgKAv3gOdDbWP8YAflMfvXwqg==}
+  '@seydx/node-av-linux-arm64@4.0.0':
+    resolution: {integrity: sha512-U8+BMPiQnW7CX90Qt9E64aSO1htUgqM1DScMO0UXwJImS/I7J45G4vVoG5jlwpeZJeKUdcF0Hl5nQWQQMvxG8w==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [linux]
 
-  '@seydx/node-av-linux-x64@3.1.3':
-    resolution: {integrity: sha512-oYxMVUhc2Z7Y6tbGIoBSkxQO0naR7S6er6SFWCXhcAjEqQ8gV0oAGKMr+Kdn2LW0i7JKtiyUzFkPSPSM6nWQow==}
+  '@seydx/node-av-linux-x64@4.0.0':
+    resolution: {integrity: sha512-8420xLQgieLZPKb3gnT25Ppj3kUKnnAfJcaAKdakki0eIL7DSt272ImhK54HQSBpJZPR7CJyirfaNF1fcKovzQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [linux]
 
-  '@seydx/node-av-win32-arm64-mingw@3.1.3':
-    resolution: {integrity: sha512-Qui6fQ57AMsNilScxconfYqJ/kVLzeA8DoLRtaGYg9WrJtUscik6TbKzMfTt+7iY1AFiFPPaixYre7aDM90J5Q==}
+  '@seydx/node-av-win32-arm64-mingw@4.0.0':
+    resolution: {integrity: sha512-Ajruxp81KSZcZJiLsL5abR/oVglNJZLMAfYjdb6HMDsZ+QKsXKuYOv9pIJEXygBW9ev2SqXuudW+6m6gX2MFmA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [win32]
 
-  '@seydx/node-av-win32-arm64-msvc@3.1.3':
-    resolution: {integrity: sha512-PsRTEEcAR+yV/RZtPuAL8PkUL1uU+jXTftsGpYso4JbqxBXx+TctyJ3biwgb9QALoCiiEcOZGvoaXWnS6nfVUA==}
+  '@seydx/node-av-win32-arm64-msvc@4.0.0':
+    resolution: {integrity: sha512-+qen/47MvZsJJGize8b8nMl8Dfk2OEpJMgALISannNvlMFq01SgCtw+HJWA41GSJJb/k7Hac+e+AL0IHDOBlNg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [win32]
 
-  '@seydx/node-av-win32-x64-mingw@3.1.3':
-    resolution: {integrity: sha512-/m/yP/73QL4n0719L6ryzjPebnV1YFpg9PP3I3cb4OA52FsteCdM0788mDyVPvPyg/NHSYNzhS9Dt2U6t+gMhA==}
+  '@seydx/node-av-win32-x64-mingw@4.0.0':
+    resolution: {integrity: sha512-hKXG4PVVsySljalMUH7AOK4e2r6vWVOQJybZn46YDhlahTgpvrhlxYwGSKOMv25dTjXPqzK+vglHxOZiCuQ/rQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
 
-  '@seydx/node-av-win32-x64-msvc@3.1.3':
-    resolution: {integrity: sha512-TipsnbabfE+fnCFqBZ3w4ry00W0wuAgCIVIR9yQFK9nIsCjsSp0GbNP1zTPRqXmVvIkBcqQ7FZ8tuVUHKiXUSQ==}
+  '@seydx/node-av-win32-x64-msvc@4.0.0':
+    resolution: {integrity: sha512-I0TjQT1/oibsi+Br7qASEwClpI3SnobM0rRF2+/BwGR9OdjHakO6jHXB/ZhryohtemYWCbtPKwmvPBUv+RfnPQ==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
@@ -5998,9 +5995,6 @@ packages:
 
   '@types/express@5.0.5':
     resolution: {integrity: sha512-LuIQOcb6UmnF7C1PCFmEU1u2hmiHL43fgFQX67sN3H4Z+0Yk0Neo++mFsBjhOAuLzvlQeqAAkeDOZrJs9rzumQ==}
-
-  '@types/fluent-ffmpeg@2.1.28':
-    resolution: {integrity: sha512-5ovxsDwBcPfJ+eYs1I/ZpcYCnkce7pvH9AHSvrZllAp1ZPpTRDZAFjF3TRFbukxSgIYTTNYePbS0rKUmaxVbXw==}
 
   '@types/graceful-fs@4.1.9':
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
@@ -9258,8 +9252,8 @@ packages:
       sass:
         optional: true
 
-  node-av@3.1.3:
-    resolution: {integrity: sha512-/fUEOytDV2xglkeHGVFH+T+nmJ5B9tFDNK4v/X9K3aabulpHxRfOO7yupAl5yNG5ppCEGk1YU9JUGml1/9ME5w==}
+  node-av@4.0.0:
+    resolution: {integrity: sha512-fx5BItaqjzDaxyMIfWAI7C4Rp+1AYKX2oCCDLiLsPw3T4zzZwnXjRAei1O+qUvF4S7qfAYWPrUkqdjG5XHJsJg==}
 
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
@@ -15830,42 +15824,42 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@seydx/node-av-darwin-arm64@3.1.3':
+  '@seydx/node-av-darwin-arm64@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-darwin-x64@3.1.3':
+  '@seydx/node-av-darwin-x64@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-linux-arm64@3.1.3':
+  '@seydx/node-av-linux-arm64@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-linux-x64@3.1.3':
+  '@seydx/node-av-linux-x64@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-arm64-mingw@3.1.3':
+  '@seydx/node-av-win32-arm64-mingw@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-arm64-msvc@3.1.3':
+  '@seydx/node-av-win32-arm64-msvc@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-x64-mingw@3.1.3':
+  '@seydx/node-av-win32-x64-mingw@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-x64-msvc@3.1.3':
+  '@seydx/node-av-win32-x64-msvc@4.0.0':
     dependencies:
       unzipper: 0.12.3
     optional: true
@@ -16485,10 +16479,6 @@ snapshots:
       '@types/body-parser': 1.19.6
       '@types/express-serve-static-core': 5.1.0
       '@types/serve-static': 1.15.10
-
-  '@types/fluent-ffmpeg@2.1.28':
-    dependencies:
-      '@types/node': 24.10.1
 
   '@types/graceful-fs@4.1.9':
     dependencies:
@@ -20580,19 +20570,19 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  node-av@3.1.3:
+  node-av@4.0.0:
     dependencies:
       unzipper: 0.12.3
       werift: 0.22.2
     optionalDependencies:
-      '@seydx/node-av-darwin-arm64': 3.1.3
-      '@seydx/node-av-darwin-x64': 3.1.3
-      '@seydx/node-av-linux-arm64': 3.1.3
-      '@seydx/node-av-linux-x64': 3.1.3
-      '@seydx/node-av-win32-arm64-mingw': 3.1.3
-      '@seydx/node-av-win32-arm64-msvc': 3.1.3
-      '@seydx/node-av-win32-x64-mingw': 3.1.3
-      '@seydx/node-av-win32-x64-msvc': 3.1.3
+      '@seydx/node-av-darwin-arm64': 4.0.0
+      '@seydx/node-av-darwin-x64': 4.0.0
+      '@seydx/node-av-linux-arm64': 4.0.0
+      '@seydx/node-av-linux-x64': 4.0.0
+      '@seydx/node-av-win32-arm64-mingw': 4.0.0
+      '@seydx/node-av-win32-arm64-msvc': 4.0.0
+      '@seydx/node-av-win32-x64-mingw': 4.0.0
+      '@seydx/node-av-win32-x64-msvc': 4.0.0
     transitivePeerDependencies:
       - supports-color
 
