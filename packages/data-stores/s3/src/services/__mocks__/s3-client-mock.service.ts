@@ -339,12 +339,15 @@ export const makeMockS3ClientService = (
         const upload = storage.multipartUploads.get(context.uploadId);
 
         if (!upload) {
-          return yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_NOT_FOUND",
-              new Error(`Upload not found: ${context.uploadId}`),
-            ),
+          // Return AWS-style error to match real S3 behavior
+          const awsError = new Error(
+            `Upload not found: ${context.uploadId}`,
+          ) as Error & { code: string };
+          awsError.code = "NoSuchUpload";
+          yield* Effect.fail(
+            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
           );
+          return ""; // Never reached but helps TypeScript
         }
 
         const etag = generateETag(context.data);
@@ -374,11 +377,13 @@ export const makeMockS3ClientService = (
         const upload = storage.multipartUploads.get(context.uploadId);
 
         if (!upload) {
+          // Return AWS-style error to match real S3 behavior
+          const awsError = new Error(
+            `Upload not found: ${context.uploadId}`,
+          ) as Error & { code: string };
+          awsError.code = "NoSuchUpload";
           yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_NOT_FOUND",
-              new Error(`Upload not found: ${context.uploadId}`),
-            ),
+            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
           );
           return; // This will never execute but helps TypeScript
         }
@@ -408,6 +413,20 @@ export const makeMockS3ClientService = (
           (sum, part) => sum + part.length,
           0,
         );
+
+        // Check if total size exceeds configured maximum
+        const config = yield* Ref.get(configRef);
+        if (config.maxObjectSize && totalLength > config.maxObjectSize) {
+          yield* Effect.fail(
+            UploadistaError.fromCode(
+              "FILE_WRITE_ERROR",
+              new Error(
+                `Total upload size ${totalLength} exceeds maximum ${config.maxObjectSize}`,
+              ),
+            ),
+          );
+        }
+
         const combinedData = new Uint8Array(totalLength);
         let offset = 0;
 
@@ -458,12 +477,19 @@ export const makeMockS3ClientService = (
         const upload = storage.multipartUploads.get(context.uploadId);
 
         if (!upload) {
-          return yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_NOT_FOUND",
-              new Error(`Upload not found: ${context.uploadId}`),
-            ),
+          // Return AWS-style error to match real S3 behavior
+          const awsError = new Error(
+            `Upload not found: ${context.uploadId}`,
+          ) as Error & { code: string };
+          awsError.code = "NoSuchUpload";
+          yield* Effect.fail(
+            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
           );
+          return {
+            parts: [],
+            isTruncated: false,
+            nextPartNumberMarker: undefined,
+          }; // Never reached but helps TypeScript
         }
 
         const parts: AWS.Part[] = Array.from(upload.parts.entries())

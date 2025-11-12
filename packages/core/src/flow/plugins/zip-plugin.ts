@@ -1,6 +1,6 @@
-import type { UploadistaError } from "@uploadista/core/errors";
 import { Context, type Effect, type Layer } from "effect";
 import type { UploadFile } from "@/types";
+import type { UploadistaError } from "../../errors";
 
 /**
  * Parameters for creating a ZIP archive.

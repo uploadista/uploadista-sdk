@@ -1,5 +1,5 @@
 import { Context, type Effect, type Layer } from "effect";
-import type { UploadistaError } from "@/errors";
+import type { UploadistaError } from "../../errors";
 
 /**
  * Shape definition for the Credential Provider interface.

@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-azure",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "Azure Blob Storage data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -15,9 +15,12 @@
   },
   "scripts": {
     "build": "tsdown",
+    "check": "biome check --write ./src",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,7 +32,9 @@
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

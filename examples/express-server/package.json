@@ -16,6 +16,7 @@
     "@redis/client": "5.8.3",
     "@uploadista/adapters-express": "workspace:*",
     "@uploadista/core": "workspace:*",
+    "@uploadista/example-flows": "workspace:*",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/kv-store-filesystem": "workspace:*",
     "@uploadista/event-broadcaster-memory": "workspace:*",

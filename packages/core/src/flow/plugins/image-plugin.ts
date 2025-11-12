@@ -1,5 +1,5 @@
-import type { UploadistaError } from "@uploadista/core/errors";
 import { Context, type Effect, type Layer } from "effect";
+import type { UploadistaError } from "../../errors";
 import type { OptimizeParams } from "./types/optimize-node";
 import type { ResizeParams } from "./types/resize-node";
 import type { Transformation } from "./types/transform-image-node";

@@ -1,5 +1,5 @@
-import type { UploadistaError } from "@uploadista/core/errors";
 import { Context, type Effect, type Layer } from "effect";
+import type { UploadistaError } from "../../errors";
 
 /**
  * Context information for AI image processing operations.

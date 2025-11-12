@@ -60,11 +60,14 @@ export const extractExpressRequest = (
           const lastSegment = routeSegments[routeSegments.length - 1];
 
           if (lastSegment === "capabilities") {
-            const storageId =
-              url.searchParams.get("storageId") ||
-              routeSegments[routeSegments.length - 2];
+            const storageId = url.searchParams.get("storageId");
+            const storageIdFromPath = routeSegments[routeSegments.length - 2];
 
-            if (!storageId) {
+            // Only use path segment if it's not "upload"
+            const finalStorageId =
+              storageId || (storageIdFromPath !== "upload" ? storageIdFromPath : null);
+
+            if (!finalStorageId) {
               return {
                 type: "bad-request",
                 message: "Storage ID is required",
@@ -72,7 +75,7 @@ export const extractExpressRequest = (
             }
             return {
               type: "get-capabilities",
-              storageId,
+              storageId: finalStorageId,
             } as UploadistaRequest;
           }
           if (routeSegments.length < 2) {
@@ -149,13 +152,14 @@ export const extractExpressRequest = (
       }
     } else if (routeSegments[0] === "jobs" || routeSegments.includes("jobs")) {
       if (ctx.request.method === "GET" && url.pathname.endsWith("/status")) {
-        const jobId = routeSegments[1];
-        if (!jobId) {
+        // Need at least 3 segments: jobs, jobId, status
+        if (routeSegments.length < 3) {
           return {
             type: "bad-request",
             message: "Job ID is required",
           } as UploadistaRequest;
         }
+        const jobId = routeSegments[1];
         return {
           type: "job-status",
           jobId,
@@ -179,7 +183,7 @@ export const extractExpressRequest = (
           } as UploadistaRequest;
         }
 
-        const contentType = ctx.request.get("Content-Type");
+        const contentType = ctx.request.get("content-type");
         let newData: unknown;
 
         // Handle different content types
@@ -244,11 +248,16 @@ export const sendExpressResponse = (
   ctx: ExpressContext,
 ) =>
   Effect.sync(() => {
-    // Set headers
-    if (response.headers) {
-      for (const [key, value] of Object.entries(response.headers)) {
-        ctx.response.setHeader(key, value);
-      }
+    // Set default Content-Type header if not provided
+    const headers = response.headers || {};
+    if (!headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
     }
-    return ctx.response.status(response.status).json(response.body);
+
+    // Set headers
+    for (const [key, value] of Object.entries(headers)) {
+      ctx.response.set(key, value);
+    }
+
+    return ctx.response.status(response.status).send(response.body);
   });

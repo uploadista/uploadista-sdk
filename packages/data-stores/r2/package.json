@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-r2",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "Cloudflare R2 data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,14 +24,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "4.20251106.1",
+    "@cloudflare/workers-types": "4.20251111.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "@uploadista/kv-store-memory": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.7"
+    "vitest": "4.0.8"
   }
 }

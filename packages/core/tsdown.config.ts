@@ -9,6 +9,7 @@ export default defineConfig({
     "upload/index": "src/upload/index.ts",
     "streams/index": "src/streams/index.ts",
     "utils/index": "src/utils/index.ts",
+    "testing/index": "src/testing/index.ts",
   },
   minify: true,
   format: ["esm", "cjs"],

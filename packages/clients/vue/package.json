@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/vue",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "Vue client for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -48,7 +48,7 @@
     "@vue/test-utils": "^2.4.6",
     "tsdown": "catalog:",
     "unplugin-vue": "^7.0.2",
-    "vitest": "4.0.7",
+    "vitest": "4.0.8",
     "vue": "^3.5.0",
     "vue-tsc": "3.1.3"
   }

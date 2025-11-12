@@ -42,11 +42,28 @@ export const handleS3NotFoundError = (
 export const isUploadNotFoundError = (
   error: unknown,
 ): error is { code: "NoSuchUpload" | "NoSuchKey" } => {
-  return (
+  // Check direct error code
+  if (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     typeof error.code === "string" &&
     (error.code === "NoSuchUpload" || error.code === "NoSuchKey")
-  );
+  ) {
+    return true;
+  }
+
+  // Check if it's an UploadistaError wrapping an AWS error with code
+  if (
+    error instanceof UploadistaError &&
+    error.cause &&
+    typeof error.cause === "object" &&
+    "code" in error.cause &&
+    typeof error.cause.code === "string" &&
+    (error.cause.code === "NoSuchUpload" || error.cause.code === "NoSuchKey")
+  ) {
+    return true;
+  }
+
+  return false;
 };

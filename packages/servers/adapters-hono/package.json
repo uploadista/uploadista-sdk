@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/adapters-hono",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "Hono adapter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,7 +24,7 @@
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "4.20251106.1",
+    "@cloudflare/workers-types": "4.20251111.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "@uploadista/event-broadcaster-memory": "workspace:*",
@@ -35,13 +35,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
     "hono": "^4.0.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.7"
+    "vitest": "4.0.8"
   },
   "peerDependencies": {
     "hono": "^4.0.0"

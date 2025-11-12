@@ -44,11 +44,14 @@ export const extractFastifyRequest = (
           const lastSegment = routeSegments[routeSegments.length - 1];
 
           if (lastSegment === "capabilities") {
-            const storageId =
-              url.searchParams.get("storageId") ||
-              routeSegments[routeSegments.length - 2];
+            const storageId = url.searchParams.get("storageId");
+            const storageIdFromPath = routeSegments[routeSegments.length - 2];
 
-            if (!storageId) {
+            // Only use path segment if it's not "upload"
+            const finalStorageId =
+              storageId || (storageIdFromPath !== "upload" ? storageIdFromPath : null);
+
+            if (!finalStorageId) {
               return {
                 type: "bad-request",
                 message: "Storage ID is required",
@@ -56,7 +59,7 @@ export const extractFastifyRequest = (
             }
             return {
               type: "get-capabilities",
-              storageId,
+              storageId: finalStorageId,
             } as UploadistaRequest;
           }
           if (routeSegments.length < 2) {
@@ -133,13 +136,14 @@ export const extractFastifyRequest = (
       }
     } else if (routeSegments[0] === "jobs" || routeSegments.includes("jobs")) {
       if (request.method === "GET" && url.pathname.endsWith("/status")) {
-        const jobId = routeSegments[1];
-        if (!jobId) {
+        // Need at least 3 segments: jobs, jobId, status
+        if (routeSegments.length < 3) {
           return {
             type: "bad-request",
             message: "Job ID is required",
           } as UploadistaRequest;
         }
+        const jobId = routeSegments[1];
         return {
           type: "job-status",
           jobId,
@@ -239,16 +243,15 @@ export const sendFastifyResponse = (
     // Fastify expects handlers to use the reply object
     const { reply } = ctx;
 
-    // Set headers if provided
-    if (response.headers) {
-      for (const [key, value] of Object.entries(response.headers)) {
-        reply.header(key, value);
-      }
+    // Set default Content-Type header if not provided
+    const headers = response.headers || {};
+    if (!headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
     }
 
-    // Set Content-Type if not already set
-    if (!reply.getHeader("Content-Type")) {
-      reply.header("Content-Type", "application/json");
+    // Set headers
+    for (const [key, value] of Object.entries(headers)) {
+      reply.header(key, value);
     }
 
     // Send response

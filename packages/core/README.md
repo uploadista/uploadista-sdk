@@ -745,7 +745,7 @@ type DataStore<TData> = {
     options: DataStoreWriteOptions,
     dependencies: { onProgress?: (chunkSize: number) => void }
   ) => Effect.Effect<number, UploadistaError>;
-  readonly deleteExpired?: Effect.Effect<number, UploadistaError>;
+  readonly deleteExpired?: () => Effect.Effect<number, UploadistaError>;
   readonly getCapabilities: () => DataStoreCapabilities;
   readonly validateUploadStrategy: (
     strategy: UploadStrategy

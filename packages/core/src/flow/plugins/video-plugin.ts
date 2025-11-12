@@ -1,5 +1,5 @@
-import type { UploadistaError } from "@uploadista/core/errors";
 import { Context, type Effect, type Layer } from "effect";
+import type { UploadistaError } from "../../errors";
 import type { DescribeVideoMetadata } from "./types/describe-video-node";
 import type { ExtractFrameVideoParams } from "./types/extract-frame-video-node";
 import type { ResizeVideoParams } from "./types/resize-video-node";

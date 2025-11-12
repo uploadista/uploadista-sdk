@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-images-sharp",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "Sharp image processing service for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -17,7 +17,10 @@
     "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
     "sharp": "0.34.5",
@@ -27,9 +30,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@types/tinycolor2": "1.4.6",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

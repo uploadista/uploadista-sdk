@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-utility-zipjs",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "ZipJS utility for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -17,7 +17,10 @@
     "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "check": "biome check --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
@@ -26,8 +29,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

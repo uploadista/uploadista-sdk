@@ -47,7 +47,7 @@ export type ExtractLayerService<
  * the services they provide, combining them into a single union type.
  *
  * @template T - A readonly tuple of Layer types
- * @returns A union of all service types provided by the layers
+ * @returns A union of all service types provided by the layers, or never for empty tuples
  *
  * @example
  * ```typescript
@@ -68,12 +68,23 @@ export type ExtractLayerService<
  * type AllServices = ExtractLayerServices<PluginLayers>;
  * // AllServices = ImagePlugin | ZipPlugin
  * ```
+ *
+ * @example
+ * ```typescript
+ * type EmptyLayers = [];
+ * type NoServices = ExtractLayerServices<EmptyLayers>;
+ * // NoServices = never
+ * ```
  */
 export type ExtractLayerServices<
   // biome-ignore lint/suspicious/noExplicitAny: Generic constraint must work with any layer configuration
   T extends readonly Layer.Layer<any, any, any>[],
-  // biome-ignore lint/suspicious/noExplicitAny: Type extraction requires any for inference
-> = T[number] extends Layer.Layer<infer S, any, any> ? S : never;
+> = T extends readonly []
+  ? never
+  : {
+      // biome-ignore lint/suspicious/noExplicitAny: Type extraction requires any for inference
+      [K in keyof T]: T[K] extends Layer.Layer<infer S, any, any> ? S : never;
+    }[number];
 
 /**
  * Unwraps an Effect type to extract its success value type.

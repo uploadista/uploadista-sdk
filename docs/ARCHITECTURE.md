@@ -547,7 +547,7 @@ type DataStore<TData = UploadFile> = {
     options: DataStoreWriteOptions,
     dependencies: { onProgress?: (bytes: number) => void }
   ) => Effect<number>;                                // Write stream at offset, returns bytes written
-  readonly deleteExpired?: Effect<number>;            // Optional cleanup
+  readonly deleteExpired?: () => Effect<number>;            // Optional cleanup
   readonly getCapabilities: () => DataStoreCapabilities;
   readonly validateUploadStrategy: (strategy) => Effect<boolean>;
 };

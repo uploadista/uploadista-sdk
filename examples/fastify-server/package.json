@@ -15,6 +15,7 @@
   "dependencies": {
     "@uploadista/adapters-fastify": "workspace:*",
     "@uploadista/core": "workspace:*",
+    "@uploadista/example-flows": "workspace:*",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/kv-store-filesystem": "workspace:*",
     "@uploadista/data-store-filesystem": "workspace:*",

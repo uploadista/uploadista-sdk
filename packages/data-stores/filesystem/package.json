@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-filesystem",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "File system data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -14,11 +14,14 @@
     }
   },
   "scripts": {
-    "dev": "tsc -b",
     "build": "tsdown",
+    "check": "biome check --write ./src",
+    "dev": "tsc -b",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
@@ -26,8 +29,11 @@
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
+    "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

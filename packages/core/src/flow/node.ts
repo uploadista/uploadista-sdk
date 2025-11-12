@@ -114,7 +114,7 @@ export type ConditionValue = string | number;
  * });
  * ```
  */
-export function createFlowNode<Input, Output>({
+export function createFlowNode<Input, Output, TType extends NodeType = NodeType>({
   id,
   name,
   description,
@@ -131,7 +131,7 @@ export function createFlowNode<Input, Output>({
   id: string;
   name: string;
   description: string;
-  type: NodeType;
+  type: TType;
   inputSchema: z.ZodSchema<Input>;
   outputSchema: z.ZodSchema<Output>;
   run: (args: {
@@ -154,7 +154,7 @@ export function createFlowNode<Input, Output>({
     retryDelay?: number;
     exponentialBackoff?: boolean;
   };
-}): Effect.Effect<FlowNode<Input, Output, UploadistaError>> {
+}): Effect.Effect<FlowNode<Input, Output, UploadistaError> & { type: TType }> {
   return Effect.succeed({
     id,
     name,
@@ -223,7 +223,7 @@ export function createFlowNode<Input, Output>({
     multiInput,
     multiOutput,
     retry,
-  });
+  } as FlowNode<Input, Output, UploadistaError> & { type: TType });
 }
 
 /**

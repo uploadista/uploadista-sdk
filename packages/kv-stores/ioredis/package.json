@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-ioredis",
   "type": "module",
-  "version": "0.0.13-beta.3",
+  "version": "0.0.13-beta.5",
   "description": "Redis KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -15,17 +15,25 @@
   },
   "scripts": {
     "build": "tsdown",
+    "check": "biome check --write ./src",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "ioredis": "5.8.2",
     "effect": "catalog:"
   },
+  "peerDependencies": {
+    "ioredis": ">=5.0.0 <6.0.0"
+  },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "ioredis": "5.8.2",
+    "tsdown": "catalog:",
+    "vitest": "4.0.8"
   }
 }

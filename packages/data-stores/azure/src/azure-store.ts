@@ -869,7 +869,12 @@ export function azureStore({
               try {
                 // Commit all blocks to finalize the blob
                 yield* commitBlocks(uploadFile, blockIds);
-                yield* clearCache(file_id);
+
+                // Update the upload file with the final offset in the KV store
+                yield* kvStore.set(file_id, {
+                  ...uploadFile,
+                  offset: newOffset,
+                });
 
                 // Log completion with observability
                 yield* logAzureUploadCompletion(file_id, {
