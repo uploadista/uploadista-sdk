@@ -139,11 +139,32 @@ export function createTransformNode({
             stream,
           );
 
+          // Merge updated metadata with result
+          const updatedMetadata = metadata
+            ? {
+                ...metadata,
+                // Update mimeType and related fields if type changed
+                ...(outputType && {
+                  mimeType: outputType,
+                  type: outputType,
+                  "content-type": outputType,
+                }),
+                // Update fileName and related fields if fileName changed
+                ...(outputFileName && {
+                  fileName: outputFileName,
+                  originalName: outputFileName,
+                  name: outputFileName,
+                  // Update extension based on new fileName
+                  extension: outputFileName.split(".").pop() || metadata.extension,
+                }),
+              }
+            : result.metadata;
+
           return completeNodeExecution(
-            metadata
+            updatedMetadata
               ? {
                   ...result,
-                  metadata,
+                  metadata: updatedMetadata,
                 }
               : result,
           );

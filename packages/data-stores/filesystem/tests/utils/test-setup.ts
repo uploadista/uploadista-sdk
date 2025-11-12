@@ -2,10 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { UploadFile } from "@uploadista/core/types";
-import {
-  type UploadFileKVStore,
-  uploadFileKvStore,
-} from "@uploadista/core/types";
+import { uploadFileKvStore } from "@uploadista/core/types";
 import { memoryKvStore } from "@uploadista/kv-store-memory";
 import { Effect, Layer } from "effect";
 import type { FileStoreOptions } from "../../src/file-store";
@@ -21,7 +18,9 @@ export const createTestDirectory = (): Effect.Effect<string, never> =>
   });
 
 // Helper to clean up test directory
-export const cleanupTestDirectory = (directory: string): Effect.Effect<void, never> =>
+export const cleanupTestDirectory = (
+  directory: string,
+): Effect.Effect<void, never> =>
   Effect.promise(async () => {
     try {
       await fs.rm(directory, { recursive: true, force: true });
@@ -47,8 +46,8 @@ export const TestLayersWithMemoryKV = () => {
 };
 
 // Helper to run tests with timeout
-export const runTestWithTimeout = async <E, R>(
-  effect: Effect.Effect<void, E, R>,
+export const runTestWithTimeout = async <E>(
+  effect: Effect.Effect<void, E>,
   timeout = 10000,
 ) => {
   await Effect.runPromise(Effect.timeout(effect, `${timeout} millis`));
@@ -59,7 +58,7 @@ export const createTestUploadFile = (
   id: string,
   size: number,
   options: {
-    metadata?: Record<string, unknown>;
+    metadata?: Record<string, string | number | boolean>;
   } = {},
 ): UploadFile => ({
   id,
@@ -84,7 +83,7 @@ export const assertFileExists = (
     const filePath = path.join(directory, fileId);
     try {
       await fs.access(filePath);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`File ${fileId} not found at ${filePath}`);
     }
   });
@@ -120,7 +119,7 @@ export const listFiles = (directory: string): Effect.Effect<string[], never> =>
         // Filter out directories
         return !file.endsWith("/");
       });
-    } catch (error) {
+    } catch (_error) {
       return [];
     }
   });

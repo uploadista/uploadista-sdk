@@ -53,6 +53,12 @@
       "import": "./dist/websocket/index.mjs",
       "require": "./dist/websocket/index.cjs",
       "default": "./dist/websocket/index.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.mts",
+      "import": "./dist/testing/index.mjs",
+      "require": "./dist/testing/index.cjs",
+      "default": "./dist/testing/index.mjs"
     }
   },
   "scripts": {
