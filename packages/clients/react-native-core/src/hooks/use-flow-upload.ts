@@ -1,6 +1,7 @@
 import type { UploadFile } from "@uploadista/core/types";
 import { useCallback, useRef, useState } from "react";
 import type { FilePickResult, UseFlowUploadOptions } from "../types";
+import { createBlobFromBuffer } from "../types/platform-types";
 import { useUploadistaContext } from "./use-uploadista-context";
 
 export type FlowUploadStatus =
@@ -130,19 +131,11 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
         // Read file content
         const fileContent = await fileSystemProvider.readFile(file.data.uri);
 
-        // Create a Blob from the file content
-        // Convert ArrayBuffer to Uint8Array for better compatibility
-        const data =
-          fileContent instanceof ArrayBuffer
-            ? new Uint8Array(fileContent)
-            : fileContent;
-        // Note: Using any cast here because React Native Blob accepts BufferSource
-        // but TypeScript's lib.dom.d.ts Blob type doesn't include it
-        // biome-ignore lint/suspicious/noExplicitAny: React Native Blob accepts BufferSource
-        const blob = new Blob([data as any], {
+        // Create a Blob from the file content using platform-aware utility
+        // Handles differences between React Native and browser Blob APIs
+        const blob = createBlobFromBuffer(fileContent, {
           type: file.data.mimeType || "application/octet-stream",
-          // biome-ignore lint/suspicious/noExplicitAny: BlobPropertyBag type differs by platform
-        } as any);
+        });
 
         // use the Blob (for React Native)
         const uploadInput = blob;

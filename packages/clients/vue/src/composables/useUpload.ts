@@ -1,72 +1,33 @@
 import type {
-  UploadistaEvent,
-  UploadOptions,
+	ChunkMetrics,
+	PerformanceInsights,
+	UploadSessionMetrics,
 } from "@uploadista/client-browser";
+import type {
+	UploadMetrics,
+	UploadOptions,
+} from "@uploadista/client-core";
+import {
+	UploadManager,
+	type UploadState,
+	type UploadStatus,
+} from "@uploadista/client-core";
 import type { UploadFile } from "@uploadista/core/types";
-import { UploadEventType } from "@uploadista/core/types";
-import { computed, onUnmounted, readonly, ref } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 import { useUploadistaClient } from "./useUploadistaClient";
 
-// Re-export types for convenience
+// Re-export types from core for convenience
+export type { UploadState, UploadStatus };
 export type UploadInput = File | Blob;
-export type ChunkMetrics = any;
-export type PerformanceInsights = any;
-export type UploadSessionMetrics = any;
-
-export type UploadStatus =
-  | "idle"
-  | "uploading"
-  | "success"
-  | "error"
-  | "aborted";
-
-export interface UploadState {
-  status: UploadStatus;
-  progress: number;
-  bytesUploaded: number;
-  totalBytes: number | null;
-  error: Error | null;
-  result: UploadFile | null;
-}
-
-export interface UploadMetrics {
-  /**
-   * Get performance insights from the upload client
-   */
-  getInsights: () => PerformanceInsights;
-
-  /**
-   * Export detailed metrics from the upload client
-   */
-  exportMetrics: () => {
-    session: Partial<UploadSessionMetrics>;
-    chunks: ChunkMetrics[];
-    insights: PerformanceInsights;
-  };
-
-  /**
-   * Get current network metrics
-   */
-  getNetworkMetrics: () => unknown;
-
-  /**
-   * Get current network condition
-   */
-  getNetworkCondition: () => unknown;
-
-  /**
-   * Reset all metrics
-   */
-  resetMetrics: () => void;
-}
+export type { ChunkMetrics, PerformanceInsights, UploadSessionMetrics };
 
 const initialState: UploadState = {
-  status: "idle",
-  progress: 0,
-  bytesUploaded: 0,
-  totalBytes: null,
-  error: null,
-  result: null,
+	status: "idle",
+	progress: 0,
+	bytesUploaded: 0,
+	totalBytes: null,
+	error: null,
+	result: null,
 };
 
 /**
@@ -107,194 +68,76 @@ const initialState: UploadState = {
  * ```
  */
 export function useUpload(options: UploadOptions = {}) {
-  const uploadistaClient = useUploadistaClient();
-  const state = ref<UploadState>({ ...initialState });
-  const abortController = ref<{ abort: () => void } | null>(null);
-  const lastFile = ref<UploadInput | null>(null);
+	const uploadistaClient = useUploadistaClient();
+	const state = ref<UploadState>({ ...initialState });
+	let manager: UploadManager | null = null;
 
-  const updateState = (update: Partial<UploadState>) => {
-    state.value = { ...state.value, ...update };
-  };
+	// Wrap the client's upload method to match UploadFunction signature
+	const uploadFn = (input: unknown, opts: UploadOptions) =>
+		uploadistaClient.client.upload(input as UploadInput, opts);
 
-  const reset = () => {
-    if (abortController.value) {
-      abortController.value.abort();
-      abortController.value = null;
-    }
-    state.value = { ...initialState };
-    lastFile.value = null;
-  };
+	// Create UploadManager instance
+	manager = new UploadManager(
+		uploadFn,
+		{
+			onStateChange: (newState: UploadState) => {
+				state.value = newState;
+			},
+			onProgress: options.onProgress,
+			onChunkComplete: options.onChunkComplete,
+			onSuccess: options.onSuccess,
+			onError: options.onError,
+			onAbort: options.onAbort,
+		},
+		options,
+	);
 
-  const abort = () => {
-    if (abortController.value) {
-      abortController.value.abort();
-      abortController.value = null;
-    }
+	// Clean up manager when component unmounts
+	onUnmounted(() => {
+		manager?.cleanup();
+	});
 
-    updateState({
-      status: "aborted",
-    });
+	// Upload function
+	const upload = (file: UploadInput) => {
+		manager?.upload(file);
+	};
 
-    options.onAbort?.();
-  };
+	// Abort function
+	const abort = () => {
+		manager?.abort();
+	};
 
-  const upload = (file: UploadInput) => {
-    // Reset any previous state but keep the file reference for retries
-    state.value = {
-      ...initialState,
-      status: "uploading",
-      totalBytes: file instanceof File ? file.size : null,
-    };
+	// Reset function
+	const reset = () => {
+		manager?.reset();
+	};
 
-    lastFile.value = file;
+	// Retry function
+	const retry = () => {
+		manager?.retry();
+	};
 
-    // Start the upload and handle the promise
-    const uploadPromise = uploadistaClient.client.upload(file, {
-      metadata: options.metadata,
-      uploadLengthDeferred: options.uploadLengthDeferred,
-      uploadSize: options.uploadSize,
+	// Computed properties
+	const isUploading = computed(() => state.value.status === "uploading");
+	const canRetry = computed(() => manager?.canRetry() ?? false);
 
-      onProgress: (
-        _uploadId: string,
-        bytesUploaded: number,
-        totalBytes: number | null,
-      ) => {
-        const progress = totalBytes
-          ? Math.round((bytesUploaded / totalBytes) * 100)
-          : 0;
+	// Create metrics object that delegates to the upload client
+	const metrics: UploadMetrics = {
+		getInsights: () => uploadistaClient.client.getChunkingInsights(),
+		exportMetrics: () => uploadistaClient.client.exportMetrics(),
+		getNetworkMetrics: () => uploadistaClient.client.getNetworkMetrics(),
+		getNetworkCondition: () => uploadistaClient.client.getNetworkCondition(),
+		resetMetrics: () => uploadistaClient.client.resetMetrics(),
+	};
 
-        updateState({
-          progress,
-          bytesUploaded,
-          totalBytes,
-        });
-
-        options.onProgress?.(progress, bytesUploaded, totalBytes);
-      },
-
-      onChunkComplete: (
-        chunkSize: number,
-        bytesAccepted: number,
-        bytesTotal: number | null,
-      ) => {
-        options.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
-      },
-
-      onSuccess: (result: UploadFile) => {
-        updateState({
-          status: "success",
-          result,
-          progress: 100,
-          bytesUploaded: result.size || 0,
-          totalBytes: result.size || null,
-        });
-
-        options.onSuccess?.(result);
-        abortController.value = null;
-      },
-
-      onError: (error: Error) => {
-        updateState({
-          status: "error",
-          error,
-        });
-
-        options.onError?.(error);
-        abortController.value = null;
-      },
-
-      onShouldRetry: options.onShouldRetry,
-    });
-
-    // Handle the promise to get the abort controller
-    uploadPromise
-      .then((controller) => {
-        abortController.value = controller;
-      })
-      .catch((error) => {
-        updateState({
-          status: "error",
-          error: error as Error,
-        });
-
-        options.onError?.(error as Error);
-        abortController.value = null;
-      });
-  };
-
-  const retry = () => {
-    if (
-      lastFile.value &&
-      (state.value.status === "error" || state.value.status === "aborted")
-    ) {
-      upload(lastFile.value);
-    }
-  };
-
-  // Subscribe to events from context (WebSocket events)
-  const unsubscribe = uploadistaClient.subscribeToEvents(
-    (event: UploadistaEvent) => {
-      console.log("useUpload - subscribeToEvents", event);
-      // Handle upload progress events
-      const uploadEvent = event as {
-        type: string;
-        data?: { id: string; progress: number; total: number };
-      };
-      if (
-        uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
-        uploadEvent.data
-      ) {
-        const { progress: bytesUploaded, total: totalBytes } = uploadEvent.data;
-
-        // Update state for this upload
-        // Note: We update for all uploads since we don't track upload IDs in single upload mode
-        const progress = totalBytes
-          ? Math.round((bytesUploaded / totalBytes) * 100)
-          : 0;
-
-        // Only update if we're currently uploading
-        if (state.value.status === "uploading") {
-          updateState({
-            progress,
-            bytesUploaded,
-            totalBytes,
-          });
-
-          options.onProgress?.(progress, bytesUploaded, totalBytes);
-        }
-      }
-    },
-  );
-
-  // Cleanup on unmount
-  onUnmounted(() => {
-    unsubscribe();
-  });
-
-  const isUploading = computed(() => state.value.status === "uploading");
-  const canRetry = computed(
-    () =>
-      (state.value.status === "error" || state.value.status === "aborted") &&
-      lastFile.value !== null,
-  );
-
-  // Create metrics object that delegates to the upload client
-  const metrics: UploadMetrics = {
-    getInsights: () => uploadistaClient.client.getChunkingInsights(),
-    exportMetrics: () => uploadistaClient.client.exportMetrics(),
-    getNetworkMetrics: () => uploadistaClient.client.getNetworkMetrics(),
-    getNetworkCondition: () => uploadistaClient.client.getNetworkCondition(),
-    resetMetrics: () => uploadistaClient.client.resetMetrics(),
-  };
-
-  return {
-    state: readonly(state),
-    upload,
-    abort,
-    reset,
-    retry,
-    isUploading,
-    canRetry,
-    metrics,
-  };
+	return {
+		state,
+		upload,
+		abort,
+		reset,
+		retry,
+		isUploading,
+		canRetry,
+		metrics,
+	};
 }

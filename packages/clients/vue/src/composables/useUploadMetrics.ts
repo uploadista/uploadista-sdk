@@ -1,13 +1,10 @@
+import type {
+  ChunkMetrics,
+  PerformanceInsights,
+  UploadSessionMetrics,
+} from "@uploadista/client-browser";
 import { onUnmounted, readonly, ref } from "vue";
 import { useUploadistaClient } from "./useUploadistaClient";
-
-// Types
-// biome-ignore lint/suspicious/noExplicitAny: Placeholder for detailed metrics types
-type ChunkMetrics = any;
-// biome-ignore lint/suspicious/noExplicitAny: Placeholder for detailed metrics types
-type PerformanceInsights = any;
-// biome-ignore lint/suspicious/noExplicitAny: Placeholder for detailed metrics types
-type UploadSessionMetrics = any;
 
 export interface UploadMetrics {
   /**
