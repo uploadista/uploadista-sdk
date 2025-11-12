@@ -25,8 +25,8 @@ catalogs:
       specifier: 19.2.0
       version: 19.2.0
     tsdown:
-      specifier: 0.16.1
-      version: 0.16.1
+      specifier: 0.16.3
+      version: 0.16.3
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -392,7 +392,7 @@ importers:
         version: link:../../packages/typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
 
   examples/hono-cf-example:
     dependencies:
@@ -716,7 +716,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -738,7 +738,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -796,7 +796,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
 
   packages/clients/react:
     dependencies:
@@ -827,7 +827,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -864,7 +864,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
 
   packages/clients/react-native-core:
     dependencies:
@@ -898,7 +898,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
 
   packages/clients/vue:
     dependencies:
@@ -917,7 +917,7 @@ importers:
         version: 2.4.6
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       unplugin-vue:
         specifier: ^7.0.2
         version: 7.0.5(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(ms@2.1.3)(terser@5.44.0)(tsx@4.20.6)(vue@3.5.24(typescript@5.9.3))(yaml@2.8.1)
@@ -954,7 +954,7 @@ importers:
         version: 0.33.0
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -988,7 +988,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1019,7 +1019,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1050,7 +1050,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1081,7 +1081,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1112,7 +1112,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1140,7 +1140,7 @@ importers:
         version: 5.8.2
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1162,7 +1162,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1190,7 +1190,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1215,7 +1215,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1240,7 +1240,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1268,7 +1268,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1305,7 +1305,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1336,7 +1336,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1373,7 +1373,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1401,7 +1401,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1432,7 +1432,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1466,7 +1466,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1494,7 +1494,7 @@ importers:
         version: link:../../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1519,7 +1519,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1544,7 +1544,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1569,7 +1569,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1594,7 +1594,7 @@ importers:
         version: 5.8.2
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1616,7 +1616,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1641,7 +1641,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       vitest:
         specifier: 4.0.8
         version: 4.0.8(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
@@ -1684,7 +1684,7 @@ importers:
         version: link:../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1739,7 +1739,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1788,7 +1788,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1843,7 +1843,7 @@ importers:
         version: 4.10.4
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -1898,7 +1898,7 @@ importers:
         version: 0.33.0
       tsdown:
         specifier: 'catalog:'
-        version: 0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+        version: 0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -5142,85 +5142,85 @@ packages:
     peerDependencies:
       '@rneui/base': 4.0.0-rc.7
 
-  '@rolldown/binding-android-arm64@1.0.0-beta.47':
-    resolution: {integrity: sha512-vPP9/MZzESh9QtmvQYojXP/midjgkkc1E4AdnPPAzQXo668ncHJcVLKjJKzoBdsQmaIvNjrMdsCwES8vTQHRQw==}
+  '@rolldown/binding-android-arm64@1.0.0-beta.49':
+    resolution: {integrity: sha512-xKQEOmqOet0vFHt/aqcoQGWvoDJhfSO8EBhuST0CDnxQRmnVzbI8keeeX62vi53ZyICKZxczyfx4A8dUY3dqKw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [android]
 
-  '@rolldown/binding-darwin-arm64@1.0.0-beta.47':
-    resolution: {integrity: sha512-Lc3nrkxeaDVCVl8qR3qoxh6ltDZfkQ98j5vwIr5ALPkgjZtDK4BGCrrBoLpGVMg+csWcaqUbwbKwH5yvVa0oOw==}
+  '@rolldown/binding-darwin-arm64@1.0.0-beta.49':
+    resolution: {integrity: sha512-kN0N/8m8HUYO13PqlIwxcXD7fu2E6GKu0J4iH7wUJw3T3QK+nvrc20rxtTZ0J6sA1sGCE8UYvvvnurDwMUp0dg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [darwin]
 
-  '@rolldown/binding-darwin-x64@1.0.0-beta.47':
-    resolution: {integrity: sha512-eBYxQDwP0O33plqNVqOtUHqRiSYVneAknviM5XMawke3mwMuVlAsohtOqEjbCEl/Loi/FWdVeks5WkqAkzkYWQ==}
+  '@rolldown/binding-darwin-x64@1.0.0-beta.49':
+    resolution: {integrity: sha512-29qmvsgY2A4ymfy8sQkFFOFc13m04SLUcYn1iil41gpkYrAspBLkvsOQMHPCs3rQCOImgweT4tFotqTAonwphQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [darwin]
 
-  '@rolldown/binding-freebsd-x64@1.0.0-beta.47':
-    resolution: {integrity: sha512-Ns+kgp2+1Iq/44bY/Z30DETUSiHY7ZuqaOgD5bHVW++8vme9rdiWsN4yG4rRPXkdgzjvQ9TDHmZZKfY4/G11AA==}
+  '@rolldown/binding-freebsd-x64@1.0.0-beta.49':
+    resolution: {integrity: sha512-fY+esrHjgt6+RAnDPuUk39RvFNmYhJekGyC6wr0HWXGTBed07Feap9BrYINSh6x5xFlNpOPs6tImKnV0zVDuWQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [freebsd]
 
-  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.47':
-    resolution: {integrity: sha512-4PecgWCJhTA2EFOlptYJiNyVP2MrVP4cWdndpOu3WmXqWqZUmSubhb4YUAIxAxnXATlGjC1WjxNPhV7ZllNgdA==}
+  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.49':
+    resolution: {integrity: sha512-oQNAqB+XrRM2AZaSPyudQETsPhzCZqgPICQu80fJuNyBFYoz6nonNNZtm3BJ9uP+HZfUk9NfOn9vPoCNuk6gAw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm]
     os: [linux]
 
-  '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.47':
-    resolution: {integrity: sha512-CyIunZ6D9U9Xg94roQI1INt/bLkOpPsZjZZkiaAZ0r6uccQdICmC99M9RUPlMLw/qg4yEWLlQhG73W/mG437NA==}
+  '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.49':
+    resolution: {integrity: sha512-bJinAiuWUJvlBxPa8ZmRnWkmmAoUlSWtZT4pRkWi/QX3HlgHfUUbhF+d7aZLciai+iFfbiPqOwCL2tqNXXrUsA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
 
-  '@rolldown/binding-linux-arm64-musl@1.0.0-beta.47':
-    resolution: {integrity: sha512-doozc/Goe7qRCSnzfJbFINTHsMktqmZQmweull6hsZZ9sjNWQ6BWQnbvOlfZJe4xE5NxM1NhPnY5Giqnl3ZrYQ==}
+  '@rolldown/binding-linux-arm64-musl@1.0.0-beta.49':
+    resolution: {integrity: sha512-gwueY8EJU7afq5tNwKSjYy5JqTR/0MNzZfv6s5dX+rMgeUpTNhwIToLO1F41TPYEa+6LRTXUWG23DO/ONPzUJA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [linux]
 
-  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.47':
-    resolution: {integrity: sha512-fodvSMf6Aqwa0wEUSTPewmmZOD44rc5Tpr5p9NkwQ6W1SSpUKzD3SwpJIgANDOhwiYhDuiIaYPGB7Ujkx1q0UQ==}
+  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.49':
+    resolution: {integrity: sha512-VXYkjzzEZh5N5Ue1IEcBgL8RuJu5jWrIKmg8WY6hhCbnNJ1IOsObT4HFW+rE8ZaKNjoIXzImoiYi1UAkKiQRYA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
 
-  '@rolldown/binding-linux-x64-musl@1.0.0-beta.47':
-    resolution: {integrity: sha512-Rxm5hYc0mGjwLh5sjlGmMygxAaV2gnsx7CNm2lsb47oyt5UQyPDZf3GP/ct8BEcwuikdqzsrrlIp8+kCSvMFNQ==}
+  '@rolldown/binding-linux-x64-musl@1.0.0-beta.49':
+    resolution: {integrity: sha512-S5Yw6g/ftiW7MpNpnOM5vSIlDzGuohDY8y7VOI47+92HhO6WqsNfcMkDZXm3G5l6YIfUNStGBV86NWrzasp+sw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [linux]
 
-  '@rolldown/binding-openharmony-arm64@1.0.0-beta.47':
-    resolution: {integrity: sha512-YakuVe+Gc87jjxazBL34hbr8RJpRuFBhun7NEqoChVDlH5FLhLXjAPHqZd990TVGVNkemourf817Z8u2fONS8w==}
+  '@rolldown/binding-openharmony-arm64@1.0.0-beta.49':
+    resolution: {integrity: sha512-bhRoMO2oP46W1UDd/PTrSdoIYfvLS2jiFAned0SOzOO0tcait9u+b9i8h4ZugbT2IK4qUXNezovbHJs7hKJOEQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [openharmony]
 
-  '@rolldown/binding-wasm32-wasi@1.0.0-beta.47':
-    resolution: {integrity: sha512-ak2GvTFQz3UAOw8cuQq8pWE+TNygQB6O47rMhvevvTzETh7VkHRFtRUwJynX5hwzFvQMP6G0az5JrBGuwaMwYQ==}
+  '@rolldown/binding-wasm32-wasi@1.0.0-beta.49':
+    resolution: {integrity: sha512-Owp6Y1RQ84UMOV8hrg5e1Fmu8Po1IUXWytAHUtPcc00+ty6Gr9g5GgLLw0oblu7QovBr4848ozvkMcEj3vDKgA==}
     engines: {node: '>=14.0.0'}
     cpu: [wasm32]
 
-  '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.47':
-    resolution: {integrity: sha512-o5BpmBnXU+Cj+9+ndMcdKjhZlPb79dVPBZnWwMnI4RlNSSq5yOvFZqvfPYbyacvnW03Na4n5XXQAPhu3RydZ0w==}
+  '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.49':
+    resolution: {integrity: sha512-dnheX8aXsN9P12uwPOW3TVvqSnQ1cfjKQlYgU2dTkrRpnco0kTGvqE1nEWybGukTyuPdzVvrGElgSGEJ7crcSQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [arm64]
     os: [win32]
 
-  '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.47':
-    resolution: {integrity: sha512-FVOmfyYehNE92IfC9Kgs913UerDog2M1m+FADJypKz0gmRg3UyTt4o1cZMCAl7MiR89JpM9jegNO1nXuP1w1vw==}
+  '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.49':
+    resolution: {integrity: sha512-Blt1aODXiAuEdZBqHYXGJwVFlonXKkVEJy5hhxOgnAVi/0mzFNWDxc8qVlxl7dpQjQdboW/wXdgMHpTDfomicg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [ia32]
     os: [win32]
 
-  '@rolldown/binding-win32-x64-msvc@1.0.0-beta.47':
-    resolution: {integrity: sha512-by/70F13IUE101Bat0oeH8miwWX5mhMFPk1yjCdxoTNHTyTdLgb0THNaebRM6AP7Kz+O3O2qx87sruYuF5UxHg==}
+  '@rolldown/binding-win32-x64-msvc@1.0.0-beta.49':
+    resolution: {integrity: sha512-sSu4qUlL/62QJrR3P+Bd+EblD8tUpnovUz65qow3PA7YxH+f5NFDbCJMR1m5b8zBuVZwZIHfzbuawz+Vl34/xg==}
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
@@ -5231,8 +5231,8 @@ packages:
   '@rolldown/pluginutils@1.0.0-beta.38':
     resolution: {integrity: sha512-N/ICGKleNhA5nc9XXQG/kkKHJ7S55u0x0XUJbbkmdCnFuoRkM1Il12q9q0eX19+M7KKUEPw/daUPIRnxhcxAIw==}
 
-  '@rolldown/pluginutils@1.0.0-beta.47':
-    resolution: {integrity: sha512-8QagwMH3kNCuzD8EWL8R2YPW5e4OrHNSAHRFDdmFqEwEaD/KcNKjVoumo+gP2vW5eKB2UPbM6vTYiGZX0ixLnw==}
+  '@rolldown/pluginutils@1.0.0-beta.49':
+    resolution: {integrity: sha512-HLlu3Qn3ePmNCbfehwKWXQMzX/2rzcL6Jmpo+Dl3xnq46TGMyJAgO+IsS8ka7IDLeD3wcoOhjJwxTdIdbrFhGw==}
 
   '@rollup/rollup-android-arm-eabi@4.52.5':
     resolution: {integrity: sha512-8c1vW4ocv3UOMp9K+gToY5zL2XiiVw3k7f1ksf4yO1FlDFQ1C2u72iACFnSOceJFsWskc2WZNqeRhFRPzv+wtQ==}
@@ -6619,8 +6619,8 @@ packages:
     resolution: {integrity: sha512-UOCGPYbl0tv8+006qks/dTgV9ajs97X2p0FAbyS2iyCRrmLSRolDaHdp+v/CLgnzHc3fVB+CwYiUmei7ndFcgA==}
     engines: {node: '>=12.0.0'}
 
-  ast-kit@2.1.3:
-    resolution: {integrity: sha512-TH+b3Lv6pUjy/Nu0m6A2JULtdzLpmqF9x1Dhj00ZoEiML8qvVA9j1flkzTKNYgdEhWrjDwtWNpyyCUbfQe514g==}
+  ast-kit@2.2.0:
+    resolution: {integrity: sha512-m1Q/RaVOnTp9JxPX+F+Zn7IcLYMzM8kZofDImfsKZd8MbR+ikdOzTeztStWqfrqIxZnYWryyI9ePm3NGjnZgGw==}
     engines: {node: '>=20.19.0'}
 
   async-function@1.0.0:
@@ -6759,8 +6759,8 @@ packages:
   bignumber.js@9.3.1:
     resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
 
-  birpc@2.6.1:
-    resolution: {integrity: sha512-LPnFhlDpdSH6FJhJyn4M0kFO7vtQ5iPw24FnG0y21q09xC7e8+1LeR31S1MAIrDAHp4m7aas4bEkTDTvMAtebQ==}
+  birpc@2.8.0:
+    resolution: {integrity: sha512-Bz2a4qD/5GRhiHSwj30c/8kC8QGj12nNDwz3D4ErQ4Xhy35dsSDvF+RA/tWpjyU0pdGtSDiEk6B5fBGE1qNVhw==}
 
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
@@ -7283,9 +7283,9 @@ packages:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
-  dts-resolver@2.1.2:
-    resolution: {integrity: sha512-xeXHBQkn2ISSXxbJWD828PFjtyg+/UrMDo7W4Ffcs7+YWCquxU8YjV1KoxuiL+eJ5pg3ll+bC6flVv61L3LKZg==}
-    engines: {node: '>=20.18.0'}
+  dts-resolver@2.1.3:
+    resolution: {integrity: sha512-bihc7jPC90VrosXNzK0LTE2cuLP6jr0Ro8jk+kMugHReJVLIpHz/xadeq3MhuwyO4TD4OA3L1Q8pBBFRc08Tsw==}
+    engines: {node: '>=20.19.0'}
     peerDependencies:
       oxc-resolver: '>=11.0.0'
     peerDependenciesMeta:
@@ -10086,8 +10086,8 @@ packages:
   rn-fetch-blob@0.12.0:
     resolution: {integrity: sha512-+QnR7AsJ14zqpVVUbzbtAjq0iI8c9tCg49tIoKO2ezjzRunN7YL6zFSFSWZm6d+mE/l9r+OeDM3jmb2tBb2WbA==}
 
-  rolldown-plugin-dts@0.17.3:
-    resolution: {integrity: sha512-8mGnNUVNrqEdTnrlcaDxs4sAZg0No6njO+FuhQd4L56nUbJO1tHxOoKDH3mmMJg7f/BhEj/1KjU5W9kZ9zM/kQ==}
+  rolldown-plugin-dts@0.17.6:
+    resolution: {integrity: sha512-yX7kDS7Pm9HyVdKKtgfLiRS4wwu+dA4c7KUmOTWKgheu3he4pcT6Wk0Ht59Xm+1pHuoWYv3DvFPqxeF1AyW82A==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
       '@ts-macro/tsc': ^0.3.6
@@ -10105,8 +10105,8 @@ packages:
       vue-tsc:
         optional: true
 
-  rolldown@1.0.0-beta.47:
-    resolution: {integrity: sha512-Mid74GckX1OeFAOYz9KuXeWYhq3xkXbMziYIC+ULVdUzPTG9y70OBSBQDQn9hQP8u/AfhuYw1R0BSg15nBI4Dg==}
+  rolldown@1.0.0-beta.49:
+    resolution: {integrity: sha512-Bfmdn3ZqyCwi1LxG39KBrSlil9a/xnrOrAj+jqqN2YTR/WJIEOOfwNKgDALQvr0xlO9bG/i1C883KGd4nd7SrA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -10678,13 +10678,13 @@ packages:
     engines: {node: '>=14.16'}
     hasBin: true
 
-  tsdown@0.16.1:
-    resolution: {integrity: sha512-oCOj9wTDa+0XfuVpaGC3EPNjatpkKtUwelg4HfXD/vz+80wuCFC6og2QePsMRZtFM4io0zdxNxZI5yRQGpDRCA==}
+  tsdown@0.16.3:
+    resolution: {integrity: sha512-uciWbZs71/Yj5Mr++gk+Ry3cp4c4PGluLscJ8dbGLHyKFjo1Hrtn+Ix/BIulIKsrnECwwvDge24WKHzdJmCCQg==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
       '@arethetypeswrong/core': ^0.18.1
-      '@vitejs/devtools': ^0.0.0-alpha.10
+      '@vitejs/devtools': ^0.0.0-alpha.17
       publint: ^0.3.0
       typescript: ^5.0.0
       unplugin-lightningcss: ^0.4.0
@@ -10835,8 +10835,8 @@ packages:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
     engines: {node: '>= 0.4'}
 
-  unconfig-core@7.4.0:
-    resolution: {integrity: sha512-3ew7rvES5x2LCZ/QRKV3nQQpq7eFYuszQuvZrhTHxDPKc34QFjRXI17XGiZI+WQTVIXKYeBti4v3LS39NWmhmg==}
+  unconfig-core@7.4.1:
+    resolution: {integrity: sha512-Bp/bPZjV2Vl/fofoA2OYLSnw1Z0MOhCX7zHnVCYrazpfZvseBbGhwcNQMxsg185Mqh7VZQqK3C8hFG/Dyng+yA==}
 
   undici-types@7.10.0:
     resolution: {integrity: sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==}
@@ -10896,8 +10896,8 @@ packages:
   unrs-resolver@1.11.1:
     resolution: {integrity: sha512-bSjt9pjaEBnNiGgc9rUiHGKv5l4/TGzDmYw3RhnkJGtLhbnnA/5qJj7x3dNDCRx/PJxu774LlH8lCOlB4hEfKg==}
 
-  unrun@0.2.6:
-    resolution: {integrity: sha512-ZLgMe3W+Zl3mjpnCbfW0JLlGQDa7U4mJKiBlValp5isZ9WeoAVaNyziCbr5Szo4abZ6WRE3OM1MjwpfFQrE5Aw==}
+  unrun@0.2.8:
+    resolution: {integrity: sha512-2HnCvemvMN7qQm0/1uhhi8JoVHQxfkAhZTCdFNWAK35dXKJlOHpcJ6ayN23JKJZyAXjAwpVZZr878flfRiaiFQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -15643,55 +15643,55 @@ snapshots:
     dependencies:
       '@rneui/base': 4.0.0-rc.8(react-native-safe-area-context@5.6.1(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-vector-icons@10.3.0)(react-native@0.81.5(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
 
-  '@rolldown/binding-android-arm64@1.0.0-beta.47':
+  '@rolldown/binding-android-arm64@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-darwin-arm64@1.0.0-beta.47':
+  '@rolldown/binding-darwin-arm64@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-darwin-x64@1.0.0-beta.47':
+  '@rolldown/binding-darwin-x64@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-freebsd-x64@1.0.0-beta.47':
+  '@rolldown/binding-freebsd-x64@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.47':
+  '@rolldown/binding-linux-arm-gnueabihf@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.47':
+  '@rolldown/binding-linux-arm64-gnu@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-linux-arm64-musl@1.0.0-beta.47':
+  '@rolldown/binding-linux-arm64-musl@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.47':
+  '@rolldown/binding-linux-x64-gnu@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-linux-x64-musl@1.0.0-beta.47':
+  '@rolldown/binding-linux-x64-musl@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-openharmony-arm64@1.0.0-beta.47':
+  '@rolldown/binding-openharmony-arm64@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-wasm32-wasi@1.0.0-beta.47':
+  '@rolldown/binding-wasm32-wasi@1.0.0-beta.49':
     dependencies:
       '@napi-rs/wasm-runtime': 1.0.7
     optional: true
 
-  '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.47':
+  '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.47':
+  '@rolldown/binding-win32-ia32-msvc@1.0.0-beta.49':
     optional: true
 
-  '@rolldown/binding-win32-x64-msvc@1.0.0-beta.47':
+  '@rolldown/binding-win32-x64-msvc@1.0.0-beta.49':
     optional: true
 
   '@rolldown/pluginutils@1.0.0-beta.29': {}
 
   '@rolldown/pluginutils@1.0.0-beta.38': {}
 
-  '@rolldown/pluginutils@1.0.0-beta.47': {}
+  '@rolldown/pluginutils@1.0.0-beta.49': {}
 
   '@rollup/rollup-android-arm-eabi@4.52.5':
     optional: true
@@ -17198,7 +17198,7 @@ snapshots:
       pvutils: 1.1.5
       tslib: 2.8.1
 
-  ast-kit@2.1.3:
+  ast-kit@2.2.0:
     dependencies:
       '@babel/parser': 7.28.5
       pathe: 2.0.3
@@ -17399,7 +17399,7 @@ snapshots:
 
   bignumber.js@9.3.1: {}
 
-  birpc@2.6.1: {}
+  birpc@2.8.0: {}
 
   bl@4.1.0:
     dependencies:
@@ -17938,7 +17938,7 @@ snapshots:
 
   dotenv@17.2.3: {}
 
-  dts-resolver@2.1.2(oxc-resolver@11.11.0):
+  dts-resolver@2.1.3(oxc-resolver@11.11.0):
     optionalDependencies:
       oxc-resolver: 11.11.0
 
@@ -21762,44 +21762,44 @@ snapshots:
       base-64: 0.1.0
       glob: 7.0.6
 
-  rolldown-plugin-dts@0.17.3(oxc-resolver@11.11.0)(rolldown@1.0.0-beta.47)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3)):
+  rolldown-plugin-dts@0.17.6(ms@2.1.3)(oxc-resolver@11.11.0)(rolldown@1.0.0-beta.49)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3)):
     dependencies:
       '@babel/generator': 7.28.5
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
-      ast-kit: 2.1.3
-      birpc: 2.6.1
-      debug: 4.4.3
-      dts-resolver: 2.1.2(oxc-resolver@11.11.0)
+      ast-kit: 2.2.0
+      birpc: 2.8.0
+      dts-resolver: 2.1.3(oxc-resolver@11.11.0)
       get-tsconfig: 4.13.0
       magic-string: 0.30.21
-      rolldown: 1.0.0-beta.47
+      obug: 0.1.1(ms@2.1.3)
+      rolldown: 1.0.0-beta.49
     optionalDependencies:
       typescript: 5.9.3
       vue-tsc: 3.1.3(typescript@5.9.3)
     transitivePeerDependencies:
+      - ms
       - oxc-resolver
-      - supports-color
 
-  rolldown@1.0.0-beta.47:
+  rolldown@1.0.0-beta.49:
     dependencies:
       '@oxc-project/types': 0.96.0
-      '@rolldown/pluginutils': 1.0.0-beta.47
+      '@rolldown/pluginutils': 1.0.0-beta.49
     optionalDependencies:
-      '@rolldown/binding-android-arm64': 1.0.0-beta.47
-      '@rolldown/binding-darwin-arm64': 1.0.0-beta.47
-      '@rolldown/binding-darwin-x64': 1.0.0-beta.47
-      '@rolldown/binding-freebsd-x64': 1.0.0-beta.47
-      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-beta.47
-      '@rolldown/binding-linux-arm64-gnu': 1.0.0-beta.47
-      '@rolldown/binding-linux-arm64-musl': 1.0.0-beta.47
-      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.47
-      '@rolldown/binding-linux-x64-musl': 1.0.0-beta.47
-      '@rolldown/binding-openharmony-arm64': 1.0.0-beta.47
-      '@rolldown/binding-wasm32-wasi': 1.0.0-beta.47
-      '@rolldown/binding-win32-arm64-msvc': 1.0.0-beta.47
-      '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.47
-      '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.47
+      '@rolldown/binding-android-arm64': 1.0.0-beta.49
+      '@rolldown/binding-darwin-arm64': 1.0.0-beta.49
+      '@rolldown/binding-darwin-x64': 1.0.0-beta.49
+      '@rolldown/binding-freebsd-x64': 1.0.0-beta.49
+      '@rolldown/binding-linux-arm-gnueabihf': 1.0.0-beta.49
+      '@rolldown/binding-linux-arm64-gnu': 1.0.0-beta.49
+      '@rolldown/binding-linux-arm64-musl': 1.0.0-beta.49
+      '@rolldown/binding-linux-x64-gnu': 1.0.0-beta.49
+      '@rolldown/binding-linux-x64-musl': 1.0.0-beta.49
+      '@rolldown/binding-openharmony-arm64': 1.0.0-beta.49
+      '@rolldown/binding-wasm32-wasi': 1.0.0-beta.49
+      '@rolldown/binding-win32-arm64-msvc': 1.0.0-beta.49
+      '@rolldown/binding-win32-ia32-msvc': 1.0.0-beta.49
+      '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.49
 
   rollup@4.52.5:
     dependencies:
@@ -22529,30 +22529,30 @@ snapshots:
       path-exists: 4.0.0
       read-pkg-up: 7.0.1
 
-  tsdown@0.16.1(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3)):
+  tsdown@0.16.3(ms@2.1.3)(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3)):
     dependencies:
       ansis: 4.2.0
       cac: 6.7.14
       chokidar: 4.0.3
-      debug: 4.4.3
       diff: 8.0.2
       empathic: 2.0.0
       hookable: 5.5.3
-      rolldown: 1.0.0-beta.47
-      rolldown-plugin-dts: 0.17.3(oxc-resolver@11.11.0)(rolldown@1.0.0-beta.47)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
+      obug: 0.1.1(ms@2.1.3)
+      rolldown: 1.0.0-beta.49
+      rolldown-plugin-dts: 0.17.6(ms@2.1.3)(oxc-resolver@11.11.0)(rolldown@1.0.0-beta.49)(typescript@5.9.3)(vue-tsc@3.1.3(typescript@5.9.3))
       semver: 7.7.3
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tree-kill: 1.2.2
-      unconfig-core: 7.4.0
-      unrun: 0.2.6
+      unconfig-core: 7.4.1
+      unrun: 0.2.8
     optionalDependencies:
       typescript: 5.9.3
     transitivePeerDependencies:
       - '@ts-macro/tsc'
       - '@typescript/native-preview'
+      - ms
       - oxc-resolver
-      - supports-color
       - synckit
       - vue-tsc
 
@@ -22684,7 +22684,7 @@ snapshots:
       has-symbols: 1.1.0
       which-boxed-primitive: 1.1.1
 
-  unconfig-core@7.4.0:
+  unconfig-core@7.4.1:
     dependencies:
       '@quansync/fs': 0.1.5
       quansync: 0.2.11
@@ -22778,10 +22778,10 @@ snapshots:
       '@unrs/resolver-binding-win32-ia32-msvc': 1.11.1
       '@unrs/resolver-binding-win32-x64-msvc': 1.11.1
 
-  unrun@0.2.6:
+  unrun@0.2.8:
     dependencies:
       '@oxc-project/runtime': 0.96.0
-      rolldown: 1.0.0-beta.47
+      rolldown: 1.0.0-beta.49
 
   unzipper@0.12.3:
     dependencies:
