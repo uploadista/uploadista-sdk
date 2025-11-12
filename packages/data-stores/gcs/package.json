@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-gcs",
   "type": "module",
-  "version": "0.0.13-beta.5",
+  "version": "0.0.13",
   "description": "Google Cloud Storage data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
