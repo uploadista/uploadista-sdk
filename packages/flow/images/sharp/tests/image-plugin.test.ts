@@ -1,6 +1,6 @@
+import { describe, expect, it } from "@effect/vitest";
 import { ImagePlugin } from "@uploadista/core/flow";
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 import { imagePlugin } from "../src/image-plugin";
 
@@ -261,7 +261,8 @@ describe("Sharp Image Plugin", () => {
         );
 
         const transformed = yield* plugin.transform(inputImage, {
-          rotate: 90,
+          type: "rotate",
+          angle: 90,
         });
 
         const metadata = yield* Effect.promise(() =>
@@ -281,7 +282,8 @@ describe("Sharp Image Plugin", () => {
         );
 
         const transformed = yield* plugin.transform(inputImage, {
-          flip: true,
+          type: "flip",
+          direction: "horizontal",
         });
 
         expect(transformed).toBeInstanceOf(Uint8Array);
@@ -301,7 +303,8 @@ describe("Sharp Image Plugin", () => {
         );
 
         const transformed = yield* plugin.transform(inputImage, {
-          flop: true,
+          type: "flip",
+          direction: "vertical",
         });
 
         expect(transformed).toBeInstanceOf(Uint8Array);
@@ -321,7 +324,8 @@ describe("Sharp Image Plugin", () => {
         );
 
         const transformed = yield* plugin.transform(inputImage, {
-          blur: 5,
+          type: "blur",
+          sigma: 5,
         });
 
         expect(transformed).toBeInstanceOf(Uint8Array);
@@ -337,7 +341,7 @@ describe("Sharp Image Plugin", () => {
         );
 
         const transformed = yield* plugin.transform(inputImage, {
-          grayscale: true,
+          type: "grayscale",
         });
 
         expect(transformed).toBeInstanceOf(Uint8Array);
@@ -352,16 +356,28 @@ describe("Sharp Image Plugin", () => {
           createTestImage(200, 100),
         );
 
-        const transformed = yield* plugin.transform(inputImage, {
-          rotate: 180,
-          flip: true,
-          blur: 3,
-          grayscale: true,
+        const transformedRotated = yield* plugin.transform(inputImage, {
+          type: "rotate",
+          angle: 180,
         });
+        const transformedFlipped = yield* plugin.transform(transformedRotated, {
+          type: "flip",
+          direction: "horizontal",
+        });
+        const transformedBlurred = yield* plugin.transform(transformedFlipped, {
+          type: "blur",
+          sigma: 3,
+        });
+        const transformedGrayscale = yield* plugin.transform(
+          transformedBlurred,
+          {
+            type: "grayscale",
+          },
+        );
 
-        expect(transformed).toBeInstanceOf(Uint8Array);
+        expect(transformedGrayscale).toBeInstanceOf(Uint8Array);
         const metadata = yield* Effect.promise(() =>
-          getImageMetadata(transformed),
+          getImageMetadata(transformedGrayscale),
         );
         // Dimensions should remain same after 180° rotation
         expect(metadata.width).toBe(200);
@@ -369,7 +385,7 @@ describe("Sharp Image Plugin", () => {
       }).pipe(Effect.provide(imagePlugin)),
     );
 
-    it.effect("should handle tint transformation", () =>
+    it.effect("should handle sepia transformation", () =>
       Effect.gen(function* () {
         const plugin = yield* ImagePlugin;
         const inputImage = yield* Effect.promise(() =>
@@ -377,7 +393,7 @@ describe("Sharp Image Plugin", () => {
         );
 
         const transformed = yield* plugin.transform(inputImage, {
-          tint: { r: 255, g: 0, b: 0 },
+          type: "sepia",
         });
 
         expect(transformed).toBeInstanceOf(Uint8Array);

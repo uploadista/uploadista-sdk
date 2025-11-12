@@ -109,11 +109,13 @@ export function createS3Store(config: S3StoreConfig) {
               data,
             })
             .pipe(
-              Effect.retry(
-                Schedule.exponential("1 second", 2.0).pipe(
+              Effect.retry({
+                schedule: Schedule.exponential("1 second", 2.0).pipe(
                   Schedule.intersect(Schedule.recurs(3)),
                 ),
-              ),
+                // Don't retry on upload not found errors - they're permanent
+                while: (error) => !isUploadNotFoundError(error),
+              }),
               Effect.tapError((error) =>
                 Effect.logWarning("Retrying part upload").pipe(
                   Effect.annotateLogs({

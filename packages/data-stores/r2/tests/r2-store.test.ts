@@ -1,5 +1,5 @@
 import { UploadFileKVStore } from "@uploadista/core/types";
-import { Effect } from "effect";
+import { Effect, Either } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   compareArrays,
@@ -8,33 +8,18 @@ import {
   generateData,
   TEST_FILE_SIZES,
 } from "../../s3/tests/utils/test-data-generator";
+import { createR2Store } from "../src/r2-store";
+import type { R2ClientService } from "../src/services/r2-client.service";
+import type { R2Store } from "../src/types";
 import {
   assertFileUploaded,
   assertMetricsRecorded,
   createTestUploadFile,
-  type MockS3TestMethods,
+  type MockR2TestMethods,
   runTestWithTimeout,
   setupTestEnvironment,
-  TestLayersWithMockS3,
-} from "../../s3/tests/utils/test-setup";
-import { createR2Store } from "../src/r2-store";
-import type { R2ClientService } from "../src/services/r2-client.service";
-import type { R2Store } from "../src/types";
-
-// Type alias for R2 client that extends S3 client
-type MockR2TestMethods = MockS3TestMethods;
-
-// R2 store config for tests (R2 is S3-compatible)
-const createTestR2StoreConfig = (overrides = {}) => ({
-  deliveryUrl: "https://test-r2-cdn.example.com",
-  partSize: 8 * 1024 * 1024, // 8MB default part size
-  minPartSize: 5 * 1024 * 1024, // 5MB S3 minimum
-  maxMultipartParts: 10_000,
-  maxConcurrentPartUploads: 10,
-  bucket: "test-r2-bucket",
-  r2Bucket: {} as any, // Mock R2 bucket
-  ...overrides,
-});
+  TestLayersWithMockR2,
+} from "./utils/test-setup";
 
 describe("R2Store - Basic Upload Tests", () => {
   let r2Store: R2Store;
@@ -43,18 +28,20 @@ describe("R2Store - Basic Upload Tests", () => {
   beforeEach(async () => {
     await runTestWithTimeout(
       Effect.gen(function* () {
-        // Setup test environment with mock S3/R2
+        // Setup test environment with mock R2
         mockService = yield* setupTestEnvironment();
 
         // Create R2 store with test configuration
-        const kvStore = yield* UploadFileKVStore;
-        const config = createTestR2StoreConfig();
-
         r2Store = yield* createR2Store({
-          ...config,
-          kvStore,
-        });
-      }).pipe(Effect.provide(TestLayersWithMockS3())),
+          deliveryUrl: "https://test-r2-cdn.example.com",
+          partSize: 8 * 1024 * 1024, // 8MB default part size
+          minPartSize: 5 * 1024 * 1024, // 5MB minimum
+          maxMultipartParts: 10_000,
+          maxConcurrentPartUploads: 10,
+          bucket: "test-r2-bucket",
+          r2Bucket: {} as any,
+        }).pipe(Effect.map((store) => store as unknown as R2Store));
+      }).pipe(Effect.provide(TestLayersWithMockR2())),
     );
   });
 
@@ -76,7 +63,7 @@ describe("R2Store - Basic Upload Tests", () => {
             { concurrency: "unbounded" },
           );
         }
-      }).pipe(Effect.provide(TestLayersWithMockS3())),
+      }).pipe(Effect.provide(TestLayersWithMockR2())),
     );
   });
 
@@ -121,7 +108,7 @@ describe("R2Store - Basic Upload Tests", () => {
             "completeMultipartUpload",
             1,
           );
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
 
@@ -162,7 +149,7 @@ describe("R2Store - Basic Upload Tests", () => {
           });
 
           expect(compareArrays(uploadedData, originalData)).toBe(true);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
 
@@ -192,7 +179,7 @@ describe("R2Store - Basic Upload Tests", () => {
             testFile.id,
             testFile.size ?? 0,
           );
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
 
@@ -230,7 +217,7 @@ describe("R2Store - Basic Upload Tests", () => {
             testFile.id,
             testFile.size ?? 0,
           );
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
   });
@@ -270,7 +257,7 @@ describe("R2Store - Basic Upload Tests", () => {
             "completeMultipartUpload",
             1,
           );
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         15000, // Longer timeout for larger files
       );
     });
@@ -317,7 +304,7 @@ describe("R2Store - Basic Upload Tests", () => {
           const metrics = yield* mockService.getMetrics();
           const partUploads = metrics.operationCounts.get("uploadPart") || 0;
           expect(partUploads).toBeGreaterThan(1);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         20000,
       );
     });
@@ -353,7 +340,7 @@ describe("R2Store - Basic Upload Tests", () => {
           const metrics = yield* mockService.getMetrics();
           const partUploads = metrics.operationCounts.get("uploadPart") || 0;
           expect(partUploads).toBeGreaterThanOrEqual(6); // ~6 parts for 49MB with 8MB parts
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         30000,
       );
     });
@@ -392,7 +379,7 @@ describe("R2Store - Basic Upload Tests", () => {
           const partUploads = metrics.operationCounts.get("uploadPart") || 0;
           expect(partUploads).toBeGreaterThanOrEqual(6); // ~7 parts for 50MB with 8MB parts
           expect(partUploads).toBeLessThanOrEqual(8);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         45000,
       );
     });
@@ -428,7 +415,7 @@ describe("R2Store - Basic Upload Tests", () => {
           const partUploads = metrics.operationCounts.get("uploadPart") || 0;
           expect(partUploads).toBeGreaterThanOrEqual(12); // ~13 parts for 100MB with 8MB parts
           expect(partUploads).toBeLessThanOrEqual(15);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         60000,
       );
     });
@@ -470,7 +457,7 @@ describe("R2Store - Basic Upload Tests", () => {
               progressUpdates[i - 1],
             );
           }
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
 
@@ -509,7 +496,7 @@ describe("R2Store - Basic Upload Tests", () => {
               progressUpdates[i - 1],
             );
           }
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         45000,
       );
     });
@@ -543,7 +530,7 @@ describe("R2Store - Basic Upload Tests", () => {
           expect(uploadInfo.id).toBe(testFile.id);
           expect(uploadInfo.size).toBe(testFile.size);
           expect(uploadInfo.offset).toBe(testFile.size); // Should be fully uploaded
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         20000,
       );
     });
@@ -578,7 +565,7 @@ describe("R2Store - Basic Upload Tests", () => {
           const readData = yield* r2Store.read(testFile.id);
 
           expect(compareArrays(readData, originalData)).toBe(true);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
   });
@@ -618,7 +605,7 @@ describe("R2Store - Basic Upload Tests", () => {
           // Verify file is deleted
           const storage = yield* mockService.getStorage();
           expect(storage.objects.has(testFile.id)).toBe(false);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
   });
@@ -659,7 +646,7 @@ describe("R2Store - Basic Upload Tests", () => {
             );
             expect(compareArrays(uploadedData, testFileData.data)).toBe(true);
           }
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
         60000, // Longer timeout for multiple files
       );
     });
@@ -684,8 +671,8 @@ describe("R2Store - Basic Upload Tests", () => {
 
           // Attempt to create - should fail
           const result = yield* Effect.either(r2Store.create(testFile));
-          expect(result._tag).toBe("Left");
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+          expect(Either.isLeft(result)).toBe(true);
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
 
@@ -696,8 +683,8 @@ describe("R2Store - Basic Upload Tests", () => {
           const result = yield* Effect.either(
             r2Store.getUpload("non-existent-id"),
           );
-          expect(result._tag).toBe("Left");
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+          expect(Either.isLeft(result)).toBe(true);
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
   });
@@ -705,7 +692,7 @@ describe("R2Store - Basic Upload Tests", () => {
   describe("Capabilities", () => {
     it("should report correct capabilities", async () => {
       await runTestWithTimeout(
-        Effect.gen(function* () {
+        Effect.sync(() => {
           const capabilities = r2Store.getCapabilities();
 
           expect(capabilities.supportsParallelUploads).toBe(true);
@@ -714,7 +701,7 @@ describe("R2Store - Basic Upload Tests", () => {
           expect(capabilities.supportsResumableUploads).toBe(true);
           expect(capabilities.minChunkSize).toBe(5 * 1024 * 1024); // 5MB
           expect(capabilities.maxParts).toBe(10_000);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
 
@@ -727,7 +714,7 @@ describe("R2Store - Basic Upload Tests", () => {
 
           expect(parallelValid).toBe(true);
           expect(singleValid).toBe(true);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }).pipe(Effect.provide(TestLayersWithMockR2())),
       );
     });
   });

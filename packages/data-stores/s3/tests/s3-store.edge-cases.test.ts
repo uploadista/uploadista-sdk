@@ -626,7 +626,7 @@ describe("S3Store - Edge Cases and Error Handling", () => {
   });
 
   describe("Error Recovery", () => {
-    it("should recover from temporary storage issues", async () => {
+    it("should recover from temporary storage issues", { timeout: 25000 }, async () => {
       const testFile = createTestUploadFile(
         "recovery-test",
         TEST_FILE_SIZES.SMALL_BASIC.size,

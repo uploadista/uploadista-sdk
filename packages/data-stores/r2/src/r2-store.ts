@@ -123,7 +123,9 @@ export function createR2Store(config: R2StoreConfig) {
             );
 
           // Store part metadata in KV (R2 doesn't provide listParts API)
-          const existingParts = uploadFile.storage.parts || [];
+          // IMPORTANT: Fetch latest uploadFile from KV to avoid race condition with concurrent uploads
+          const latestUploadFile = yield* kvStore.get(uploadFile.id);
+          const existingParts = latestUploadFile.storage.parts || [];
           const updatedParts = [
             ...existingParts,
             {
@@ -134,9 +136,9 @@ export function createR2Store(config: R2StoreConfig) {
           ];
 
           yield* kvStore.set(uploadFile.id, {
-            ...uploadFile,
+            ...latestUploadFile,
             storage: {
-              ...uploadFile.storage,
+              ...latestUploadFile.storage,
               parts: updatedParts,
             },
           });
@@ -636,16 +638,17 @@ export function createR2Store(config: R2StoreConfig) {
     // Note: R2 does not provide a listMultipartUploads API
     // Use R2's native lifecycle rules or Cloudflare Workers Cron for cleanup
     // See: https://developers.cloudflare.com/r2/buckets/object-lifecycles/
-    const deleteExpired = Effect.gen(function* () {
-      yield* Effect.logWarning(
-        "R2 does not support automatic expired upload deletion via API. Please use R2 lifecycle rules instead.",
-      ).pipe(
-        Effect.annotateLogs({
-          bucket: r2Client.bucket,
-        }),
-      );
-      return 0;
-    });
+    const deleteExpired = (): Effect.Effect<number, UploadistaError> =>
+      Effect.gen(function* () {
+        yield* Effect.logWarning(
+          "R2 does not support automatic expired upload deletion via API. Please use R2 lifecycle rules instead.",
+        ).pipe(
+          Effect.annotateLogs({
+            bucket: r2Client.bucket,
+          }),
+        );
+        return 0;
+      });
 
     // Proper single-pass chunking using Effect's async stream constructor
     // Ensures all parts except the final part are exactly the same size (S3 requirement)

@@ -1011,6 +1011,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.0
+      '@uploadista/kv-store-memory':
+        specifier: workspace:*
+        version: link:../../kv-stores/memory
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1039,6 +1042,9 @@ importers:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.27.0(effect@3.19.3)(vitest@4.0.8(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@uploadista/kv-store-memory':
+        specifier: workspace:*
+        version: link:../../kv-stores/memory
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1226,6 +1232,9 @@ importers:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.27.0(effect@3.19.3)(vitest@4.0.8(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+      '@uploadista/event-broadcaster-memory':
+        specifier: workspace:*
+        version: link:../../event-broadcasters/memory
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config

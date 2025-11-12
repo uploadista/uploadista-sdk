@@ -1,11 +1,15 @@
-import type AWS from "@aws-sdk/client-s3";
+import type { ReadableStream } from "@cloudflare/workers-types";
 import { UploadistaError } from "@uploadista/core/errors";
 import { Effect, Layer, Ref } from "effect";
-import type { S3OperationContext } from "../../types";
-import { S3ClientService } from "../s3-client.service";
+import type {
+  MultipartUploadInfo,
+  R2OperationContext,
+  R2UploadedPart,
+} from "../../types";
+import { R2ClientService } from "../r2-client.service";
 
 // Mock configuration for testing scenarios
-export interface MockS3Config {
+export interface MockR2Config {
   simulateLatency?: number; // ms delay for all operations
   errorRate?: number; // 0-1 probability of random errors
   uploadFailureRate?: number; // 0-1 probability of upload failures
@@ -13,7 +17,7 @@ export interface MockS3Config {
   enableErrorInjection?: boolean;
 }
 
-// In-memory storage for mock S3
+// In-memory storage for mock R2
 interface MockStorage {
   objects: Map<string, Uint8Array>;
   multipartUploads: Map<
@@ -40,9 +44,9 @@ interface MockMetrics {
   totalBytesDownloaded: number;
 }
 
-// Additional methods for testing that extend the base S3ClientService
-export interface MockS3TestMethods {
-  readonly setConfig: (config: Partial<MockS3Config>) => Effect.Effect<void>;
+// Additional methods for testing that extend the base R2ClientService
+export interface MockR2TestMethods {
+  readonly setConfig: (config: Partial<MockR2Config>) => Effect.Effect<void>;
   readonly clearStorage: () => Effect.Effect<void>;
   readonly injectError: (
     operation: string,
@@ -53,10 +57,10 @@ export interface MockS3TestMethods {
   readonly getStorage: () => Effect.Effect<MockStorage>;
 }
 
-export const makeMockS3ClientService = (
+export const makeMockR2ClientService = (
   bucket: string,
-  initialConfig: MockS3Config = {},
-): Effect.Effect<S3ClientService["Type"] & MockS3TestMethods, never> => {
+  initialConfig: MockR2Config = {},
+): Effect.Effect<R2ClientService["Type"] & MockR2TestMethods, never> => {
   return Effect.gen(function* () {
     const storageRef = yield* Ref.make<MockStorage>({
       objects: new Map(),
@@ -70,7 +74,7 @@ export const makeMockS3ClientService = (
       totalBytesDownloaded: 0,
     });
 
-    const configRef = yield* Ref.make<MockS3Config>(initialConfig);
+    const configRef = yield* Ref.make<MockR2Config>(initialConfig);
     const errorInjectionRef = yield* Ref.make<Map<string, Error>>(new Map());
 
     const simulateLatency = () =>
@@ -98,8 +102,6 @@ export const makeMockS3ClientService = (
         const errorMap = yield* Ref.get(errorInjectionRef);
         const error = errorMap.get(operation);
         if (error) {
-          // Don't remove the error - let it persist for retries
-          // Tests should clear errors explicitly when done
           yield* Effect.fail(
             UploadistaError.fromCode("FILE_WRITE_ERROR", error),
           );
@@ -133,7 +135,7 @@ export const makeMockS3ClientService = (
     };
 
     // Implementation of service methods
-    const setConfig = (config: Partial<MockS3Config>) =>
+    const setConfig = (config: Partial<MockR2Config>) =>
       Ref.update(configRef, (current) => ({ ...current, ...config }));
 
     const clearStorage = () =>
@@ -143,9 +145,7 @@ export const makeMockS3ClientService = (
           multipartUploads: new Map(),
           incompleteParts: new Map(),
         });
-        // Also clear injected errors
         yield* Ref.set(errorInjectionRef, new Map());
-        // Reset metrics
         yield* Ref.set(metricsRef, {
           operationCounts: new Map(),
           totalBytesUploaded: 0,
@@ -185,7 +185,7 @@ export const makeMockS3ClientService = (
               new Error(`Object not found: ${key}`),
             ),
           );
-          return new ReadableStream(); // Never reached but helps TypeScript
+          return {} as ReadableStream; // Never reached but helps TypeScript
         }
 
         yield* Ref.update(metricsRef, (metrics) => ({
@@ -194,6 +194,7 @@ export const makeMockS3ClientService = (
         }));
 
         // Convert Uint8Array to ReadableStream
+        // @ts-expect-error - Using standard ReadableStream in tests
         return new ReadableStream({
           start(controller) {
             controller.enqueue(data);
@@ -271,19 +272,14 @@ export const makeMockS3ClientService = (
           }
           return { ...storage, objects: newObjects };
         });
-
-        return {
-          $metadata: {},
-          Deleted: keys.map((key) => ({ Key: key })),
-          Errors: [],
-        } as AWS.DeleteObjectsCommandOutput;
       });
 
-    const createMultipartUpload = (context: S3OperationContext) =>
+    const createMultipartUpload = (context: R2OperationContext) =>
       Effect.gen(function* () {
         yield* simulateLatency();
         yield* recordOperation("createMultipartUpload");
         yield* checkForInjectedError("createMultipartUpload");
+        yield* maybeInjectRandomError("createMultipartUpload");
 
         const uploadId = generateUploadId();
 
@@ -311,11 +307,11 @@ export const makeMockS3ClientService = (
           uploadId,
           bucket: context.bucket,
           key: context.key,
-        };
+        } as MultipartUploadInfo;
       });
 
     const uploadPart = (
-      context: S3OperationContext & { partNumber: number; data: Uint8Array },
+      context: R2OperationContext & { partNumber: number; data: Uint8Array },
     ) =>
       Effect.gen(function* () {
         yield* simulateLatency();
@@ -339,15 +335,13 @@ export const makeMockS3ClientService = (
         const upload = storage.multipartUploads.get(context.uploadId);
 
         if (!upload) {
-          // Return AWS-style error to match real S3 behavior
-          const awsError = new Error(
+          const r2Error = new Error(
             `Upload not found: ${context.uploadId}`,
           ) as Error & { code: string };
-          awsError.code = "NoSuchUpload";
-          yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
+          r2Error.code = "NoSuchUpload";
+          return yield* Effect.fail(
+            UploadistaError.fromCode("FILE_NOT_FOUND", r2Error),
           );
-          return ""; // Never reached but helps TypeScript
         }
 
         const etag = generateETag(context.data);
@@ -365,8 +359,8 @@ export const makeMockS3ClientService = (
       });
 
     const completeMultipartUpload = (
-      context: S3OperationContext,
-      parts: Array<AWS.Part>,
+      context: R2OperationContext,
+      parts: Array<R2UploadedPart>,
     ) =>
       Effect.gen(function* () {
         yield* simulateLatency();
@@ -377,24 +371,23 @@ export const makeMockS3ClientService = (
         const upload = storage.multipartUploads.get(context.uploadId);
 
         if (!upload) {
-          // Return AWS-style error to match real S3 behavior
-          const awsError = new Error(
+          const r2Error = new Error(
             `Upload not found: ${context.uploadId}`,
           ) as Error & { code: string };
-          awsError.code = "NoSuchUpload";
+          r2Error.code = "NoSuchUpload";
           yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
+            UploadistaError.fromCode("FILE_NOT_FOUND", r2Error),
           );
           return; // This will never execute but helps TypeScript
         }
 
         // Validate all parts are present
         for (const part of parts) {
-          if (!part.PartNumber || !upload.parts.has(part.PartNumber)) {
+          if (!part.partNumber || !upload.parts.has(part.partNumber)) {
             yield* Effect.fail(
               UploadistaError.fromCode(
                 "FILE_WRITE_ERROR",
-                new Error(`Part ${part.PartNumber} not found`),
+                new Error(`Part ${part.partNumber} not found`),
               ),
             );
           }
@@ -402,10 +395,10 @@ export const makeMockS3ClientService = (
 
         // Combine all parts into final object
         const sortedParts = parts
-          .sort((a, b) => (a.PartNumber || 0) - (b.PartNumber || 0))
+          .sort((a, b) => (a.partNumber || 0) - (b.partNumber || 0))
           .map((part) => {
-            const partData = upload.parts.get(part.PartNumber || 0);
-            if (!partData) throw new Error(`Part ${part.PartNumber} not found`);
+            const partData = upload.parts.get(part.partNumber || 0);
+            if (!partData) throw new Error(`Part ${part.partNumber} not found`);
             return partData.data;
           });
 
@@ -446,10 +439,10 @@ export const makeMockS3ClientService = (
           ),
         }));
 
-        return `https://${context.bucket}.s3.amazonaws.com/${context.key}`;
+        return context.key;
       });
 
-    const abortMultipartUpload = (context: S3OperationContext) =>
+    const abortMultipartUpload = (context: R2OperationContext) =>
       Effect.gen(function* () {
         yield* simulateLatency();
         yield* recordOperation("abortMultipartUpload");
@@ -465,72 +458,6 @@ export const makeMockS3ClientService = (
         }));
       });
 
-    const listParts = (
-      context: S3OperationContext & { partNumberMarker?: string },
-    ) =>
-      Effect.gen(function* () {
-        yield* simulateLatency();
-        yield* recordOperation("listParts");
-        yield* checkForInjectedError("listParts");
-
-        const storage = yield* Ref.get(storageRef);
-        const upload = storage.multipartUploads.get(context.uploadId);
-
-        if (!upload) {
-          // Return AWS-style error to match real S3 behavior
-          const awsError = new Error(
-            `Upload not found: ${context.uploadId}`,
-          ) as Error & { code: string };
-          awsError.code = "NoSuchUpload";
-          yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
-          );
-          return {
-            parts: [],
-            isTruncated: false,
-            nextPartNumberMarker: undefined,
-          }; // Never reached but helps TypeScript
-        }
-
-        const parts: AWS.Part[] = Array.from(upload.parts.entries())
-          .map(([partNumber, part]) => ({
-            PartNumber: partNumber,
-            ETag: part.etag,
-            Size: part.data.length,
-          }))
-          .sort((a, b) => (a.PartNumber || 0) - (b.PartNumber || 0));
-
-        return {
-          parts,
-          isTruncated: false,
-          nextPartNumberMarker: undefined,
-        };
-      });
-
-    const listMultipartUploads = (
-      _keyMarker?: string,
-      _uploadIdMarker?: string,
-    ) =>
-      Effect.gen(function* () {
-        yield* simulateLatency();
-        yield* recordOperation("listMultipartUploads");
-        yield* checkForInjectedError("listMultipartUploads");
-
-        const storage = yield* Ref.get(storageRef);
-        const uploads = Array.from(storage.multipartUploads.values()).map(
-          (upload) => ({
-            Key: upload.metadata.key,
-            UploadId: upload.uploadId,
-            Initiated: new Date(),
-          }),
-        );
-
-        return {
-          Uploads: uploads,
-          IsTruncated: false,
-        } as AWS.ListMultipartUploadsCommandOutput;
-      });
-
     const getIncompletePart = (id: string) =>
       Effect.gen(function* () {
         yield* simulateLatency();
@@ -543,6 +470,7 @@ export const makeMockS3ClientService = (
           return undefined;
         }
 
+        // @ts-expect-error - Using standard ReadableStream in tests
         return new ReadableStream({
           start(controller) {
             controller.enqueue(data);
@@ -599,7 +527,7 @@ export const makeMockS3ClientService = (
 
     return {
       bucket,
-      // S3ClientService methods
+      // R2ClientService methods
       getObject,
       headObject,
       putObject,
@@ -609,8 +537,6 @@ export const makeMockS3ClientService = (
       uploadPart,
       completeMultipartUpload,
       abortMultipartUpload,
-      listParts,
-      listMultipartUploads,
       getIncompletePart,
       getIncompletePartSize,
       putIncompletePart,
@@ -626,5 +552,5 @@ export const makeMockS3ClientService = (
   });
 };
 
-export const MockS3ClientLayer = (bucket: string, config?: MockS3Config) =>
-  Layer.effect(S3ClientService, makeMockS3ClientService(bucket, config));
+export const MockR2ClientLayer = (bucket: string, config?: MockR2Config) =>
+  Layer.effect(R2ClientService, makeMockR2ClientService(bucket, config));

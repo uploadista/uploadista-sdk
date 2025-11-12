@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
+    "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
     "vitest": "4.0.8"

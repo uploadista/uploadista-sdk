@@ -1,7 +1,6 @@
 import type {
   R2UploadedPart as CloudflareR2UploadedPart,
   R2Bucket,
-  ReadableStream,
 } from "@cloudflare/workers-types";
 import type { UploadistaError } from "@uploadista/core/errors";
 import type {
@@ -89,8 +88,8 @@ export type R2Store = {
     dependencies: { onProgress?: (chunkSize: number) => void },
   ) => Effect.Effect<number, UploadistaError>;
   getUpload: (id: string) => Effect.Effect<UploadFile, UploadistaError>;
-  read: (id: string) => Effect.Effect<ReadableStream, UploadistaError>;
-  deleteExpired: Effect.Effect<number, UploadistaError>;
+  read: (id: string) => Effect.Effect<Uint8Array, UploadistaError>;
+  deleteExpired?: () => Effect.Effect<number, UploadistaError>;
   getCapabilities: () => DataStoreCapabilities;
   getChunkerConstraints: () => {
     minChunkSize: number;
