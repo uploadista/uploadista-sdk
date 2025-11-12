@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
-    "@types/fluent-ffmpeg": "^2.1.28",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
