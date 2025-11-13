@@ -72,7 +72,7 @@ export const mergeFlow = createFlow({
     "input-1": createInputNode("input-1"),
     "input-2": createInputNode("input-2"),
     "input-3": createInputNode("input-3"),
-    merge: createMergeNode("merge"),
+    merge: createMergeNode("merge", { strategy: "concat", inputCount: 3 }),
     output: createStorageNode("output"),
   },
   edges: [

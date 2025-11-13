@@ -6,38 +6,225 @@ import { Label } from "./ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
 
-type Flows = "optimize-flow" | "describe-image-flow" | "remove-background-flow";
-const flowDescriptions: Record<Flows, { title: string; description: string }> =
-  {
-    "optimize-flow": {
-      title: "Image Optimization",
-      description:
-        'Upload an image file through a processing flow. This example uses the "optimize-flow" which optimizes and converts images to WEBP format at 80% quality',
-    },
-    "describe-image-flow": {
-      title: "Image Description",
-      description:
-        'Upload an image file through a processing flow. This example uses the "describe-image-flow" which describes the image in detail',
-    },
-    "remove-background-flow": {
-      title: "Remove Background",
-      description:
-        'Upload an image file through a processing flow. This example uses the "remove-background-flow" which removes the background from the image',
-    },
-  };
+// All available flows from @uploadista/example-flows
+type FlowId =
+  // Basic Image Flows
+  | "simple-flow"
+  | "optimize-flow"
+  | "resize-flow"
+  | "transform-flow"
+  // Advanced Image Flows
+  | "describe-image-flow"
+  | "remove-background-flow"
+  // Video Flows
+  | "transcode-video-flow"
+  | "trim-video-flow"
+  | "thumbnail-flow"
+  | "resize-video-flow"
+  | "describe-video-flow"
+  // Utility Flows
+  | "conditional-flow"
+  | "merge-flow"
+  | "multiplex-flow"
+  | "zip-flow"
+  // Complex Flows
+  | "image-pipeline-flow"
+  | "video-pipeline-flow"
+  | "conditional-image-flow"
+  | "multi-format-flow";
+
+type FlowCategory =
+  | "basic-image"
+  | "advanced-image"
+  | "video"
+  | "utility"
+  | "complex";
+
+type FlowMetadata = {
+  title: string;
+  description: string;
+  category: FlowCategory;
+  acceptedTypes: string;
+};
+
+const flowDescriptions: Record<FlowId, FlowMetadata> = {
+  // Basic Image Flows
+  "simple-flow": {
+    title: "Simple Flow",
+    description:
+      "Basic file upload without any processing. Accepts a file and stores it directly.",
+    category: "basic-image",
+    acceptedTypes: "image/*",
+  },
+  "optimize-flow": {
+    title: "Image Optimization",
+    description:
+      "Compresses and converts images to WebP format at 80% quality for web delivery.",
+    category: "basic-image",
+    acceptedTypes: "image/*",
+  },
+  "resize-flow": {
+    title: "Image Resize",
+    description:
+      "Resizes images to 800x600 with cover fit, maintaining aspect ratio.",
+    category: "basic-image",
+    acceptedTypes: "image/*",
+  },
+  "transform-flow": {
+    title: "Image Transform",
+    description:
+      "Applies transformations like rotation (90°) and horizontal flipping.",
+    category: "basic-image",
+    acceptedTypes: "image/*",
+  },
+
+  // Advanced Image Flows
+  "describe-image-flow": {
+    title: "Image Description (AI)",
+    description:
+      "Uses AI to generate detailed descriptions of image content for accessibility and metadata.",
+    category: "advanced-image",
+    acceptedTypes: "image/*",
+  },
+  "remove-background-flow": {
+    title: "Remove Background (AI)",
+    description:
+      "Uses AI to remove backgrounds from images, outputting transparent PNGs.",
+    category: "advanced-image",
+    acceptedTypes: "image/*",
+  },
+
+  // Video Flows
+  "transcode-video-flow": {
+    title: "Video Transcode",
+    description:
+      "Converts videos to WebM format with VP9 codec for web-friendly playback.",
+    category: "video",
+    acceptedTypes: "video/*",
+  },
+  "trim-video-flow": {
+    title: "Video Trim",
+    description:
+      "Cuts videos to specified time range (5-30 seconds) for clips or previews.",
+    category: "video",
+    acceptedTypes: "video/*",
+  },
+  "thumbnail-flow": {
+    title: "Video Thumbnail",
+    description:
+      "Extracts a frame from video at 10 seconds as a JPEG thumbnail.",
+    category: "video",
+    acceptedTypes: "video/*",
+  },
+  "resize-video-flow": {
+    title: "Video Resize",
+    description: "Resizes videos to 720p (1280x720) while maintaining quality.",
+    category: "video",
+    acceptedTypes: "video/*",
+  },
+  "describe-video-flow": {
+    title: "Video Description (AI)",
+    description:
+      "Uses AI to analyze video content and generate searchable descriptions.",
+    category: "video",
+    acceptedTypes: "video/*",
+  },
+
+  // Utility Flows
+  "conditional-flow": {
+    title: "Conditional Routing",
+    description:
+      "Routes files to different outputs based on size (>1MB to large, ≤1MB to small).",
+    category: "utility",
+    acceptedTypes: "image/*",
+  },
+  "merge-flow": {
+    title: "Merge Files",
+    description:
+      "Combines multiple input files into a single processing stream for batch operations.",
+    category: "utility",
+    acceptedTypes: "*",
+  },
+  "multiplex-flow": {
+    title: "Multiplex",
+    description:
+      "Splits a single input into 3 parallel processing paths for multiple versions.",
+    category: "utility",
+    acceptedTypes: "image/*",
+  },
+  "zip-flow": {
+    title: "Zip Archive",
+    description:
+      "Archives multiple files into a single compressed ZIP file for download.",
+    category: "utility",
+    acceptedTypes: "*",
+  },
+
+  // Complex Flows
+  "image-pipeline-flow": {
+    title: "Image Pipeline",
+    description:
+      "Multi-stage processing: resize to 1200x900, optimize to WebP, and generate AI description.",
+    category: "complex",
+    acceptedTypes: "image/*",
+  },
+  "video-pipeline-flow": {
+    title: "Video Pipeline",
+    description:
+      "Complete video processing: trim to 60s, transcode to WebM, and generate thumbnail.",
+    category: "complex",
+    acceptedTypes: "video/*",
+  },
+  "conditional-image-flow": {
+    title: "Conditional Image Processing",
+    description:
+      "Routes images >2MB through resize+optimize, smaller images through optimize only.",
+    category: "complex",
+    acceptedTypes: "image/*",
+  },
+  "multi-format-flow": {
+    title: "Multi-Format Export",
+    description:
+      "Generates WebP, JPEG, and PNG versions, then zips them into a single archive.",
+    category: "complex",
+    acceptedTypes: "image/*",
+  },
+};
+
+const categoryLabels: Record<FlowCategory, string> = {
+  "basic-image": "Basic Image Flows",
+  "advanced-image": "Advanced Image Flows (AI)",
+  video: "Video Flows",
+  utility: "Utility Flows",
+  complex: "Complex Flows",
+};
+
+// Group flows by category
+const flowsByCategory = Object.entries(flowDescriptions).reduce(
+  (acc, [flowId, metadata]) => {
+    if (!acc[metadata.category]) {
+      acc[metadata.category] = [];
+    }
+    acc[metadata.category].push({ flowId: flowId as FlowId, ...metadata });
+    return acc;
+  },
+  {} as Record<FlowCategory, Array<{ flowId: FlowId } & FlowMetadata>>,
+);
 
 function FlowUploadContent() {
-  const [flowId, setFlowId] = useState<Flows>("optimize-flow");
+  const [flowId, setFlowId] = useState<FlowId>("optimize-flow");
 
   const flowData = useMemo(() => flowDescriptions[flowId], [flowId]);
 
   const handleFlowIdChange = (value: string) => {
-    setFlowId(value as Flows);
+    setFlowId(value as FlowId);
   };
 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -67,16 +254,26 @@ function FlowUploadContent() {
     <Card className="p-8">
       <div className="mb-8">
         <div className="space-y-2">
-          <Label htmlFor="storage">Flow</Label>
+          <Label htmlFor="flow-select">Flow</Label>
           <Select value={flowId} onValueChange={handleFlowIdChange}>
-            <SelectTrigger id="storage" className="w-64">
-              <SelectValue placeholder="Select storage" />
+            <SelectTrigger id="flow-select" className="w-full max-w-md">
+              <SelectValue placeholder="Select a flow" />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(flowDescriptions).map(([flowId, flowData]) => (
-                <SelectItem key={flowId} value={flowId}>
-                  {flowData.title}
-                </SelectItem>
+              {(
+                Object.entries(flowsByCategory) as [
+                  FlowCategory,
+                  Array<{ flowId: FlowId } & FlowMetadata>,
+                ][]
+              ).map(([category, flows]) => (
+                <SelectGroup key={category}>
+                  <SelectLabel>{categoryLabels[category]}</SelectLabel>
+                  {flows.map(({ flowId, title }) => (
+                    <SelectItem key={flowId} value={flowId}>
+                      {title}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               ))}
             </SelectContent>
           </Select>
@@ -97,12 +294,12 @@ function FlowUploadContent() {
             htmlFor="flow-file-input"
             className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide"
           >
-            Choose Image File
+            Choose File
           </label>
           <input
             id="flow-file-input"
             type="file"
-            accept="image/*"
+            accept={flowData.acceptedTypes}
             onChange={handleFileSelect}
             disabled={flowUpload.isUploading}
             className="block w-full text-gray-700 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:bg-gradient-to-r file:from-indigo-600 file:to-purple-600 file:text-white file:font-semibold file:cursor-pointer hover:file:from-indigo-700 hover:file:to-purple-700 file:transition-all file:shadow-md disabled:opacity-50 disabled:cursor-not-allowed border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500"
@@ -228,7 +425,7 @@ function FlowUploadContent() {
                   Flow Complete!
                 </h3>
                 <p className="text-green-700">
-                  Image uploaded and optimized successfully.
+                  File processed successfully through {flowData.title}.
                 </p>
               </div>
             </div>
@@ -256,7 +453,7 @@ function FlowUploadContent() {
               onClick={flowUpload.reset}
               className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-md"
             >
-              Upload Another Image
+              Upload Another File
             </button>
           </div>
         )}
