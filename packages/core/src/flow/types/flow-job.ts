@@ -9,6 +9,8 @@
  * @see {@link FlowServer} for job management operations
  */
 
+import type { TypedOutput } from "./flow-types";
+
 // import type { FlowData } from "@/flow";
 
 /**
@@ -33,16 +35,25 @@ export type FlowJobTaskStatus =
  *
  * @property nodeId - Unique identifier of the node this task represents
  * @property status - Current execution status of the node
- * @property result - Output data from the node (if completed successfully)
+ * @property result - Node execution result data (can be partial data if paused, or complete data if finished)
  * @property error - Error message if the node failed
  * @property retryCount - Number of retry attempts made before success or final failure
  * @property createdAt - When the task was created
  * @property updatedAt - When the task was last updated
+ *
+ * @remarks
+ * The result field can contain:
+ * - Partial/intermediate data when status is "paused" (unknown type)
+ * - Complete data when status is "completed" (could be TypedOutput for output nodes)
+ * - undefined when status is "pending", "running", "started", or "failed"
+ *
+ * For type-safe access to final outputs, use FlowJob.result instead, which contains
+ * the array of TypedOutput from all output nodes.
  */
 export type FlowJobTask = {
   nodeId: string;
   status: FlowJobTaskStatus;
-  result?: unknown; // Node execution result
+  result?: unknown; // Can be partial data (paused) or complete data (completed)
   error?: string; // Error message from failed execution
   retryCount?: number; // Number of retry attempts made
   createdAt: Date;
@@ -65,7 +76,7 @@ export type FlowJobTask = {
  * @property tasks - Array of node execution tasks
  * @property error - Error message if the job failed
  * @property endedAt - When the job completed or failed
- * @property result - Final output from the flow (only set when completed)
+ * @property result - Array of typed outputs from all output nodes (only set when completed)
  * @property pausedAt - Node ID where execution is paused (if applicable)
  * @property executionState - State needed to resume a paused flow
  * @property intermediateFiles - File IDs to cleanup after completion
@@ -75,6 +86,7 @@ export type FlowJobTask = {
  * - Paused jobs store execution state and can be resumed with new data
  * - Intermediate files from non-output nodes are automatically cleaned up
  * - Tasks are updated as nodes progress through their lifecycle
+ * - The result field now contains an array of TypedOutput for all output nodes
  *
  * @example
  * ```typescript
@@ -88,7 +100,11 @@ export type FlowJobTask = {
  * // Poll for status
  * const status = yield* flowServer.getJobStatus(job.id);
  * if (status.status === "completed") {
- *   console.log("Final result:", status.result);
+ *   // Access typed outputs
+ *   console.log("Outputs:", status.result);
+ *   for (const output of status.result || []) {
+ *     console.log(`${output.nodeId} (${output.nodeType}):`, output.data);
+ *   }
  * } else if (status.status === "paused") {
  *   // Resume with additional data
  *   yield* flowServer.resumeFlow({
@@ -110,8 +126,8 @@ export type FlowJob = {
   tasks: FlowJobTask[];
   error?: string;
   endedAt?: Date;
-  // Final flow execution result (only populated when completed)
-  result?: unknown;
+  // Array of typed outputs from all output nodes (only populated when completed)
+  result?: TypedOutput[];
   // Paused execution state
   pausedAt?: string; // nodeId where execution is paused
   executionState?: {

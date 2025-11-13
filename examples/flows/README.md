@@ -56,6 +56,60 @@ const result = await executeFlow(flow, imageFile, storage);
 
 ## Available Flows
 
+### Typed Flows (4 flows)
+
+**New in v1.0:** Examples demonstrating the type registry system for type-safe flow outputs.
+
+| Flow ID | Export | Description |
+|---------|--------|-------------|
+| `simple-typed-flow` | `simpleTypedFlow` | Basic typed flow using built-in types |
+| `multi-output-flow` | `multiOutputFlow` | Flow with multiple typed outputs (storage + thumbnail) |
+| `complex-typed-flow` | `complexTypedFlow` | Multi-output flow with custom types (storage + thumbnail + description) |
+
+**Type Guards & Helpers:**
+- `isThumbnailOutput`, `isDescriptionOutput` - Custom type guards
+- `createThumbnailNode`, `createDescribeImageNode` - Custom typed node factories
+- Helper functions: `filterOutputsByType()`, `getSingleOutputByType()`, etc.
+
+**Example:**
+```typescript
+import {
+  complexTypedFlow,
+  isThumbnailOutput,
+  isDescriptionOutput,
+} from '@uploadista/example-flows';
+import { isStorageOutput, filterOutputsByType } from '@uploadista/core';
+
+const result = await executeFlow(complexTypedFlow, imageFile, storage);
+
+// Type-safe access to outputs
+for (const output of result.outputs) {
+  if (isStorageOutput(output)) {
+    console.log('Original:', output.data.url);
+  } else if (isThumbnailOutput(output)) {
+    console.log('Thumbnail:', `${output.data.width}x${output.data.height}`);
+  } else if (isDescriptionOutput(output)) {
+    console.log('Description:', output.data.description);
+  }
+}
+
+// Filter outputs by type
+const thumbnails = filterOutputsByType(result.outputs, isThumbnailOutput);
+console.log(`Generated ${thumbnails.length} thumbnails`);
+```
+
+**Key Features:**
+- **Type Registration:** Custom types registered with Zod schemas
+- **Type Guards:** Runtime type checking with TypeScript narrowing
+- **Multi-Output Support:** Flows can produce multiple typed outputs
+- **Helper Functions:** Utilities for filtering and extracting typed outputs
+- **Backward Compatible:** Untyped flows continue to work
+
+**See Also:**
+- [Type Registry Guide](../../docs/type-registry.md) - Complete type registry documentation
+- [Typed Flows Guide](../../docs/typed-flows.md) - Using typed flows in depth
+- [Migration Guide](../../docs/MIGRATION-typed-flows.md) - Upgrading existing flows
+
 ### Basic Image Flows (4 flows)
 
 | Flow ID | Export | Description |

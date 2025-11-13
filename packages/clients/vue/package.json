@@ -40,6 +40,7 @@
     "vue": "^3.3.0"
   },
   "dependencies": {
+    "@uploadista/client-core": "workspace:*",
     "@uploadista/client-browser": "workspace:*",
     "@uploadista/core": "workspace:*"
   },

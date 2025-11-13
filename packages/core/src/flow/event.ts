@@ -10,6 +10,7 @@
  */
 
 import type { NodeType } from "./node";
+import type { TypedOutput } from "./types/flow-types";
 
 /**
  * Enumeration of all possible flow and node execution event types.
@@ -87,13 +88,32 @@ export type FlowEventFlowStart = {
 /**
  * Event emitted when a flow completes successfully.
  *
- * @property result - The final output from all output nodes in the flow
+ * @property outputs - Array of typed outputs from all output nodes in the flow
+ * @property result - Legacy field for backward compatibility (deprecated, use outputs instead)
+ *
+ * @remarks
+ * The `outputs` field contains an array of TypedOutput objects, each with:
+ * - nodeId: The specific node that produced the output
+ * - nodeType: The registered type ID (e.g., "storage-output-v1")
+ * - data: The actual output data
+ * - timestamp: When the output was produced
+ *
+ * @example
+ * ```typescript
+ * // Handle flow completion with typed outputs
+ * if (event.eventType === EventType.FlowEnd && event.outputs) {
+ *   for (const output of event.outputs) {
+ *     console.log(`${output.nodeId} (${output.nodeType}):`, output.data);
+ *   }
+ * }
+ * ```
  */
 export type FlowEventFlowEnd = {
   jobId: string;
   flowId: string;
   eventType: EventType.FlowEnd;
-  result?: unknown; // Flow execution result
+  outputs?: TypedOutput[]; // Typed outputs from all output nodes
+  result?: unknown; // Legacy field (deprecated, use outputs instead)
 };
 
 /**
@@ -166,7 +186,11 @@ export type FlowEventNodeError = {
 /**
  * Event emitted when a node completes successfully.
  *
- * @property result - The output data produced by the node
+ * @property result - The typed output data produced by the node
+ *
+ * @remarks
+ * For output nodes, the result will be a TypedOutput containing type information.
+ * For other nodes, it may be untyped (nodeType will be undefined).
  */
 export type FlowEventNodeEnd = {
   jobId: string;
@@ -174,7 +198,7 @@ export type FlowEventNodeEnd = {
   nodeId: string;
   eventType: EventType.NodeEnd;
   nodeName: string;
-  result?: unknown; // Node execution result
+  result?: TypedOutput | unknown; // Typed output for output nodes, or untyped for others
 };
 
 /**

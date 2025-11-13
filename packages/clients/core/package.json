@@ -21,6 +21,14 @@
     "./upload": {
       "types": "./dist/upload/index.d.mts",
       "import": "./dist/upload/index.mjs"
+    },
+    "./managers": {
+      "types": "./dist/managers/index.d.mts",
+      "import": "./dist/managers/index.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.mts",
+      "import": "./dist/testing/index.mjs"
     }
   },
   "scripts": {

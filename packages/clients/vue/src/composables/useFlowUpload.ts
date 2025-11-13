@@ -1,11 +1,17 @@
 import type {
-  FlowUploadConfig,
+  FlowUploadOptions,
   UploadistaEvent,
 } from "@uploadista/client-browser";
+import {
+  FlowManager,
+  type FlowUploadState,
+  type FlowUploadStatus,
+  type InternalFlowUploadOptions,
+} from "@uploadista/client-core";
 import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import type { UploadFile } from "@uploadista/core/types";
 import { UploadEventType } from "@uploadista/core/types";
-import { computed, onUnmounted, readonly, ref } from "vue";
+import { computed, onMounted, onUnmounted, readonly, ref } from "vue";
 import { useUploadistaClient } from "./useUploadistaClient";
 
 /**
@@ -25,35 +31,14 @@ function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
   );
 }
 
-export type FlowUploadStatus =
-  | "idle"
-  | "uploading"
-  | "processing"
-  | "success"
-  | "error"
-  | "aborted";
-
-export interface FlowUploadState<TOutput = UploadFile> {
-  status: FlowUploadStatus;
-  progress: number;
-  bytesUploaded: number;
-  totalBytes: number | null;
-  error: Error | null;
-  result: TOutput | null;
-  jobId: string | null;
-  // Flow execution tracking
-  flowStarted: boolean;
-  currentNodeName: string | null;
-  currentNodeType: string | null;
-  // Full flow outputs (all output nodes)
-  flowOutputs: Record<string, unknown> | null;
-}
+// Re-export types from core for convenience
+export type { FlowUploadState, FlowUploadStatus };
 
 export interface UseFlowUploadOptions<TOutput = UploadFile> {
   /**
    * Flow configuration
    */
-  flowConfig: FlowUploadConfig;
+  flowConfig: FlowUploadOptions<TOutput>["flowConfig"];
 
   /**
    * Called when upload progress updates
@@ -156,270 +141,134 @@ const initialState: FlowUploadState = {
 export function useFlowUpload<TOutput = UploadFile>(
   options: UseFlowUploadOptions<TOutput>,
 ) {
-  // Get client and event subscription
+  // Get client
   const client = useUploadistaClient();
   const state = ref<FlowUploadState<TOutput>>(
     initialState as FlowUploadState<TOutput>,
   );
-  const abortFn = ref<(() => void) | null>(null);
-  const jobId = ref<string | null>(null);
+  let manager: FlowManager<File | Blob, TOutput> | null = null;
+  let unsubscribe: (() => void) | null = null;
 
-  // Handle flow events
-  const handleFlowEvent = (event: FlowEvent) => {
-    console.log("handleFlowEvent", event);
-    // Only handle events for the current job
-    if (!jobId.value || event.jobId !== jobId.value) {
-      console.log("handleFlowEvent - jobId mismatch", event.jobId, jobId.value);
-      return;
-    }
-
-    switch (event.eventType) {
-      case EventType.FlowStart:
-        state.value = {
-          ...state.value,
-          flowStarted: true,
-          status: "processing",
+  // Create FlowManager instance
+  onMounted(() => {
+    manager = new FlowManager(
+      async (
+        file: File | Blob,
+        flowConfig: {
+          flowId: string;
+          storageId: string;
+          outputNodeId?: string;
+          metadata?: Record<string, string>;
+        },
+        internalOptions: InternalFlowUploadOptions,
+      ) => {
+        const result = await client.client.uploadWithFlow(file, flowConfig, {
+          onJobStart: internalOptions.onJobStart,
+          onProgress: internalOptions.onProgress,
+          onChunkComplete: internalOptions.onChunkComplete,
+          onSuccess: internalOptions.onSuccess,
+          onError: internalOptions.onError,
+          onShouldRetry: internalOptions.onShouldRetry,
+        });
+        // Return only abort and pause (ignore jobId and return value)
+        return {
+          abort: async () => {
+            await result.abort();
+          },
+          pause: async () => {
+            await result.pause();
+            // Ignore the FlowJob return value
+          },
         };
-        break;
+      },
+      {
+        onStateChange: (newState) => {
+          state.value = newState;
+        },
+        onProgress: options.onProgress
+          ? (_uploadId, bytesUploaded, totalBytes) => {
+              const progress = totalBytes
+                ? Math.round((bytesUploaded / totalBytes) * 100)
+                : 0;
+              options.onProgress?.(progress, bytesUploaded, totalBytes);
+            }
+          : undefined,
+        onChunkComplete: options.onChunkComplete,
+        onFlowComplete: options.onFlowComplete,
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+        onAbort: options.onAbort,
+      },
+      {
+        flowConfig: options.flowConfig,
+        onChunkComplete: options.onChunkComplete,
+        onFlowComplete: options.onFlowComplete,
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+        onAbort: options.onAbort,
+        onShouldRetry: options.onShouldRetry,
+      },
+    );
 
-      case EventType.NodeStart:
-        state.value = {
-          ...state.value,
-          status: "processing",
-          currentNodeName: event.nodeName,
-          currentNodeType: event.nodeType,
-        };
-        break;
-
-      case EventType.NodePause:
-        // When input node pauses, it's waiting for upload - switch to uploading state
-        state.value = {
-          ...state.value,
-          status: "uploading",
-          currentNodeName: event.nodeName,
-        };
-        break;
-
-      case EventType.NodeResume:
-        // When node resumes, upload is complete - switch to processing state
-        state.value = {
-          ...state.value,
-          status: "processing",
-          currentNodeName: event.nodeName,
-          currentNodeType: event.nodeType,
-        };
-        break;
-
-      case EventType.NodeEnd:
-        state.value = {
-          ...state.value,
-          status:
-            state.value.status === "uploading"
-              ? "processing"
-              : state.value.status,
-          currentNodeName: null,
-          currentNodeType: null,
-        };
-        break;
-
-      case EventType.FlowEnd: {
-        // Get flow outputs from the event result
-        const flowOutputs = (event.result as Record<string, unknown>) || null;
-
-        // Call onFlowComplete with full outputs
-        if (flowOutputs && options.onFlowComplete) {
-          options.onFlowComplete(flowOutputs);
-        }
-
-        // Extract single output for onSuccess callback
-        let extractedOutput: TOutput | null = null;
-        if (flowOutputs) {
-          if (
-            options.flowConfig.outputNodeId &&
-            options.flowConfig.outputNodeId in flowOutputs
-          ) {
-            // Use specified output node
-            extractedOutput = flowOutputs[
-              options.flowConfig.outputNodeId
-            ] as TOutput;
-          } else {
-            // Use first output node
-            const firstOutputValue = Object.values(flowOutputs)[0];
-            extractedOutput = firstOutputValue as TOutput;
-          }
-        }
-
-        // Call onSuccess with extracted output
-        if (extractedOutput && options.onSuccess) {
-          options.onSuccess(extractedOutput);
-        }
-
-        state.value = {
-          ...state.value,
-          status: "success",
-          currentNodeName: null,
-          currentNodeType: null,
-          result: extractedOutput,
-          flowOutputs,
-        };
-        break;
+    // Subscribe to events and forward them to the manager
+    unsubscribe = client.subscribeToEvents((event: UploadistaEvent) => {
+      // Handle flow events
+      if (isFlowEvent(event)) {
+        manager?.handleFlowEvent(event);
+        return;
       }
 
-      case EventType.FlowError:
-        state.value = {
-          ...state.value,
-          status: "error",
-          error: new Error(event.error),
-        };
-        options.onError?.(new Error(event.error));
-        break;
-
-      case EventType.NodeError:
-        state.value = {
-          ...state.value,
-          status: "error",
-          error: new Error(event.error),
-        };
-        options.onError?.(new Error(event.error));
-        break;
-    }
-  };
-
-  // Automatically subscribe to flow events and upload events
-  const unsubscribe = client.subscribeToEvents((event: UploadistaEvent) => {
-    console.log("subscribeToEvents", event);
-    // Handle flow events
-    if (isFlowEvent(event)) {
-      handleFlowEvent(event);
-      return;
-    }
-
-    // Handle upload progress events for this job's upload
-    const uploadEvent = event as {
-      type: string;
-      data?: { id: string; progress: number; total: number };
-      flow?: { jobId: string };
-    };
-    if (
-      uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
-      uploadEvent.flow?.jobId === jobId.value &&
-      uploadEvent.data
-    ) {
-      const { progress: bytesUploaded, total: totalBytes } = uploadEvent.data;
-      const progress = totalBytes
-        ? Math.round((bytesUploaded / totalBytes) * 100)
-        : 0;
-
-      state.value = {
-        ...state.value,
-        progress,
-        bytesUploaded,
-        totalBytes,
+      // Handle upload progress events for this job's upload
+      const uploadEvent = event as {
+        type: string;
+        data?: { id: string; progress: number; total: number };
+        flow?: { jobId: string };
       };
-    }
+      if (
+        uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
+        uploadEvent.flow?.jobId === manager?.getJobId() &&
+        uploadEvent.data
+      ) {
+        const { progress: bytesUploaded, total: totalBytes } = uploadEvent.data;
+
+        manager?.handleUploadProgress(
+          uploadEvent.data.id,
+          bytesUploaded,
+          totalBytes,
+        );
+      }
+    });
   });
 
   // Cleanup on unmount
   onUnmounted(() => {
-    unsubscribe();
+    unsubscribe?.();
+    manager?.cleanup();
   });
 
-  const abort = () => {
-    if (abortFn.value) {
-      abortFn.value();
-      abortFn.value = null;
-
-      state.value = {
-        ...state.value,
-        status: "aborted",
-      };
-
-      options.onAbort?.();
-    }
+  const upload = async (file: File | Blob) => {
+    await manager?.upload(file);
   };
 
-  const upload = async (file: File | Blob) => {
-    jobId.value = null;
+  const abort = () => {
+    manager?.abort();
+  };
 
-    state.value = {
-      ...initialState,
-      status: "uploading",
-      totalBytes: file.size,
-    } as FlowUploadState<TOutput>;
-
-    try {
-      const { abort: _abortFn } = await client.client.uploadWithFlow(
-        file,
-        options.flowConfig,
-        {
-          onJobStart: (id: string) => {
-            jobId.value = id;
-            state.value = { ...state.value, jobId: id };
-          },
-          onProgress: (
-            _uploadId: string,
-            bytesUploaded: number,
-            totalBytes: number | null,
-          ) => {
-            const progress = totalBytes
-              ? Math.round((bytesUploaded / totalBytes) * 100)
-              : 0;
-
-            state.value = {
-              ...state.value,
-              progress,
-              bytesUploaded,
-              totalBytes,
-            };
-
-            options.onProgress?.(progress, bytesUploaded, totalBytes);
-          },
-          onChunkComplete: options.onChunkComplete,
-          onSuccess: (_result: UploadFile) => {
-            // Upload phase is complete, now waiting for flow execution
-            // Status transition from "uploading" to "processing" is handled by NodeResume event
-            state.value = {
-              ...state.value,
-              progress: 100,
-            };
-            // Don't call onSuccess here - wait for FlowEnd event
-          },
-          onError: (error: Error) => {
-            state.value = {
-              ...state.value,
-              status: "error",
-              error,
-            };
-
-            options.onError?.(error);
-          },
-          onShouldRetry: options.onShouldRetry,
-        },
-      );
-
-      abortFn.value = _abortFn;
-    } catch (error) {
-      state.value = {
-        ...state.value,
-        status: "error",
-        error: error as Error,
-      };
-
-      options.onError?.(error as Error);
-    }
+  const pause = () => {
+    manager?.pause();
   };
 
   const reset = () => {
-    state.value = initialState as FlowUploadState<TOutput>;
-    abortFn.value = null;
-    jobId.value = null;
+    manager?.reset();
   };
 
   return {
     state: readonly(state),
     upload,
     abort,
+    pause,
     reset,
+    // Derive computed values from state (reactive to state changes)
     isUploading: computed(
       () =>
         state.value.status === "uploading" ||

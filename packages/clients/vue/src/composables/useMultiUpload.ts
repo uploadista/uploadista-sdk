@@ -1,12 +1,8 @@
 import type { UploadOptions } from "@uploadista/client-browser";
+import type { UploadMetrics } from "@uploadista/client-core";
 import type { UploadFile } from "@uploadista/core/types";
 import { computed, readonly, ref } from "vue";
-import type {
-  UploadInput,
-  UploadMetrics,
-  UploadState,
-  UploadStatus,
-} from "./useUpload";
+import type { UploadInput, UploadState, UploadStatus } from "./useUpload";
 import { useUploadistaClient } from "./useUploadistaClient";
 
 export interface UploadItem {

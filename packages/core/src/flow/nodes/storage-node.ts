@@ -4,6 +4,7 @@ import { UploadistaError } from "../../errors";
 import { type UploadFile, uploadFileSchema } from "../../types";
 import { UploadServer } from "../../upload";
 import { createFlowNode, NodeType } from "../node";
+import { STORAGE_OUTPUT_TYPE_ID } from "../node-types";
 import { completeNodeExecution } from "../types";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
@@ -61,6 +62,7 @@ export function createStorageNode(
       type: NodeType.output,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       run: ({ data: file, storageId, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           const { type, fileName, metadata, metadataJson } =

@@ -1,25 +1,20 @@
-import type { UploadistaEvent } from "@uploadista/client-core";
+import type {
+  UploadistaUploadOptions,
+  UploadMetrics,
+} from "@uploadista/client-core";
+import {
+  UploadManager,
+  type UploadState,
+  type UploadStatus,
+} from "@uploadista/client-core";
 import type { UploadFile } from "@uploadista/core/types";
-import { UploadEventType } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FilePickResult } from "../types";
+import { createBlobFromBuffer } from "../types/platform-types";
 import { useUploadistaContext } from "./use-uploadista-context";
 
-export type UploadStatus =
-  | "idle"
-  | "uploading"
-  | "success"
-  | "error"
-  | "aborted";
-
-export interface UploadState {
-  status: UploadStatus;
-  progress: number;
-  bytesUploaded: number;
-  totalBytes: number | null;
-  error: Error | null;
-  result: UploadFile | null;
-}
+// Re-export types from core for convenience
+export type { UploadState, UploadStatus };
 
 export interface UseUploadOptions {
   /**
@@ -41,7 +36,7 @@ export interface UseUploadOptions {
    * Called when upload progress updates
    */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;
@@ -111,6 +106,11 @@ export interface UseUploadReturn {
    * Whether the upload can be retried
    */
   canRetry: boolean;
+
+  /**
+   * Upload metrics and performance insights from the client
+   */
+  metrics: UploadMetrics;
 }
 
 const initialState: UploadState = {
@@ -123,7 +123,7 @@ const initialState: UploadState = {
 };
 
 /**
- * React hook for managing individual file uploads with full state management.
+ * React Native hook for managing individual file uploads with full state management.
  * Provides upload progress tracking, error handling, abort functionality, and retry logic.
  *
  * Must be used within an UploadistaProvider.
@@ -140,16 +140,14 @@ const initialState: UploadState = {
  *     onProgress: (progress) => console.log('Progress:', progress + '%'),
  *   });
  *
- *   const handlePickFile = async () => {
- *     const file = await fileSystemProvider.pickDocument();
- *     if (file) {
- *       await upload.upload(file);
- *     }
+ *   const handleFilePick = async () => {
+ *     const file = await pickFile();
+ *     if (file) await upload.upload(file);
  *   };
  *
  *   return (
  *     <View>
- *       <Button title="Pick File" onPress={handlePickFile} />
+ *       <Button title="Pick File" onPress={handleFilePick} />
  *       {upload.isUploading && <Text>Progress: {upload.state.progress}%</Text>}
  *       {upload.state.error && <Text>Error: {upload.state.error.message}</Text>}
  *       {upload.canRetry && <Button title="Retry" onPress={upload.retry} />}
@@ -160,226 +158,92 @@ const initialState: UploadState = {
  * ```
  */
 export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
-  const { client, fileSystemProvider, subscribeToEvents } =
-    useUploadistaContext();
+  const { client, fileSystemProvider } = useUploadistaContext();
   const [state, setState] = useState<UploadState>(initialState);
-  const abortControllerRef = useRef<{ abort: () => void } | null>(null);
+  const managerRef = useRef<UploadManager | null>(null);
   const lastFileRef = useRef<FilePickResult | null>(null);
-  const currentUploadIdRef = useRef<string | null>(null);
 
-  const updateState = useCallback((update: Partial<UploadState>) => {
-    setState((prev) => ({ ...prev, ...update }));
-  }, []);
+  // Create UploadManager instance
+  useEffect(() => {
+    // Create upload function that handles React Native file reading
+    const uploadFn = async (input: unknown, opts: UploadistaUploadOptions) => {
+      const file = input as FilePickResult;
 
-  const reset = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setState(initialState);
-    lastFileRef.current = null;
-    currentUploadIdRef.current = null;
-  }, []);
-
-  const abort = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-
-    updateState({
-      status: "aborted",
-    });
-
-    options.onAbort?.();
-  }, [options, updateState]);
-
-  const upload = useCallback(
-    async (file: FilePickResult) => {
-      // Handle cancelled picker
-      if (file.status === "cancelled") {
-        return;
-      }
-
-      // Handle picker error
-      if (file.status === "error") {
-        updateState({
-          status: "error",
-          error: file.error,
-        });
-        options.onError?.(file.error);
-        return;
-      }
-
-      // Reset any previous state
-      setState({
-        ...initialState,
-        status: "uploading",
-        totalBytes: file.data.size,
-      });
-
-      lastFileRef.current = file;
-
-      try {
-        // Read file content
+      if (file.status === "success") {
+        // Read file content from React Native file system
         const fileContent = await fileSystemProvider.readFile(file.data.uri);
 
-        // Create a Blob from the file content
-        // Convert ArrayBuffer to Uint8Array for better compatibility
-        const data =
-          fileContent instanceof ArrayBuffer
-            ? new Uint8Array(fileContent)
-            : fileContent;
-        // Note: Using any cast here because React Native Blob accepts BufferSource
-        // but TypeScript's lib.dom.d.ts Blob type doesn't include it
-        // biome-ignore lint/suspicious/noExplicitAny: React Native Blob accepts BufferSource
-        const blob = new Blob([data as any], {
+        // Create a Blob from the file content using platform-aware utility
+        const blob = createBlobFromBuffer(fileContent, {
           type: file.data.mimeType || "application/octet-stream",
-          // biome-ignore lint/suspicious/noExplicitAny: BlobPropertyBag type differs by platform
-        } as any);
-
-        // use the Blob (for React Native)
-        const uploadInput = blob;
-
-        // Start the upload using the client
-        const uploadPromise = client.upload(uploadInput, {
-          metadata: options.metadata,
-          uploadLengthDeferred: options.uploadLengthDeferred,
-          uploadSize: options.uploadSize,
-
-          onStart: ({ uploadId }) => {
-            currentUploadIdRef.current = uploadId;
-          },
-
-          onProgress: (
-            _uploadId: string,
-            bytesUploaded: number,
-            totalBytes: number | null,
-          ) => {
-            const progress = totalBytes
-              ? Math.round((bytesUploaded / totalBytes) * 100)
-              : 0;
-
-            updateState({
-              progress,
-              bytesUploaded,
-              totalBytes,
-            });
-
-            options.onProgress?.(progress, bytesUploaded, totalBytes);
-          },
-
-          onChunkComplete: (
-            chunkSize: number,
-            bytesAccepted: number,
-            bytesTotal: number | null,
-          ) => {
-            options.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
-          },
-
-          onSuccess: (result: UploadFile) => {
-            updateState({
-              status: "success",
-              result,
-              progress: 100,
-              bytesUploaded: result.size || 0,
-              totalBytes: result.size || null,
-            });
-
-            options.onSuccess?.(result);
-            abortControllerRef.current = null;
-          },
-
-          onError: (error: Error) => {
-            updateState({
-              status: "error",
-              error,
-            });
-
-            options.onError?.(error);
-            abortControllerRef.current = null;
-          },
-
-          onShouldRetry: options.onShouldRetry,
         });
 
-        // Handle the promise to get the abort controller
-        const controller = await uploadPromise;
-        abortControllerRef.current = controller;
-      } catch (error) {
-        updateState({
-          status: "error",
-          error: error as Error,
-        });
-
-        options.onError?.(error as Error);
-        abortControllerRef.current = null;
+        // Upload the Blob
+        return client.upload(blob, opts);
       }
-    },
-    [client, fileSystemProvider, options, updateState],
-  );
 
+      return Promise.resolve({ abort: () => {} });
+    };
+
+    managerRef.current = new UploadManager(
+      uploadFn,
+      {
+        onStateChange: setState,
+        onProgress: options.onProgress,
+        onChunkComplete: options.onChunkComplete,
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+        onAbort: options.onAbort,
+      },
+      {
+        metadata: options.metadata,
+        uploadLengthDeferred: options.uploadLengthDeferred,
+        uploadSize: options.uploadSize,
+        onShouldRetry: options.onShouldRetry,
+      },
+    );
+
+    return () => {
+      managerRef.current?.cleanup();
+    };
+  }, [client, fileSystemProvider, options]);
+
+  // Upload function - stores file reference for retry
+  const upload = useCallback(async (file: FilePickResult) => {
+    lastFileRef.current = file;
+    await managerRef.current?.upload(file);
+  }, []);
+
+  // Abort function
+  const abort = useCallback(() => {
+    managerRef.current?.abort();
+  }, []);
+
+  // Reset function
+  const reset = useCallback(() => {
+    managerRef.current?.reset();
+    lastFileRef.current = null;
+  }, []);
+
+  // Retry function
   const retry = useCallback(() => {
-    if (
-      lastFileRef.current &&
-      (state.status === "error" || state.status === "aborted")
-    ) {
-      upload(lastFileRef.current);
+    if (lastFileRef.current && managerRef.current?.canRetry()) {
+      managerRef.current.retry();
     }
-  }, [upload, state.status]);
+  }, []);
 
-  // Subscribe to events from context (WebSocket events)
-  useEffect(() => {
-    const unsubscribe = subscribeToEvents((event: UploadistaEvent) => {
-      // Handle upload progress events
-      const uploadEvent = event as {
-        type: string;
-        data?: { id: string; progress: number; total: number };
-      };
-
-      if (
-        uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
-        uploadEvent.data
-      ) {
-        const {
-          id: uploadId,
-          progress: bytesUploaded,
-          total: totalBytes,
-        } = uploadEvent.data;
-
-        if (uploadId !== currentUploadIdRef.current) {
-          return;
-        }
-
-        // Update state for this upload
-        const progress = totalBytes
-          ? Math.round((bytesUploaded / totalBytes) * 100)
-          : 0;
-
-        setState((prev) => {
-          // Only update if we're currently uploading
-          if (prev.status === "uploading") {
-            return {
-              ...prev,
-              progress,
-              bytesUploaded,
-              totalBytes,
-            };
-          }
-          return prev;
-        });
-
-        options.onProgress?.(progress, bytesUploaded, totalBytes);
-      }
-    });
-
-    return unsubscribe;
-  }, [subscribeToEvents, options]);
-
+  // Derive computed values from state
   const isUploading = state.status === "uploading";
-  const canRetry =
-    (state.status === "error" || state.status === "aborted") &&
-    lastFileRef.current !== null;
+  const canRetry = managerRef.current?.canRetry() ?? false;
+
+  // Create metrics object that delegates to the upload client
+  const metrics: UploadMetrics = {
+    getInsights: () => client.getChunkingInsights(),
+    exportMetrics: () => client.exportMetrics(),
+    getNetworkMetrics: () => client.getNetworkMetrics(),
+    getNetworkCondition: () => client.getNetworkCondition(),
+    resetMetrics: () => client.resetMetrics(),
+  };
 
   return {
     state,
@@ -389,5 +253,6 @@ export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
     retry,
     isUploading,
     canRetry,
+    metrics,
   };
 }

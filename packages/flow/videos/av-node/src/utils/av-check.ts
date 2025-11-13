@@ -19,7 +19,7 @@ export async function checkAVAvailable(): Promise<AVCheckResult> {
     // node-av includes FFmpeg binaries, so if import succeeds, it's available
     return {
       available: true,
-      version: "3.x", // node-av version is in package.json
+      version: "4.x", // node-av version is in package.json
     };
   } catch (error) {
     return {

@@ -7,6 +7,7 @@ import {
   type Flow,
   type FlowData,
   type FlowExecutionResult,
+  type TypedOutput,
   getFlowData,
   runArgsSchema,
 } from "../flow";
@@ -317,6 +318,21 @@ const isResultUploadFile = (result: unknown): result is UploadFile => {
   return typeof result === "object" && result !== null && "id" in result;
 };
 
+// Helper to extract data from TypedOutput or return as-is
+const extractResultData = (result: unknown): unknown => {
+  if (
+    typeof result === "object" &&
+    result !== null &&
+    "nodeId" in result &&
+    "data" in result &&
+    "timestamp" in result
+  ) {
+    // This looks like a TypedOutput, extract the data
+    return (result as TypedOutput).data;
+  }
+  return result;
+};
+
 // Function to enhance a flow with event emission capabilities
 function withFlowEvents<
   TFlowInputSchema extends z.ZodSchema<any>,
@@ -369,8 +385,17 @@ function withFlowEvents<
             break;
 
           case EventType.FlowEnd:
-            // Flow end is handled by executeFlowInBackground
-            // This case ensures the event is still emitted
+            // Store typed outputs in job for client access
+            yield* Effect.gen(function* () {
+              const job = yield* kvStore.get(executionJobId);
+              if (job && event.outputs) {
+                yield* kvStore.set(executionJobId, {
+                  ...job,
+                  result: event.outputs, // Store typed outputs array
+                  updatedAt: new Date(),
+                });
+              }
+            });
             break;
 
           case EventType.FlowError:
@@ -497,23 +522,29 @@ function withFlowEvents<
                 const node = flow.nodes.find((n) => n.id === event.nodeId);
                 const isOutputNode = node?.type === "output";
                 const result = event.result;
+                // Extract data from TypedOutput if present
+                const resultData = extractResultData(result);
 
                 let intermediateFiles = job.intermediateFiles || [];
 
-                if (isOutputNode && isResultUploadFile(result) && result.id) {
+                if (
+                  isOutputNode &&
+                  isResultUploadFile(resultData) &&
+                  resultData.id
+                ) {
                   // If this is an output node and it returns a file that was an intermediate file,
                   // remove it from the intermediate files list (it's now the final output)
                   intermediateFiles = intermediateFiles.filter(
-                    (fileId) => fileId !== result.id,
+                    (fileId) => fileId !== resultData.id,
                   );
                 } else if (
                   !isOutputNode &&
-                  isResultUploadFile(result) &&
-                  result.id
+                  isResultUploadFile(resultData) &&
+                  resultData.id
                 ) {
                   // Only add to intermediate files if it's not an output node
-                  if (!intermediateFiles.includes(result.id)) {
-                    intermediateFiles.push(result.id);
+                  if (!intermediateFiles.includes(resultData.id)) {
+                    intermediateFiles.push(resultData.id);
                   }
                 }
 
@@ -769,10 +800,10 @@ export function createFlowServer() {
             updatedAt: new Date(),
           });
         } else {
-          // Update job as completed with final result
+          // Update job as completed
+          // Note: result field is already set by FlowEnd event handler with TypedOutput[]
           yield* updateJob(jobId, {
             status: "completed",
-            result: result.result,
             updatedAt: new Date(),
             endedAt: new Date(),
           });
@@ -1088,12 +1119,12 @@ export function createFlowServer() {
                 updatedAt: new Date(),
               });
             } else {
-              // Update job as completed with final result
+              // Update job as completed
+              // Note: result field is already set by FlowEnd event handler with TypedOutput[]
               yield* updateJob(jobId, {
                 status: "completed",
                 pausedAt: undefined,
                 executionState: undefined,
-                result: result.result,
                 updatedAt: new Date(),
                 endedAt: new Date(),
               });

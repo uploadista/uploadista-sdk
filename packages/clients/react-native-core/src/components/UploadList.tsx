@@ -58,7 +58,7 @@ export function UploadList({
               bytesUploaded: item.progress.uploadedBytes,
               totalBytes: item.progress.totalBytes,
               error: item.progress.error || null,
-              result: (item.result as any) || null,
+              result: item.result ?? null,
             }}
           />
         </View>

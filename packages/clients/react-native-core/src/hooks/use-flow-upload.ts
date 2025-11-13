@@ -1,24 +1,36 @@
+import {
+  FlowManager,
+  type FlowUploadState,
+  type FlowUploadStatus,
+  type InternalFlowUploadOptions,
+  type UploadistaEvent,
+} from "@uploadista/client-core";
+import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import type { UploadFile } from "@uploadista/core/types";
-import { useCallback, useRef, useState } from "react";
+import { UploadEventType } from "@uploadista/core/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FilePickResult, UseFlowUploadOptions } from "../types";
+import { createBlobFromBuffer } from "../types/platform-types";
 import { useUploadistaContext } from "./use-uploadista-context";
 
-export type FlowUploadStatus =
-  | "idle"
-  | "uploading"
-  | "processing"
-  | "success"
-  | "error"
-  | "aborted";
+// Re-export types from core for convenience
+export type { FlowUploadState, FlowUploadStatus };
 
-export interface FlowUploadState {
-  status: FlowUploadStatus;
-  progress: number;
-  bytesUploaded: number;
-  totalBytes: number | null;
-  jobId: string | null;
-  error: Error | null;
-  result: unknown | null;
+/**
+ * Type guard to check if an event is a flow event
+ */
+function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
+  const flowEvent = event as FlowEvent;
+  return (
+    flowEvent.eventType === EventType.FlowStart ||
+    flowEvent.eventType === EventType.FlowEnd ||
+    flowEvent.eventType === EventType.FlowError ||
+    flowEvent.eventType === EventType.NodeStart ||
+    flowEvent.eventType === EventType.NodeEnd ||
+    flowEvent.eventType === EventType.NodePause ||
+    flowEvent.eventType === EventType.NodeResume ||
+    flowEvent.eventType === EventType.NodeError
+  );
 }
 
 const initialState: FlowUploadState = {
@@ -26,9 +38,13 @@ const initialState: FlowUploadState = {
   progress: 0,
   bytesUploaded: 0,
   totalBytes: null,
-  jobId: null,
   error: null,
   result: null,
+  jobId: null,
+  flowStarted: false,
+  currentNodeName: null,
+  currentNodeType: null,
+  flowOutputs: null,
 };
 
 /**
@@ -71,34 +87,115 @@ const initialState: FlowUploadState = {
  * ```
  */
 export function useFlowUpload(options: UseFlowUploadOptions) {
-  const { client, fileSystemProvider } = useUploadistaContext();
+  const context = useUploadistaContext();
+  const { client, fileSystemProvider } = context;
   const [state, setState] = useState<FlowUploadState>(initialState);
-  const abortControllerRef = useRef<{ abort: () => void } | null>(null);
+  const managerRef = useRef<FlowManager<Blob, UploadFile> | null>(null);
   const lastFileRef = useRef<FilePickResult | null>(null);
 
-  const updateState = useCallback((update: Partial<FlowUploadState>) => {
-    setState((prev) => ({ ...prev, ...update }));
-  }, []);
+  // Create FlowManager instance once (only recreate if client changes)
+  // Note: We don't include options in deps to avoid recreating the manager on every render
+  // The manager will use the latest options values through closures
+  useEffect(() => {
+    managerRef.current = new FlowManager(
+      async (
+        blob: Blob,
+        flowConfig: {
+          flowId: string;
+          storageId: string;
+          outputNodeId?: string;
+          metadata?: Record<string, string>;
+        },
+        internalOptions: InternalFlowUploadOptions,
+      ) => {
+        const result = await client.uploadWithFlow(blob, flowConfig, {
+          onJobStart: internalOptions.onJobStart,
+          onProgress: internalOptions.onProgress,
+          onChunkComplete: internalOptions.onChunkComplete,
+          onSuccess: internalOptions.onSuccess,
+          onError: internalOptions.onError,
+          onShouldRetry: internalOptions.onShouldRetry,
+        });
+        // Return only abort and pause (ignore jobId and return value)
+        return {
+          abort: async () => {
+            await result.abort();
+          },
+          pause: async () => {
+            await result.pause();
+            // Ignore the FlowJob return value
+          },
+        };
+      },
+      {
+        onStateChange: setState,
+        onProgress: options.onProgress
+          ? (_uploadId, bytesUploaded, totalBytes) => {
+              const progress = totalBytes
+                ? Math.round((bytesUploaded / totalBytes) * 100)
+                : 0;
+              options.onProgress?.(progress, bytesUploaded, totalBytes);
+            }
+          : undefined,
+        onChunkComplete: options.onChunkComplete,
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+      },
+      {
+        flowConfig: {
+          flowId: options.flowId,
+          storageId: options.storageId,
+          outputNodeId: options.outputNodeId,
+          metadata: options.metadata as Record<string, string> | undefined,
+        },
+        onChunkComplete: options.onChunkComplete,
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+      },
+    );
 
-  const reset = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setState(initialState);
-    lastFileRef.current = null;
-  }, []);
+    return () => {
+      managerRef.current?.cleanup();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client]);
 
-  const abort = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
+  // Subscribe to events and forward them to the manager
+  useEffect(() => {
+    const unsubscribe = context.subscribeToEvents(
+      (event: UploadistaEvent) => {
+        // Handle flow events
+        if (isFlowEvent(event)) {
+          managerRef.current?.handleFlowEvent(event);
+          return;
+        }
 
-    updateState({
-      status: "aborted",
-    });
-  }, [updateState]);
+        // Handle upload progress events for this job's upload
+        const uploadEvent = event as {
+          type: string;
+          data?: { id: string; progress: number; total: number };
+          flow?: { jobId: string };
+        };
+
+        if (
+          uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
+          uploadEvent.flow?.jobId === managerRef.current?.getJobId() &&
+          uploadEvent.data
+        ) {
+          const { progress: bytesUploaded, total: totalBytes } =
+            uploadEvent.data;
+
+          managerRef.current?.handleUploadProgress(
+            uploadEvent.data.id,
+            bytesUploaded,
+            totalBytes,
+          );
+        }
+      },
+    );
+
+    return unsubscribe;
+  }, [context]);
 
   const upload = useCallback(
     async (file: FilePickResult) => {
@@ -109,20 +206,9 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
 
       // Handle picker error
       if (file.status === "error") {
-        updateState({
-          status: "error",
-          error: file.error,
-        });
         options.onError?.(file.error);
         return;
       }
-
-      // Reset any previous state
-      setState({
-        ...initialState,
-        status: "uploading",
-        totalBytes: file.data.size,
-      });
 
       lastFileRef.current = file;
 
@@ -130,105 +216,29 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
         // Read file content
         const fileContent = await fileSystemProvider.readFile(file.data.uri);
 
-        // Create a Blob from the file content
-        // Convert ArrayBuffer to Uint8Array for better compatibility
-        const data =
-          fileContent instanceof ArrayBuffer
-            ? new Uint8Array(fileContent)
-            : fileContent;
-        // Note: Using any cast here because React Native Blob accepts BufferSource
-        // but TypeScript's lib.dom.d.ts Blob type doesn't include it
-        // biome-ignore lint/suspicious/noExplicitAny: React Native Blob accepts BufferSource
-        const blob = new Blob([data as any], {
+        // Create a Blob from the file content using platform-aware utility
+        // Handles differences between React Native and browser Blob APIs
+        const blob = createBlobFromBuffer(fileContent, {
           type: file.data.mimeType || "application/octet-stream",
-          // biome-ignore lint/suspicious/noExplicitAny: BlobPropertyBag type differs by platform
-        } as any);
-
-        // use the Blob (for React Native)
-        const uploadInput = blob;
-
-        // Start the flow upload using the client
-        const uploadPromise = client.uploadWithFlow(
-          uploadInput,
-          {
-            flowId: options.flowId,
-            storageId: options.storageId,
-            outputNodeId: options.outputNodeId,
-            metadata: options.metadata as Record<string, string> | undefined,
-          },
-          {
-            onJobStart: () => {
-              updateState({
-                status: "processing",
-              });
-            },
-
-            onProgress: (
-              _uploadId: string,
-              bytesUploaded: number,
-              totalBytes: number | null,
-            ) => {
-              const progress = totalBytes
-                ? Math.round((bytesUploaded / totalBytes) * 100)
-                : 0;
-
-              updateState({
-                progress,
-                bytesUploaded,
-                totalBytes,
-              });
-
-              options.onProgress?.(progress, bytesUploaded, totalBytes);
-            },
-
-            onChunkComplete: (
-              chunkSize: number,
-              bytesAccepted: number,
-              bytesTotal: number | null,
-            ) => {
-              options.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
-            },
-
-            onSuccess: (result: UploadFile) => {
-              updateState({
-                status: "success",
-                result,
-                progress: 100,
-                bytesUploaded: result.size || 0,
-                totalBytes: result.size || null,
-              });
-
-              options.onSuccess?.(result);
-              abortControllerRef.current = null;
-            },
-
-            onError: (error: Error) => {
-              updateState({
-                status: "error",
-                error,
-              });
-
-              options.onError?.(error);
-              abortControllerRef.current = null;
-            },
-          },
-        );
-
-        // Handle the promise to get the abort controller
-        const controller = await uploadPromise;
-        abortControllerRef.current = controller;
-      } catch (error) {
-        updateState({
-          status: "error",
-          error: error as Error,
         });
 
+        // Start the upload using the manager
+        await managerRef.current?.upload(blob);
+      } catch (error) {
         options.onError?.(error as Error);
-        abortControllerRef.current = null;
       }
     },
-    [client, fileSystemProvider, options, updateState],
+    [fileSystemProvider, options],
   );
+
+  const reset = useCallback(() => {
+    managerRef.current?.reset();
+    lastFileRef.current = null;
+  }, []);
+
+  const abort = useCallback(() => {
+    managerRef.current?.abort();
+  }, []);
 
   const retry = useCallback(() => {
     if (
@@ -239,6 +249,7 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
     }
   }, [upload, state.status]);
 
+  // Derive computed values from state (reactive to state changes)
   const isActive =
     state.status === "uploading" || state.status === "processing";
   const canRetry =

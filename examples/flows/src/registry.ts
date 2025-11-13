@@ -19,6 +19,12 @@ import {
   videoPipelineFlow,
 } from "./flows/complex-flows";
 
+// Typed Flows
+import {
+  complexTypedFlow,
+  multiOutputFlow,
+  simpleTypedFlow,
+} from "./flows/typed-flows";
 // Utility Flows
 import {
   conditionalFlow,
@@ -47,6 +53,10 @@ export type FlowId =
   // Advanced Image Flows
   | "describe-image-flow"
   | "remove-background-flow"
+  // Typed Flows
+  | "simple-typed-flow"
+  | "multi-output-flow"
+  | "complex-typed-flow"
   // Video Flows
   | "transcode-video-flow"
   | "trim-video-flow"
@@ -105,6 +115,14 @@ export function getFlow(flowId: string): any {
       return describeImageFlow;
     case "remove-background-flow":
       return removeBackgroundFlow;
+
+    // Typed Flows
+    case "simple-typed-flow":
+      return simpleTypedFlow;
+    case "multi-output-flow":
+      return multiOutputFlow;
+    case "complex-typed-flow":
+      return complexTypedFlow;
 
     // Video Flows
     case "transcode-video-flow":
@@ -168,6 +186,10 @@ export function getAllFlowIds(): FlowId[] {
     // Advanced Image Flows
     "describe-image-flow",
     "remove-background-flow",
+    // Typed Flows
+    "simple-typed-flow",
+    "multi-output-flow",
+    "complex-typed-flow",
     // Video Flows
     "transcode-video-flow",
     "trim-video-flow",

@@ -15,6 +15,7 @@
 import type { Effect } from "effect";
 import type { z } from "zod";
 import type { UploadistaError } from "../../errors";
+import type { UploadFile } from "../../types/upload-file";
 import type { FlowEvent, FlowEventFlowEnd, FlowEventFlowStart } from "../event";
 import { NodeType } from "../node";
 
@@ -41,6 +42,139 @@ export type FlowNodeData = {
 };
 
 /**
+ * Built-in typed outputs with automatic TypeScript narrowing.
+ *
+ * These outputs use discriminated unions to enable automatic type narrowing
+ * in switch statements without requiring type guards.
+ *
+ * @remarks
+ * Built-in types automatically narrow when using switch statements:
+ * ```typescript
+ * switch (output.nodeType) {
+ *   case 'storage-output-v1':
+ *     output.data.url // ✅ TypeScript knows data is UploadFile
+ *     break;
+ * }
+ * ```
+ */
+export type BuiltInTypedOutput =
+  | {
+      nodeType: "storage-output-v1";
+      data: UploadFile;
+      nodeId: string;
+      timestamp: string;
+    }
+  | {
+      nodeType: "streaming-input-v1";
+      data: UploadFile;
+      nodeId: string;
+      timestamp: string;
+    };
+
+/**
+ * Custom typed output for user-defined node types.
+ *
+ * Custom outputs require type guards for type narrowing:
+ * ```typescript
+ * if (isThumbnailOutput(output)) {
+ *   output.data.width // ✅ Type guard narrows data to ThumbnailOutput
+ * }
+ * ```
+ *
+ * @template T - The TypeScript type of the output data
+ */
+export type CustomTypedOutput<T = unknown> = {
+  nodeType?: string; // Custom type ID or undefined for untyped nodes
+  data: T;
+  nodeId: string;
+  timestamp: string;
+};
+
+/**
+ * Typed output structure from a flow node.
+ *
+ * This is a discriminated union that provides automatic type narrowing for
+ * built-in types while maintaining extensibility for custom types.
+ *
+ * @template T - The TypeScript type of the output data (for custom outputs)
+ *
+ * @property nodeId - Node instance ID that produced this output
+ * @property nodeType - Type ID from the registry (e.g., "storage-output-v1")
+ * @property data - The actual output data from the node
+ * @property timestamp - ISO 8601 timestamp when the result was produced
+ *
+ * @remarks
+ * **Built-in types (automatic narrowing):**
+ * - `storage-output-v1` - Storage node output (UploadFile)
+ * - `streaming-input-v1` - Streaming input node (UploadFile)
+ *
+ * Use switch statements for automatic narrowing:
+ * ```typescript
+ * for (const output of state.flowOutputs) {
+ *   switch (output.nodeType) {
+ *     case 'storage-output-v1':
+ *       // ✅ output.data is automatically UploadFile
+ *       console.log(output.data.url);
+ *       break;
+ *     case 'streaming-input-v1':
+ *       // ✅ output.data is automatically UploadFile
+ *       console.log(output.data.size);
+ *       break;
+ *   }
+ * }
+ * ```
+ *
+ * **Custom types (require type guards):**
+ * ```typescript
+ * import { isThumbnailOutput } from './type-guards';
+ *
+ * if (isThumbnailOutput(output)) {
+ *   // ✅ Type guard narrows output.data to ThumbnailOutput
+ *   console.log(output.data.width);
+ * }
+ * ```
+ *
+ * **Untyped nodes (backward compatible):**
+ * ```typescript
+ * const untypedOutput: TypedOutput = {
+ *   nodeId: "custom-node-1",
+ *   data: { custom: "data" },
+ *   timestamp: "2024-01-15T10:30:00Z"
+ * };
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Storage output result (built-in, automatic narrowing)
+ * const output: TypedOutput = {
+ *   nodeId: "storage-1",
+ *   nodeType: "storage-output-v1",
+ *   data: {
+ *     id: "file-123",
+ *     url: "https://cdn.example.com/file.jpg",
+ *     size: 1024000,
+ *     // ... rest of UploadFile
+ *   },
+ *   timestamp: "2024-01-15T10:30:00Z"
+ * };
+ *
+ * // Custom output (requires type guard)
+ * const thumbnailOutput: TypedOutput<ThumbnailOutput> = {
+ *   nodeId: "thumbnail-1",
+ *   nodeType: "thumbnail-output-v1",
+ *   data: {
+ *     url: "https://cdn.example.com/thumb.jpg",
+ *     width: 200,
+ *     height: 200,
+ *     format: "webp",
+ *   },
+ *   timestamp: "2024-01-15T10:30:00Z"
+ * };
+ * ```
+ */
+export type TypedOutput<T = unknown> = BuiltInTypedOutput | CustomTypedOutput<T>;
+
+/**
  * Result of a node execution - either complete or waiting for more data.
  *
  * @template TOutput - Type of the node's output data
@@ -50,10 +184,15 @@ export type FlowNodeData = {
  * data (e.g., chunked uploads, external service responses). The flow can be
  * resumed later with the missing data.
  *
+ * Results now include optional type information (`nodeType` and `nodeId`) to
+ * enable type-safe result consumption. These fields are automatically added
+ * by the node execution wrapper when a node is created with a `nodeTypeId`.
+ *
  * @example
  * ```typescript
- * // Node completes immediately
+ * // Node completes immediately with type information
  * return completeNodeExecution({ processedData });
+ * // Result will be wrapped with: { type: "complete", data, nodeType, nodeId }
  *
  * // Node waits for more chunks
  * if (needsMoreData) {
@@ -62,8 +201,18 @@ export type FlowNodeData = {
  * ```
  */
 export type NodeExecutionResult<TOutput> =
-  | { type: "complete"; data: TOutput }
-  | { type: "waiting"; partialData?: unknown };
+  | {
+      type: "complete";
+      data: TOutput;
+      nodeType?: string;
+      nodeId?: string;
+    }
+  | {
+      type: "waiting";
+      partialData?: unknown;
+      nodeType?: string;
+      nodeId?: string;
+    };
 
 /**
  * Helper function to create a complete node execution result.

@@ -20,7 +20,12 @@ import type { FlowEdge } from "./edge";
 import { EventType } from "./event";
 import { getNodeData } from "./node";
 import { ParallelScheduler } from "./parallel-scheduler";
-import type { FlowConfig, FlowNode, FlowNodeData } from "./types/flow-types";
+import type {
+  FlowConfig,
+  FlowNode,
+  FlowNodeData,
+  TypedOutput,
+} from "./types/flow-types";
 import { FlowTypeValidator } from "./types/type-validator";
 
 /**
@@ -87,7 +92,11 @@ export const getFlowData = <TRequirements>(
  * ```
  */
 export type FlowExecutionResult<TOutput> =
-  | { type: "completed"; result: TOutput }
+  | {
+      type: "completed";
+      result: TOutput;
+      outputs?: TypedOutput[]; // Typed outputs from all output nodes with registered types
+    }
   | {
       type: "paused";
       nodeId: string;
@@ -458,6 +467,33 @@ export function createFlowWithSchema<
       return flowOutputs as Record<string, z.infer<TFlowInputSchema>>;
     };
 
+    // Collect typed outputs from output nodes with metadata
+    const collectTypedOutputs = (
+      nodeResults: Map<string, unknown>,
+      nodeTypesMap: Map<string, string>,
+    ): TypedOutput[] => {
+      const outputNodes = nodes.filter((node: any) => node.type === "output");
+      const typedOutputs: TypedOutput[] = [];
+
+      outputNodes.forEach((node: any) => {
+        const result = nodeResults.get(node.id);
+        if (result !== undefined) {
+          // Get the nodeType from the nodeTypes map
+          const nodeTypeId = nodeTypesMap.get(node.id);
+
+          // Create TypedOutput with metadata
+          typedOutputs.push({
+            nodeId: node.id,
+            nodeType: nodeTypeId,
+            data: result,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      });
+
+      return typedOutputs;
+    };
+
     // Execute a single node using Effect
     const executeNode = (
       nodeId: string,
@@ -468,7 +504,13 @@ export function createFlowWithSchema<
       jobId: string,
       clientId: string | null,
     ): Effect.Effect<
-      { nodeId: string; result: unknown; success: boolean; waiting: boolean },
+      {
+        nodeId: string;
+        result: unknown;
+        success: boolean;
+        waiting: boolean;
+        nodeType?: string;
+      },
       UploadistaError
     > => {
       return Effect.gen(function* () {
@@ -615,6 +657,7 @@ export function createFlowWithSchema<
                 result,
                 success: true,
                 waiting: true,
+                nodeType: executionResult.nodeType,
               };
             }
 
@@ -633,7 +676,13 @@ export function createFlowWithSchema<
               });
             }
 
-            return { nodeId, result, success: true, waiting: false };
+            return {
+              nodeId,
+              result,
+              success: true,
+              waiting: false,
+              nodeType: executionResult.nodeType,
+            };
           } catch (error) {
             // Store the error
             lastError =
@@ -712,6 +761,7 @@ export function createFlowWithSchema<
       | {
           type: "completed";
           result: Record<string, z.infer<TFlowOutputSchema>>;
+          outputs?: TypedOutput[];
         }
       | {
           type: "paused";
@@ -752,13 +802,22 @@ export function createFlowWithSchema<
           executionOrder = topologicalSort();
           nodeResults = new Map<string, unknown>();
           startIndex = 0;
+        }
 
-          // Check for cycles
-          if (executionOrder.length !== nodes.length) {
-            return yield* UploadistaError.fromCode(
-              "FLOW_CYCLE_ERROR",
-            ).toEffect();
-          }
+        // Track nodeTypes for typed outputs
+        const nodeTypes = new Map<string, string>();
+
+        // If resuming, restore any nodeTypes from previous execution
+        if (resumeFrom) {
+          // nodeTypes would need to be restored from job state if implementing pause/resume
+          // For now, fresh starts only track types going forward
+        }
+
+        // Check for cycles
+        if (executionOrder.length !== nodes.length) {
+          return yield* UploadistaError.fromCode(
+            "FLOW_CYCLE_ERROR",
+          ).toEffect();
         }
 
         // Create node map for quick lookup
@@ -849,6 +908,9 @@ export function createFlowWithSchema<
                 // Node is waiting - pause execution and return state
                 if (nodeResult.result !== undefined) {
                   nodeResults.set(nodeId, nodeResult.result);
+                  if (nodeResult.nodeType) {
+                    nodeTypes.set(nodeId, nodeResult.nodeType);
+                  }
                 }
 
                 return {
@@ -864,6 +926,9 @@ export function createFlowWithSchema<
 
               if (nodeResult.success) {
                 nodeResults.set(nodeId, nodeResult.result);
+                if (nodeResult.nodeType) {
+                  nodeTypes.set(nodeId, nodeResult.nodeType);
+                }
               }
             }
           }
@@ -910,6 +975,9 @@ export function createFlowWithSchema<
               // Node is waiting - pause execution and return state
               if (nodeResult.result !== undefined) {
                 nodeResults.set(nodeResult.nodeId, nodeResult.result);
+                if (nodeResult.nodeType) {
+                  nodeTypes.set(nodeResult.nodeId, nodeResult.nodeType);
+                }
               }
 
               return {
@@ -925,12 +993,16 @@ export function createFlowWithSchema<
 
             if (nodeResult.success) {
               nodeResults.set(nodeResult.nodeId, nodeResult.result);
+              if (nodeResult.nodeType) {
+                nodeTypes.set(nodeResult.nodeId, nodeResult.nodeType);
+              }
             }
           }
         }
 
         // All nodes completed - collect outputs
         const finalResult = collectFlowOutputs(nodeResults);
+        const typedOutputs = collectTypedOutputs(nodeResults, nodeTypes);
 
         const finalResultSchema = z.record(z.string(), outputSchema);
 
@@ -961,17 +1033,22 @@ export function createFlowWithSchema<
         }
         const validatedResult = parseResult.data;
 
-        // Emit FlowEnd event
+        // Emit FlowEnd event with typed outputs
         if (onEvent) {
           yield* onEvent({
             jobId,
             eventType: EventType.FlowEnd,
             flowId,
-            result: validatedResult,
+            outputs: typedOutputs,
+            result: validatedResult, // Keep for backward compatibility
           });
         }
 
-        return { type: "completed" as const, result: validatedResult };
+        return {
+          type: "completed" as const,
+          result: validatedResult,
+          outputs: typedOutputs,
+        };
       });
     };
 
@@ -989,6 +1066,7 @@ export function createFlowWithSchema<
       | {
           type: "completed";
           result: Record<string, z.infer<TFlowOutputSchema>>;
+          outputs?: TypedOutput[];
         }
       | {
           type: "paused";
@@ -1025,6 +1103,7 @@ export function createFlowWithSchema<
       | {
           type: "completed";
           result: Record<string, z.infer<TFlowOutputSchema>>;
+          outputs?: TypedOutput[];
         }
       | {
           type: "paused";

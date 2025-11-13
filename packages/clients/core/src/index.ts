@@ -11,3 +11,5 @@ export * from "./services";
 export * from "./storage";
 // Core types
 export * from "./types";
+// Managers
+export * from "./managers";

@@ -8,6 +8,7 @@ export * from "./multi-flow-upload-state";
 export * from "./performance-insights";
 export * from "./previous-upload";
 export * from "./upload-options";
+export * from "./upload-metrics";
 export * from "./upload-response";
 export * from "./upload-result";
 export * from "./upload-session-metrics";

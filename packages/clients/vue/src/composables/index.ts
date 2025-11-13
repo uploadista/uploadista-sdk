@@ -26,7 +26,6 @@ export type {
   ChunkMetrics,
   PerformanceInsights,
   UploadInput,
-  UploadMetrics,
   UploadSessionMetrics,
   UploadState,
   UploadStatus,
