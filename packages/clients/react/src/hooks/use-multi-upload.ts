@@ -3,11 +3,7 @@ import type { UploadMetrics } from "@uploadista/client-core";
 import type { UploadFile } from "@uploadista/core/types";
 import { useCallback, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
-import type {
-  UploadState,
-  UploadStatus,
-  UseUploadOptions,
-} from "./use-upload";
+import type { UploadState, UploadStatus, UseUploadOptions } from "./use-upload";
 
 export interface UploadItem {
   id: string;

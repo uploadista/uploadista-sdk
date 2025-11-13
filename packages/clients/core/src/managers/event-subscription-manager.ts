@@ -9,7 +9,7 @@ export interface GenericEvent {
 /**
  * Event handler callback function
  */
-export type EventHandler<T = GenericEvent> = (event: T) => void;
+export type SubscriptionEventHandler<T = GenericEvent> = (event: T) => void;
 
 /**
  * Unsubscribe function returned from subscriptions
@@ -24,7 +24,7 @@ export interface EventSource<T = GenericEvent> {
    * Subscribe to events from this source
    * @returns Unsubscribe function to clean up the subscription
    */
-  subscribe(handler: EventHandler<T>): UnsubscribeFunction;
+  subscribe(handler: SubscriptionEventHandler<T>): UnsubscribeFunction;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface EventFilterOptions {
  */
 interface SubscriptionInfo<T extends GenericEvent = GenericEvent> {
   unsubscribe: UnsubscribeFunction;
-  handler: EventHandler<T>;
+  handler: SubscriptionEventHandler<T>;
   filter?: EventFilterOptions;
 }
 
@@ -133,11 +133,11 @@ export class EventSubscriptionManager<T extends GenericEvent = GenericEvent> {
    * ```
    */
   subscribe(
-    handler: EventHandler<T>,
+    handler: SubscriptionEventHandler<T>,
     filter?: EventFilterOptions,
   ): UnsubscribeFunction {
     // Create a wrapper handler that applies filtering
-    const wrappedHandler: EventHandler<T> = (event: T) => {
+    const wrappedHandler: SubscriptionEventHandler<T> = (event: T) => {
       if (this.shouldHandleEvent(event, filter)) {
         handler(event);
       }

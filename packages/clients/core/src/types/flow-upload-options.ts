@@ -8,10 +8,20 @@ export interface FlowUploadOptions<TOutput = UploadFile> {
   flowConfig: FlowUploadConfig;
 
   /**
+   * Called when the flow job starts
+   * @param jobId - The unique identifier for the flow job
+   */
+  onJobStart?: (jobId: string) => void;
+
+  /**
    * Called when upload progress updates
+   *
+   * @param uploadId - The unique identifier for this upload
+   * @param bytesUploaded - Number of bytes uploaded so far
+   * @param totalBytes - Total bytes to upload, null if unknown/deferred
    */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;

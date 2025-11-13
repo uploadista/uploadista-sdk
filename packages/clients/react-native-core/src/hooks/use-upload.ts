@@ -1,7 +1,6 @@
 import type {
   UploadistaUploadOptions,
   UploadMetrics,
-  UploadOptions,
 } from "@uploadista/client-core";
 import {
   UploadManager,
@@ -37,7 +36,7 @@ export interface UseUploadOptions {
    * Called when upload progress updates
    */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;
