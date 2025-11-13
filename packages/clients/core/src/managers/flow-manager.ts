@@ -1,4 +1,4 @@
-import type { FlowEvent } from "@uploadista/core/flow";
+import type { FlowEvent, TypedOutput } from "@uploadista/core/flow";
 import { EventType } from "@uploadista/core/flow";
 import type { UploadFile } from "@uploadista/core/types";
 import type { FlowUploadOptions } from "../types/flow-upload-options";
@@ -42,8 +42,12 @@ export interface FlowUploadState<TOutput = UploadFile> {
   currentNodeName: string | null;
   /** Type of the currently executing flow node */
   currentNodeType: string | null;
-  /** Complete outputs from all output nodes in the flow */
-  flowOutputs: Record<string, unknown> | null;
+  /**
+   * Complete typed outputs from all output nodes in the flow.
+   * Each output includes nodeId, optional nodeType, data, and timestamp.
+   * Available when status is "success".
+   */
+  flowOutputs: TypedOutput[] | null;
 }
 
 /**
@@ -81,9 +85,20 @@ export interface FlowManagerCallbacks<TOutput = UploadFile> {
 
   /**
    * Called when the flow completes successfully (receives full flow outputs)
-   * Format: { [outputNodeId]: result, ... }
+   * Each output includes nodeId, optional nodeType (e.g., "storage-output-v1"), data, and timestamp.
+   *
+   * @param outputs - Array of typed outputs from all output nodes
+   *
+   * @example
+   * ```typescript
+   * onFlowComplete: (outputs) => {
+   *   for (const output of outputs) {
+   *     console.log(`${output.nodeId} (${output.nodeType}):`, output.data);
+   *   }
+   * }
+   * ```
    */
-  onFlowComplete?: (outputs: Record<string, unknown>) => void;
+  onFlowComplete?: (outputs: TypedOutput[]) => void;
 
   /**
    * Called when upload succeeds (receives single extracted output)
@@ -281,6 +296,17 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
    * @param event - Flow event to process
    */
   handleFlowEvent(event: FlowEvent): void {
+    // For FlowStart, accept if we don't have a jobId yet (first event)
+    // This handles the race condition where flow events arrive before onJobStart callback
+    if (event.eventType === EventType.FlowStart && !this.state.jobId) {
+      this.updateState({
+        jobId: event.jobId,
+        flowStarted: true,
+        status: "processing",
+      });
+      return;
+    }
+
     // Only handle events for the current job
     if (!this.state.jobId || event.jobId !== this.state.jobId) {
       return;
@@ -332,29 +358,31 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
         break;
 
       case EventType.FlowEnd: {
-        // Get flow outputs from the event result
-        const flowOutputs = (event.result as Record<string, unknown>) || null;
+        // Get typed outputs from the event
+        const flowOutputs = event.outputs || null;
 
-        // Call onFlowComplete with full outputs
+        // Call onFlowComplete with full typed outputs
         if (flowOutputs && this.callbacks.onFlowComplete) {
           this.callbacks.onFlowComplete(flowOutputs);
         }
 
         // Extract single output for onSuccess callback
         let extractedOutput: TOutput | null = null;
-        if (flowOutputs) {
-          if (
-            this.options.flowConfig.outputNodeId &&
-            this.options.flowConfig.outputNodeId in flowOutputs
-          ) {
-            // Use specified output node
-            extractedOutput = flowOutputs[
-              this.options.flowConfig.outputNodeId
-            ] as TOutput;
+        if (flowOutputs && flowOutputs.length > 0) {
+          if (this.options.flowConfig.outputNodeId) {
+            // Find output by specified nodeId
+            const targetOutput = flowOutputs.find(
+              (output) => output.nodeId === this.options.flowConfig.outputNodeId,
+            );
+            if (targetOutput) {
+              extractedOutput = targetOutput.data as TOutput;
+            }
           } else {
-            // Use first output node
-            const firstOutputValue = Object.values(flowOutputs)[0];
-            extractedOutput = firstOutputValue as TOutput;
+            // Use first output
+            const firstOutput = flowOutputs[0];
+            if (firstOutput) {
+              extractedOutput = firstOutput.data as TOutput;
+            }
           }
         }
 
@@ -420,9 +448,16 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
     bytesUploaded: number,
     totalBytes: number | null,
   ): void {
+    // Calculate progress percentage
+    const progress =
+      totalBytes && totalBytes > 0
+        ? Math.round((bytesUploaded / totalBytes) * 100)
+        : 0;
+
     this.updateState({
       bytesUploaded,
       totalBytes,
+      progress,
     });
 
     this.callbacks.onProgress?.(uploadId, bytesUploaded, totalBytes);

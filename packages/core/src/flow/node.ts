@@ -6,6 +6,7 @@ import type {
   FlowNodeData,
   NodeExecutionResult,
 } from "./types/flow-types";
+import { flowTypeRegistry } from "./type-registry";
 
 /**
  * Defines the type of node in a flow, determining its role in the processing pipeline.
@@ -81,6 +82,7 @@ export type ConditionValue = string | number;
  * @param config.retry.maxRetries - Maximum number of retry attempts (default: 0)
  * @param config.retry.retryDelay - Base delay in milliseconds between retries (default: 1000)
  * @param config.retry.exponentialBackoff - Whether to use exponential backoff for retries (default: true)
+ * @param config.nodeTypeId - Optional type ID from the registry (e.g., "storage-output-v1"). If provided, the node type must be registered and its category must match the node type (input/output).
  *
  * @returns An Effect that succeeds with the created FlowNode
  *
@@ -127,6 +129,7 @@ export function createFlowNode<Input, Output, TType extends NodeType = NodeType>
   multiOutput = false,
   pausable = false,
   retry,
+  nodeTypeId,
 }: {
   id: string;
   name: string;
@@ -154,8 +157,35 @@ export function createFlowNode<Input, Output, TType extends NodeType = NodeType>
     retryDelay?: number;
     exponentialBackoff?: boolean;
   };
-}): Effect.Effect<FlowNode<Input, Output, UploadistaError> & { type: TType }> {
-  return Effect.succeed({
+  nodeTypeId?: string;
+}): Effect.Effect<FlowNode<Input, Output, UploadistaError> & { type: TType }, UploadistaError> {
+  return Effect.gen(function* () {
+    // Validate type registration if nodeTypeId provided
+    if (nodeTypeId) {
+      const typeDef = flowTypeRegistry.get(nodeTypeId);
+      if (!typeDef) {
+        return yield* UploadistaError.fromCode("INVALID_NODE_TYPE", {
+          body: `Node type "${nodeTypeId}" is not registered`,
+          details: { nodeTypeId, nodeId: id },
+        }).toEffect();
+      }
+
+      // Validate category matches for input/output nodes
+      if (type === NodeType.input && typeDef.category !== "input") {
+        return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
+          body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
+          details: { nodeTypeId, nodeId: id, expectedCategory: "input", actualCategory: typeDef.category },
+        }).toEffect();
+      }
+      if (type === NodeType.output && typeDef.category !== "output") {
+        return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
+          body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
+          details: { nodeTypeId, nodeId: id, expectedCategory: "output", actualCategory: typeDef.category },
+        }).toEffect();
+      }
+    }
+
+    return {
     id,
     name,
     description,
@@ -199,9 +229,14 @@ export function createFlowNode<Input, Output, TType extends NodeType = NodeType>
           clientId,
         });
 
-        // If the node returned waiting state, pass it through
+        // If the node returned waiting state, add type information and pass through
         if (result.type === "waiting") {
-          return result;
+          return {
+            type: "waiting" as const,
+            partialData: result.partialData,
+            nodeType: nodeTypeId,
+            nodeId: id,
+          };
         }
 
         // Validate output data against schema for completed results
@@ -217,13 +252,20 @@ export function createFlowNode<Input, Output, TType extends NodeType = NodeType>
           },
         });
 
-        return { type: "complete" as const, data: validatedResult };
+        // Return with type information
+        return {
+          type: "complete" as const,
+          data: validatedResult,
+          nodeType: nodeTypeId,
+          nodeId: id,
+        };
       }),
     condition,
     multiInput,
     multiOutput,
     retry,
-  } as FlowNode<Input, Output, UploadistaError> & { type: TType });
+  } as FlowNode<Input, Output, UploadistaError> & { type: TType };
+  });
 }
 
 /**

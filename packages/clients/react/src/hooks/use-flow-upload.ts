@@ -203,7 +203,9 @@ export function useFlowUpload<TOutput = UploadFile>(
   );
   const managerRef = useRef<FlowManager<File | Blob, TOutput> | null>(null);
 
-  // Create FlowManager instance
+  // Create FlowManager instance once (only recreate if client changes)
+  // Note: We don't include options in deps to avoid recreating the manager on every render
+  // The manager will use the latest options values through closures
   useEffect(() => {
     managerRef.current = new FlowManager(
       async (
@@ -250,7 +252,8 @@ export function useFlowUpload<TOutput = UploadFile>(
     return () => {
       managerRef.current?.cleanup();
     };
-  }, [client, options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client]);
 
   // Subscribe to events and forward them to the manager
   useEffect(() => {
@@ -267,6 +270,7 @@ export function useFlowUpload<TOutput = UploadFile>(
         data?: { id: string; progress: number; total: number };
         flow?: { jobId: string };
       };
+
       if (
         uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
         uploadEvent.flow?.jobId === managerRef.current?.getJobId() &&
@@ -302,10 +306,11 @@ export function useFlowUpload<TOutput = UploadFile>(
     managerRef.current?.reset();
   }, []);
 
-  // Derive computed values from state
-  const isUploading = managerRef.current?.isUploading() ?? false;
-  const isUploadingFile = managerRef.current?.isUploadingFile() ?? false;
-  const isProcessing = managerRef.current?.isProcessing() ?? false;
+  // Derive computed values from state (reactive to state changes)
+  const isUploading =
+    state.status === "uploading" || state.status === "processing";
+  const isUploadingFile = state.status === "uploading";
+  const isProcessing = state.status === "processing";
 
   return {
     state,

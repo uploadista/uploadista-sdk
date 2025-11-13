@@ -268,8 +268,13 @@ export function useFlowUpload<TOutput = UploadFile>(
     abort,
     pause,
     reset,
-    isUploading: computed(() => manager?.isUploading() ?? false),
-    isUploadingFile: computed(() => manager?.isUploadingFile() ?? false),
-    isProcessing: computed(() => manager?.isProcessing() ?? false),
+    // Derive computed values from state (reactive to state changes)
+    isUploading: computed(
+      () =>
+        state.value.status === "uploading" ||
+        state.value.status === "processing",
+    ),
+    isUploadingFile: computed(() => state.value.status === "uploading"),
+    isProcessing: computed(() => state.value.status === "processing"),
   };
 }

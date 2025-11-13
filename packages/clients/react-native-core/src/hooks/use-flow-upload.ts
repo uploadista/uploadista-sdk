@@ -3,8 +3,11 @@ import {
   type FlowUploadState,
   type FlowUploadStatus,
   type InternalFlowUploadOptions,
+  type UploadistaEvent,
 } from "@uploadista/client-core";
+import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import type { UploadFile } from "@uploadista/core/types";
+import { UploadEventType } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FilePickResult, UseFlowUploadOptions } from "../types";
 import { createBlobFromBuffer } from "../types/platform-types";
@@ -12,6 +15,23 @@ import { useUploadistaContext } from "./use-uploadista-context";
 
 // Re-export types from core for convenience
 export type { FlowUploadState, FlowUploadStatus };
+
+/**
+ * Type guard to check if an event is a flow event
+ */
+function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
+  const flowEvent = event as FlowEvent;
+  return (
+    flowEvent.eventType === EventType.FlowStart ||
+    flowEvent.eventType === EventType.FlowEnd ||
+    flowEvent.eventType === EventType.FlowError ||
+    flowEvent.eventType === EventType.NodeStart ||
+    flowEvent.eventType === EventType.NodeEnd ||
+    flowEvent.eventType === EventType.NodePause ||
+    flowEvent.eventType === EventType.NodeResume ||
+    flowEvent.eventType === EventType.NodeError
+  );
+}
 
 const initialState: FlowUploadState = {
   status: "idle",
@@ -67,12 +87,15 @@ const initialState: FlowUploadState = {
  * ```
  */
 export function useFlowUpload(options: UseFlowUploadOptions) {
-  const { client, fileSystemProvider } = useUploadistaContext();
+  const context = useUploadistaContext();
+  const { client, fileSystemProvider } = context;
   const [state, setState] = useState<FlowUploadState>(initialState);
   const managerRef = useRef<FlowManager<Blob, UploadFile> | null>(null);
   const lastFileRef = useRef<FilePickResult | null>(null);
 
-  // Create FlowManager instance
+  // Create FlowManager instance once (only recreate if client changes)
+  // Note: We don't include options in deps to avoid recreating the manager on every render
+  // The manager will use the latest options values through closures
   useEffect(() => {
     managerRef.current = new FlowManager(
       async (
@@ -134,7 +157,45 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
     return () => {
       managerRef.current?.cleanup();
     };
-  }, [client, options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client]);
+
+  // Subscribe to events and forward them to the manager
+  useEffect(() => {
+    const unsubscribe = context.subscribeToEvents(
+      (event: UploadistaEvent) => {
+        // Handle flow events
+        if (isFlowEvent(event)) {
+          managerRef.current?.handleFlowEvent(event);
+          return;
+        }
+
+        // Handle upload progress events for this job's upload
+        const uploadEvent = event as {
+          type: string;
+          data?: { id: string; progress: number; total: number };
+          flow?: { jobId: string };
+        };
+
+        if (
+          uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
+          uploadEvent.flow?.jobId === managerRef.current?.getJobId() &&
+          uploadEvent.data
+        ) {
+          const { progress: bytesUploaded, total: totalBytes } =
+            uploadEvent.data;
+
+          managerRef.current?.handleUploadProgress(
+            uploadEvent.data.id,
+            bytesUploaded,
+            totalBytes,
+          );
+        }
+      },
+    );
+
+    return unsubscribe;
+  }, [context]);
 
   const upload = useCallback(
     async (file: FilePickResult) => {
@@ -188,7 +249,9 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
     }
   }, [upload, state.status]);
 
-  const isActive = managerRef.current?.isUploading() ?? false;
+  // Derive computed values from state (reactive to state changes)
+  const isActive =
+    state.status === "uploading" || state.status === "processing";
   const canRetry =
     (state.status === "error" || state.status === "aborted") &&
     lastFileRef.current !== null;

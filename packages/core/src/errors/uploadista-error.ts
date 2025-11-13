@@ -45,7 +45,11 @@ export type UploadistaErrorCode =
   | "INVALID_VIDEO_FORMAT"
   | "CODEC_NOT_SUPPORTED"
   | "VIDEO_METADATA_EXTRACTION_FAILED"
-  | "FFMPEG_NOT_INSTALLED";
+  | "FFMPEG_NOT_INSTALLED"
+  | "INVALID_NODE_TYPE"
+  | "TYPE_CATEGORY_MISMATCH"
+  | "OUTPUT_NOT_FOUND"
+  | "MULTIPLE_OUTPUTS_FOUND";
 
 /**
  * Catalog of all predefined errors in the Uploadista system.
@@ -212,6 +216,22 @@ export const ERROR_CATALOG: Readonly<
   FFMPEG_NOT_INSTALLED: {
     status: 500,
     body: "FFmpeg is not installed or not available in PATH\n",
+  },
+  INVALID_NODE_TYPE: {
+    status: 500,
+    body: "The specified node type is not registered\n",
+  },
+  TYPE_CATEGORY_MISMATCH: {
+    status: 500,
+    body: "Node type category does not match the node configuration\n",
+  },
+  OUTPUT_NOT_FOUND: {
+    status: 404,
+    body: "No output of the specified type was found\n",
+  },
+  MULTIPLE_OUTPUTS_FOUND: {
+    status: 409,
+    body: "Multiple outputs of the specified type found, expected single output\n",
   },
 } as const;
 

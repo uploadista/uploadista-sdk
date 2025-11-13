@@ -61,6 +61,7 @@ export * from "./flows/advanced-image-flows";
 // Re-export all flows by category
 export * from "./flows/basic-image-flows";
 export * from "./flows/complex-flows";
+export * from "./flows/typed-flows";
 export * from "./flows/utility-flows";
 export * from "./flows/video-flows";
 
