@@ -1,4 +1,5 @@
 import type {
+  UploadistaUploadOptions,
   UploadMetrics,
   UploadOptions,
 } from "@uploadista/client-core";
@@ -166,19 +167,23 @@ export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
   // Create UploadManager instance
   useEffect(() => {
     // Create upload function that handles React Native file reading
-    const uploadFn = async (input: unknown, opts: UploadOptions) => {
+    const uploadFn = async (input: unknown, opts: UploadistaUploadOptions) => {
       const file = input as FilePickResult;
 
-      // Read file content from React Native file system
-      const fileContent = await fileSystemProvider.readFile(file.data.uri);
+      if (file.status === "success") {
+        // Read file content from React Native file system
+        const fileContent = await fileSystemProvider.readFile(file.data.uri);
 
-      // Create a Blob from the file content using platform-aware utility
-      const blob = createBlobFromBuffer(fileContent, {
-        type: file.data.mimeType || "application/octet-stream",
-      });
+        // Create a Blob from the file content using platform-aware utility
+        const blob = createBlobFromBuffer(fileContent, {
+          type: file.data.mimeType || "application/octet-stream",
+        });
 
-      // Upload the Blob
-      return client.upload(blob, opts);
+        // Upload the Blob
+        return client.upload(blob, opts);
+      }
+
+      return Promise.resolve({ abort: () => {} });
     };
 
     managerRef.current = new UploadManager(

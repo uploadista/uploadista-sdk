@@ -1,42 +1,60 @@
 import type {
-	AbortControllerFactory,
-	AbortControllerLike,
-	AbortSignalLike,
+  AbortControllerFactory,
+  AbortControllerLike,
+  AbortSignalLike,
 } from "../services/abort-controller-service";
 import type { ChecksumService } from "../services/checksum-service";
 import type {
-	Base64Service,
-	FileReaderService,
-	FileSource,
-	SliceResult,
+  Base64Service,
+  FileReaderService,
+  FileSource,
+  SliceResult,
 } from "../services/file-reader-service";
 import type { FingerprintService } from "../services/fingerprint-service";
 import type {
-	ConnectionMetrics,
-	DetailedConnectionMetrics,
-	HeadersLike,
-	HttpClient,
-	HttpRequestOptions,
-	HttpResponse,
+  ConnectionMetrics,
+  DetailedConnectionMetrics,
+  HeadersLike,
+  HttpClient,
+  HttpRequestOptions,
+  HttpResponse,
 } from "../services/http-client";
 import type { IdGenerationService } from "../services/id-generation-service";
-import type { PlatformService } from "../services/platform-service";
+import type {
+  PlatformService,
+  Timeout,
+} from "../services/platform-service";
 import type { ServiceContainer } from "../services/service-container";
 import type { StorageService } from "../services/storage-service";
 import type {
-	WebSocketFactory,
-	WebSocketLike,
+  WebSocketFactory,
+  WebSocketLike,
 } from "../services/websocket-service";
+
+// Platform globals polyfill for testing environments
+declare function setTimeout(callback: () => void, ms: number): number;
+declare function clearTimeout(id: number): void;
+declare class TextEncoder {
+  encode(input?: string): Uint8Array;
+}
+declare class Blob {
+  readonly size: number;
+  readonly type: string;
+  slice(start?: number, end?: number, contentType?: string): Blob;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+declare function btoa(data: string): string;
+declare function atob(data: string): string;
 
 /**
  * Mock HTTP response configuration for testing
  */
 export interface MockHttpResponseConfig {
-	status?: number;
-	statusText?: string;
-	headers?: Record<string, string>;
-	body?: unknown;
-	delay?: number;
+  status?: number;
+  statusText?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  delay?: number;
 }
 
 /**
@@ -55,135 +73,143 @@ export interface MockHttpResponseConfig {
  * ```
  */
 export class MockHttpClient implements HttpClient {
-	private responses = new Map<string, MockHttpResponseConfig>();
-	private defaultResponse: MockHttpResponseConfig = {
-		status: 200,
-		statusText: "OK",
-		body: {},
-	};
-	private requestLog: Array<{ url: string; options?: HttpRequestOptions }> = [];
+  private responses = new Map<string, MockHttpResponseConfig>();
+  private defaultResponse: MockHttpResponseConfig = {
+    status: 200,
+    statusText: "OK",
+    body: {},
+  };
+  private requestLog: Array<{ url: string; options?: HttpRequestOptions }> = [];
 
-	/**
-	 * Configure a mock response for a specific URL
-	 */
-	mockResponse(url: string, config: MockHttpResponseConfig): void {
-		this.responses.set(url, config);
-	}
+  /**
+   * Configure a mock response for a specific URL
+   */
+  mockResponse(url: string, config: MockHttpResponseConfig): void {
+    this.responses.set(url, config);
+  }
 
-	/**
-	 * Set the default response for unmocked URLs
-	 */
-	setDefaultResponse(config: MockHttpResponseConfig): void {
-		this.defaultResponse = config;
-	}
+  /**
+   * Set the default response for unmocked URLs
+   */
+  setDefaultResponse(config: MockHttpResponseConfig): void {
+    this.defaultResponse = config;
+  }
 
-	/**
-	 * Get the log of all requests made
-	 */
-	getRequestLog(): Array<{ url: string; options?: HttpRequestOptions }> {
-		return [...this.requestLog];
-	}
+  /**
+   * Get the log of all requests made
+   */
+  getRequestLog(): Array<{ url: string; options?: HttpRequestOptions }> {
+    return [...this.requestLog];
+  }
 
-	/**
-	 * Clear the request log
-	 */
-	clearRequestLog(): void {
-		this.requestLog = [];
-	}
+  /**
+   * Clear the request log
+   */
+  clearRequestLog(): void {
+    this.requestLog = [];
+  }
 
-	async request(
-		url: string,
-		options?: HttpRequestOptions,
-	): Promise<HttpResponse> {
-		// Log the request
-		this.requestLog.push({ url, options });
+  async request(
+    url: string,
+    options?: HttpRequestOptions,
+  ): Promise<HttpResponse> {
+    // Log the request
+    this.requestLog.push({ url, options });
 
-		// Get the configured response or use default
-		const config = this.responses.get(url) || this.defaultResponse;
+    // Get the configured response or use default
+    const config = this.responses.get(url) || this.defaultResponse;
 
-		// Simulate network delay if configured
-		if (config.delay) {
-			await new Promise((resolve) => setTimeout(resolve, config.delay));
-		}
+    // Simulate network delay if configured
+    if (config.delay) {
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), config.delay ?? 0));
+    }
 
-		// Create mock headers
-		const headers: HeadersLike = {
-			get: (name: string) => config.headers?.[name] ?? null,
-			has: (name: string) => config.headers?.[name] !== undefined,
-			forEach: (callback: (value: string, name: string) => void) => {
-				if (config.headers) {
-					for (const [key, value] of Object.entries(config.headers)) {
-						callback(value, key);
-					}
-				}
-			},
-		};
+    // Create mock headers
+    const headers: HeadersLike = {
+      get: (name: string) => config.headers?.[name] ?? null,
+      has: (name: string) => config.headers?.[name] !== undefined,
+      forEach: (callback: (value: string, name: string) => void) => {
+        if (config.headers) {
+          for (const [key, value] of Object.entries(config.headers)) {
+            // Call the callback directly with value and name
+            (callback as (value: string, name: string) => void)(value, key);
+          }
+        }
+      },
+    };
 
-		// Create mock response
-		const status = config.status ?? 200;
-		const response: HttpResponse = {
-			status,
-			statusText: config.statusText ?? "OK",
-			headers,
-			ok: status >= 200 && status < 300,
-			json: async () => config.body,
-			text: async () =>
-				typeof config.body === "string"
-					? config.body
-					: JSON.stringify(config.body),
-			arrayBuffer: async () => {
-				const text =
-					typeof config.body === "string"
-						? config.body
-						: JSON.stringify(config.body);
-				return new TextEncoder().encode(text).buffer;
-			},
-		};
+    // Create mock response
+    const status = config.status ?? 200;
+    const response: HttpResponse = {
+      status,
+      statusText: config.statusText ?? "OK",
+      headers,
+      ok: status >= 200 && status < 300,
+      json: async () => config.body,
+      text: async () =>
+        typeof config.body === "string"
+          ? config.body
+          : JSON.stringify(config.body),
+      arrayBuffer: async (): Promise<ArrayBuffer> => {
+        const text =
+          typeof config.body === "string"
+            ? config.body
+            : JSON.stringify(config.body);
+        return new TextEncoder().encode(text).buffer as ArrayBuffer;
+      },
+    };
 
-		return response;
-	}
+    return response;
+  }
 
-	getMetrics(): ConnectionMetrics {
-		return {
-			activeConnections: 0,
-			totalConnections: this.requestLog.length,
-			reuseRate: 0,
-			averageConnectionTime: 0,
-		};
-	}
+  getMetrics(): ConnectionMetrics {
+    return {
+      activeConnections: 0,
+      totalConnections: this.requestLog.length,
+      reuseRate: 0,
+      averageConnectionTime: 0,
+    };
+  }
 
-	getDetailedMetrics(): DetailedConnectionMetrics {
-		return {
-			activeConnections: 0,
-			totalConnections: this.requestLog.length,
-			reuseRate: 0,
-			averageConnectionTime: 0,
-			idleConnections: 0,
-			errors: 0,
-			timeouts: 0,
-			retries: 0,
-			fastConnections: this.requestLog.length,
-			slowConnections: 0,
-			http2Info: {
-				supported: false,
-				enabled: false,
-				activeStreams: 0,
-			},
-		};
-	}
+  getDetailedMetrics(): DetailedConnectionMetrics {
+    return {
+      activeConnections: 0,
+      totalConnections: this.requestLog.length,
+      reuseRate: 0,
+      averageConnectionTime: 0,
+      health: {
+        status: "healthy",
+        score: 100,
+        issues: [],
+        recommendations: [],
+      },
+      requestsPerSecond: 0,
+      errorRate: 0,
+      timeouts: 0,
+      retries: 0,
+      fastConnections: this.requestLog.length,
+      slowConnections: 0,
+      http2Info: {
+        supported: false,
+        detected: false,
+        version: "1.1",
+        multiplexingActive: false,
+      },
+    };
+  }
 
-	reset(): void {
-		this.requestLog = [];
-		this.responses.clear();
-	}
+  reset(): void {
+    this.requestLog = [];
+    this.responses.clear();
+  }
 
-	async close(): Promise<void> {
-		// No-op for mock
-	}
+  async close(): Promise<void> {
+    // No-op for mock
+  }
 
-	async warmupConnections(_urls: string[]): Promise<void> {
-		// No-op for mock
-	}
+  async warmupConnections(_urls: string[]): Promise<void> {
+    // No-op for mock
+  }
 }
 
 /**
@@ -192,51 +218,51 @@ export class MockHttpClient implements HttpClient {
  * Uses in-memory storage that can be inspected and manipulated for testing.
  */
 export class MockStorageService implements StorageService {
-	private storage = new Map<string, string>();
+  private storage = new Map<string, string>();
 
-	async getItem(key: string): Promise<string | null> {
-		return this.storage.get(key) ?? null;
-	}
+  async getItem(key: string): Promise<string | null> {
+    return this.storage.get(key) ?? null;
+  }
 
-	async setItem(key: string, value: string): Promise<void> {
-		this.storage.set(key, value);
-	}
+  async setItem(key: string, value: string): Promise<void> {
+    this.storage.set(key, value);
+  }
 
-	async removeItem(key: string): Promise<void> {
-		this.storage.delete(key);
-	}
+  async removeItem(key: string): Promise<void> {
+    this.storage.delete(key);
+  }
 
-	async findAll(): Promise<Record<string, string>> {
-		const result: Record<string, string> = {};
-		for (const [key, value] of this.storage.entries()) {
-			result[key] = value;
-		}
-		return result;
-	}
+  async findAll(): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    for (const [key, value] of this.storage.entries()) {
+      result[key] = value;
+    }
+    return result;
+  }
 
-	async find(prefix: string): Promise<Record<string, string>> {
-		const result: Record<string, string> = {};
-		for (const [key, value] of this.storage.entries()) {
-			if (key.startsWith(prefix)) {
-				result[key] = value;
-			}
-		}
-		return result;
-	}
+  async find(prefix: string): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    for (const [key, value] of this.storage.entries()) {
+      if (key.startsWith(prefix)) {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
 
-	/**
-	 * Get the current storage state for inspection
-	 */
-	getStorageState(): Map<string, string> {
-		return new Map(this.storage);
-	}
+  /**
+   * Get the current storage state for inspection
+   */
+  getStorageState(): Map<string, string> {
+    return new Map(this.storage);
+  }
 
-	/**
-	 * Clear all storage
-	 */
-	clear(): void {
-		this.storage.clear();
-	}
+  /**
+   * Clear all storage
+   */
+  clear(): void {
+    this.storage.clear();
+  }
 }
 
 /**
@@ -245,287 +271,332 @@ export class MockStorageService implements StorageService {
  * Accepts either File/Blob objects or mock file data (Uint8Array).
  */
 export class MockFileReaderService<UploadInput = unknown>
-	implements FileReaderService<UploadInput>
+  implements FileReaderService<UploadInput>
 {
-	async openFile(
-		input: UploadInput,
-		_chunkSize: number,
-	): Promise<FileSource> {
-		// Handle File/Blob objects
-		if (input instanceof Blob || (input && typeof input === "object" && "size" in input)) {
-			const file = input as Blob & { name?: string; lastModified?: number };
-			return {
-				input,
-				size: file.size,
-				name: "name" in file && typeof file.name === "string" ? file.name : null,
-				type: file.type || null,
-				lastModified:
-					"lastModified" in file && typeof file.lastModified === "number"
-						? file.lastModified
-						: null,
-				slice: async (start: number, end: number): Promise<SliceResult> => {
-					if (start >= file.size) {
-						return { done: true, value: null, size: null };
-					}
-					const blob = file.slice(start, end);
-					const arrayBuffer = await blob.arrayBuffer();
-					const chunk = new Uint8Array(arrayBuffer);
-					return { done: false, value: chunk, size: chunk.length };
-				},
-				close: () => {
-					// No-op for Blob
-				},
-			};
-		}
+  async openFile(input: UploadInput, _chunkSize: number): Promise<FileSource> {
+    // Handle File/Blob objects
+    if (
+      input instanceof Blob ||
+      (input && typeof input === "object" && "size" in input)
+    ) {
+      const file = input as Blob & { name?: string; lastModified?: number };
+      return {
+        input,
+        size: file.size,
+        name:
+          "name" in file && typeof file.name === "string" ? file.name : null,
+        type: file.type || null,
+        lastModified:
+          "lastModified" in file && typeof file.lastModified === "number"
+            ? file.lastModified
+            : null,
+        slice: async (start: number, end: number): Promise<SliceResult> => {
+          if (start >= file.size) {
+            return { done: true, value: null, size: null };
+          }
+          const blob = file.slice(start, end);
+          const arrayBuffer = await blob.arrayBuffer();
+          const chunk = new Uint8Array(arrayBuffer);
+          return { done: false, value: chunk, size: chunk.length };
+        },
+        close: () => {
+          // No-op for Blob
+        },
+      };
+    }
 
-		// Handle Uint8Array for testing
-		if (input instanceof Uint8Array) {
-			const data = input;
-			return {
-				input,
-				size: data.length,
-				name: "test-file.bin",
-				type: "application/octet-stream",
-				lastModified: Date.now(),
-				slice: async (start: number, end: number): Promise<SliceResult> => {
-					if (start >= data.length) {
-						return { done: true, value: null, size: null };
-					}
-					const chunk = data.slice(start, end);
-					return { done: false, value: chunk, size: chunk.length };
-				},
-				close: () => {
-					// No-op for Uint8Array
-				},
-			};
-		}
+    // Handle Uint8Array for testing
+    if (input instanceof Uint8Array) {
+      const data = input;
+      return {
+        input,
+        size: data.length,
+        name: "test-file.bin",
+        type: "application/octet-stream",
+        lastModified: Date.now(),
+        slice: async (start: number, end: number): Promise<SliceResult> => {
+          if (start >= data.length) {
+            return { done: true, value: null, size: null };
+          }
+          const chunk = data.slice(start, end);
+          return { done: false, value: chunk, size: chunk.length };
+        },
+        close: () => {
+          // No-op for Uint8Array
+        },
+      };
+    }
 
-		// Fallback for unknown types
-		throw new Error(
-			`MockFileReaderService: Unsupported input type: ${typeof input}`,
-		);
-	}
+    // Fallback for unknown types
+    throw new Error(
+      `MockFileReaderService: Unsupported input type: ${typeof input}`,
+    );
+  }
 }
 
 /**
  * Mock abort controller for testing cancellation
  */
 export class MockAbortController implements AbortControllerLike {
-	private _aborted = false;
-	private listeners: Array<() => void> = [];
+  private _aborted = false;
+  private listeners: Array<() => void> = [];
 
-	get signal(): AbortSignalLike {
-		return {
-			aborted: this._aborted,
-			addEventListener: (_event: string, listener: () => void) => {
-				this.listeners.push(listener);
-			},
-			removeEventListener: (_event: string, listener: () => void) => {
-				const index = this.listeners.indexOf(listener);
-				if (index !== -1) {
-					this.listeners.splice(index, 1);
-				}
-			},
-		};
-	}
+  get signal(): AbortSignalLike {
+    return {
+      aborted: this._aborted,
+      addEventListener: (_event: string, listener: () => void) => {
+        this.listeners.push(listener);
+      },
+      removeEventListener: (_event: string, listener: () => void) => {
+        const index = this.listeners.indexOf(listener);
+        if (index !== -1) {
+          this.listeners.splice(index, 1);
+        }
+      },
+    };
+  }
 
-	abort(): void {
-		this._aborted = true;
-		for (const listener of this.listeners) {
-			listener();
-		}
-	}
+  abort(): void {
+    this._aborted = true;
+    for (const listener of this.listeners) {
+      listener();
+    }
+  }
 }
 
 /**
  * Mock abort controller factory
  */
 export class MockAbortControllerFactory implements AbortControllerFactory {
-	create(): AbortControllerLike {
-		return new MockAbortController();
-	}
+  create(): AbortControllerLike {
+    return new MockAbortController();
+  }
 }
 
 /**
  * Mock WebSocket for testing real-time events
  */
 export class MockWebSocket implements WebSocketLike {
-	readyState = 0; // CONNECTING
-	private messageHandlers: Array<(event: { data: string }) => void> = [];
-	private openHandlers: Array<() => void> = [];
-	private errorHandlers: Array<(error: Error) => void> = [];
-	private closeHandlers: Array<() => void> = [];
+  readonly CONNECTING = 0;
+  readonly OPEN = 1;
+  readonly CLOSING = 2;
+  readonly CLOSED = 3;
 
-	constructor(public url: string) {
-		// Simulate connection opening after a short delay
-		setTimeout(() => {
-			this.readyState = 1; // OPEN
-			for (const handler of this.openHandlers) {
-				handler();
-			}
-		}, 10);
-	}
+  readyState = 0; // CONNECTING
 
-	send(data: string): void {
-		if (this.readyState !== 1) {
-			throw new Error("WebSocket is not open");
-		}
-		// Mock implementation - in tests, you can override this
-	}
+  onopen: (() => void) | null = null;
+  onclose: ((event: { code: number; reason: string }) => void) | null = null;
+  onerror: ((event: { message: string }) => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
 
-	close(): void {
-		this.readyState = 3; // CLOSED
-		for (const handler of this.closeHandlers) {
-			handler();
-		}
-	}
+  constructor(public url: string) {
+    // Simulate connection opening after a short delay
+    setTimeout(() => {
+      this.readyState = 1; // OPEN
+      if (this.onopen) {
+        this.onopen();
+      }
+    }, 10);
+  }
 
-	addEventListener(event: string, handler: (...args: unknown[]) => void): void {
-		if (event === "message") {
-			this.messageHandlers.push(handler as (event: { data: string }) => void);
-		} else if (event === "open") {
-			this.openHandlers.push(handler as () => void);
-		} else if (event === "error") {
-			this.errorHandlers.push(handler as (error: Error) => void);
-		} else if (event === "close") {
-			this.closeHandlers.push(handler as () => void);
-		}
-	}
+  send(_data: string | Uint8Array): void {
+    if (this.readyState !== 1) {
+      throw new Error("WebSocket is not open");
+    }
+    // Mock implementation - in tests, you can override this
+  }
 
-	removeEventListener(
-		event: string,
-		handler: (...args: unknown[]) => void,
-	): void {
-		if (event === "message") {
-			const index = this.messageHandlers.indexOf(
-				handler as (event: { data: string }) => void,
-			);
-			if (index !== -1) this.messageHandlers.splice(index, 1);
-		} else if (event === "open") {
-			const index = this.openHandlers.indexOf(handler as () => void);
-			if (index !== -1) this.openHandlers.splice(index, 1);
-		} else if (event === "error") {
-			const index = this.errorHandlers.indexOf(
-				handler as (error: Error) => void,
-			);
-			if (index !== -1) this.errorHandlers.splice(index, 1);
-		} else if (event === "close") {
-			const index = this.closeHandlers.indexOf(handler as () => void);
-			if (index !== -1) this.closeHandlers.splice(index, 1);
-		}
-	}
+  close(code = 1000, reason = ""): void {
+    this.readyState = 3; // CLOSED
+    if (this.onclose) {
+      this.onclose({ code, reason });
+    }
+  }
 
-	/**
-	 * Simulate receiving a message (for testing)
-	 */
-	simulateMessage(data: string): void {
-		if (this.readyState === 1) {
-			for (const handler of this.messageHandlers) {
-				handler({ data });
-			}
-		}
-	}
+  /**
+   * Simulate receiving a message (for testing)
+   */
+  simulateMessage(data: string): void {
+    if (this.readyState === 1 && this.onmessage) {
+      this.onmessage({ data });
+    }
+  }
 
-	/**
-	 * Simulate an error (for testing)
-	 */
-	simulateError(error: Error): void {
-		for (const handler of this.errorHandlers) {
-			handler(error);
-		}
-	}
+  /**
+   * Simulate an error (for testing)
+   */
+  simulateError(message: string): void {
+    if (this.onerror) {
+      this.onerror({ message });
+    }
+  }
 }
 
 /**
  * Mock WebSocket factory
  */
 export class MockWebSocketFactory implements WebSocketFactory {
-	create(url: string): WebSocketLike {
-		return new MockWebSocket(url);
-	}
+  create(url: string): WebSocketLike {
+    return new MockWebSocket(url);
+  }
 }
 
 /**
  * Mock platform service
  */
 export class MockPlatformService implements PlatformService {
-	constructor(
-		private browser = true,
-		private node = false,
-	) {}
+  private timers = new Map<Timeout, ReturnType<typeof setTimeout>>();
+  private timerId = 0;
 
-	isBrowser(): boolean {
-		return this.browser;
-	}
+  constructor(
+    private browser = true,
+    private online = true,
+  ) {}
 
-	isNode(): boolean {
-		return this.node;
-	}
+  setTimeout(callback: () => void, ms: number | undefined): Timeout {
+    const id = ++this.timerId;
+    const timer = setTimeout(callback, ms ?? 0);
+    this.timers.set(id, timer);
+    return id;
+  }
 
-	isReactNative(): boolean {
-		return !this.browser && !this.node;
-	}
+  clearTimeout(id: Timeout): void {
+    const timer = this.timers.get(id);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      this.timers.delete(id);
+    }
+  }
+
+  isBrowser(): boolean {
+    return this.browser;
+  }
+
+  isOnline(): boolean {
+    return this.online;
+  }
+
+  isFileLike(value: unknown): boolean {
+    if (typeof value !== "object" || value === null) return false;
+    // Check for File/Blob-like properties
+    return (
+      "size" in value &&
+      typeof (value as { size: unknown }).size === "number" &&
+      ("slice" in value || "type" in value)
+    );
+  }
+
+  getFileName(file: unknown): string | undefined {
+    if (
+      typeof file === "object" &&
+      file !== null &&
+      "name" in file &&
+      typeof (file as { name: unknown }).name === "string"
+    ) {
+      return (file as { name: string }).name;
+    }
+    return undefined;
+  }
+
+  getFileType(file: unknown): string | undefined {
+    if (
+      typeof file === "object" &&
+      file !== null &&
+      "type" in file &&
+      typeof (file as { type: unknown }).type === "string"
+    ) {
+      return (file as { type: string }).type;
+    }
+    return undefined;
+  }
+
+  getFileSize(file: unknown): number | undefined {
+    if (
+      typeof file === "object" &&
+      file !== null &&
+      "size" in file &&
+      typeof (file as { size: unknown }).size === "number"
+    ) {
+      return (file as { size: number }).size;
+    }
+    return undefined;
+  }
+
+  getFileLastModified(file: unknown): number | undefined {
+    if (
+      typeof file === "object" &&
+      file !== null &&
+      "lastModified" in file &&
+      typeof (file as { lastModified: unknown }).lastModified === "number"
+    ) {
+      return (file as { lastModified: number }).lastModified;
+    }
+    return undefined;
+  }
+
+  /**
+   * Set online status for testing
+   */
+  setOnline(online: boolean): void {
+    this.online = online;
+  }
 }
 
 /**
  * Mock checksum service
  */
 export class MockChecksumService implements ChecksumService {
-	async computeChecksum(_data: Uint8Array): Promise<string> {
-		// Return a mock checksum
-		return "mock-checksum-" + Math.random().toString(36).substring(7);
-	}
+  async computeChecksum(_data: Uint8Array): Promise<string> {
+    // Return a mock checksum
+    return `mock-checksum-${Math.random().toString(36).substring(7)}`;
+  }
 }
 
 /**
  * Mock fingerprint service
  */
 export class MockFingerprintService<UploadInput>
-	implements FingerprintService<UploadInput>
+  implements FingerprintService<UploadInput>
 {
-	async computeFingerprint(_input: UploadInput): Promise<string> {
-		// Return a mock fingerprint
-		return "mock-fingerprint-" + Math.random().toString(36).substring(7);
-	}
+  async computeFingerprint(_input: UploadInput): Promise<string> {
+    // Return a mock fingerprint
+    return `mock-fingerprint-${Math.random().toString(36).substring(7)}`;
+  }
 }
 
 /**
  * Mock ID generation service
  */
 export class MockIdGenerationService implements IdGenerationService {
-	private counter = 0;
+  private counter = 0;
 
-	generateId(): string {
-		return `mock-id-${++this.counter}`;
-	}
-
-	generateUploadId(): string {
-		return `mock-upload-${++this.counter}`;
-	}
+  generate(): string {
+    return `mock-id-${++this.counter}`;
+  }
 }
 
 /**
  * Mock base64 service
  */
 export class MockBase64Service implements Base64Service {
-	toBase64(data: ArrayBuffer): string {
-		// Simple mock implementation
-		const bytes = new Uint8Array(data);
-		let binary = "";
-		for (let i = 0; i < bytes.byteLength; i++) {
-			binary += String.fromCharCode(bytes[i]);
-		}
-		return btoa(binary);
-	}
+  toBase64(data: ArrayBuffer): string {
+    // Simple mock implementation
+    const bytes = new Uint8Array(data);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i] ?? 0);
+    }
+    return btoa(binary);
+  }
 
-	fromBase64(data: string): ArrayBuffer {
-		const binary = atob(data);
-		const bytes = new Uint8Array(binary.length);
-		for (let i = 0; i < binary.length; i++) {
-			bytes[i] = binary.charCodeAt(i);
-		}
-		return bytes.buffer;
-	}
+  fromBase64(data: string): ArrayBuffer {
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
 }
 
 /**
@@ -541,18 +612,18 @@ export class MockBase64Service implements Base64Service {
  * ```
  */
 export function createMockServiceContainer<
-	UploadInput = unknown,
+  UploadInput = unknown,
 >(): ServiceContainer<UploadInput> {
-	return {
-		storage: new MockStorageService(),
-		idGeneration: new MockIdGenerationService(),
-		httpClient: new MockHttpClient(),
-		fileReader: new MockFileReaderService<UploadInput>(),
-		base64: new MockBase64Service(),
-		websocket: new MockWebSocketFactory(),
-		abortController: new MockAbortControllerFactory(),
-		platform: new MockPlatformService(),
-		checksumService: new MockChecksumService(),
-		fingerprintService: new MockFingerprintService<UploadInput>(),
-	};
+  return {
+    storage: new MockStorageService(),
+    idGeneration: new MockIdGenerationService(),
+    httpClient: new MockHttpClient(),
+    fileReader: new MockFileReaderService<UploadInput>(),
+    base64: new MockBase64Service(),
+    websocket: new MockWebSocketFactory(),
+    abortController: new MockAbortControllerFactory(),
+    platform: new MockPlatformService(),
+    checksumService: new MockChecksumService(),
+    fingerprintService: new MockFingerprintService<UploadInput>(),
+  };
 }

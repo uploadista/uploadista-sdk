@@ -905,6 +905,9 @@ importers:
       '@uploadista/client-browser':
         specifier: workspace:*
         version: link:../browser
+      '@uploadista/client-core':
+        specifier: workspace:*
+        version: link:../core
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core

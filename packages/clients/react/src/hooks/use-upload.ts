@@ -30,15 +30,23 @@ export interface UseUploadOptions {
 
   /**
    * Called when upload progress updates
+   *
+   * @param uploadId - The unique identifier for this upload
+   * @param bytesUploaded - Number of bytes uploaded
+   * @param totalBytes - Total bytes to upload, null if unknown
    */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;
 
   /**
    * Called when a chunk completes
+   *
+   * @param chunkSize - Size of the completed chunk
+   * @param bytesAccepted - Total bytes accepted so far
+   * @param bytesTotal - Total bytes to upload, null if unknown
    */
   onChunkComplete?: (
     chunkSize: number,
@@ -48,11 +56,15 @@ export interface UseUploadOptions {
 
   /**
    * Called when upload succeeds
+   *
+   * @param result - The uploaded file result
    */
   onSuccess?: (result: UploadFile) => void;
 
   /**
    * Called when upload fails
+   *
+   * @param error - The error that caused the failure
    */
   onError?: (error: Error) => void;
 
@@ -63,6 +75,10 @@ export interface UseUploadOptions {
 
   /**
    * Custom retry logic
+   *
+   * @param error - The error that triggered the retry check
+   * @param retryAttempt - The current retry attempt number
+   * @returns true to retry, false to fail
    */
   onShouldRetry?: (error: Error, retryAttempt: number) => boolean;
 }
@@ -124,7 +140,10 @@ export interface UseUploadReturn {
  *   const upload = useUpload({
  *     onSuccess: (result) => console.log('Upload complete:', result),
  *     onError: (error) => console.error('Upload failed:', error),
- *     onProgress: (progress) => console.log('Progress:', progress + '%'),
+ *     onProgress: (uploadId, bytesUploaded, totalBytes) => {
+ *       const progress = totalBytes ? Math.round((bytesUploaded / totalBytes) * 100) : 0;
+ *       console.log(`Upload ${uploadId}: ${progress}% (${bytesUploaded}/${totalBytes} bytes)`);
+ *     },
  *   });
  *
  *   return (
@@ -157,19 +176,16 @@ const initialState: UploadState = {
 export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
   const uploadClient = useUploadistaContext();
   const [state, setState] = useState<UploadState>(initialState);
-  const managerRef = useRef<UploadManager | null>(null);
+  const managerRef = useRef<UploadManager<
+    BrowserUploadInput,
+    UploadOptions
+  > | null>(null);
 
   // Create UploadManager instance
   useEffect(() => {
-    // Wrap the client's upload method to match UploadFunction signature
-    const uploadFn = (input: unknown, opts: UploadOptions) =>
-      uploadClient.client.upload(
-        input as BrowserUploadInput,
-        opts as Parameters<typeof uploadClient.client.upload>[1],
-      );
-
     managerRef.current = new UploadManager(
-      uploadFn,
+      (file: BrowserUploadInput, opts: UploadOptions) =>
+        uploadClient.client.upload(file, opts),
       {
         onStateChange: setState,
         onProgress: options.onProgress,

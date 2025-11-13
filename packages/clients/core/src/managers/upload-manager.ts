@@ -40,18 +40,21 @@ export interface UploadManagerCallbacks {
 
   /**
    * Called when upload progress updates
-   * @param progress - Progress percentage (0-100)
+   * @param uploadId - The unique identifier for this upload
    * @param bytesUploaded - Number of bytes uploaded
    * @param totalBytes - Total bytes to upload, null if unknown
    */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;
 
   /**
    * Called when a chunk completes
+   * @param chunkSize - Size of the completed chunk
+   * @param bytesAccepted - Total bytes accepted so far
+   * @param bytesTotal - Total bytes to upload, null if unknown
    */
   onChunkComplete?: (
     chunkSize: number,
@@ -61,11 +64,13 @@ export interface UploadManagerCallbacks {
 
   /**
    * Called when upload completes successfully
+   * @param result - The uploaded file result
    */
   onSuccess?: (result: UploadFile) => void;
 
   /**
    * Called when upload fails with an error
+   * @param error - The error that occurred
    */
   onError?: (error: Error) => void;
 
@@ -91,10 +96,10 @@ export interface UploadAbortController {
  * Upload function that performs the actual upload.
  * Returns a promise that resolves to an abort controller.
  */
-export type UploadFunction<TInput = UploadInput> = (
-  input: TInput,
-  options: UploadOptions,
-) => Promise<UploadAbortController>;
+export type UploadFunction<
+  TInput = UploadInput,
+  TOptions extends UploadOptions = UploadOptions,
+> = (input: TInput, options: TOptions) => Promise<UploadAbortController>;
 
 /**
  * Initial state for a new upload
@@ -128,10 +133,14 @@ const initialState: UploadState = {
  * await manager.upload(file);
  * ```
  */
-export class UploadManager {
+export class UploadManager<
+  TInput = UploadInput,
+  TOptions extends UploadOptions = UploadOptions,
+> {
   private state: UploadState;
   private abortController: UploadAbortController | null = null;
-  private lastInput: UploadInput | null = null;
+  private lastInput: TInput | null = null;
+  private uploadId: string | null = null;
 
   /**
    * Create a new UploadManager
@@ -141,9 +150,9 @@ export class UploadManager {
    * @param options - Upload configuration options
    */
   constructor(
-    private readonly uploadFn: UploadFunction,
+    private readonly uploadFn: UploadFunction<TInput, TOptions>,
     private readonly callbacks: UploadManagerCallbacks,
-    private readonly options?: UploadOptions,
+    private readonly options?: TOptions,
   ) {
     this.state = { ...initialState };
   }
@@ -185,7 +194,7 @@ export class UploadManager {
    *
    * @param input - File or input to upload (type depends on platform)
    */
-  async upload(input: UploadInput): Promise<void> {
+  async upload(input: TInput): Promise<void> {
     // Determine totalBytes from input if possible (File/Blob on browser platforms)
     let totalBytes: number | null = null;
     if (input && typeof input === "object") {
@@ -208,13 +217,18 @@ export class UploadManager {
 
     try {
       // Build complete options with our callbacks
-      const uploadOptions: UploadOptions = {
+      const uploadOptions = {
         ...this.options,
         onProgress: (
-          progress: number,
+          uploadId: string,
           bytesUploaded: number,
           bytes: number | null,
         ) => {
+          // Store uploadId on first progress callback
+          if (!this.uploadId) {
+            this.uploadId = uploadId;
+          }
+
           const progressPercent = bytes
             ? Math.round((bytesUploaded / bytes) * 100)
             : 0;
@@ -225,8 +239,8 @@ export class UploadManager {
             totalBytes: bytes,
           });
 
-          this.callbacks.onProgress?.(progressPercent, bytesUploaded, bytes);
-          this.options?.onProgress?.(progress, bytesUploaded, bytes);
+          this.callbacks.onProgress?.(uploadId, bytesUploaded, bytes);
+          this.options?.onProgress?.(uploadId, bytesUploaded, bytes);
         },
         onChunkComplete: (
           chunkSize: number,
@@ -273,7 +287,7 @@ export class UploadManager {
           this.abortController = null;
         },
         onShouldRetry: this.options?.onShouldRetry,
-      };
+      } as TOptions;
 
       // Start the upload
       this.abortController = await this.uploadFn(input, uploadOptions);
@@ -313,6 +327,7 @@ export class UploadManager {
 
     this.state = { ...initialState };
     this.lastInput = null;
+    this.uploadId = null;
     this.callbacks.onStateChange(this.state);
   }
 
@@ -333,5 +348,6 @@ export class UploadManager {
       this.abortController.abort();
       this.abortController = null;
     }
+    this.uploadId = null;
   }
 }

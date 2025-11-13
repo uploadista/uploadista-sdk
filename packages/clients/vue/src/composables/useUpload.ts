@@ -1,18 +1,18 @@
 import type {
-	ChunkMetrics,
-	PerformanceInsights,
-	UploadSessionMetrics,
+  ChunkMetrics,
+  PerformanceInsights,
+  UploadSessionMetrics,
 } from "@uploadista/client-browser";
 import type {
-	UploadMetrics,
-	UploadOptions,
+  UploadFunction,
+  UploadMetrics,
+  UploadOptions,
 } from "@uploadista/client-core";
 import {
-	UploadManager,
-	type UploadState,
-	type UploadStatus,
+  UploadManager,
+  type UploadState,
+  type UploadStatus,
 } from "@uploadista/client-core";
-import type { UploadFile } from "@uploadista/core/types";
 import { computed, onUnmounted, ref } from "vue";
 import { useUploadistaClient } from "./useUploadistaClient";
 
@@ -22,12 +22,12 @@ export type UploadInput = File | Blob;
 export type { ChunkMetrics, PerformanceInsights, UploadSessionMetrics };
 
 const initialState: UploadState = {
-	status: "idle",
-	progress: 0,
-	bytesUploaded: 0,
-	totalBytes: null,
-	error: null,
-	result: null,
+  status: "idle",
+  progress: 0,
+  bytesUploaded: 0,
+  totalBytes: null,
+  error: null,
+  result: null,
 };
 
 /**
@@ -68,76 +68,78 @@ const initialState: UploadState = {
  * ```
  */
 export function useUpload(options: UploadOptions = {}) {
-	const uploadistaClient = useUploadistaClient();
-	const state = ref<UploadState>({ ...initialState });
-	let manager: UploadManager | null = null;
+  const uploadistaClient = useUploadistaClient();
+  const state = ref<UploadState>({ ...initialState });
+  let manager: UploadManager | null = null;
 
-	// Wrap the client's upload method to match UploadFunction signature
-	const uploadFn = (input: unknown, opts: UploadOptions) =>
-		uploadistaClient.client.upload(input as UploadInput, opts);
+  // Wrap the client's upload method to match UploadFunction signature
+  const uploadFn: UploadFunction<UploadInput> = (
+    input: UploadInput,
+    opts: UploadOptions,
+  ) => uploadistaClient.client.upload(input, opts);
 
-	// Create UploadManager instance
-	manager = new UploadManager(
-		uploadFn,
-		{
-			onStateChange: (newState: UploadState) => {
-				state.value = newState;
-			},
-			onProgress: options.onProgress,
-			onChunkComplete: options.onChunkComplete,
-			onSuccess: options.onSuccess,
-			onError: options.onError,
-			onAbort: options.onAbort,
-		},
-		options,
-	);
+  // Create UploadManager instance
+  manager = new UploadManager(
+    uploadFn,
+    {
+      onStateChange: (newState: UploadState) => {
+        state.value = newState;
+      },
+      onProgress: options.onProgress,
+      onChunkComplete: options.onChunkComplete,
+      onSuccess: options.onSuccess,
+      onError: options.onError,
+      onAbort: options.onAbort,
+    },
+    options,
+  );
 
-	// Clean up manager when component unmounts
-	onUnmounted(() => {
-		manager?.cleanup();
-	});
+  // Clean up manager when component unmounts
+  onUnmounted(() => {
+    manager?.cleanup();
+  });
 
-	// Upload function
-	const upload = (file: UploadInput) => {
-		manager?.upload(file);
-	};
+  // Upload function
+  const upload = (file: UploadInput) => {
+    manager?.upload(file);
+  };
 
-	// Abort function
-	const abort = () => {
-		manager?.abort();
-	};
+  // Abort function
+  const abort = () => {
+    manager?.abort();
+  };
 
-	// Reset function
-	const reset = () => {
-		manager?.reset();
-	};
+  // Reset function
+  const reset = () => {
+    manager?.reset();
+  };
 
-	// Retry function
-	const retry = () => {
-		manager?.retry();
-	};
+  // Retry function
+  const retry = () => {
+    manager?.retry();
+  };
 
-	// Computed properties
-	const isUploading = computed(() => state.value.status === "uploading");
-	const canRetry = computed(() => manager?.canRetry() ?? false);
+  // Computed properties
+  const isUploading = computed(() => state.value.status === "uploading");
+  const canRetry = computed(() => manager?.canRetry() ?? false);
 
-	// Create metrics object that delegates to the upload client
-	const metrics: UploadMetrics = {
-		getInsights: () => uploadistaClient.client.getChunkingInsights(),
-		exportMetrics: () => uploadistaClient.client.exportMetrics(),
-		getNetworkMetrics: () => uploadistaClient.client.getNetworkMetrics(),
-		getNetworkCondition: () => uploadistaClient.client.getNetworkCondition(),
-		resetMetrics: () => uploadistaClient.client.resetMetrics(),
-	};
+  // Create metrics object that delegates to the upload client
+  const metrics: UploadMetrics = {
+    getInsights: () => uploadistaClient.client.getChunkingInsights(),
+    exportMetrics: () => uploadistaClient.client.exportMetrics(),
+    getNetworkMetrics: () => uploadistaClient.client.getNetworkMetrics(),
+    getNetworkCondition: () => uploadistaClient.client.getNetworkCondition(),
+    resetMetrics: () => uploadistaClient.client.resetMetrics(),
+  };
 
-	return {
-		state,
-		upload,
-		abort,
-		reset,
-		retry,
-		isUploading,
-		canRetry,
-		metrics,
-	};
+  return {
+    state,
+    upload,
+    abort,
+    reset,
+    retry,
+    isUploading,
+    canRetry,
+    metrics,
+  };
 }
