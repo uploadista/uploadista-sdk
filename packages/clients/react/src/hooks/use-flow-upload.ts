@@ -260,6 +260,7 @@ export function useFlowUpload<TOutput = UploadFile>(
     const unsubscribe = client.subscribeToEvents((event: UploadistaEvent) => {
       // Handle flow events
       if (isFlowEvent(event)) {
+        console.log("[useFlowUpload] Flow event received:", event.eventType, "jobId:", event.jobId, "current:", managerRef.current?.getJobId());
         managerRef.current?.handleFlowEvent(event);
         return;
       }

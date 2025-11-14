@@ -296,9 +296,12 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
    * @param event - Flow event to process
    */
   handleFlowEvent(event: FlowEvent): void {
+    console.log("[FlowManager] handleFlowEvent", event.eventType, "eventJobId:", event.jobId, "stateJobId:", this.state.jobId);
+
     // For FlowStart, accept if we don't have a jobId yet (first event)
     // This handles the race condition where flow events arrive before onJobStart callback
     if (event.eventType === EventType.FlowStart && !this.state.jobId) {
+      console.log("[FlowManager] Setting jobId from FlowStart");
       this.updateState({
         jobId: event.jobId,
         flowStarted: true,
@@ -309,8 +312,11 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
 
     // Only handle events for the current job
     if (!this.state.jobId || event.jobId !== this.state.jobId) {
+      console.log("[FlowManager] IGNORING event - jobId mismatch");
       return;
     }
+
+    console.log("[FlowManager] Processing event:", event.eventType);
 
     switch (event.eventType) {
       case EventType.FlowStart:
