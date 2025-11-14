@@ -45,6 +45,6 @@
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.8"
+    "vitest": "4.0.9"
   }
 }
