@@ -488,13 +488,13 @@ function FlowUploadContent() {
                     </div>
                   )}
 
-                  {flowUpload.state.result && (
+                  {flowUpload.state.flowOutputs && (
                     <details className="bg-white rounded-xl border border-green-200 mb-4">
                       <summary className="px-4 py-3 cursor-pointer font-semibold text-gray-700 hover:text-gray-900">
                         View Flow Result Details
                       </summary>
                       <pre className="px-4 pb-4 text-sm text-gray-800 overflow-auto font-mono">
-                        {JSON.stringify(flowUpload.state.result, null, 2)}
+                        {JSON.stringify(flowUpload.state.flowOutputs, null, 2)}
                       </pre>
                     </details>
                   )}

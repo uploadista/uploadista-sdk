@@ -278,12 +278,7 @@ export function DragDropUploadExample() {
                     {/* File Preview for successful uploads */}
                     {item.state.status === "success" && (
                       <div className="mt-3">
-                        <FilePreview
-                          file={
-                            item.file instanceof File ? item.file : undefined
-                          }
-                          result={item.state.result}
-                        />
+                        <FilePreview result={item.state.result} />
                       </div>
                     )}
 

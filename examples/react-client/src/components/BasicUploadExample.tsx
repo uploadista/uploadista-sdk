@@ -1,11 +1,8 @@
 import { useUpload } from "@uploadista/react";
-import { useState } from "react";
 import { FilePreview } from "./FilePreview";
 import { Card } from "./ui/card";
 
 export function BasicUploadExample() {
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-
   const upload = useUpload({
     onSuccess: (result) => {
       console.log("Upload successful:", result);
@@ -21,7 +18,6 @@ export function BasicUploadExample() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadedFile(file);
       upload.upload(file);
     }
   };
@@ -139,12 +135,8 @@ export function BasicUploadExample() {
               </div>
             </div>
             {/* File Preview */}
-            {uploadedFile && (
-              <FilePreview
-                file={uploadedFile}
-                result={upload.state.result}
-                className="mb-4"
-              />
+            {upload.state.result && (
+              <FilePreview result={upload.state.result} className="mb-4" />
             )}
 
             {upload.state.result && (

@@ -2,6 +2,9 @@
  * Core types for React Native Uploadista client
  */
 
+import type { TypedOutput } from "@uploadista/core/flow";
+import type { UploadFile } from "@uploadista/core/types";
+
 /**
  * Options for file picker operations
  */
@@ -187,7 +190,7 @@ export interface UploadItem {
   /** Upload progress */
   progress: UploadProgress;
   /** Result from server if successful */
-  result?: unknown;
+  result?: UploadFile;
 }
 
 /**
@@ -264,8 +267,10 @@ export interface UseFlowUploadOptions {
   outputNodeId?: string;
   /** Metadata to pass to flow */
   metadata?: Record<string, unknown>;
-  /** Called when upload succeeds */
-  onSuccess?: (result: unknown) => void;
+  /** Called when upload succeeds (receives typed outputs from all output nodes) */
+  onSuccess?: (outputs: TypedOutput[]) => void;
+  /** Called when the flow completes successfully (receives full flow outputs) */
+  onFlowComplete?: (outputs: TypedOutput[]) => void;
   /** Called when upload fails */
   onError?: (error: Error) => void;
   /** Called when upload progress updates */
@@ -298,7 +303,7 @@ export interface UseCameraUploadOptions {
   onError?: (error: Error) => void;
   /** Called when upload progress updates */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;
@@ -344,7 +349,7 @@ export interface UseFileUploadOptions {
   onError?: (error: Error) => void;
   /** Called when upload progress updates */
   onProgress?: (
-    progress: number,
+    uploadId: string,
     bytesUploaded: number,
     totalBytes: number | null,
   ) => void;

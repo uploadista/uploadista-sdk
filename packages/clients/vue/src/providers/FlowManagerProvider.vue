@@ -34,8 +34,8 @@ function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
 /**
  * Internal manager registry entry with ref counting
  */
-interface ManagerEntry<TOutput> {
-  manager: FlowManager<unknown, TOutput>;
+interface ManagerEntry {
+  manager: FlowManager<unknown>;
   refCount: number;
   flowId: string;
 }
@@ -44,16 +44,16 @@ interface ManagerEntry<TOutput> {
  * Context value providing access to flow managers
  */
 interface FlowManagerContextValue {
-  getManager: <TOutput = unknown>(
+  getManager: (
     flowId: string,
-    callbacks: FlowManagerCallbacks<TOutput>,
-    options: FlowUploadOptions<TOutput>,
-  ) => FlowManager<unknown, TOutput>;
+    callbacks: FlowManagerCallbacks,
+    options: FlowUploadOptions,
+  ) => FlowManager<unknown>;
   releaseManager: (flowId: string) => void;
 }
 
 const { client, subscribeToEvents } = useUploadistaContext();
-const managers = new Map<string, ManagerEntry<unknown>>();
+const managers = new Map<string, ManagerEntry>();
 let unsubscribe: (() => void) | null = null;
 
 // Subscribe to events and route to managers
@@ -99,36 +99,32 @@ onBeforeUnmount(() => {
   managers.clear();
 });
 
-const getManager = <TOutput,>(
+const getManager = (
   flowId: string,
-  callbacks: FlowManagerCallbacks<TOutput>,
-  options: FlowUploadOptions<TOutput>,
-): FlowManager<unknown, TOutput> => {
+  callbacks: FlowManagerCallbacks,
+  options: FlowUploadOptions,
+): FlowManager<unknown> => {
   const existing = managers.get(flowId);
 
   if (existing) {
     // Increment ref count for existing manager
     existing.refCount++;
-    return existing.manager as FlowManager<unknown, TOutput>;
+    return existing.manager;
   }
 
   // Create new manager
   const flowUploadFn = (
     input: unknown,
-    flowConfig: FlowUploadOptions<TOutput>["flowConfig"],
+    flowConfig: FlowUploadOptions["flowConfig"],
     internalOptions: unknown,
   ) => {
     return client.value.uploadWithFlow(input, flowConfig, internalOptions);
   };
 
-  const manager = new FlowManager<unknown, TOutput>(
-    flowUploadFn,
-    callbacks,
-    options,
-  );
+  const manager = new FlowManager<unknown>(flowUploadFn, callbacks, options);
 
   managers.set(flowId, {
-    manager: manager as FlowManager<unknown, unknown>,
+    manager,
     refCount: 1,
     flowId,
   });

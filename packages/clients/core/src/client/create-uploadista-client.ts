@@ -673,7 +673,7 @@ export function createUploadistaClient<UploadInput>({
     > = {},
   ): Promise<{
     abort: () => Promise<void>;
-    pause: () => Promise<FlowJob>;
+    pause: () => Promise<void>;
     jobId: string;
   }> => {
     const source = await fileReader.openFile(file, chunkSize);
@@ -707,9 +707,7 @@ export function createUploadistaClient<UploadInput>({
     if (!result) {
       return {
         abort: async () => {},
-        pause: async () => {
-          throw new Error("Flow upload not initialized");
-        },
+        pause: async () => {},
         jobId: "",
       };
     }
@@ -766,7 +764,9 @@ export function createUploadistaClient<UploadInput>({
         wsManager.closeWebSocket(jobId);
         wsManager.closeUploadWebSocket(uploadFile.id);
       },
-      pause: () => uploadistaApi.pauseFlow(jobId),
+      pause: async () => {
+        await uploadistaApi.pauseFlow(jobId);
+      },
       jobId,
     };
   };

@@ -1,4 +1,4 @@
-import type { UploadistaEvent } from "@uploadista/client-browser";
+import type { UploadistaEvent } from "@uploadista/client-core";
 import { useEffect } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
 

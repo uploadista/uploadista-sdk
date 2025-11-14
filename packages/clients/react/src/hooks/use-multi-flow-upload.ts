@@ -4,7 +4,6 @@ import type {
   MultiFlowUploadOptions,
   MultiFlowUploadState,
 } from "@uploadista/client-browser";
-import type { UploadFile } from "@uploadista/core/types";
 import { useCallback, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
 
@@ -271,11 +270,16 @@ export function useMultiFlowUpload(
               return updated;
             });
           },
-          onSuccess: (result: UploadFile) => {
+          onSuccess: (outputs) => {
             setItems((prev) => {
               const updated = prev.map((i) =>
                 i.id === itemId
-                  ? { ...i, status: "success" as const, result, progress: 100 }
+                  ? {
+                      ...i,
+                      status: "success" as const,
+                      result: outputs,
+                      progress: 100,
+                    }
                   : i,
               );
               const updatedItem = updated.find((i) => i.id === itemId);

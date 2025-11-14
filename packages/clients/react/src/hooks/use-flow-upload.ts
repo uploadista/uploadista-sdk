@@ -1,11 +1,10 @@
 import type { FlowUploadOptions } from "@uploadista/client-browser";
-import {
-  type FlowManager,
-  type FlowUploadState,
-  type FlowUploadStatus,
+import type {
+  FlowManager,
+  FlowUploadState,
+  FlowUploadStatus,
 } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
-import type { UploadFile } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFlowManagerContext } from "../contexts/flow-manager-context";
 
@@ -14,8 +13,6 @@ export type { FlowUploadState, FlowUploadStatus };
 
 /**
  * Return value from the useFlowUpload hook with upload control methods and state.
- *
- * @template TOutput - Type of the final output from the flow (defaults to UploadFile)
  *
  * @property state - Complete flow upload state with progress and outputs
  * @property upload - Function to initiate file upload through the flow
@@ -26,11 +23,11 @@ export type { FlowUploadState, FlowUploadStatus };
  * @property isUploadingFile - True only during file upload phase
  * @property isProcessing - True only during flow processing phase
  */
-export interface UseFlowUploadReturn<TOutput = UploadFile> {
+export interface UseFlowUploadReturn {
   /**
    * Current upload state
    */
-  state: FlowUploadState<TOutput>;
+  state: FlowUploadState;
 
   /**
    * Upload a file through the flow
@@ -74,7 +71,6 @@ const initialState: FlowUploadState = {
   bytesUploaded: 0,
   totalBytes: null,
   error: null,
-  result: null,
   jobId: null,
   flowStarted: false,
   currentNodeName: null,
@@ -93,7 +89,6 @@ const initialState: FlowUploadState = {
  * Must be used within FlowManagerProvider (which must be within UploadistaProvider).
  * Flow events are automatically routed by the provider to the appropriate manager.
  *
- * @template TOutput - Type of the final result from the flow (defaults to UploadFile)
  * @param options - Flow upload configuration including flow ID and event handlers
  * @returns Flow upload state and control methods
  *
@@ -105,14 +100,16 @@ const initialState: FlowUploadState = {
  *     flowConfig: {
  *       flowId: "image-optimization-flow",
  *       storageId: "s3-images",
- *       outputNodeId: "optimized-output", // Optional: specify which output to use
  *     },
- *     onSuccess: (result) => {
- *       console.log("Image optimized and saved:", result);
+ *     onSuccess: (outputs) => {
+ *       console.log("Flow outputs:", outputs);
+ *       // Access all outputs from the flow
+ *       for (const output of outputs) {
+ *         console.log(`${output.nodeId}:`, output.data);
+ *       }
  *     },
  *     onFlowComplete: (outputs) => {
  *       console.log("All flow outputs:", outputs);
- *       // outputs might include: { thumbnail: {...}, optimized: {...}, original: {...} }
  *     },
  *     onError: (error) => {
  *       console.error("Upload or processing failed:", error);
@@ -146,8 +143,12 @@ const initialState: FlowUploadState = {
  *       {flowUpload.state.status === "success" && (
  *         <div>
  *           <p>Upload complete!</p>
- *           {flowUpload.state.result && (
- *             <img src={flowUpload.state.result.url} alt="Uploaded" />
+ *           {flowUpload.state.flowOutputs && (
+ *             <div>
+ *               {flowUpload.state.flowOutputs.map((output) => (
+ *                 <div key={output.nodeId}>{output.nodeId}: {JSON.stringify(output.data)}</div>
+ *               ))}
+ *             </div>
  *           )}
  *         </div>
  *       )}
@@ -170,14 +171,10 @@ const initialState: FlowUploadState = {
  * @see {@link useMultiFlowUpload} for uploading multiple files through a flow
  * @see {@link useUpload} for simple uploads without flow processing
  */
-export function useFlowUpload<TOutput = UploadFile>(
-  options: FlowUploadOptions<TOutput>,
-): UseFlowUploadReturn<TOutput> {
+export function useFlowUpload(options: FlowUploadOptions): UseFlowUploadReturn {
   const { getManager, releaseManager } = useFlowManagerContext();
-  const [state, setState] = useState<FlowUploadState<TOutput>>(
-    initialState as FlowUploadState<TOutput>,
-  );
-  const managerRef = useRef<FlowManager<unknown, TOutput> | null>(null);
+  const [state, setState] = useState<FlowUploadState>(initialState);
+  const managerRef = useRef<FlowManager<unknown> | null>(null);
 
   // Store callbacks in refs so they can be updated without recreating the manager
   const callbacksRef = useRef(options);
@@ -195,17 +192,29 @@ export function useFlowUpload<TOutput = UploadFile>(
     // Create stable callback wrappers that call the latest callbacks via refs
     const stableCallbacks = {
       onStateChange: setState,
-      onProgress: (uploadId: string, bytesUploaded: number, totalBytes: number | null) => {
+      onProgress: (
+        uploadId: string,
+        bytesUploaded: number,
+        totalBytes: number | null,
+      ) => {
         callbacksRef.current.onProgress?.(uploadId, bytesUploaded, totalBytes);
       },
-      onChunkComplete: (chunkSize: number, bytesAccepted: number, bytesTotal: number | null) => {
-        callbacksRef.current.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
+      onChunkComplete: (
+        chunkSize: number,
+        bytesAccepted: number,
+        bytesTotal: number | null,
+      ) => {
+        callbacksRef.current.onChunkComplete?.(
+          chunkSize,
+          bytesAccepted,
+          bytesTotal,
+        );
       },
       onFlowComplete: (outputs: TypedOutput[]) => {
         callbacksRef.current.onFlowComplete?.(outputs);
       },
-      onSuccess: (result: TOutput) => {
-        callbacksRef.current.onSuccess?.(result);
+      onSuccess: (outputs: TypedOutput[]) => {
+        callbacksRef.current.onSuccess?.(outputs);
       },
       onError: (error: Error) => {
         callbacksRef.current.onError?.(error);
@@ -223,7 +232,13 @@ export function useFlowUpload<TOutput = UploadFile>(
       releaseManager(flowId);
       managerRef.current = null;
     };
-  }, [options.flowConfig.flowId, options.flowConfig.storageId, options.flowConfig.outputNodeId, getManager, releaseManager]);
+  }, [
+    options.flowConfig.flowId,
+    options.flowConfig.storageId,
+    options.flowConfig.outputNodeId,
+    getManager,
+    releaseManager,
+  ]);
 
   // Wrap manager methods with useCallback
   const upload = useCallback(async (file: File | Blob) => {

@@ -1,6 +1,9 @@
 "use client";
 import type { UploadistaEvent } from "@uploadista/client-core";
-import { UploadistaContext, FlowManagerProvider } from "@uploadista/react-native-core";
+import {
+  FlowManagerProvider,
+  UploadistaContext,
+} from "@uploadista/react-native-core";
 import type { UploadistaContextType } from "@uploadista/react-native-core/hooks";
 import type React from "react";
 import { useCallback, useContext, useMemo, useRef } from "react";
@@ -130,9 +133,7 @@ export function UploadistaProvider({
 
   return (
     <UploadistaContext.Provider value={contextValue}>
-      <FlowManagerProvider>
-        {children}
-      </FlowManagerProvider>
+      <FlowManagerProvider>{children}</FlowManagerProvider>
     </UploadistaContext.Provider>
   );
 }

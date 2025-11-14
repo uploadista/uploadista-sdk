@@ -1,6 +1,6 @@
-import type { UploadistaEvent } from "@uploadista/client-browser";
+import type { UploadistaEvent } from "@uploadista/client-core";
 import { EventType, type FlowEvent } from "@uploadista/core/flow";
-import { UploadEventType, type UploadEvent } from "@uploadista/core/types";
+import { type UploadEvent, UploadEventType } from "@uploadista/core/types";
 
 /**
  * Type guard to check if an event is a flow event

@@ -18,10 +18,8 @@ export type FlowUploadStatus =
 /**
  * Complete state information for a flow upload operation.
  * Tracks both the upload phase (file transfer) and processing phase (flow execution).
- *
- * @template TOutput - Type of the final output from the flow (defaults to UploadFile)
  */
-export interface FlowUploadState<TOutput = UploadFile> {
+export interface FlowUploadState {
   /** Current upload status */
   status: FlowUploadStatus;
   /** Upload progress percentage (0-100) */
@@ -32,8 +30,6 @@ export interface FlowUploadState<TOutput = UploadFile> {
   totalBytes: number | null;
   /** Error if upload or processing failed */
   error: Error | null;
-  /** Final output from the flow (available when status is "success") */
-  result: TOutput | null;
   /** Unique identifier for the flow execution job */
   jobId: string | null;
   /** Whether the flow processing has started */
@@ -53,11 +49,11 @@ export interface FlowUploadState<TOutput = UploadFile> {
 /**
  * Callbacks that FlowManager invokes during the flow upload lifecycle
  */
-export interface FlowManagerCallbacks<TOutput = UploadFile> {
+export interface FlowManagerCallbacks {
   /**
    * Called when the flow upload state changes
    */
-  onStateChange: (state: FlowUploadState<TOutput>) => void;
+  onStateChange: (state: FlowUploadState) => void;
 
   /**
    * Called when upload progress updates
@@ -101,11 +97,21 @@ export interface FlowManagerCallbacks<TOutput = UploadFile> {
   onFlowComplete?: (outputs: TypedOutput[]) => void;
 
   /**
-   * Called when upload succeeds (receives single extracted output)
-   * For single-output flows, receives the value from the specified outputNodeId
-   * or the first output node if outputNodeId is not specified
+   * Called when upload succeeds (receives typed outputs from all output nodes)
+   * Each output includes nodeId, optional nodeType (e.g., "storage-output-v1"), data, and timestamp.
+   *
+   * @param outputs - Array of typed outputs from all output nodes
+   *
+   * @example
+   * ```typescript
+   * onSuccess: (outputs) => {
+   *   for (const output of outputs) {
+   *     console.log(`${output.nodeId} completed:`, output.data);
+   *   }
+   * }
+   * ```
    */
-  onSuccess?: (result: TOutput) => void;
+  onSuccess?: (outputs: TypedOutput[]) => void;
 
   /**
    * Called when upload or flow processing fails with an error
@@ -186,7 +192,6 @@ const initialState: FlowUploadState = {
   bytesUploaded: 0,
   totalBytes: null,
   error: null,
-  result: null,
   jobId: null,
   flowStarted: false,
   currentNodeName: null,
@@ -225,8 +230,8 @@ const initialState: FlowUploadState = {
  * await manager.upload(file);
  * ```
  */
-export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
-  private state: FlowUploadState<TOutput>;
+export class FlowManager<TInput = FlowUploadInput> {
+  private state: FlowUploadState;
   private abortController: FlowUploadAbortController | null = null;
 
   /**
@@ -238,16 +243,16 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
    */
   constructor(
     private readonly flowUploadFn: FlowUploadFunction<TInput>,
-    private readonly callbacks: FlowManagerCallbacks<TOutput>,
-    private readonly options: FlowUploadOptions<TOutput>,
+    private readonly callbacks: FlowManagerCallbacks,
+    private readonly options: FlowUploadOptions,
   ) {
-    this.state = { ...initialState } as FlowUploadState<TOutput>;
+    this.state = { ...initialState };
   }
 
   /**
    * Get the current flow upload state
    */
-  getState(): FlowUploadState<TOutput> {
+  getState(): FlowUploadState {
     return { ...this.state };
   }
 
@@ -284,7 +289,7 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
   /**
    * Update the internal state and notify callbacks
    */
-  private updateState(update: Partial<FlowUploadState<TOutput>>): void {
+  private updateState(update: Partial<FlowUploadState>): void {
     this.state = { ...this.state, ...update };
     this.callbacks.onStateChange(this.state);
   }
@@ -309,7 +314,7 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
 
     // Only handle events for the current job
     if (!this.state.jobId || event.jobId !== this.state.jobId) {
-      console.warn("[FlowManager] IGNORING event - jobId mismatch");
+      // console.warn("[FlowManager] IGNORING event - jobId mismatch");
       return;
     }
 
@@ -367,37 +372,15 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
           this.callbacks.onFlowComplete(flowOutputs);
         }
 
-        // Extract single output for onSuccess callback
-        let extractedOutput: TOutput | null = null;
-        if (flowOutputs && flowOutputs.length > 0) {
-          if (this.options.flowConfig.outputNodeId) {
-            // Find output by specified nodeId
-            const targetOutput = flowOutputs.find(
-              (output) =>
-                output.nodeId === this.options.flowConfig.outputNodeId,
-            );
-            if (targetOutput) {
-              extractedOutput = targetOutput.data as TOutput;
-            }
-          } else {
-            // Use first output
-            const firstOutput = flowOutputs[0];
-            if (firstOutput) {
-              extractedOutput = firstOutput.data as TOutput;
-            }
-          }
-        }
-
-        // Call onSuccess with extracted output
-        if (extractedOutput && this.callbacks.onSuccess) {
-          this.callbacks.onSuccess(extractedOutput);
+        // Call onSuccess with full typed outputs
+        if (flowOutputs && flowOutputs.length > 0 && this.callbacks.onSuccess) {
+          this.callbacks.onSuccess(flowOutputs);
         }
 
         this.updateState({
           status: "success",
           currentNodeName: null,
           currentNodeType: null,
-          result: extractedOutput,
           flowOutputs,
         });
 
@@ -486,7 +469,6 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
       bytesUploaded: 0,
       totalBytes,
       error: null,
-      result: null,
       jobId: null,
       flowStarted: false,
       currentNodeName: null,
@@ -600,7 +582,7 @@ export class FlowManager<TInput = FlowUploadInput, TOutput = UploadFile> {
       this.abortController = null;
     }
 
-    this.state = { ...initialState } as FlowUploadState<TOutput>;
+    this.state = { ...initialState };
     this.callbacks.onStateChange(this.state);
   }
 

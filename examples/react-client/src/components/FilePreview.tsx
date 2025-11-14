@@ -2,7 +2,7 @@ import type { UploadFile } from "@uploadista/core";
 
 interface FilePreviewProps {
   file?: File;
-  result?: UploadFile;
+  result?: UploadFile | null;
   className?: string;
 }
 

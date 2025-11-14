@@ -1,19 +1,15 @@
-import {
-  FlowManager,
-  type FlowManagerCallbacks,
-  type FlowUploadOptions,
-} from "@uploadista/client-core";
+import type { FlowManager, FlowManagerCallbacks, FlowUploadOptions } from "@uploadista/client-core";
 import { inject } from "vue";
 
 /**
  * Context value providing access to flow managers
  */
 interface FlowManagerContextValue {
-  getManager: <TOutput = unknown>(
+  getManager: (
     flowId: string,
-    callbacks: FlowManagerCallbacks<TOutput>,
-    options: FlowUploadOptions<TOutput>,
-  ) => FlowManager<unknown, TOutput>;
+    callbacks: FlowManagerCallbacks,
+    options: FlowUploadOptions,
+  ) => FlowManager<unknown>;
   releaseManager: (flowId: string) => void;
 }
 

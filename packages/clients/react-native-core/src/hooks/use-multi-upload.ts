@@ -171,7 +171,10 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
 
         // Override blob type if we have mimeType from picker
         const uploadInput = item.file.data.mimeType
-          ? new Blob([blob], { type: item.file.data.mimeType })
+          ? new Blob([blob], {
+              type: item.file.data.mimeType,
+              lastModified: Date.now(),
+            })
           : blob;
 
         // Start upload using the client

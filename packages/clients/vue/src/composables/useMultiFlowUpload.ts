@@ -4,7 +4,6 @@ import type {
   MultiFlowUploadOptions,
   MultiFlowUploadState,
 } from "@uploadista/client-browser";
-import type { UploadFile } from "@uploadista/core/types";
 import { computed, readonly, ref } from "vue";
 import { useUploadistaClient } from "./useUploadistaClient";
 
@@ -129,13 +128,13 @@ export function useMultiFlowUpload(
               return i;
             });
           },
-          onSuccess: (result: UploadFile) => {
+          onSuccess: (outputs) => {
             items.value = items.value.map((i) => {
               if (i.id === itemId) {
                 const updated = {
                   ...i,
                   status: "success" as const,
-                  result,
+                  result: outputs,
                   progress: 100,
                 };
                 options.onItemSuccess?.(updated);

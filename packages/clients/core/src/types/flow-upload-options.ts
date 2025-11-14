@@ -1,8 +1,7 @@
 import type { TypedOutput } from "@uploadista/core/flow";
-import type { UploadFile } from "@uploadista/core/types";
 import type { FlowUploadConfig } from "./flow-upload-config";
 
-export interface FlowUploadOptions<TOutput = UploadFile> {
+export interface FlowUploadOptions {
   /**
    * Flow configuration
    */
@@ -58,11 +57,22 @@ export interface FlowUploadOptions<TOutput = UploadFile> {
   onFlowComplete?: (outputs: TypedOutput[]) => void;
 
   /**
-   * Called when upload succeeds (legacy, single-output flows)
-   * For single-output flows, receives the value from the specified outputNodeId
-   * or the first output node if outputNodeId is not specified
+   * Called when upload succeeds (receives typed outputs from all output nodes)
+   * Each output includes nodeId, optional nodeType, data, and timestamp.
+   *
+   * @param outputs - Array of typed outputs from all output nodes
+   *
+   * @example
+   * ```typescript
+   * onSuccess: (outputs) => {
+   *   // Access all outputs with type information
+   *   for (const output of outputs) {
+   *     console.log(`${output.nodeId} completed:`, output.data);
+   *   }
+   * }
+   * ```
    */
-  onSuccess?: (result: TOutput) => void;
+  onSuccess?: (outputs: TypedOutput[]) => void;
 
   /**
    * Called when upload fails

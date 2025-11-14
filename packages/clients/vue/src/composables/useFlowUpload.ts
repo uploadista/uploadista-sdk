@@ -1,22 +1,21 @@
 import type { FlowUploadOptions } from "@uploadista/client-browser";
-import {
-  type FlowManager,
-  type FlowUploadState,
-  type FlowUploadStatus,
+import type {
+  FlowManager,
+  FlowUploadState,
+  FlowUploadStatus,
 } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
-import type { UploadFile } from "@uploadista/core/types";
 import { computed, onMounted, onUnmounted, readonly, ref } from "vue";
 import { useFlowManagerContext } from "./useFlowManagerContext";
 
 // Re-export types from core for convenience
 export type { FlowUploadState, FlowUploadStatus };
 
-export interface UseFlowUploadOptions<TOutput = UploadFile> {
+export interface UseFlowUploadOptions {
   /**
    * Flow configuration
    */
-  flowConfig: FlowUploadOptions<TOutput>["flowConfig"];
+  flowConfig: FlowUploadOptions["flowConfig"];
 
   /**
    * Called when upload progress updates
@@ -44,11 +43,12 @@ export interface UseFlowUploadOptions<TOutput = UploadFile> {
   onFlowComplete?: (outputs: Record<string, unknown>) => void;
 
   /**
-   * Called when upload succeeds (legacy, single-output flows)
-   * For single-output flows, receives the value from the specified outputNodeId
-   * or the first output node if outputNodeId is not specified
+   * Called when upload succeeds (receives typed outputs from all output nodes)
+   * Each output includes nodeId, optional nodeType, data, and timestamp.
+   *
+   * @param outputs - Array of typed outputs from all output nodes
    */
-  onSuccess?: (result: TOutput) => void;
+  onSuccess?: (outputs: TypedOutput[]) => void;
 
   /**
    * Called when upload fails
@@ -72,7 +72,6 @@ const initialState: FlowUploadState = {
   bytesUploaded: 0,
   totalBytes: null,
   error: null,
-  result: null,
   jobId: null,
   flowStarted: false,
   currentNodeName: null,
@@ -100,8 +99,11 @@ const initialState: FlowUploadState = {
  *     flowId: "my-upload-flow",
  *     storageId: "my-storage",
  *   },
- *   onSuccess: (result) => {
- *     console.log("Upload complete:", result);
+ *   onSuccess: (outputs) => {
+ *     console.log("Flow outputs:", outputs);
+ *     for (const output of outputs) {
+ *       console.log(`${output.nodeId}:`, output.data);
+ *     }
  *   },
  * });
  *
@@ -116,14 +118,10 @@ const initialState: FlowUploadState = {
  * </template>
  * ```
  */
-export function useFlowUpload<TOutput = UploadFile>(
-  options: UseFlowUploadOptions<TOutput>,
-) {
+export function useFlowUpload(options: UseFlowUploadOptions) {
   const { getManager, releaseManager } = useFlowManagerContext();
-  const state = ref<FlowUploadState<TOutput>>(
-    initialState as FlowUploadState<TOutput>,
-  );
-  let manager: FlowManager<unknown, TOutput> | null = null;
+  const state = ref<FlowUploadState>(initialState);
+  let manager: FlowManager<unknown> | null = null;
 
   // Store latest options in a ref to access in callbacks
   const optionsRef = ref(options);
@@ -134,10 +132,14 @@ export function useFlowUpload<TOutput = UploadFile>(
 
     // Create stable callback wrappers
     const stableCallbacks = {
-      onStateChange: (newState: FlowUploadState<TOutput>) => {
+      onStateChange: (newState: FlowUploadState) => {
         state.value = newState;
       },
-      onProgress: (_uploadId: string, bytesUploaded: number, totalBytes: number | null) => {
+      onProgress: (
+        _uploadId: string,
+        bytesUploaded: number,
+        totalBytes: number | null,
+      ) => {
         if (optionsRef.value.onProgress) {
           const progress = totalBytes
             ? Math.round((bytesUploaded / totalBytes) * 100)
@@ -145,14 +147,24 @@ export function useFlowUpload<TOutput = UploadFile>(
           optionsRef.value.onProgress(progress, bytesUploaded, totalBytes);
         }
       },
-      onChunkComplete: (chunkSize: number, bytesAccepted: number, bytesTotal: number | null) => {
-        optionsRef.value.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
+      onChunkComplete: (
+        chunkSize: number,
+        bytesAccepted: number,
+        bytesTotal: number | null,
+      ) => {
+        optionsRef.value.onChunkComplete?.(
+          chunkSize,
+          bytesAccepted,
+          bytesTotal,
+        );
       },
       onFlowComplete: (outputs: TypedOutput[]) => {
-        optionsRef.value.onFlowComplete?.(outputs as unknown as Record<string, unknown>);
+        optionsRef.value.onFlowComplete?.(
+          outputs as unknown as Record<string, unknown>,
+        );
       },
-      onSuccess: (result: TOutput) => {
-        optionsRef.value.onSuccess?.(result);
+      onSuccess: (outputs: TypedOutput[]) => {
+        optionsRef.value.onSuccess?.(outputs);
       },
       onError: (error: Error) => {
         optionsRef.value.onError?.(error);
@@ -166,7 +178,9 @@ export function useFlowUpload<TOutput = UploadFile>(
     manager = getManager(flowId, stableCallbacks, {
       flowConfig: options.flowConfig,
       onChunkComplete: options.onChunkComplete,
-      onFlowComplete: options.onFlowComplete as ((outputs: TypedOutput[]) => void) | undefined,
+      onFlowComplete: options.onFlowComplete as
+        | ((outputs: TypedOutput[]) => void)
+        | undefined,
       onSuccess: options.onSuccess,
       onError: options.onError,
       onAbort: options.onAbort,

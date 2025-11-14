@@ -1,10 +1,9 @@
-import {
-  type FlowManager,
-  type FlowUploadState,
-  type FlowUploadStatus,
+import type {
+  FlowManager,
+  FlowUploadState,
+  FlowUploadStatus,
 } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
-import type { UploadFile } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFlowManagerContext } from "../contexts/flow-manager-context";
 import type { FilePickResult, UseFlowUploadOptions } from "../types";
@@ -20,7 +19,6 @@ const initialState: FlowUploadState = {
   bytesUploaded: 0,
   totalBytes: null,
   error: null,
-  result: null,
   jobId: null,
   flowStarted: false,
   currentNodeName: null,
@@ -72,7 +70,7 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
   const { getManager, releaseManager } = useFlowManagerContext();
   const { fileSystemProvider } = useUploadistaContext();
   const [state, setState] = useState<FlowUploadState>(initialState);
-  const managerRef = useRef<FlowManager<unknown, UploadFile> | null>(null);
+  const managerRef = useRef<FlowManager<unknown> | null>(null);
   const lastFileRef = useRef<FilePickResult | null>(null);
 
   // Store callbacks in refs so they can be updated without recreating the manager
@@ -91,7 +89,11 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
     // Create stable callback wrappers that call the latest callbacks via refs
     const stableCallbacks = {
       onStateChange: setState,
-      onProgress: (_uploadId: string, bytesUploaded: number, totalBytes: number | null) => {
+      onProgress: (
+        _uploadId: string,
+        bytesUploaded: number,
+        totalBytes: number | null,
+      ) => {
         if (callbacksRef.current.onProgress) {
           const progress = totalBytes
             ? Math.round((bytesUploaded / totalBytes) * 100)
@@ -99,46 +101,56 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
           callbacksRef.current.onProgress(progress, bytesUploaded, totalBytes);
         }
       },
-      onChunkComplete: (chunkSize: number, bytesAccepted: number, bytesTotal: number | null) => {
-        callbacksRef.current.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
+      onChunkComplete: (
+        chunkSize: number,
+        bytesAccepted: number,
+        bytesTotal: number | null,
+      ) => {
+        callbacksRef.current.onChunkComplete?.(
+          chunkSize,
+          bytesAccepted,
+          bytesTotal,
+        );
       },
       onFlowComplete: (outputs: TypedOutput[]) => {
         callbacksRef.current.onFlowComplete?.(outputs);
       },
-      onSuccess: (result: UploadFile) => {
-        callbacksRef.current.onSuccess?.(result);
+      onSuccess: (outputs: TypedOutput[]) => {
+        callbacksRef.current.onSuccess?.(outputs);
       },
       onError: (error: Error) => {
         callbacksRef.current.onError?.(error);
       },
       onAbort: () => {
-        callbacksRef.current.onAbort?.();
+        // onAbort is not exposed in the public API
       },
     };
 
     // Get manager from context (creates if doesn't exist, increments ref count)
-    managerRef.current = getManager(
-      flowId,
-      stableCallbacks,
-      {
-        flowConfig: {
-          flowId: options.flowId,
-          storageId: options.storageId,
-          outputNodeId: options.outputNodeId,
-          metadata: options.metadata as Record<string, string> | undefined,
-        },
-        onChunkComplete: options.onChunkComplete,
-        onSuccess: options.onSuccess,
-        onError: options.onError,
+    managerRef.current = getManager(flowId, stableCallbacks, {
+      flowConfig: {
+        flowId: options.flowId,
+        storageId: options.storageId,
+        outputNodeId: options.outputNodeId,
+        metadata: options.metadata as Record<string, string> | undefined,
       },
-    );
+      onChunkComplete: options.onChunkComplete,
+      onSuccess: options.onSuccess,
+      onError: options.onError,
+    });
 
     // Release manager when component unmounts or flowId changes
     return () => {
       releaseManager(flowId);
       managerRef.current = null;
     };
-  }, [options.flowId, options.storageId, options.outputNodeId, getManager, releaseManager]);
+  }, [
+    options.flowId,
+    options.storageId,
+    options.outputNodeId,
+    getManager,
+    releaseManager,
+  ]);
 
   const upload = useCallback(
     async (file: FilePickResult) => {

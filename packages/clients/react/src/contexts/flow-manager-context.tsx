@@ -1,8 +1,11 @@
-import type { UploadistaEvent } from "@uploadista/client-browser";
+import type {
+  BrowserUploadInput,
+  FlowUploadOptions,
+  UploadistaEvent,
+} from "@uploadista/client-browser";
 import {
   FlowManager,
   type FlowManagerCallbacks,
-  type FlowUploadState,
 } from "@uploadista/client-core";
 import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import { UploadEventType } from "@uploadista/core/types";
@@ -15,7 +18,6 @@ import {
   useRef,
 } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
-import type { FlowUploadOptions } from "@uploadista/client-browser";
 
 /**
  * Type guard to check if an event is a flow event
@@ -37,8 +39,8 @@ function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
 /**
  * Internal manager registry entry with ref counting
  */
-interface ManagerEntry<TOutput> {
-  manager: FlowManager<unknown, TOutput>;
+interface ManagerEntry {
+  manager: FlowManager<unknown>;
   refCount: number;
   flowId: string;
 }
@@ -56,11 +58,11 @@ interface FlowManagerContextValue {
    * @param options - Flow configuration options
    * @returns FlowManager instance
    */
-  getManager: <TOutput = unknown>(
+  getManager: (
     flowId: string,
-    callbacks: FlowManagerCallbacks<TOutput>,
-    options: FlowUploadOptions<TOutput>,
-  ) => FlowManager<unknown, TOutput>;
+    callbacks: FlowManagerCallbacks,
+    options: FlowUploadOptions,
+  ) => FlowManager<unknown>;
 
   /**
    * Release a flow manager reference.
@@ -101,9 +103,7 @@ interface FlowManagerProviderProps {
  */
 export function FlowManagerProvider({ children }: FlowManagerProviderProps) {
   const { client, subscribeToEvents } = useUploadistaContext();
-  const managersRef = useRef(
-    new Map<string, ManagerEntry<unknown>>(),
-  );
+  const managersRef = useRef(new Map<string, ManagerEntry>());
 
   // Subscribe to all events and route to appropriate managers
   useEffect(() => {
@@ -122,15 +122,11 @@ export function FlowManagerProvider({ children }: FlowManagerProviderProps) {
         event.type === UploadEventType.UPLOAD_PROGRESS &&
         "data" in event
       ) {
-        const uploadEvent = event as {
-          type: UploadEventType;
-          uploadId: string;
-          data: { progress: number; total: number | null };
-        };
+        const uploadEvent = event;
 
         for (const entry of managersRef.current.values()) {
           entry.manager.handleUploadProgress(
-            uploadEvent.uploadId,
+            uploadEvent.data.id,
             uploadEvent.data.progress,
             uploadEvent.data.total,
           );
@@ -142,36 +138,27 @@ export function FlowManagerProvider({ children }: FlowManagerProviderProps) {
   }, [subscribeToEvents]);
 
   const getManager = useCallback(
-    <TOutput,>(
+    (
       flowId: string,
-      callbacks: FlowManagerCallbacks<TOutput>,
-      options: FlowUploadOptions<TOutput>,
-    ): FlowManager<unknown, TOutput> => {
+      callbacks: FlowManagerCallbacks,
+      options: FlowUploadOptions,
+    ): FlowManager<unknown> => {
       const existing = managersRef.current.get(flowId);
 
       if (existing) {
         // Increment ref count for existing manager
         existing.refCount++;
-        return existing.manager as FlowManager<unknown, TOutput>;
+        return existing.manager;
       }
 
-      // Create new manager using client from hook scope
-      const flowUploadFn = (
-        input: unknown,
-        flowConfig: FlowUploadOptions<TOutput>["flowConfig"],
-        internalOptions: unknown,
-      ) => {
-        return client.uploadWithFlow(input, flowConfig, internalOptions);
-      };
-
-      const manager = new FlowManager<unknown, TOutput>(
-        flowUploadFn,
+      const manager = new FlowManager<BrowserUploadInput>(
+        client.uploadWithFlow,
         callbacks,
         options,
       );
 
       managersRef.current.set(flowId, {
-        manager: manager as FlowManager<unknown, unknown>,
+        manager,
         refCount: 1,
         flowId,
       });
