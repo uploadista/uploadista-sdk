@@ -151,41 +151,63 @@ export function useUploadEvents(options: UseUploadEventsOptions): void {
       if (!isUploadEvent(event)) return;
 
       // Route to appropriate callback based on event type
+      // Note: flow context is at the top level of the event, not inside data
+      const flowContext = "flow" in event ? event.flow : undefined;
+
       switch (event.type) {
         case UploadEventType.UPLOAD_STARTED:
-          options.onUploadStarted?.(
-            event.data as unknown as UploadFileEventData,
-          );
+          options.onUploadStarted?.({
+            ...(event.data as unknown as Omit<UploadFileEventData, "flow">),
+            flow: flowContext,
+          });
           break;
         case UploadEventType.UPLOAD_PROGRESS:
-          options.onUploadProgress?.(
-            event.data as unknown as UploadProgressEventData,
-          );
+          options.onUploadProgress?.({
+            ...(event.data as unknown as Omit<
+              UploadProgressEventData,
+              "flow"
+            >),
+            flow: flowContext,
+          });
           break;
         case UploadEventType.UPLOAD_COMPLETE:
-          options.onUploadComplete?.(
-            event.data as unknown as UploadFileEventData,
-          );
+          options.onUploadComplete?.({
+            ...(event.data as unknown as Omit<UploadFileEventData, "flow">),
+            flow: flowContext,
+          });
           break;
         case UploadEventType.UPLOAD_FAILED:
-          options.onUploadFailed?.(
-            event.data as unknown as UploadFailedEventData,
-          );
+          options.onUploadFailed?.({
+            ...(event.data as unknown as Omit<UploadFailedEventData, "flow">),
+            flow: flowContext,
+          });
           break;
         case UploadEventType.UPLOAD_VALIDATION_SUCCESS:
-          options.onUploadValidationSuccess?.(
-            event.data as unknown as UploadValidationSuccessEventData,
-          );
+          options.onUploadValidationSuccess?.({
+            ...(event.data as unknown as Omit<
+              UploadValidationSuccessEventData,
+              "flow"
+            >),
+            flow: flowContext,
+          });
           break;
         case UploadEventType.UPLOAD_VALIDATION_FAILED:
-          options.onUploadValidationFailed?.(
-            event.data as unknown as UploadValidationFailedEventData,
-          );
+          options.onUploadValidationFailed?.({
+            ...(event.data as unknown as Omit<
+              UploadValidationFailedEventData,
+              "flow"
+            >),
+            flow: flowContext,
+          });
           break;
         case UploadEventType.UPLOAD_VALIDATION_WARNING:
-          options.onUploadValidationWarning?.(
-            event.data as unknown as UploadValidationWarningEventData,
-          );
+          options.onUploadValidationWarning?.({
+            ...(event.data as unknown as Omit<
+              UploadValidationWarningEventData,
+              "flow"
+            >),
+            flow: flowContext,
+          });
           break;
       }
     });
