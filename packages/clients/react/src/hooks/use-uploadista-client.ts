@@ -117,6 +117,8 @@ export function useUploadistaClient(
   optionsRef.current = options;
 
   // Create client instance with stable identity
+  // IMPORTANT: We depend on individual config values, not the entire options object,
+  // to prevent unnecessary client recreation when the options object reference changes
   const client = useMemo(() => {
     return createUploadistaClient({
       baseUrl: options.baseUrl,
@@ -136,7 +138,24 @@ export function useUploadistaClient(
       auth: options.auth,
       onEvent: options.onEvent,
     });
-  }, [options]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    options.baseUrl,
+    options.storageId,
+    options.uploadistaBasePath,
+    options.chunkSize,
+    options.storeFingerprintForResuming,
+    options.retryDelays,
+    options.parallelUploads,
+    options.parallelChunkSize,
+    options.uploadStrategy,
+    options.smartChunking,
+    options.networkMonitoring,
+    options.uploadMetrics,
+    options.connectionPooling,
+    options.auth,
+    options.onEvent,
+  ]);
 
   return {
     client,
