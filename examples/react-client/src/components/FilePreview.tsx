@@ -1,6 +1,8 @@
+import type { UploadFile } from "@uploadista/core";
+
 interface FilePreviewProps {
   file?: File;
-  result?: any;
+  result?: UploadFile;
   className?: string;
 }
 
@@ -10,8 +12,12 @@ export function FilePreview({
   className = "",
 }: FilePreviewProps) {
   // Extract MIME type from various sources
-  const mimeType = file?.type || result?.mimeType || result?.type || "";
-  const fileName = file?.name || result?.name || result?.fileName || "File";
+  const mimeType =
+    file?.type ||
+    result?.metadata?.type?.toString() ||
+    result?.metadata?.mimeType?.toString() ||
+    "";
+  const fileName = file?.name || result?.metadata?.fileName || "File";
 
   // Determine if this is an image or video
   const isImage = mimeType.startsWith("image/");
@@ -26,9 +32,9 @@ export function FilePreview({
   } else if (result?.url) {
     // Use URL from result
     fileUrl = result.url;
-  } else if (result?.path) {
+  } else if (result?.storage?.path) {
     // Construct URL from path (assuming it's accessible)
-    fileUrl = result.path;
+    fileUrl = result.storage.path;
   }
 
   if (!fileUrl || (!isImage && !isVideo)) {
@@ -42,7 +48,7 @@ export function FilePreview({
       {isImage && (
         <img
           src={fileUrl}
-          alt={fileName}
+          alt={fileName.toString()}
           className="w-full h-auto object-contain max-h-96"
           onError={(e) => {
             // Hide image if it fails to load

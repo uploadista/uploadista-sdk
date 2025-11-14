@@ -2,6 +2,7 @@
 import type { UploadistaEvent } from "@uploadista/client-browser";
 import type React from "react";
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import { FlowManagerProvider } from "../contexts/flow-manager-context";
 import {
   type UseUploadistaClientOptions,
   type UseUploadistaClientReturn,
@@ -114,6 +115,7 @@ export function UploadistaProvider({
     [options.onEvent],
   );
 
+  console.log("[UploadistaProvider] Calling useUploadistaClient with wrappedOnEvent:", wrappedOnEvent);
   const uploadClient = useUploadistaClient({
     ...options,
     onEvent: wrappedOnEvent,
@@ -140,7 +142,9 @@ export function UploadistaProvider({
 
   return (
     <UploadistaContext.Provider value={contextValue}>
-      {children}
+      <FlowManagerProvider>
+        {children}
+      </FlowManagerProvider>
     </UploadistaContext.Provider>
   );
 }

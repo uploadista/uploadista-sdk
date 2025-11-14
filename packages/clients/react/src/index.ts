@@ -51,6 +51,12 @@ export {
   UploadistaProvider,
   useUploadistaContext,
 } from "./components/uploadista-provider";
+
+// Contexts
+export {
+  FlowManagerProvider,
+  useFlowManagerContext,
+} from "./contexts/flow-manager-context";
 export type {
   DragDropOptions,
   DragDropState,

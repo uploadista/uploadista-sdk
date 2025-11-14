@@ -1,35 +1,13 @@
-import type {
-  FlowUploadOptions,
-  UploadistaEvent,
-} from "@uploadista/client-browser";
+import type { FlowUploadOptions } from "@uploadista/client-browser";
 import {
-  FlowManager,
+  type FlowManager,
   type FlowUploadState,
   type FlowUploadStatus,
-  type InternalFlowUploadOptions,
 } from "@uploadista/client-core";
-import { EventType, type FlowEvent } from "@uploadista/core/flow";
+import type { TypedOutput } from "@uploadista/core/flow";
 import type { UploadFile } from "@uploadista/core/types";
-import { UploadEventType } from "@uploadista/core/types";
 import { computed, onMounted, onUnmounted, readonly, ref } from "vue";
-import { useUploadistaClient } from "./useUploadistaClient";
-
-/**
- * Type guard to check if an event is a flow event
- */
-function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
-  const flowEvent = event as FlowEvent;
-  return (
-    flowEvent.eventType === EventType.FlowStart ||
-    flowEvent.eventType === EventType.FlowEnd ||
-    flowEvent.eventType === EventType.FlowError ||
-    flowEvent.eventType === EventType.NodeStart ||
-    flowEvent.eventType === EventType.NodeEnd ||
-    flowEvent.eventType === EventType.NodePause ||
-    flowEvent.eventType === EventType.NodeResume ||
-    flowEvent.eventType === EventType.NodeError
-  );
-}
+import { useFlowManagerContext } from "./useFlowManagerContext";
 
 // Re-export types from core for convenience
 export type { FlowUploadState, FlowUploadStatus };
@@ -109,8 +87,8 @@ const initialState: FlowUploadState = {
  * The flow handles the upload process and can perform post-processing like
  * saving to storage, optimizing images, etc.
  *
- * Must be used within a component tree that has the Uploadista plugin installed.
- * Events are automatically wired up through the plugin.
+ * Must be used within FlowManagerProvider (which must be within UploadistaProvider).
+ * Flow events are automatically routed by the provider to the appropriate manager.
  *
  * @example
  * ```vue
@@ -141,109 +119,67 @@ const initialState: FlowUploadState = {
 export function useFlowUpload<TOutput = UploadFile>(
   options: UseFlowUploadOptions<TOutput>,
 ) {
-  // Get client
-  const client = useUploadistaClient();
+  const { getManager, releaseManager } = useFlowManagerContext();
   const state = ref<FlowUploadState<TOutput>>(
     initialState as FlowUploadState<TOutput>,
   );
-  let manager: FlowManager<File | Blob, TOutput> | null = null;
-  let unsubscribe: (() => void) | null = null;
+  let manager: FlowManager<unknown, TOutput> | null = null;
 
-  // Create FlowManager instance
+  // Store latest options in a ref to access in callbacks
+  const optionsRef = ref(options);
+
+  // Get or create manager from context when component mounts
   onMounted(() => {
-    manager = new FlowManager(
-      async (
-        file: File | Blob,
-        flowConfig: {
-          flowId: string;
-          storageId: string;
-          outputNodeId?: string;
-          metadata?: Record<string, string>;
-        },
-        internalOptions: InternalFlowUploadOptions,
-      ) => {
-        const result = await client.client.uploadWithFlow(file, flowConfig, {
-          onJobStart: internalOptions.onJobStart,
-          onProgress: internalOptions.onProgress,
-          onChunkComplete: internalOptions.onChunkComplete,
-          onSuccess: internalOptions.onSuccess,
-          onError: internalOptions.onError,
-          onShouldRetry: internalOptions.onShouldRetry,
-        });
-        // Return only abort and pause (ignore jobId and return value)
-        return {
-          abort: async () => {
-            await result.abort();
-          },
-          pause: async () => {
-            await result.pause();
-            // Ignore the FlowJob return value
-          },
-        };
-      },
-      {
-        onStateChange: (newState) => {
-          state.value = newState;
-        },
-        onProgress: options.onProgress
-          ? (_uploadId, bytesUploaded, totalBytes) => {
-              const progress = totalBytes
-                ? Math.round((bytesUploaded / totalBytes) * 100)
-                : 0;
-              options.onProgress?.(progress, bytesUploaded, totalBytes);
-            }
-          : undefined,
-        onChunkComplete: options.onChunkComplete,
-        onFlowComplete: options.onFlowComplete,
-        onSuccess: options.onSuccess,
-        onError: options.onError,
-        onAbort: options.onAbort,
-      },
-      {
-        flowConfig: options.flowConfig,
-        onChunkComplete: options.onChunkComplete,
-        onFlowComplete: options.onFlowComplete,
-        onSuccess: options.onSuccess,
-        onError: options.onError,
-        onAbort: options.onAbort,
-        onShouldRetry: options.onShouldRetry,
-      },
-    );
+    const flowId = options.flowConfig.flowId;
 
-    // Subscribe to events and forward them to the manager
-    unsubscribe = client.subscribeToEvents((event: UploadistaEvent) => {
-      // Handle flow events
-      if (isFlowEvent(event)) {
-        manager?.handleFlowEvent(event);
-        return;
-      }
+    // Create stable callback wrappers
+    const stableCallbacks = {
+      onStateChange: (newState: FlowUploadState<TOutput>) => {
+        state.value = newState;
+      },
+      onProgress: (_uploadId: string, bytesUploaded: number, totalBytes: number | null) => {
+        if (optionsRef.value.onProgress) {
+          const progress = totalBytes
+            ? Math.round((bytesUploaded / totalBytes) * 100)
+            : 0;
+          optionsRef.value.onProgress(progress, bytesUploaded, totalBytes);
+        }
+      },
+      onChunkComplete: (chunkSize: number, bytesAccepted: number, bytesTotal: number | null) => {
+        optionsRef.value.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
+      },
+      onFlowComplete: (outputs: TypedOutput[]) => {
+        optionsRef.value.onFlowComplete?.(outputs as unknown as Record<string, unknown>);
+      },
+      onSuccess: (result: TOutput) => {
+        optionsRef.value.onSuccess?.(result);
+      },
+      onError: (error: Error) => {
+        optionsRef.value.onError?.(error);
+      },
+      onAbort: () => {
+        optionsRef.value.onAbort?.();
+      },
+    };
 
-      // Handle upload progress events for this job's upload
-      const uploadEvent = event as {
-        type: string;
-        data?: { id: string; progress: number; total: number };
-        flow?: { jobId: string };
-      };
-      if (
-        uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
-        uploadEvent.flow?.jobId === manager?.getJobId() &&
-        uploadEvent.data
-      ) {
-        const { progress: bytesUploaded, total: totalBytes } = uploadEvent.data;
-
-        manager?.handleUploadProgress(
-          uploadEvent.data.id,
-          bytesUploaded,
-          totalBytes,
-        );
-      }
+    // Get manager from context
+    manager = getManager(flowId, stableCallbacks, {
+      flowConfig: options.flowConfig,
+      onChunkComplete: options.onChunkComplete,
+      onFlowComplete: options.onFlowComplete as ((outputs: TypedOutput[]) => void) | undefined,
+      onSuccess: options.onSuccess,
+      onError: options.onError,
+      onAbort: options.onAbort,
+      onShouldRetry: options.onShouldRetry,
     });
   });
 
   // Cleanup on unmount
   onUnmounted(() => {
-    unsubscribe?.();
-    manager?.cleanup();
+    if (manager) {
+      releaseManager(options.flowConfig.flowId);
+      manager = null;
+    }
   });
 
   const upload = async (file: File | Blob) => {

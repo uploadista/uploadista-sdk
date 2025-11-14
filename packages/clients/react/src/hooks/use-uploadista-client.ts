@@ -120,6 +120,7 @@ export function useUploadistaClient(
   // IMPORTANT: We depend on individual config values, not the entire options object,
   // to prevent unnecessary client recreation when the options object reference changes
   const client = useMemo(() => {
+    console.log("[useUploadistaClient] Creating NEW client instance with onEvent:", options.onEvent);
     return createUploadistaClient({
       baseUrl: options.baseUrl,
       storageId: options.storageId,

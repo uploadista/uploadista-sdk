@@ -40,6 +40,11 @@ export {
   UploadProgress,
   type UploadProgressProps,
 } from "./components";
+// Export contexts
+export {
+  FlowManagerProvider,
+  useFlowManagerContext,
+} from "./contexts/flow-manager-context";
 // Export hooks
 export {
   UploadistaContext,

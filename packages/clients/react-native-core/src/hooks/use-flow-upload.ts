@@ -1,37 +1,18 @@
 import {
-  FlowManager,
+  type FlowManager,
   type FlowUploadState,
   type FlowUploadStatus,
-  type InternalFlowUploadOptions,
-  type UploadistaEvent,
 } from "@uploadista/client-core";
-import { EventType, type FlowEvent } from "@uploadista/core/flow";
+import type { TypedOutput } from "@uploadista/core/flow";
 import type { UploadFile } from "@uploadista/core/types";
-import { UploadEventType } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFlowManagerContext } from "../contexts/flow-manager-context";
 import type { FilePickResult, UseFlowUploadOptions } from "../types";
 import { createBlobFromBuffer } from "../types/platform-types";
 import { useUploadistaContext } from "./use-uploadista-context";
 
 // Re-export types from core for convenience
 export type { FlowUploadState, FlowUploadStatus };
-
-/**
- * Type guard to check if an event is a flow event
- */
-function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
-  const flowEvent = event as FlowEvent;
-  return (
-    flowEvent.eventType === EventType.FlowStart ||
-    flowEvent.eventType === EventType.FlowEnd ||
-    flowEvent.eventType === EventType.FlowError ||
-    flowEvent.eventType === EventType.NodeStart ||
-    flowEvent.eventType === EventType.NodeEnd ||
-    flowEvent.eventType === EventType.NodePause ||
-    flowEvent.eventType === EventType.NodeResume ||
-    flowEvent.eventType === EventType.NodeError
-  );
-}
 
 const initialState: FlowUploadState = {
   status: "idle",
@@ -51,7 +32,8 @@ const initialState: FlowUploadState = {
  * Hook for uploading files through a flow pipeline with full state management.
  * Provides upload progress tracking, flow execution monitoring, error handling, and abort functionality.
  *
- * Must be used within an UploadistaProvider.
+ * Must be used within FlowManagerProvider (which must be within UploadistaProvider).
+ * Flow events are automatically routed by the provider to the appropriate manager.
  *
  * @param options - Flow upload configuration
  * @returns Flow upload state and control methods
@@ -87,60 +69,57 @@ const initialState: FlowUploadState = {
  * ```
  */
 export function useFlowUpload(options: UseFlowUploadOptions) {
-  const context = useUploadistaContext();
-  const { client, fileSystemProvider } = context;
+  const { getManager, releaseManager } = useFlowManagerContext();
+  const { fileSystemProvider } = useUploadistaContext();
   const [state, setState] = useState<FlowUploadState>(initialState);
-  const managerRef = useRef<FlowManager<Blob, UploadFile> | null>(null);
+  const managerRef = useRef<FlowManager<unknown, UploadFile> | null>(null);
   const lastFileRef = useRef<FilePickResult | null>(null);
 
-  // Create FlowManager instance once (only recreate if client changes)
-  // Note: We don't include options in deps to avoid recreating the manager on every render
-  // The manager will use the latest options values through closures
+  // Store callbacks in refs so they can be updated without recreating the manager
+  const callbacksRef = useRef(options);
+
+  // Update refs on every render to capture latest callbacks
   useEffect(() => {
-    managerRef.current = new FlowManager(
-      async (
-        blob: Blob,
-        flowConfig: {
-          flowId: string;
-          storageId: string;
-          outputNodeId?: string;
-          metadata?: Record<string, string>;
-        },
-        internalOptions: InternalFlowUploadOptions,
-      ) => {
-        const result = await client.uploadWithFlow(blob, flowConfig, {
-          onJobStart: internalOptions.onJobStart,
-          onProgress: internalOptions.onProgress,
-          onChunkComplete: internalOptions.onChunkComplete,
-          onSuccess: internalOptions.onSuccess,
-          onError: internalOptions.onError,
-          onShouldRetry: internalOptions.onShouldRetry,
-        });
-        // Return only abort and pause (ignore jobId and return value)
-        return {
-          abort: async () => {
-            await result.abort();
-          },
-          pause: async () => {
-            await result.pause();
-            // Ignore the FlowJob return value
-          },
-        };
+    callbacksRef.current = options;
+  });
+
+  // Get or create manager from context when component mounts
+  // Manager lifecycle is now handled by FlowManagerProvider
+  useEffect(() => {
+    const flowId = options.flowId;
+
+    // Create stable callback wrappers that call the latest callbacks via refs
+    const stableCallbacks = {
+      onStateChange: setState,
+      onProgress: (_uploadId: string, bytesUploaded: number, totalBytes: number | null) => {
+        if (callbacksRef.current.onProgress) {
+          const progress = totalBytes
+            ? Math.round((bytesUploaded / totalBytes) * 100)
+            : 0;
+          callbacksRef.current.onProgress(progress, bytesUploaded, totalBytes);
+        }
       },
-      {
-        onStateChange: setState,
-        onProgress: options.onProgress
-          ? (_uploadId, bytesUploaded, totalBytes) => {
-              const progress = totalBytes
-                ? Math.round((bytesUploaded / totalBytes) * 100)
-                : 0;
-              options.onProgress?.(progress, bytesUploaded, totalBytes);
-            }
-          : undefined,
-        onChunkComplete: options.onChunkComplete,
-        onSuccess: options.onSuccess,
-        onError: options.onError,
+      onChunkComplete: (chunkSize: number, bytesAccepted: number, bytesTotal: number | null) => {
+        callbacksRef.current.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
       },
+      onFlowComplete: (outputs: TypedOutput[]) => {
+        callbacksRef.current.onFlowComplete?.(outputs);
+      },
+      onSuccess: (result: UploadFile) => {
+        callbacksRef.current.onSuccess?.(result);
+      },
+      onError: (error: Error) => {
+        callbacksRef.current.onError?.(error);
+      },
+      onAbort: () => {
+        callbacksRef.current.onAbort?.();
+      },
+    };
+
+    // Get manager from context (creates if doesn't exist, increments ref count)
+    managerRef.current = getManager(
+      flowId,
+      stableCallbacks,
       {
         flowConfig: {
           flowId: options.flowId,
@@ -154,48 +133,12 @@ export function useFlowUpload(options: UseFlowUploadOptions) {
       },
     );
 
+    // Release manager when component unmounts or flowId changes
     return () => {
-      managerRef.current?.cleanup();
+      releaseManager(flowId);
+      managerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client]);
-
-  // Subscribe to events and forward them to the manager
-  useEffect(() => {
-    const unsubscribe = context.subscribeToEvents(
-      (event: UploadistaEvent) => {
-        // Handle flow events
-        if (isFlowEvent(event)) {
-          managerRef.current?.handleFlowEvent(event);
-          return;
-        }
-
-        // Handle upload progress events for this job's upload
-        const uploadEvent = event as {
-          type: string;
-          data?: { id: string; progress: number; total: number };
-          flow?: { jobId: string };
-        };
-
-        if (
-          uploadEvent.type === UploadEventType.UPLOAD_PROGRESS &&
-          uploadEvent.flow?.jobId === managerRef.current?.getJobId() &&
-          uploadEvent.data
-        ) {
-          const { progress: bytesUploaded, total: totalBytes } =
-            uploadEvent.data;
-
-          managerRef.current?.handleUploadProgress(
-            uploadEvent.data.id,
-            bytesUploaded,
-            totalBytes,
-          );
-        }
-      },
-    );
-
-    return unsubscribe;
-  }, [context]);
+  }, [options.flowId, options.storageId, options.outputNodeId, getManager, releaseManager]);
 
   const upload = useCallback(
     async (file: FilePickResult) => {
