@@ -17,7 +17,6 @@ const props = withDefaults(
     chunkSize?: number;
     parallelUploads?: number;
     storeFingerprintForResuming?: boolean;
-    onEvent?: (event: UploadistaEvent) => void;
   }>(),
   {
     storageId: "local",
@@ -27,13 +26,6 @@ const props = withDefaults(
     storeFingerprintForResuming: true,
   },
 );
-
-const emit = defineEmits<{
-  /**
-   * Emitted when the underlying client dispatches an event.
-   */
-  (e: "event", event: UploadistaEvent): void;
-}>();
 
 // Create a shared set of event subscribers
 const eventSubscribers = ref(new Set<(event: UploadistaEvent) => void>());
@@ -48,11 +40,12 @@ const client = createUploadistaClient({
   onEvent: (event) => {
     // Dispatch to all subscribers registered via subscribeToEvents
     eventSubscribers.value.forEach((subscriber) => {
-      subscriber(event);
+      try {
+        subscriber(event);
+      } catch (err) {
+        console.error("Error in event subscriber:", err);
+      }
     });
-
-    props.onEvent?.(event);
-    emit("event", event);
   },
 });
 

@@ -17,10 +17,10 @@ import {
  * @property baseUrl - API base URL for uploads
  * @property storageId - Default storage identifier
  * @property chunkSize - Upload chunk size in bytes
- * @property onEvent - Global event handler for all upload events
  * @property ... - All other UploadistaClientOptions
  */
-export interface UploadistaProviderProps extends UseUploadistaClientOptions {
+export interface UploadistaProviderProps
+  extends Omit<UseUploadistaClientOptions, "onEvent"> {
   /**
    * Children components that will have access to the upload client
    */
@@ -54,9 +54,6 @@ const UploadistaContext = createContext<UploadistaContextValue | null>(null);
  *       baseUrl="https://api.example.com"
  *       storageId="my-storage"
  *       chunkSize={1024 * 1024} // 1MB chunks
- *       onEvent={(event) => {
- *         console.log('Global upload event:', event);
- *       }}
  *     >
  *       <UploadInterface />
  *     </UploadistaProvider>
@@ -90,35 +87,21 @@ export function UploadistaProvider({
     new Set(),
   );
 
-  // Wrap the original onEvent to broadcast to subscribers
-  const wrappedOnEvent = useCallback(
-    (event: UploadistaEvent) => {
-      console.log("[UploadistaProvider] Received event:", event);
+  // Event handler that broadcasts to all subscribers
+  const handleEvent = useCallback((event: UploadistaEvent) => {
+    // Broadcast to all subscribers
+    eventSubscribersRef.current.forEach((handler) => {
+      try {
+        handler(event);
+      } catch (err) {
+        console.error("Error in event subscriber:", err);
+      }
+    });
+  }, []);
 
-      // Call original handler if provided
-      options.onEvent?.(event);
-
-      // Broadcast to all subscribers
-      console.log(
-        "[UploadistaProvider] Broadcasting to",
-        eventSubscribersRef.current.size,
-        "subscribers",
-      );
-      eventSubscribersRef.current.forEach((handler) => {
-        try {
-          handler(event);
-        } catch (err) {
-          console.error("Error in event subscriber:", err);
-        }
-      });
-    },
-    [options.onEvent],
-  );
-
-  console.log("[UploadistaProvider] Calling useUploadistaClient with wrappedOnEvent:", wrappedOnEvent);
   const uploadClient = useUploadistaClient({
     ...options,
-    onEvent: wrappedOnEvent,
+    onEvent: handleEvent,
   });
 
   const subscribeToEvents = useCallback(
@@ -142,9 +125,7 @@ export function UploadistaProvider({
 
   return (
     <UploadistaContext.Provider value={contextValue}>
-      <FlowManagerProvider>
-        {children}
-      </FlowManagerProvider>
+      <FlowManagerProvider>{children}</FlowManagerProvider>
     </UploadistaContext.Provider>
   );
 }

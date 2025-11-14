@@ -1,3 +1,19 @@
+// Event composables
+export { isFlowEvent, isUploadEvent } from "./eventUtils";
+export { useUploadistaEvents } from "./useUploadistaEvents";
+export type { UseFlowEventsOptions } from "./useFlowEvents";
+export { useFlowEvents } from "./useFlowEvents";
+export type {
+  UploadFailedEventData,
+  UploadFileEventData,
+  UploadProgressEventData,
+  UploadValidationFailedEventData,
+  UploadValidationSuccessEventData,
+  UploadValidationWarningEventData,
+  UseUploadEventsOptions,
+} from "./useUploadEvents";
+export { useUploadEvents } from "./useUploadEvents";
+
 // Plugin
 
 export type { UploadistaPluginOptions } from "./plugin";

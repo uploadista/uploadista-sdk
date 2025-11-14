@@ -74,6 +74,20 @@ export {
   type UseUploadistaClientReturn,
   useUploadistaClient,
 } from "./hooks/use-uploadista-client";
+// Export event hooks and utilities
+export { isFlowEvent, isUploadEvent } from "./hooks/event-utils";
+export { useUploadistaEvents } from "./hooks/use-uploadista-events";
+export { useFlowEvents, type UseFlowEventsOptions } from "./hooks/use-flow-events";
+export {
+  useUploadEvents,
+  type UseUploadEventsOptions,
+  type UploadProgressEventData,
+  type UploadFileEventData,
+  type UploadFailedEventData,
+  type UploadValidationSuccessEventData,
+  type UploadValidationFailedEventData,
+  type UploadValidationWarningEventData,
+} from "./hooks/use-upload-events";
 // Re-export service implementations and factories
 export {
   createAsyncStorageService,
