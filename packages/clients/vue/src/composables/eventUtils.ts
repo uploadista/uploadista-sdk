@@ -6,22 +6,23 @@ import { UploadEventType, type UploadEvent } from "@uploadista/core/types";
  * Type guard to check if an event is a flow event
  */
 export function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
-  const flowEvent = event as FlowEvent;
+  if (!("eventType" in event)) return false;
+  const e = event as { eventType: unknown };
   return (
-    flowEvent.eventType === EventType.JobStart ||
-    flowEvent.eventType === EventType.JobEnd ||
-    flowEvent.eventType === EventType.FlowStart ||
-    flowEvent.eventType === EventType.FlowEnd ||
-    flowEvent.eventType === EventType.FlowError ||
-    flowEvent.eventType === EventType.FlowPause ||
-    flowEvent.eventType === EventType.FlowCancel ||
-    flowEvent.eventType === EventType.NodeStart ||
-    flowEvent.eventType === EventType.NodeEnd ||
-    flowEvent.eventType === EventType.NodePause ||
-    flowEvent.eventType === EventType.NodeResume ||
-    flowEvent.eventType === EventType.NodeError ||
-    flowEvent.eventType === EventType.NodeStream ||
-    flowEvent.eventType === EventType.NodeResponse
+    e.eventType === EventType.JobStart ||
+    e.eventType === EventType.JobEnd ||
+    e.eventType === EventType.FlowStart ||
+    e.eventType === EventType.FlowEnd ||
+    e.eventType === EventType.FlowError ||
+    e.eventType === EventType.FlowPause ||
+    e.eventType === EventType.FlowCancel ||
+    e.eventType === EventType.NodeStart ||
+    e.eventType === EventType.NodeEnd ||
+    e.eventType === EventType.NodePause ||
+    e.eventType === EventType.NodeResume ||
+    e.eventType === EventType.NodeError ||
+    e.eventType === EventType.NodeStream ||
+    e.eventType === EventType.NodeResponse
   );
 }
 
@@ -29,14 +30,15 @@ export function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
  * Type guard to check if an event is an upload event
  */
 export function isUploadEvent(event: UploadistaEvent): event is UploadEvent {
-  const uploadEvent = event as UploadEvent;
+  if (!("type" in event)) return false;
+  const e = event as { type: unknown };
   return (
-    uploadEvent.type === UploadEventType.UPLOAD_STARTED ||
-    uploadEvent.type === UploadEventType.UPLOAD_PROGRESS ||
-    uploadEvent.type === UploadEventType.UPLOAD_COMPLETE ||
-    uploadEvent.type === UploadEventType.UPLOAD_FAILED ||
-    uploadEvent.type === UploadEventType.UPLOAD_VALIDATION_SUCCESS ||
-    uploadEvent.type === UploadEventType.UPLOAD_VALIDATION_FAILED ||
-    uploadEvent.type === UploadEventType.UPLOAD_VALIDATION_WARNING
+    e.type === UploadEventType.UPLOAD_STARTED ||
+    e.type === UploadEventType.UPLOAD_PROGRESS ||
+    e.type === UploadEventType.UPLOAD_COMPLETE ||
+    e.type === UploadEventType.UPLOAD_FAILED ||
+    e.type === UploadEventType.UPLOAD_VALIDATION_SUCCESS ||
+    e.type === UploadEventType.UPLOAD_VALIDATION_FAILED ||
+    e.type === UploadEventType.UPLOAD_VALIDATION_WARNING
   );
 }

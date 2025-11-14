@@ -1,3 +1,4 @@
+import type { UploadistaEvent } from "@uploadista/client-browser";
 import type {
   FlowEventFlowCancel,
   FlowEventFlowEnd,
@@ -14,8 +15,8 @@ import type {
 } from "@uploadista/core/flow";
 import { EventType } from "@uploadista/core/flow";
 import { onBeforeUnmount, onMounted } from "vue";
-import { useUploadistaContext } from "./useUploadistaContext";
 import { isFlowEvent } from "./eventUtils";
+import { useUploadistaClient } from "./useUploadistaClient";
 
 /**
  * Options for handling flow execution events.
@@ -89,11 +90,11 @@ export interface UseFlowEventsOptions {
  * ```
  */
 export function useFlowEvents(options: UseFlowEventsOptions): void {
-  const { subscribeToEvents } = useUploadistaContext();
+  const { subscribeToEvents } = useUploadistaClient();
   let unsubscribe: (() => void) | null = null;
 
   onMounted(() => {
-    unsubscribe = subscribeToEvents((event) => {
+    unsubscribe = subscribeToEvents((event: UploadistaEvent) => {
       // Only handle flow events
       if (!isFlowEvent(event)) return;
 

@@ -1,6 +1,6 @@
 import type { UploadistaEvent } from "@uploadista/client-browser";
-import { onMounted, onBeforeUnmount } from "vue";
-import { useUploadistaContext } from "./useUploadistaContext";
+import { onBeforeUnmount, onMounted } from "vue";
+import { useUploadistaClient } from "./useUploadistaClient";
 
 /**
  * Simple composable that subscribes to all Uploadista events (both flow and upload events).
@@ -34,7 +34,7 @@ import { useUploadistaContext } from "./useUploadistaContext";
 export function useUploadistaEvents(
   callback: (event: UploadistaEvent) => void,
 ): void {
-  const { subscribeToEvents } = useUploadistaContext();
+  const { subscribeToEvents } = useUploadistaClient();
   let unsubscribe: (() => void) | null = null;
 
   onMounted(() => {

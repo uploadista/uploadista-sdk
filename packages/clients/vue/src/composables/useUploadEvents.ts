@@ -1,7 +1,8 @@
-import { UploadEventType, type UploadEvent } from "@uploadista/core/types";
+import type { UploadistaEvent } from "@uploadista/client-browser";
+import { UploadEventType } from "@uploadista/core/types";
 import { onBeforeUnmount, onMounted } from "vue";
-import { useUploadistaContext } from "./useUploadistaContext";
 import { isUploadEvent } from "./eventUtils";
+import { useUploadistaClient } from "./useUploadistaClient";
 
 /**
  * Upload progress event data
@@ -145,11 +146,11 @@ export interface UseUploadEventsOptions {
  * ```
  */
 export function useUploadEvents(options: UseUploadEventsOptions): void {
-  const { subscribeToEvents } = useUploadistaContext();
+  const { subscribeToEvents } = useUploadistaClient();
   let unsubscribe: (() => void) | null = null;
 
   onMounted(() => {
-    unsubscribe = subscribeToEvents((event) => {
+    unsubscribe = subscribeToEvents((event: UploadistaEvent) => {
       // Only handle upload events
       if (!isUploadEvent(event)) return;
 
