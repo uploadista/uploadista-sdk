@@ -13,11 +13,11 @@ catalogs:
       specifier: 24.10.1
       version: 24.10.1
     effect:
-      specifier: 3.19.3
-      version: 3.19.3
+      specifier: 3.19.4
+      version: 3.19.4
     hono:
-      specifier: 4.10.5
-      version: 4.10.5
+      specifier: 4.10.6
+      version: 4.10.6
     react:
       specifier: 19.2.0
       version: 19.2.0
@@ -345,7 +345,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       fastify:
         specifier: 5.6.1
         version: 5.6.1
@@ -425,13 +425,13 @@ importers:
         version: link:../../packages/servers/server
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       hono:
         specifier: 'catalog:'
-        version: 4.10.5
+        version: 4.10.6
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.5)(pino@10.1.0)
+        version: 0.10.3(hono@4.10.6)(pino@10.1.0)
       pino:
         specifier: 10.1.0
         version: 10.1.0
@@ -456,10 +456,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 1.19.5
-        version: 1.19.5(hono@4.10.5)
+        version: 1.19.5(hono@4.10.6)
       '@hono/node-ws':
         specifier: 1.2.0
-        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.5))(hono@4.10.5)
+        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.6))(hono@4.10.6)
       '@redis/client':
         specifier: 5.8.3
         version: 5.8.3
@@ -510,13 +510,13 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       hono:
         specifier: 'catalog:'
-        version: 4.10.5
+        version: 4.10.6
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.5)(pino@10.0.0)
+        version: 0.10.3(hono@4.10.6)(pino@10.0.0)
       pino:
         specifier: 10.0.0
         version: 10.0.0
@@ -938,14 +938,14 @@ importers:
     dependencies:
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       zod:
         specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -981,11 +981,11 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1006,11 +1006,11 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1040,11 +1040,11 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../kv-stores/memory
@@ -1071,11 +1071,11 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../kv-stores/memory
@@ -1102,11 +1102,11 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../kv-stores/memory
@@ -1127,11 +1127,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1155,11 +1155,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1177,11 +1177,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@redis/client':
         specifier: 5.9.0
         version: 5.9.0
@@ -1208,11 +1208,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1230,11 +1230,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/event-broadcaster-memory':
         specifier: workspace:*
         version: link:../../event-broadcasters/memory
@@ -1255,14 +1255,14 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       zod:
         specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1286,7 +1286,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       tinycolor2:
         specifier: 1.6.0
         version: 1.6.0
@@ -1296,7 +1296,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1320,7 +1320,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       replicate:
         specifier: 1.4.0
         version: 1.4.0
@@ -1330,7 +1330,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1351,7 +1351,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       sharp:
         specifier: 0.34.5
         version: 0.34.5
@@ -1364,7 +1364,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1388,14 +1388,14 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       zod:
         specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1416,7 +1416,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       jszip:
         specifier: 3.10.1
         version: 3.10.1
@@ -1426,7 +1426,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1447,7 +1447,7 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       node-av:
         specifier: 4.0.0
         version: 4.0.0
@@ -1457,7 +1457,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1478,14 +1478,14 @@ importers:
         version: link:../../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       zod:
         specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1509,11 +1509,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1534,11 +1534,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1556,11 +1556,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1581,11 +1581,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1606,11 +1606,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -1628,11 +1628,11 @@ importers:
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@redis/client':
         specifier: 5.9.0
         version: 5.9.0
@@ -1650,7 +1650,7 @@ importers:
     dependencies:
       '@effect/opentelemetry':
         specifier: 0.59.1
-        version: 0.59.1(@effect/platform@0.92.1(effect@3.19.3))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.3)
+        version: 0.59.1(@effect/platform@0.92.1(effect@3.19.4))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.4)
       '@opentelemetry/sdk-logs':
         specifier: 0.208.0
         version: 0.208.0(@opentelemetry/api@1.9.0)
@@ -1668,14 +1668,14 @@ importers:
         version: 2.2.0(@opentelemetry/api@1.9.0)
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 4.20251117.0
         version: 4.20251117.0
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1711,7 +1711,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
@@ -1724,7 +1724,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.5
@@ -1769,7 +1769,7 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       fastify:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.6.1
@@ -1779,7 +1779,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1821,14 +1821,14 @@ importers:
         version: link:../server
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       zod:
         specifier: 'catalog:'
         version: 4.1.12
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1867,7 +1867,7 @@ importers:
         version: link:../../observability
       effect:
         specifier: 'catalog:'
-        version: 3.19.3
+        version: 3.19.4
       express:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
@@ -1883,7 +1883,7 @@ importers:
         version: 4.20251117.0
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.5
@@ -7319,8 +7319,8 @@ packages:
   effect@3.18.4:
     resolution: {integrity: sha512-b1LXQJLe9D11wfnOKAk3PKxuqYshQ0Heez+y5pnkd3jLj1yx9QhM72zZ9uUrOQyNvrs2GZZd/3maL0ZV18YuDA==}
 
-  effect@3.19.3:
-    resolution: {integrity: sha512-LodiPXiyUJWQ5LoMhUGbu0acD2ff5A5teJtUlLKDPVfoeWEBcZLlzK8BeVXpVa0f30UsdHouVCf0C/E0TxYMrA==}
+  effect@3.19.4:
+    resolution: {integrity: sha512-gApFffMwpDVgmw/FzCaYWt6zw4m0xAnQf5+cPS0+Sl85AxfeovJeEIsiEQVlk+ZvtBYcoPXxi65GIyruzanQ5g==}
 
   ejs@3.1.10:
     resolution: {integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==}
@@ -8210,10 +8210,6 @@ packages:
 
   hono@4.10.1:
     resolution: {integrity: sha512-rpGNOfacO4WEPClfkEt1yfl8cbu10uB1lNpiI33AKoiAHwOS8lV748JiLx4b5ozO/u4qLjIvfpFsPXdY5Qjkmg==}
-    engines: {node: '>=16.9.0'}
-
-  hono@4.10.5:
-    resolution: {integrity: sha512-h/MXuTkoAK8NG1EfDp0jI1YLf6yGdDnfkebRO2pwEh5+hE3RAJFXkCsnD0vamSiARK4ZrB6MY+o3E/hCnOyHrQ==}
     engines: {node: '>=16.9.0'}
 
   hono@4.10.6:
@@ -13019,11 +13015,11 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@effect/opentelemetry@0.59.1(@effect/platform@0.92.1(effect@3.19.3))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.3)':
+  '@effect/opentelemetry@0.59.1(@effect/platform@0.92.1(effect@3.19.4))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.37.0)(effect@3.19.4)':
     dependencies:
-      '@effect/platform': 0.92.1(effect@3.19.3)
+      '@effect/platform': 0.92.1(effect@3.19.4)
       '@opentelemetry/semantic-conventions': 1.37.0
-      effect: 3.19.3
+      effect: 3.19.4
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
@@ -13033,16 +13029,16 @@ snapshots:
       '@opentelemetry/sdk-trace-node': 2.2.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-web': 2.2.0(@opentelemetry/api@1.9.0)
 
-  '@effect/platform@0.92.1(effect@3.19.3)':
+  '@effect/platform@0.92.1(effect@3.19.4)':
     dependencies:
-      effect: 3.19.3
+      effect: 3.19.4
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
 
-  '@effect/vitest@0.27.0(effect@3.19.3)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
+  '@effect/vitest@0.27.0(effect@3.19.4)(vitest@4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))':
     dependencies:
-      effect: 3.19.3
+      effect: 3.19.4
       vitest: 4.0.9(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1)
 
   '@egjs/hammerjs@2.0.17':
@@ -13863,14 +13859,14 @@ snapshots:
       - encoding
       - supports-color
 
-  '@hono/node-server@1.19.5(hono@4.10.5)':
+  '@hono/node-server@1.19.5(hono@4.10.6)':
     dependencies:
-      hono: 4.10.5
+      hono: 4.10.6
 
-  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.5))(hono@4.10.5)':
+  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.6))(hono@4.10.6)':
     dependencies:
-      '@hono/node-server': 1.19.5(hono@4.10.5)
-      hono: 4.10.5
+      '@hono/node-server': 1.19.5(hono@4.10.6)
+      hono: 4.10.6
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -17989,7 +17985,7 @@ snapshots:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
 
-  effect@3.19.3:
+  effect@3.19.4:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
@@ -19306,21 +19302,19 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono-pino@0.10.3(hono@4.10.5)(pino@10.0.0):
+  hono-pino@0.10.3(hono@4.10.6)(pino@10.0.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.5
+      hono: 4.10.6
       pino: 10.0.0
 
-  hono-pino@0.10.3(hono@4.10.5)(pino@10.1.0):
+  hono-pino@0.10.3(hono@4.10.6)(pino@10.1.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.5
+      hono: 4.10.6
       pino: 10.1.0
 
   hono@4.10.1: {}
-
-  hono@4.10.5: {}
 
   hono@4.10.6: {}
 
