@@ -15,6 +15,9 @@ catalogs:
     effect:
       specifier: 3.19.3
       version: 3.19.3
+    hono:
+      specifier: 4.10.5
+      version: 4.10.5
     react:
       specifier: 19.2.0
       version: 19.2.0
@@ -425,10 +428,10 @@ importers:
         version: 3.19.3
       hono:
         specifier: 'catalog:'
-        version: 4.10.6
+        version: 4.10.5
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.6)(pino@10.1.0)
+        version: 0.10.3(hono@4.10.5)(pino@10.1.0)
       pino:
         specifier: 10.1.0
         version: 10.1.0
@@ -453,10 +456,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 1.19.5
-        version: 1.19.5(hono@4.10.6)
+        version: 1.19.5(hono@4.10.5)
       '@hono/node-ws':
         specifier: 1.2.0
-        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.6))(hono@4.10.6)
+        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.5))(hono@4.10.5)
       '@redis/client':
         specifier: 5.8.3
         version: 5.8.3
@@ -510,10 +513,10 @@ importers:
         version: 3.19.3
       hono:
         specifier: 'catalog:'
-        version: 4.10.6
+        version: 4.10.5
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.6)(pino@10.0.0)
+        version: 0.10.3(hono@4.10.5)(pino@10.0.0)
       pino:
         specifier: 10.0.0
         version: 10.0.0
@@ -1276,8 +1279,8 @@ importers:
   packages/flow/images/photon:
     dependencies:
       '@cf-wasm/photon':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.2.2
+        version: 0.2.2
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
@@ -2928,11 +2931,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cf-wasm/internals@0.1.0':
-    resolution: {integrity: sha512-JTLXSEqKdcRp58CY3TtFO44BMwCUvhDWKNLT+gdha8JIXecK5cGLvK/iVaaW75JD0KG4HrpV2Mw/UqXi0Ga5SA==}
+  '@cf-wasm/internals@0.1.1':
+    resolution: {integrity: sha512-zyl5ThQx3XJhGXbBI6DVsw9dSb7edAHB71goURMg1grGeIso9d0V9oa6HtOd7/9ggYGqTmLvBS/EYJByCrs3Yw==}
 
-  '@cf-wasm/photon@0.2.1':
-    resolution: {integrity: sha512-uJpfCkJ8zy8Nsh7HdtjF21IP4l6VzCWWbCEpa3IidNbXF+wwKBcIjuCZ3yVyIxzHVFyUnGo/1sUDY1JOPC4zIg==}
+  '@cf-wasm/photon@0.2.2':
+    resolution: {integrity: sha512-gJVT+JPrWZBRpgD7e4Pq5w9JNXDn1SwylHKX0DNlME3Hf5lB8Ik6pEadXo0KEGOvVvlVAGF0OTsHz0fa0M54dQ==}
 
   '@cloudflare/kv-asset-handler@0.4.0':
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
@@ -8209,6 +8212,10 @@ packages:
     resolution: {integrity: sha512-rpGNOfacO4WEPClfkEt1yfl8cbu10uB1lNpiI33AKoiAHwOS8lV748JiLx4b5ozO/u4qLjIvfpFsPXdY5Qjkmg==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.10.5:
+    resolution: {integrity: sha512-h/MXuTkoAK8NG1EfDp0jI1YLf6yGdDnfkebRO2pwEh5+hE3RAJFXkCsnD0vamSiARK4ZrB6MY+o3E/hCnOyHrQ==}
+    engines: {node: '>=16.9.0'}
+
   hono@4.10.6:
     resolution: {integrity: sha512-BIdolzGpDO9MQ4nu3AUuDwHZZ+KViNm+EZ75Ae55eMXMqLVhDFqEMXxtUe9Qh8hjL+pIna/frs2j6Y2yD5Ua/g==}
     engines: {node: '>=16.9.0'}
@@ -12975,11 +12982,11 @@ snapshots:
   '@biomejs/cli-win32-x64@2.3.6':
     optional: true
 
-  '@cf-wasm/internals@0.1.0': {}
+  '@cf-wasm/internals@0.1.1': {}
 
-  '@cf-wasm/photon@0.2.1':
+  '@cf-wasm/photon@0.2.2':
     dependencies:
-      '@cf-wasm/internals': 0.1.0
+      '@cf-wasm/internals': 0.1.1
 
   '@cloudflare/kv-asset-handler@0.4.0':
     dependencies:
@@ -13856,14 +13863,14 @@ snapshots:
       - encoding
       - supports-color
 
-  '@hono/node-server@1.19.5(hono@4.10.6)':
+  '@hono/node-server@1.19.5(hono@4.10.5)':
     dependencies:
-      hono: 4.10.6
+      hono: 4.10.5
 
-  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.6))(hono@4.10.6)':
+  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.5))(hono@4.10.5)':
     dependencies:
-      '@hono/node-server': 1.19.5(hono@4.10.6)
-      hono: 4.10.6
+      '@hono/node-server': 1.19.5(hono@4.10.5)
+      hono: 4.10.5
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -19299,19 +19306,21 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono-pino@0.10.3(hono@4.10.6)(pino@10.0.0):
+  hono-pino@0.10.3(hono@4.10.5)(pino@10.0.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.6
+      hono: 4.10.5
       pino: 10.0.0
 
-  hono-pino@0.10.3(hono@4.10.6)(pino@10.1.0):
+  hono-pino@0.10.3(hono@4.10.5)(pino@10.1.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.6
+      hono: 4.10.5
       pino: 10.1.0
 
   hono@4.10.1: {}
+
+  hono@4.10.5: {}
 
   hono@4.10.6: {}
 
