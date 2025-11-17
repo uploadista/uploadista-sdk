@@ -1279,8 +1279,8 @@ importers:
   packages/flow/images/photon:
     dependencies:
       '@cf-wasm/photon':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.2.2
+        version: 0.2.2
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
@@ -2931,11 +2931,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cf-wasm/internals@0.1.0':
-    resolution: {integrity: sha512-JTLXSEqKdcRp58CY3TtFO44BMwCUvhDWKNLT+gdha8JIXecK5cGLvK/iVaaW75JD0KG4HrpV2Mw/UqXi0Ga5SA==}
+  '@cf-wasm/internals@0.1.1':
+    resolution: {integrity: sha512-zyl5ThQx3XJhGXbBI6DVsw9dSb7edAHB71goURMg1grGeIso9d0V9oa6HtOd7/9ggYGqTmLvBS/EYJByCrs3Yw==}
 
-  '@cf-wasm/photon@0.2.1':
-    resolution: {integrity: sha512-uJpfCkJ8zy8Nsh7HdtjF21IP4l6VzCWWbCEpa3IidNbXF+wwKBcIjuCZ3yVyIxzHVFyUnGo/1sUDY1JOPC4zIg==}
+  '@cf-wasm/photon@0.2.2':
+    resolution: {integrity: sha512-gJVT+JPrWZBRpgD7e4Pq5w9JNXDn1SwylHKX0DNlME3Hf5lB8Ik6pEadXo0KEGOvVvlVAGF0OTsHz0fa0M54dQ==}
 
   '@cloudflare/kv-asset-handler@0.4.0':
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
@@ -12982,11 +12982,11 @@ snapshots:
   '@biomejs/cli-win32-x64@2.3.6':
     optional: true
 
-  '@cf-wasm/internals@0.1.0': {}
+  '@cf-wasm/internals@0.1.1': {}
 
-  '@cf-wasm/photon@0.2.1':
+  '@cf-wasm/photon@0.2.2':
     dependencies:
-      '@cf-wasm/internals': 0.1.0
+      '@cf-wasm/internals': 0.1.1
 
   '@cloudflare/kv-asset-handler@0.4.0':
     dependencies:
