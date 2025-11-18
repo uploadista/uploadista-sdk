@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-security-nodes",
   "type": "module",
-  "version": "0.0.16-beta.1",
+  "version": "0.0.16-beta.2",
   "description": "Security processing nodes for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
