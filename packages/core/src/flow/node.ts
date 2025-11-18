@@ -1,12 +1,12 @@
 import { Effect } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
+import { flowTypeRegistry } from "./type-registry";
 import type {
   FlowNode,
   FlowNodeData,
   NodeExecutionResult,
 } from "./types/flow-types";
-import { flowTypeRegistry } from "./type-registry";
 
 /**
  * Defines the type of node in a flow, determining its role in the processing pipeline.
@@ -116,7 +116,11 @@ export type ConditionValue = string | number;
  * });
  * ```
  */
-export function createFlowNode<Input, Output, TType extends NodeType = NodeType>({
+export function createFlowNode<
+  Input,
+  Output,
+  TType extends NodeType = NodeType,
+>({
   id,
   name,
   description,
@@ -158,7 +162,10 @@ export function createFlowNode<Input, Output, TType extends NodeType = NodeType>
     exponentialBackoff?: boolean;
   };
   nodeTypeId?: string;
-}): Effect.Effect<FlowNode<Input, Output, UploadistaError> & { type: TType }, UploadistaError> {
+}): Effect.Effect<
+  FlowNode<Input, Output, UploadistaError> & { type: TType },
+  UploadistaError
+> {
   return Effect.gen(function* () {
     // Validate type registration if nodeTypeId provided
     if (nodeTypeId) {
@@ -174,97 +181,107 @@ export function createFlowNode<Input, Output, TType extends NodeType = NodeType>
       if (type === NodeType.input && typeDef.category !== "input") {
         return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
           body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
-          details: { nodeTypeId, nodeId: id, expectedCategory: "input", actualCategory: typeDef.category },
+          details: {
+            nodeTypeId,
+            nodeId: id,
+            expectedCategory: "input",
+            actualCategory: typeDef.category,
+          },
         }).toEffect();
       }
       if (type === NodeType.output && typeDef.category !== "output") {
         return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
           body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
-          details: { nodeTypeId, nodeId: id, expectedCategory: "output", actualCategory: typeDef.category },
+          details: {
+            nodeTypeId,
+            nodeId: id,
+            expectedCategory: "output",
+            actualCategory: typeDef.category,
+          },
         }).toEffect();
       }
     }
 
     return {
-    id,
-    name,
-    description,
-    type,
-    inputSchema,
-    outputSchema,
-    pausable,
-    run: ({
-      data,
-      jobId,
-      flowId,
-      storageId,
-      clientId,
-    }: {
-      data: Input;
-      jobId: string;
-      flowId: string;
-      storageId: string;
-      clientId: string | null;
-    }) =>
-      Effect.gen(function* () {
-        // Validate input data against schema
-        const validatedData = yield* Effect.try({
-          try: () => inputSchema.parse(data),
-          catch: (error) => {
-            const errorMessage =
-              error instanceof Error ? error.message : String(error);
-            return UploadistaError.fromCode("FLOW_INPUT_VALIDATION_ERROR", {
-              body: `Node '${name}' (${id}) input validation failed: ${errorMessage}`,
-              cause: error,
-            });
-          },
-        });
+      id,
+      name,
+      description,
+      type,
+      inputSchema,
+      outputSchema,
+      pausable,
+      run: ({
+        data,
+        jobId,
+        flowId,
+        storageId,
+        clientId,
+      }: {
+        data: Input;
+        jobId: string;
+        flowId: string;
+        storageId: string;
+        clientId: string | null;
+      }) =>
+        Effect.gen(function* () {
+          // Validate input data against schema
+          const validatedData = yield* Effect.try({
+            try: () => inputSchema.parse(data),
+            catch: (error) => {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              return UploadistaError.fromCode("FLOW_INPUT_VALIDATION_ERROR", {
+                body: `Node '${name}' (${id}) input validation failed: ${errorMessage}`,
+                cause: error,
+              });
+            },
+          });
 
-        // Run the node logic
-        const result = yield* run({
-          data: validatedData,
-          jobId,
-          storageId,
-          flowId,
-          clientId,
-        });
+          // Run the node logic
+          const result = yield* run({
+            data: validatedData,
+            jobId,
+            storageId,
+            flowId,
+            clientId,
+          });
 
-        // If the node returned waiting state, add type information and pass through
-        if (result.type === "waiting") {
+          // If the node returned waiting state, add type information and pass through
+          if (result.type === "waiting") {
+            return {
+              type: "waiting" as const,
+              partialData: result.partialData,
+              nodeType: nodeTypeId,
+              nodeId: id,
+            };
+          }
+
+          // Validate output data against schema for completed results
+          const validatedResult = yield* Effect.try({
+            try: () => outputSchema.parse(result.data),
+            catch: (error) => {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              return UploadistaError.fromCode("FLOW_OUTPUT_VALIDATION_ERROR", {
+                body: `Node '${name}' (${id}) output validation failed: ${errorMessage}`,
+                cause: error,
+              });
+            },
+          });
+
+          // Return with type information
           return {
-            type: "waiting" as const,
-            partialData: result.partialData,
+            type: "complete" as const,
+            data: validatedResult,
             nodeType: nodeTypeId,
             nodeId: id,
           };
-        }
-
-        // Validate output data against schema for completed results
-        const validatedResult = yield* Effect.try({
-          try: () => outputSchema.parse(result.data),
-          catch: (error) => {
-            const errorMessage =
-              error instanceof Error ? error.message : String(error);
-            return UploadistaError.fromCode("FLOW_OUTPUT_VALIDATION_ERROR", {
-              body: `Node '${name}' (${id}) output validation failed: ${errorMessage}`,
-              cause: error,
-            });
-          },
-        });
-
-        // Return with type information
-        return {
-          type: "complete" as const,
-          data: validatedResult,
-          nodeType: nodeTypeId,
-          nodeId: id,
-        };
-      }),
-    condition,
-    multiInput,
-    multiOutput,
-    retry,
-  } as FlowNode<Input, Output, UploadistaError> & { type: TType };
+        }),
+      condition,
+      multiInput,
+      multiOutput,
+      retry,
+    } as FlowNode<Input, Output, UploadistaError> & { type: TType };
   });
 }
 

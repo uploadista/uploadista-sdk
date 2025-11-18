@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect";
 import type { InputFile, UploadFile, WebSocketConnection } from "../types";
-import { UploadServer } from "../upload";
 import type { DataStoreCapabilities } from "../types/data-store";
+import { UploadServer } from "../upload";
 
 /**
  * Mock UploadServer implementation for testing.

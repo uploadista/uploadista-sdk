@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/adapters-express",
   "type": "module",
-  "version": "0.0.15",
+  "version": "0.0.16-beta.3",
   "description": "Express adapter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -41,7 +41,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.8"
+    "vitest": "4.0.9"
   },
   "peerDependencies": {
     "express": "^4.0.0 || ^5.0.0"

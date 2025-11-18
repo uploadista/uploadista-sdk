@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-images-photon",
   "type": "module",
-  "version": "0.0.15",
+  "version": "0.0.16-beta.3",
   "description": "Photon image processing service for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -29,7 +29,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@cf-wasm/photon": "0.2.1",
+    "@cf-wasm/photon": "0.2.2",
     "@uploadista/core": "workspace:*",
     "effect": "catalog:",
     "tinycolor2": "1.6.0",
@@ -41,6 +41,6 @@
     "@types/tinycolor2": "1.4.6",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.8"
+    "vitest": "4.0.9"
   }
 }

@@ -69,7 +69,8 @@ flowTypeRegistry.register({
   category: "output",
   schema: uploadFileSchema,
   version: "1.0.0",
-  description: "Storage output node that saves files to configured storage backend",
+  description:
+    "Storage output node that saves files to configured storage backend",
 });
 
 /**

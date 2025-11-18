@@ -155,7 +155,8 @@ export function createTransformNode({
                   originalName: outputFileName,
                   name: outputFileName,
                   // Update extension based on new fileName
-                  extension: outputFileName.split(".").pop() || metadata.extension,
+                  extension:
+                    outputFileName.split(".").pop() || metadata.extension,
                 }),
               }
             : result.metadata;

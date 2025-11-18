@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-emitter-websocket",
   "type": "module",
-  "version": "0.0.15",
+  "version": "0.0.16-beta.3",
   "description": "WebSocket event emitter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -31,6 +31,6 @@
     "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.8"
+    "vitest": "4.0.9"
   }
 }

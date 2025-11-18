@@ -25,8 +25,8 @@
 import { Effect } from "effect";
 import { UploadistaError } from "../errors";
 import type { UploadFile } from "../types";
-import type { TypedOutput } from "./types/flow-types";
 import { flowTypeRegistry } from "./type-registry";
+import type { TypedOutput } from "./types/flow-types";
 
 /**
  * Factory function to create type guards for specific node types.
@@ -97,9 +97,7 @@ export function createTypeGuard<T>(
  * }
  * ```
  */
-export const isStorageOutput = createTypeGuard<UploadFile>(
-  "storage-output-v1",
-);
+export const isStorageOutput = createTypeGuard<UploadFile>("storage-output-v1");
 
 /**
  * Filter an array of outputs to only those matching a specific type.

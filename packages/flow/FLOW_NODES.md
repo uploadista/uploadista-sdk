@@ -90,6 +90,153 @@ Create ZIP archives.
 - Batch delivery
 - Backup creation
 
+### Security Nodes
+
+Malware detection and file security scanning.
+
+#### Scan Virus Node
+**Package**: `@uploadista/flow-security-nodes`
+
+Scan files for viruses and malware using ClamAV antivirus engine.
+
+```typescript
+{
+  type: "scanVirus",
+  params: {
+    action: "fail" | "pass",
+    timeout?: number, // milliseconds (default: 60000, max: 300000)
+  },
+}
+```
+
+**Actions**:
+- `fail`: Stop flow execution when virus detected (recommended for production)
+- `pass`: Continue processing with detection metadata (useful for logging/auditing)
+
+**Use Cases**:
+- Scan user-uploaded files before storage
+- Protect file management systems from malware
+- Audit uploaded content for security threats
+- Prevent virus distribution through file sharing
+
+**Example Flow**:
+```typescript
+import { createScanVirusNode } from "@uploadista/flow-security-nodes";
+import { ClamScanPluginLayer } from "@uploadista/flow-security-clamscan";
+
+// Fail on virus detection (production)
+const scanNode = yield* createScanVirusNode("scan-1", {
+  action: "fail",
+  timeout: 60000,
+});
+
+// Pass with metadata (audit mode)
+const auditNode = yield* createScanVirusNode("scan-audit", {
+  action: "pass",
+});
+
+// Provide ClamAV plugin
+const layer = ClamScanPluginLayer();
+```
+
+**Scan Results Metadata**:
+All files scanned will have `virusScan` metadata added:
+```typescript
+{
+  scanned: boolean,
+  isClean: boolean,
+  detectedViruses: string[],
+  scanDate: string, // ISO 8601
+  engineVersion: string,
+  definitionsDate: string, // ISO 8601
+}
+```
+
+**Performance**:
+- Small files (<10MB): ~1-5 seconds
+- Large files (>10MB): ~5-30 seconds (depends on file size)
+- Daemon mode (clamd) is significantly faster than binary mode
+
+**Requirements**:
+- ClamAV must be installed on the host system
+- For Docker: install `clamav` and `clamav-daemon` packages
+- Virus definitions should be updated regularly (daily recommended)
+
+**Plugin Options**:
+```typescript
+import { ClamScanPluginLayer } from "@uploadista/flow-security-clamscan";
+
+// Default configuration (daemon preferred, fallback to binary)
+const defaultLayer = ClamScanPluginLayer();
+
+// Custom daemon configuration
+const customLayer = ClamScanPluginLayer({
+  preference: "clamdscan",
+  clamdscan_socket: "/var/run/clamav/clamd.sock",
+  clamdscan_port: 3310,
+  debug_mode: false,
+});
+
+// Binary-only mode
+const binaryLayer = ClamScanPluginLayer({
+  preference: "clamscan",
+});
+```
+
+**Error Codes**:
+- `VIRUS_DETECTED`: Malware found in file (when action=fail)
+- `CLAMAV_NOT_INSTALLED`: ClamAV not available on system
+- `VIRUS_SCAN_FAILED`: Generic scanning operation failure
+- `SCAN_TIMEOUT`: Scanning exceeded timeout limit
+
+**Best Practices**:
+1. Always scan before storing user uploads
+2. Use `action: "fail"` in production environments
+3. Set appropriate timeouts for expected file sizes
+4. Keep virus definitions up to date (use `freshclam` cron job)
+5. Monitor ClamAV daemon health in production
+6. Consider file size limits to prevent DoS via large files
+
+**Testing**:
+Use the EICAR test file for testing without real malware:
+```typescript
+// EICAR is a safe test signature recognized by all AV engines
+const eicarSignature = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+```
+
+**ClamAV Installation**:
+
+Ubuntu/Debian:
+```bash
+sudo apt-get update
+sudo apt-get install clamav clamav-daemon
+sudo freshclam  # Update virus definitions
+sudo systemctl enable clamav-daemon
+sudo systemctl start clamav-daemon
+```
+
+macOS (Homebrew):
+```bash
+brew install clamav
+freshclam  # Update virus definitions
+```
+
+Docker:
+```dockerfile
+FROM node:24-slim
+RUN apt-get update && apt-get install -y clamav clamav-daemon
+RUN freshclam
+RUN mkdir -p /var/run/clamav && chown clamav:clamav /var/run/clamav
+CMD ["node", "dist/index.js"]
+```
+
+**Troubleshooting**:
+- **"ClamAV not installed"**: Install ClamAV or check PATH
+- **"Virus definitions outdated"**: Run `freshclam` to update
+- **"Scan timeout"**: Increase timeout or optimize ClamAV config
+- **Daemon connection failed**: Check clamd is running (`systemctl status clamav-daemon`)
+- **Permission denied**: Ensure user has access to clamd socket
+
 ### Image Processing Nodes
 
 Image optimization and transformation.
@@ -411,6 +558,239 @@ Input → Remove BG → Upscale → Optimize → S3 → Output
    - Full: 1200×1200
 5. **Error Handling**: Always have fallback paths
 
+### Document Processing Nodes
+
+Process PDF documents with text extraction, OCR, and manipulation.
+
+#### OCR Node
+**Package**: `@uploadista/flow-documents-nodes`
+
+AI-powered text extraction from scanned documents and images.
+
+```typescript
+{
+  type: "ocr",
+  params: {
+    taskType: "convertToMarkdown" | "freeOcr" | "parseFigure" | "locateObject",
+    resolution: "tiny" | "small" | "base" | "gundam" | "large",
+    credentialId: string,
+    referenceText?: string,
+  },
+}
+```
+
+**Task Types**:
+- `convertToMarkdown`: Structured markdown output with headings, lists
+- `freeOcr`: Unstructured plain text extraction
+- `parseFigure`: Analyze charts and diagrams
+- `locateObject`: Find specific content using reference text
+
+**Use Cases**:
+- Extract text from scanned invoices, receipts
+- Convert documents to structured markdown
+- Parse charts and technical diagrams
+- Search for specific content in scanned documents
+
+**Time**: ~5-15s | **Cost**: ~$0.005 per document
+
+#### Extract Text Node
+**Package**: `@uploadista/flow-documents-nodes`
+
+Fast text extraction from searchable PDFs.
+
+```typescript
+{
+  type: "extractText",
+  params: {},
+}
+```
+
+**Output**: Adds `extractedText` to file metadata
+
+**Use Cases**:
+- Extract text from searchable PDFs for indexing
+- Parse PDF documents for content analysis
+- Extract structured text with paragraphs preserved
+
+**Time**: <1s | **Cost**: Free
+
+**Note**: For scanned PDFs, use OCR Node instead.
+
+#### Split PDF Node
+**Package**: `@uploadista/flow-documents-nodes`
+
+Split PDFs by page range or into individual pages.
+
+```typescript
+{
+  type: "splitPdf",
+  params: {
+    mode: "range" | "individual",
+    startPage: number,
+    endPage: number,
+  },
+}
+```
+
+**Modes**:
+- `range`: Extract pages 3-5 as single PDF
+- `individual`: Split each page into separate PDF
+
+**Use Cases**:
+- Extract specific pages from large documents
+- Split multi-page documents for parallel processing
+- Create individual files for each page
+
+**Time**: <2s | **Cost**: Free
+
+#### Merge PDF Node
+**Package**: `@uploadista/flow-documents-nodes`
+
+Combine multiple PDFs into a single document.
+
+```typescript
+{
+  type: "mergePdf",
+  params: {
+    inputCount: 2-10,
+  },
+}
+```
+
+**Requires**: Merge utility node to provide multiple files
+
+**Use Cases**:
+- Combine related documents
+- Create document collections
+- Merge split documents back together
+
+**Time**: <2s | **Cost**: Free
+
+#### Describe Document Node
+**Package**: `@uploadista/flow-documents-nodes`
+
+Extract comprehensive PDF metadata.
+
+```typescript
+{
+  type: "describeDocument",
+  params: {},
+}
+```
+
+**Output Metadata**:
+```json
+{
+  "pageCount": 10,
+  "format": "pdf",
+  "author": "John Doe",
+  "title": "Document Title",
+  "subject": "Document Subject",
+  "creator": "Adobe Acrobat",
+  "creationDate": "2023-01-01T00:00:00Z",
+  "modifiedDate": "2023-01-02T00:00:00Z",
+  "fileSize": 1024000
+}
+```
+
+**Use Cases**:
+- Index document properties
+- Validate document metadata
+- Extract creation dates and authors
+
+**Time**: <1s | **Cost**: Free
+
+#### Convert to Markdown Node
+**Package**: `@uploadista/flow-documents-nodes`
+
+Intelligent document-to-markdown conversion.
+
+```typescript
+{
+  type: "convertToMarkdown",
+  params: {
+    credentialId?: string,
+    resolution?: "tiny" | "small" | "base" | "gundam" | "large",
+  },
+}
+```
+
+**How it Works**:
+1. Tries text extraction first (fast, searchable PDFs)
+2. Falls back to OCR if no text found (scanned PDFs)
+3. Returns structured markdown
+
+**Use Cases**:
+- Convert documents to markdown for CMS
+- Extract structured content for processing
+- Create markdown documentation from PDFs
+
+**Time**: <1s (searchable) or ~5-15s (scanned) | **Cost**: Free or ~$0.005
+
+## Document Processing Patterns
+
+### Pattern 1: Invoice Processing
+
+Extract data from scanned invoices:
+
+```
+Input → OCR (convertToMarkdown) → Conditional (amount > $1000?)
+        ├─ YES: Flag for review
+        └─ NO: Auto-process
+        → Store → Output
+```
+
+### Pattern 2: Document Archival
+
+Merge and archive multiple documents:
+
+```
+File 1 ┐
+File 2 ├─ Merge → Describe → Storage (archive bucket) → Output
+File 3 ┘
+```
+
+### Pattern 3: Text Extraction Pipeline
+
+Extract text from mixed document types:
+
+```
+Input → Describe → Conditional (has text?)
+        ├─ YES: Extract Text (fast)
+        └─ NO: OCR (scanned)
+        → Store metadata → Output
+```
+
+### Pattern 4: Page Selection
+
+Extract specific pages from documents:
+
+```
+Input → Describe → Split (pages 1-5) → Process → Output
+```
+
+## Document Node Comparison
+
+| Node | Speed | Cost | Best For |
+|------|-------|------|----------|
+| OCR | 5-15s | $0.005 | Scanned documents, images |
+| Extract Text | <1s | Free | Searchable PDFs |
+| Split PDF | <2s | Free | Page extraction |
+| Merge PDF | <2s | Free | Combining documents |
+| Describe | <1s | Free | Metadata extraction |
+| Convert Markdown | 1-15s | Free-$0.005 | CMS integration |
+
+## When to Use Which?
+
+### OCR vs Extract Text
+- **Extract Text**: For searchable PDFs with embedded text (fast, free)
+- **OCR**: For scanned documents, images, or image-based PDFs (AI-powered)
+- **Convert to Markdown**: Automatic detection - tries extract text first, falls back to OCR
+
+### Split vs Merge
+- **Split**: Break documents into pieces (page selection, parallel processing)
+- **Merge**: Combine documents (archival, bundling)
+
 ## Related Packages
 
 - [@uploadista/flow-utility-nodes](./utility/nodes/README.md)
@@ -419,6 +799,11 @@ Input → Remove BG → Upscale → Optimize → S3 → Output
 - [@uploadista/flow-images-sharp](./images/sharp/README.md)
 - [@uploadista/flow-images-photon](./images/photon/README.md)
 - [@uploadista/flow-images-replicate](./images/replicate/README.md)
+- [@uploadista/flow-documents-nodes](./documents/nodes/README.md)
+- [@uploadista/flow-documents-pdflib](./documents/pdflib/README.md)
+- [@uploadista/flow-documents-unpdf](./documents/unpdf/README.md)
+- [@uploadista/flow-documents-replicate](./documents/replicate/README.md)
+- [@uploadista/flow-documents-combined](./documents/combined/README.md)
 
 ## See Also
 

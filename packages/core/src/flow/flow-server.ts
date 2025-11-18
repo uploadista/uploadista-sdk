@@ -7,9 +7,9 @@ import {
   type Flow,
   type FlowData,
   type FlowExecutionResult,
-  type TypedOutput,
   getFlowData,
   runArgsSchema,
+  type TypedOutput,
 } from "../flow";
 import type {
   EventEmitter,

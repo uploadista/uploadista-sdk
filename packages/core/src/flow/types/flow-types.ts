@@ -172,7 +172,9 @@ export type CustomTypedOutput<T = unknown> = {
  * };
  * ```
  */
-export type TypedOutput<T = unknown> = BuiltInTypedOutput | CustomTypedOutput<T>;
+export type TypedOutput<T = unknown> =
+  | BuiltInTypedOutput
+  | CustomTypedOutput<T>;
 
 /**
  * Result of a node execution - either complete or waiting for more data.

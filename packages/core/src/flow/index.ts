@@ -8,9 +8,7 @@ export type { Flow, FlowData } from "./flow";
 export * from "./type-registry";
 // Built-in node types (auto-registers on import)
 import "./node-types";
-export * from "./node-types";
-// Type guards
-export * from "./type-guards";
+
 export * from "./flow";
 // Core flow engine
 export { createFlowWithSchema } from "./flow";
@@ -18,16 +16,22 @@ export * from "./flow-server";
 export * from "./node";
 // Node types and interfaces
 export { createFlowNode, NodeType } from "./node";
+export * from "./node-types";
 export * from "./nodes";
 // Parallel execution
 export * from "./parallel-scheduler";
 export * from "./plugins/credential-provider";
+export * from "./plugins/document-ai-plugin";
+export * from "./plugins/document-plugin";
 export * from "./plugins/image-ai-plugin";
 export * from "./plugins/image-plugin";
 export * from "./plugins/plugins";
 export * from "./plugins/types";
 export * from "./plugins/video-plugin";
+export * from "./plugins/virus-scan-plugin";
 export * from "./plugins/zip-plugin";
+// Type guards
+export * from "./type-guards";
 export * from "./typed-flow";
 export { createFlow } from "./typed-flow";
 export * from "./types/flow-file";

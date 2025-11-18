@@ -1,0 +1,42 @@
+{
+  "name": "@uploadista/flow-documents-nodes",
+  "type": "module",
+  "version": "0.0.16-beta.3",
+  "description": "Document processing nodes for Uploadista Flow",
+  "license": "MIT",
+  "author": "Uploadista",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.mts",
+      "import": "./dist/types/index.mjs",
+      "require": "./dist/types/index.cjs",
+      "default": "./dist/types/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*",
+    "effect": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@types/node": "catalog:",
+    "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:",
+    "vitest": "4.0.9"
+  }
+}

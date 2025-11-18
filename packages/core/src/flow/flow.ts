@@ -815,9 +815,7 @@ export function createFlowWithSchema<
 
         // Check for cycles
         if (executionOrder.length !== nodes.length) {
-          return yield* UploadistaError.fromCode(
-            "FLOW_CYCLE_ERROR",
-          ).toEffect();
+          return yield* UploadistaError.fromCode("FLOW_CYCLE_ERROR").toEffect();
         }
 
         // Create node map for quick lookup

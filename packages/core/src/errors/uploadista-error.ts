@@ -49,7 +49,18 @@ export type UploadistaErrorCode =
   | "INVALID_NODE_TYPE"
   | "TYPE_CATEGORY_MISMATCH"
   | "OUTPUT_NOT_FOUND"
-  | "MULTIPLE_OUTPUTS_FOUND";
+  | "MULTIPLE_OUTPUTS_FOUND"
+  | "VIRUS_SCAN_FAILED"
+  | "VIRUS_DETECTED"
+  | "CLAMAV_NOT_INSTALLED"
+  | "VIRUS_DEFINITIONS_OUTDATED"
+  | "SCAN_TIMEOUT"
+  | "DOCUMENT_PROCESSING_FAILED"
+  | "INVALID_DOCUMENT_FORMAT"
+  | "OCR_FAILED"
+  | "PDF_ENCRYPTED"
+  | "PDF_CORRUPTED"
+  | "PAGE_RANGE_INVALID";
 
 /**
  * Catalog of all predefined errors in the Uploadista system.
@@ -232,6 +243,50 @@ export const ERROR_CATALOG: Readonly<
   MULTIPLE_OUTPUTS_FOUND: {
     status: 409,
     body: "Multiple outputs of the specified type found, expected single output\n",
+  },
+  VIRUS_SCAN_FAILED: {
+    status: 500,
+    body: "Virus scanning operation failed\n",
+  },
+  VIRUS_DETECTED: {
+    status: 400,
+    body: "Virus or malware detected in file\n",
+  },
+  CLAMAV_NOT_INSTALLED: {
+    status: 500,
+    body: "ClamAV is not installed or not available\n",
+  },
+  VIRUS_DEFINITIONS_OUTDATED: {
+    status: 500,
+    body: "Virus definitions are outdated and should be updated\n",
+  },
+  SCAN_TIMEOUT: {
+    status: 500,
+    body: "Virus scan exceeded timeout limit\n",
+  },
+  DOCUMENT_PROCESSING_FAILED: {
+    status: 500,
+    body: "Document processing operation failed\n",
+  },
+  INVALID_DOCUMENT_FORMAT: {
+    status: 400,
+    body: "The document format is not supported\n",
+  },
+  OCR_FAILED: {
+    status: 500,
+    body: "OCR operation failed\n",
+  },
+  PDF_ENCRYPTED: {
+    status: 400,
+    body: "The PDF is password-protected and cannot be processed\n",
+  },
+  PDF_CORRUPTED: {
+    status: 400,
+    body: "The PDF file is corrupted or malformed\n",
+  },
+  PAGE_RANGE_INVALID: {
+    status: 400,
+    body: "The specified page range is invalid\n",
   },
 } as const;
 
