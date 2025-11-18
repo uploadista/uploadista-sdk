@@ -21,6 +21,8 @@ export * from "./nodes";
 // Parallel execution
 export * from "./parallel-scheduler";
 export * from "./plugins/credential-provider";
+export * from "./plugins/document-ai-plugin";
+export * from "./plugins/document-plugin";
 export * from "./plugins/image-ai-plugin";
 export * from "./plugins/image-plugin";
 export * from "./plugins/plugins";

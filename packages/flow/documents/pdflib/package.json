@@ -1,0 +1,32 @@
+{
+  "name": "@uploadista/flow-documents-pdflib",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "pdf-lib plugin for Uploadista document processing",
+  "license": "MIT",
+  "author": "Uploadista",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "check": "biome check --write ./src"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*",
+    "effect": "catalog:",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@uploadista/typescript-config": "workspace:*",
+    "tsdown": "catalog:"
+  }
+}

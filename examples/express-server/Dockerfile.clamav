@@ -1,0 +1,110 @@
+# Example Dockerfile for Uploadista SDK with ClamAV support
+# This Dockerfile demonstrates how to set up a production-ready
+# Uploadista server with virus scanning capabilities
+
+FROM node:24-bookworm-slim
+
+# Install system dependencies including ClamAV
+RUN apt-get update && apt-get install -y \
+    # ClamAV for virus scanning
+    clamav \
+    clamav-daemon \
+    # Build tools (if needed for native modules)
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Update ClamAV virus definitions
+# This is done at build time to ensure recent definitions
+RUN mkdir -p /var/lib/clamav && \
+    chown -R clamav:clamav /var/lib/clamav && \
+    freshclam || echo "ClamAV database update will continue in background"
+
+# Create ClamAV runtime directory
+RUN mkdir -p /var/run/clamav && \
+    chown -R clamav:clamav /var/run/clamav
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+# Install pnpm and dependencies
+RUN npm install -g pnpm && \
+    pnpm install --frozen-lockfile
+
+# Copy application code
+COPY . .
+
+# Build application (if TypeScript)
+RUN pnpm build || echo "No build script found"
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Start ClamAV daemon\n\
+echo "Starting ClamAV daemon..."\n\
+clamd &\n\
+\n\
+# Wait for ClamAV to be ready\n\
+echo "Waiting for ClamAV daemon..."\n\
+for i in {1..30}; do\n\
+  if clamdscan --ping 2>/dev/null; then\n\
+    echo "ClamAV daemon is ready"\n\
+    break\n\
+  fi\n\
+  if [ $i -eq 30 ]; then\n\
+    echo "WARNING: ClamAV daemon not responding"\n\
+  fi\n\
+  sleep 1\n\
+done\n\
+\n\
+# Optional: Update virus definitions at startup\n\
+# Uncomment if you want to update definitions on each container start\n\
+# echo "Updating virus definitions..."\n\
+# freshclam || echo "Failed to update definitions, using existing"\n\
+\n\
+# Start application\n\
+echo "Starting application..."\n\
+exec node dist/index.js\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Expose application port
+EXPOSE 3000
+
+# Health check for both app and ClamAV
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start with ClamAV
+CMD ["/app/start.sh"]
+
+# Production Notes:
+# 1. Virus Definition Updates:
+#    - Build-time: freshclam during image build (shown above)
+#    - Runtime: Optional freshclam at container start (commented out)
+#    - Scheduled: Use external cron job or K8s CronJob to rebuild image daily
+#
+# 2. ClamAV Configuration:
+#    - Default config works for most cases
+#    - Custom clamd.conf can be mounted: -v ./clamd.conf:/etc/clamav/clamd.conf
+#    - Socket path: /var/run/clamav/clamd.ctl
+#    - TCP mode: Set TCPSocket=3310 in clamd.conf
+#
+# 3. Performance Optimization:
+#    - Use clamd (daemon) instead of clamscan binary
+#    - Allocate sufficient memory (2GB+ for ClamAV)
+#    - Consider shared volume for virus DB across containers
+#
+# 4. Kubernetes Deployment:
+#    - Use initContainer to update virus definitions
+#    - Share virus DB via emptyDir volume
+#    - Run ClamAV as sidecar container (alternative approach)
+#
+# 5. Security:
+#    - Run as non-root user in production
+#    - Use read-only root filesystem where possible
+#    - Update definitions regularly (daily minimum)
