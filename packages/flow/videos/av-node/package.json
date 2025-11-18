@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-videos-av-node",
   "type": "module",
-  "version": "0.0.16-beta.3",
+  "version": "0.0.16",
   "description": "FFmpeg video processing plugin for Uploadista Flow with av-node",
   "license": "MIT",
   "author": "Uploadista",
