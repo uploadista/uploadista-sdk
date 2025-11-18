@@ -23,7 +23,9 @@
     "build": "tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "check": "biome check --write ./src"
+    "check": "biome check --write ./src",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
@@ -31,8 +33,10 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
-    "tsdown": "catalog:"
+    "tsdown": "catalog:",
+    "vitest": "4.0.9"
   }
 }
