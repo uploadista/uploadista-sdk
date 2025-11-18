@@ -25,3 +25,6 @@ export {
   createSplitPdfNode,
   type SplitPdfNodeParams,
 } from "./split-pdf-node";
+
+// Parameter schemas for validation
+export * from "./types";

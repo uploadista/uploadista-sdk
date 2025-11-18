@@ -10,18 +10,18 @@ import { Effect, Layer } from "effect";
  *
  * This provides a complete DocumentPlugin implementation.
  */
-export const combinedDocumentPlugin = Layer.unwrapEffect(
+export const documentPlugin = Layer.unwrapEffect(
   Effect.gen(function* () {
     // Get the pdf-lib plugin for manipulation operations
     const pdfLibPlugin = yield* Effect.provide(
       DocumentPlugin,
-      pdfLibDocumentPlugin
+      pdfLibDocumentPlugin,
     );
 
     // Get the unpdf plugin for text extraction
     const unpdfPlugin = yield* Effect.provide(
       DocumentPlugin,
-      unpdfDocumentPlugin
+      unpdfDocumentPlugin,
     );
 
     // Create a combined plugin
@@ -36,9 +36,9 @@ export const combinedDocumentPlugin = Layer.unwrapEffect(
         splitPdf: pdfLibPlugin.splitPdf,
         // Use pdf-lib for merging
         mergePdfs: pdfLibPlugin.mergePdfs,
-      })
+      }),
     );
-  })
+  }),
 );
 
-export const CombinedDocumentPluginLive = combinedDocumentPlugin;
+export const DocumentPluginLive = documentPlugin;
