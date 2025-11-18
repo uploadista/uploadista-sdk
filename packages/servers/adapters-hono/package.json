@@ -42,7 +42,7 @@
     "hono": "^4.0.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.9"
+    "vitest": "4.0.10"
   },
   "peerDependencies": {
     "hono": "^4.0.0"
