@@ -1,8 +1,8 @@
 import type { WebSocketConnection } from "@uploadista/core/types";
 import {
   type BaseEventEmitter,
-  TypedEventEmitter,
   eventToMessageSerializer,
+  TypedEventEmitter,
 } from "@uploadista/core/types";
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
@@ -152,7 +152,11 @@ describe("TypedEventEmitter", () => {
 
       await Effect.runPromise(
         Effect.gen(function* () {
-          const event: TestEvent = { id: "upload-1", type: "progress", data: "50%" };
+          const event: TestEvent = {
+            id: "upload-1",
+            type: "progress",
+            data: "50%",
+          };
           yield* typedEmitter.emit("upload-key", event);
 
           expect(emittedMessages).toHaveLength(1);
@@ -185,7 +189,11 @@ describe("TypedEventEmitter", () => {
 
       await Effect.runPromise(
         Effect.gen(function* () {
-          const event: TestEvent = { id: "flow-1", type: "complete", data: "done" };
+          const event: TestEvent = {
+            id: "flow-1",
+            type: "complete",
+            data: "done",
+          };
           yield* typedEmitter.emit("flow-key", event);
 
           expect(emittedMessages).toHaveLength(1);
@@ -242,13 +250,21 @@ describe("TypedEventEmitter", () => {
         unsubscribe: () => Effect.void,
       };
 
-      const customSerializer = (event: TestEvent) => `CUSTOM:${event.id}:${event.type}:${event.data}`;
+      const customSerializer = (event: TestEvent) =>
+        `CUSTOM:${event.id}:${event.type}:${event.data}`;
 
-      const typedEmitter = new TypedEventEmitter(mockBaseEmitter, customSerializer);
+      const typedEmitter = new TypedEventEmitter(
+        mockBaseEmitter,
+        customSerializer,
+      );
 
       await Effect.runPromise(
         Effect.gen(function* () {
-          const event: TestEvent = { id: "123", type: "action", data: "payload" };
+          const event: TestEvent = {
+            id: "123",
+            type: "action",
+            data: "payload",
+          };
           yield* typedEmitter.emit("custom-key", event);
 
           expect(emittedMessages).toHaveLength(1);
@@ -267,7 +283,10 @@ describe("TypedEventEmitter", () => {
 
       const customSerializer = (event: TestEvent) => `EVENT-${event.id}`;
 
-      const typedEmitter = new TypedEventEmitter(mockBaseEmitter, customSerializer);
+      const typedEmitter = new TypedEventEmitter(
+        mockBaseEmitter,
+        customSerializer,
+      );
 
       await Effect.runPromise(
         Effect.gen(function* () {

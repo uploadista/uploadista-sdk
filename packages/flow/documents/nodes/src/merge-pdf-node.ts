@@ -5,6 +5,7 @@ import {
   DocumentPlugin,
   NodeType,
   resolveUploadMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
@@ -31,6 +32,7 @@ export function createMergePdfNode(
       name: "Merge PDFs",
       description: "Merge multiple PDF documents into one",
       type: NodeType.process,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema: multipleFilesSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: files, flowId, jobId, clientId }) => {
@@ -44,7 +46,8 @@ export function createMergePdfNode(
           // Validate that we have an array of files
           if (!Array.isArray(files)) {
             return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
-              cause: "Merge PDF node requires an array of files from a Merge utility node",
+              cause:
+                "Merge PDF node requires an array of files from a Merge utility node",
             }).toEffect();
           }
 
@@ -65,14 +68,15 @@ export function createMergePdfNode(
 
             // Sum up page counts if available
             const fileMetadata = resolveUploadMetadata(file.metadata).metadata;
-            if (fileMetadata?.pageCount && typeof fileMetadata.pageCount === 'number') {
+            if (
+              fileMetadata?.pageCount &&
+              typeof fileMetadata.pageCount === "number"
+            ) {
               totalPages += fileMetadata.pageCount;
             }
           }
 
-          yield* Effect.logInfo(
-            `Merging ${files.length} PDF files`,
-          );
+          yield* Effect.logInfo(`Merging ${files.length} PDF files`);
 
           // Merge PDFs with error handling
           const mergedPdf = yield* documentService

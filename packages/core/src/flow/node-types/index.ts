@@ -13,7 +13,7 @@
  * @example
  * ```typescript
  * // Types are automatically registered on import
- * import "@uploadista/core/flow/node-types";
+ * import "@uploadista/core/flow";
  * import { flowTypeRegistry } from "@uploadista/core/flow";
  *
  * // Check registered types
@@ -22,6 +22,7 @@
  * ```
  */
 
+import { z } from "zod";
 import { uploadFileSchema } from "../../types/upload-file";
 import { flowTypeRegistry } from "../type-registry";
 
@@ -33,7 +34,7 @@ import { flowTypeRegistry } from "../type-registry";
  *
  * @example
  * ```typescript
- * import { STREAMING_INPUT_TYPE_ID } from "@uploadista/core/flow/node-types";
+ * import { STREAMING_INPUT_TYPE_ID } from "@uploadista/core/flow";
  *
  * const inputNode = createFlowNode({
  *   // ... other config
@@ -42,6 +43,42 @@ import { flowTypeRegistry } from "../type-registry";
  * ```
  */
 export const STORAGE_OUTPUT_TYPE_ID = "storage-output-v1";
+export const OCR_OUTPUT_TYPE_ID = "ocr-output-v1";
+export const IMAGE_DESCRIPTION_OUTPUT_TYPE_ID = "image-description-output-v1";
+
+/**
+ * OCR output schema - structured text extraction result.
+ *
+ * @property extractedText - The text extracted from the document
+ * @property format - Output format (text, markdown, or JSON)
+ * @property taskType - Type of OCR task performed
+ * @property confidence - Optional confidence score (0-1)
+ */
+export const ocrOutputSchema = z.object({
+  extractedText: z.string(),
+  format: z.enum(["markdown", "plain", "structured"]),
+  taskType: z.enum(["convertToMarkdown", "freeOcr", "parseFigure", "locateObject"]),
+  confidence: z.number().min(0).max(1).optional(),
+});
+
+export type OcrOutput = z.infer<typeof ocrOutputSchema>;
+
+/**
+ * Image description output schema - AI-generated image analysis result.
+ *
+ * @property description - Human-readable description of the image
+ * @property confidence - Confidence score for the description (0-1)
+ * @property metadata - Additional metadata about the description
+ */
+export const imageDescriptionOutputSchema = z.object({
+  description: z.string(),
+  confidence: z.number().min(0).max(1).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type ImageDescriptionOutput = z.infer<
+  typeof imageDescriptionOutputSchema
+>;
 
 /**
  * Register storage output node type.
@@ -59,13 +96,34 @@ flowTypeRegistry.register({
 });
 
 /**
- * Future type registrations can be added here.
+ * Register OCR output node type.
  *
- * Examples:
- * - description-output-v1: AI-powered image description output
- * - webhook-output-v1: HTTP webhook notification output
- * - metadata-output-v1: File metadata extraction output
+ * This output type is for document text extraction nodes that use AI/OCR to
+ * extract structured text from images or PDFs.
  */
+flowTypeRegistry.register({
+  id: OCR_OUTPUT_TYPE_ID,
+  category: "output",
+  schema: ocrOutputSchema,
+  version: "1.0.0",
+  description:
+    "OCR output node that extracts structured text from documents using AI",
+});
+
+/**
+ * Register image description output node type.
+ *
+ * This output type is for AI-powered image analysis nodes that generate
+ * textual descriptions of image content.
+ */
+flowTypeRegistry.register({
+  id: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
+  category: "output",
+  schema: imageDescriptionOutputSchema,
+  version: "1.0.0",
+  description:
+    "Image description output node that generates AI-powered descriptions of images",
+});
 
 // Export the registry for convenience
 export { flowTypeRegistry } from "../type-registry";

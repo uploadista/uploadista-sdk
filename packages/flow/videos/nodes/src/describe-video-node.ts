@@ -1,4 +1,8 @@
-import { createTransformNode, VideoPlugin } from "@uploadista/core/flow";
+import {
+  createTransformNode,
+  STORAGE_OUTPUT_TYPE_ID,
+  VideoPlugin,
+} from "@uploadista/core/flow";
 import { Effect } from "effect";
 
 /**
@@ -25,6 +29,7 @@ export function createDescribeVideoNode(id: string) {
       name: "Describe Video",
       description:
         "Extracts video metadata (duration, resolution, codec, etc.)",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes, file) =>
         Effect.gen(function* () {
           // Extract metadata

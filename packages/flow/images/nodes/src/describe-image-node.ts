@@ -2,9 +2,10 @@ import { UploadistaError } from "@uploadista/core/errors";
 import {
   completeNodeExecution,
   createFlowNode,
+  IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
   ImageAiPlugin,
+  imageDescriptionOutputSchema,
   NodeType,
-  resolveUploadMetadata,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 
@@ -23,8 +24,9 @@ export function createDescribeImageNode(
       name: "Describe Image",
       description: "Describes the image using AI",
       type: NodeType.process,
+      nodeTypeId: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
       inputSchema: uploadFileSchema,
-      outputSchema: uploadFileSchema,
+      outputSchema: imageDescriptionOutputSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           const flow = {
@@ -56,7 +58,7 @@ export function createDescribeImageNode(
           };
 
           // Describe image with error handling
-          const { description } = yield* imageAiService
+          const result = yield* imageAiService
             .describeImage(fileUrl, context)
             .pipe(
               Effect.catchAll((error) =>
@@ -72,28 +74,15 @@ export function createDescribeImageNode(
               ),
             );
 
-          const { metadata } = resolveUploadMetadata(file.metadata);
-
-          // add description to metadata
-          const newMetadata = {
-            ...file.metadata,
-            ...metadata,
-            description,
-          };
-
           yield* Effect.logInfo(
             `Successfully described image for file ${file.id}`,
           );
 
-          return completeNodeExecution(
-            newMetadata
-              ? {
-                  ...file,
-                  metadata: newMetadata,
-                  flow,
-                }
-              : file,
-          );
+          // Return structured image description output (not UploadFile)
+          return completeNodeExecution({
+            description: result.description,
+            flow,
+          });
         });
       },
     });

@@ -1,6 +1,7 @@
 import {
   createTransformNode,
   type ResizeVideoParams,
+  STORAGE_OUTPUT_TYPE_ID,
   VideoPlugin,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -32,6 +33,7 @@ export function createVideoResizeNode(id: string, params: ResizeVideoParams) {
       id,
       name: "Resize Video",
       description: "Changes video resolution",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes, _file) =>
         Effect.map(videoService.resize(inputBytes, params), (resizedBytes) => {
           // Pass through video bytes (no metadata changes needed)

@@ -1,7 +1,6 @@
 import {
   createFlow,
   createInputNode,
-  createStorageNode,
 } from "@uploadista/core";
 import {
   createDescribeImageNode,
@@ -11,14 +10,16 @@ import {
 /**
  * Image description flow - generates AI-powered descriptions of image content
  *
- * Nodes: input → describe-image → output
+ * Nodes: input → describe-image (sink)
  *
  * Configuration:
  * - Uses AI vision models to analyze image content
  * - Generates detailed descriptions including objects, scenes, and context
  *
  * Use case: Automatically generate alt text for accessibility, create image
- * metadata for search, or provide content moderation insights.
+ * metadata for search, or provide content moderation insights. The describe-image
+ * node is a sink (no outgoing edges), so the described file is automatically
+ * persisted to target storage.
  *
  * Note: Requires AI service credentials (e.g., OpenAI, Replicate) to be configured.
  *
@@ -35,25 +36,25 @@ export const describeImageFlow = createFlow({
   nodes: {
     input: createInputNode("input"),
     "describe-image": createDescribeImageNode("describe-image"),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "describe-image" },
-    { source: "describe-image", target: "output" },
   ],
 });
 
 /**
  * Background removal flow - removes backgrounds from images using AI
  *
- * Nodes: input → remove-background → output
+ * Nodes: input → remove-background (sink)
  *
  * Configuration:
  * - Uses AI models to detect and remove image backgrounds
  * - Outputs transparent PNG with subject isolated
  *
  * Use case: Create product images for e-commerce, generate profile pictures
- * with transparent backgrounds, or prepare images for compositing.
+ * with transparent backgrounds, or prepare images for compositing. The
+ * remove-background node is a sink (no outgoing edges), so the processed
+ * file is automatically persisted to target storage.
  *
  * Note: Requires AI service credentials (e.g., remove.bg, Replicate) to be configured.
  *
@@ -70,10 +71,8 @@ export const removeBackgroundFlow = createFlow({
   nodes: {
     input: createInputNode("input"),
     "remove-background": createRemoveBackgroundNode("remove-background"),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "remove-background" },
-    { source: "remove-background", target: "output" },
   ],
 });

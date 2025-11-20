@@ -6,7 +6,6 @@ import { uploadFileSchema } from "../../types";
 import { UploadServer } from "../../upload";
 import { arrayBuffer, fetchFile } from "../../upload/upload-url";
 import { createFlowNode, NodeType } from "../node";
-import { STREAMING_INPUT_TYPE_ID } from "../node-types";
 import { completeNodeExecution, waitingNodeExecution } from "../types";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
@@ -178,7 +177,6 @@ export function createInputNode(id: string, params?: InputNodeParams) {
       type: NodeType.input,
       inputSchema: inputDataSchema,
       outputSchema: uploadFileSchema,
-      nodeTypeId: STREAMING_INPUT_TYPE_ID,
       run: ({ data, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           switch (data.operation) {

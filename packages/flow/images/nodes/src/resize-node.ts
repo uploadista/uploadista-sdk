@@ -2,6 +2,7 @@ import {
   createTransformNode,
   ImagePlugin,
   type ResizeParams,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
 
@@ -16,6 +17,7 @@ export function createResizeNode(
       id,
       name: "Resize",
       description: "Resizes an image to the specified dimensions",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes) =>
         imageService.resize(inputBytes, { height, width, fit }),
     });

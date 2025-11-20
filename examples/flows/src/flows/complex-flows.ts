@@ -1,7 +1,6 @@
 import {
   createFlow,
   createInputNode,
-  createStorageNode,
 } from "@uploadista/core";
 import {
   createDescribeImageNode,
@@ -22,7 +21,7 @@ import {
 /**
  * Image pipeline flow - multi-stage image processing with resize, optimize, and describe
  *
- * Nodes: input → resize → optimize → describe-image → output
+ * Nodes: input → resize → optimize → describe-image (sink)
  *
  * Configuration:
  * - Resize to 1200x900 cover
@@ -30,7 +29,9 @@ import {
  * - Generate AI description
  *
  * Use case: Complete image processing pipeline that ensures proper dimensions,
- * optimal file size, and generates searchable metadata in a single flow.
+ * optimal file size, and generates searchable metadata in a single flow. The
+ * describe-image node is a sink (no outgoing edges), so the processed file is
+ * automatically persisted to target storage.
  *
  * @example
  * ```ts
@@ -54,20 +55,18 @@ export const imagePipelineFlow = createFlow({
       format: "webp",
     }),
     "describe-image": createDescribeImageNode("describe-image"),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "resize" },
     { source: "resize", target: "optimize" },
     { source: "optimize", target: "describe-image" },
-    { source: "describe-image", target: "output" },
   ],
 });
 
 /**
  * Video pipeline flow - multi-stage video processing with trim, transcode, and thumbnail
  *
- * Nodes: input → trim → transcode → thumbnail → output
+ * Nodes: input → trim → transcode → thumbnail (sink)
  *
  * Configuration:
  * - Trim to 0-60 seconds
@@ -75,7 +74,9 @@ export const imagePipelineFlow = createFlow({
  * - Generate thumbnail at 5 seconds
  *
  * Use case: Process uploaded videos for web delivery by trimming length,
- * converting to efficient format, and generating preview thumbnail.
+ * converting to efficient format, and generating preview thumbnail. The thumbnail
+ * node is a sink (no outgoing edges), so the processed file is automatically
+ * persisted to target storage.
  *
  * @example
  * ```ts
@@ -103,20 +104,18 @@ export const videoPipelineFlow = createFlow({
       format: "jpeg",
       quality: 85,
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "trim" },
     { source: "trim", target: "transcode" },
     { source: "transcode", target: "thumbnail" },
-    { source: "thumbnail", target: "output" },
   ],
 });
 
 /**
  * Conditional image flow - routes images based on size with different processing
  *
- * Nodes: input → conditional → [large: resize+optimize, small: optimize only] → outputs
+ * Nodes: input → conditional → [large: resize → optimize-large (sink), small: optimize-small (sink)]
  *
  * Configuration:
  * - Condition: file size > 2MB
@@ -124,7 +123,9 @@ export const videoPipelineFlow = createFlow({
  * - Small files: optimize directly without resizing
  *
  * Use case: Apply different processing strategies based on file characteristics,
- * optimizing resources by only resizing large files that need it.
+ * optimizing resources by only resizing large files that need it. Both optimize
+ * nodes are sinks (no outgoing edges), so the processed files are automatically
+ * persisted to target storage.
  *
  * @example
  * ```ts
@@ -156,30 +157,28 @@ export const conditionalImageFlow = createFlow({
       quality: 85,
       format: "webp",
     }),
-    "output-large": createStorageNode("output-large"),
-    "output-small": createStorageNode("output-small"),
   },
   edges: [
     { source: "input", target: "conditional" },
     { source: "conditional", target: "resize" },
     { source: "resize", target: "optimize-large" },
-    { source: "optimize-large", target: "output-large" },
     { source: "conditional", target: "optimize-small" },
-    { source: "optimize-small", target: "output-small" },
   ],
 });
 
 /**
  * Multi-format flow - generates multiple output formats and zips them together
  *
- * Nodes: input → multiplex → [webp, jpeg, png] optimizations → zip → output
+ * Nodes: input → multiplex → [webp, jpeg, png] optimizations → zip (sink)
  *
  * Configuration:
  * - Creates three optimized versions: WebP (quality 80), JPEG (quality 85), PNG
  * - Zips all formats into a single archive
  *
  * Use case: Generate multiple format versions of an image for maximum compatibility,
- * useful for distributing assets that need to work across different platforms.
+ * useful for distributing assets that need to work across different platforms. The
+ * zip node is a sink (no outgoing edges), so the archive is automatically persisted
+ * to target storage.
  *
  * @example
  * ```ts
@@ -214,7 +213,6 @@ export const multiFormatFlow = createFlow({
       includeMetadata: false,
       inputCount: 3,
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "multiplex" },
@@ -224,6 +222,5 @@ export const multiFormatFlow = createFlow({
     { source: "optimize-webp", target: "zip" },
     { source: "optimize-jpeg", target: "zip" },
     { source: "optimize-png", target: "zip" },
-    { source: "zip", target: "output" },
   ],
 });

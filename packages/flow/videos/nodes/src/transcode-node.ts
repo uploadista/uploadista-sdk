@@ -1,5 +1,6 @@
 import {
   createTransformNode,
+  STORAGE_OUTPUT_TYPE_ID,
   type TranscodeVideoParams,
   VideoPlugin,
 } from "@uploadista/core/flow";
@@ -50,6 +51,7 @@ export function createTranscodeVideoNode(
       id,
       name: "Transcode",
       description: "Converts video to specified format and codec",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes, file) =>
         Effect.map(
           videoService.transcode(inputBytes, params),

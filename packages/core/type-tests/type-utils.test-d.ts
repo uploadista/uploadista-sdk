@@ -237,8 +237,9 @@ expectType<ImagePlugin | ZipPlugin>({} as DebugFlowRequirements);
 
 // This should compile: flow requirements are subset of plugin services
 // Note: This tests that the union is compatible
-type ValidationTest =
-  [FlowRequirements] extends [PluginServices] ? true : false;
+type ValidationTest = [FlowRequirements] extends [PluginServices]
+  ? true
+  : false;
 expectType<true>({} as ValidationTest);
 
 // Test: Should detect missing requirements

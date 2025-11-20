@@ -17,6 +17,8 @@ export interface TransformNodeConfig {
   name: string;
   /** Description of what the node does */
   description: string;
+  /** Optional node type ID for result type registration */
+  nodeTypeId?: string;
   /** Function that transforms file bytes */
   transform: (
     bytes: Uint8Array,
@@ -71,6 +73,7 @@ export function createTransformNode({
   id,
   name,
   description,
+  nodeTypeId,
   transform,
 }: TransformNodeConfig) {
   return Effect.gen(function* () {
@@ -81,6 +84,7 @@ export function createTransformNode({
       name,
       description,
       type: NodeType.process,
+      nodeTypeId,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, storageId, flowId, jobId, clientId }) => {

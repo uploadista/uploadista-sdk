@@ -2,7 +2,6 @@ import {
   createFlow,
   createFlowNode,
   createInputNode,
-  createStorageNode,
   createTypeGuard,
   filterOutputsByType,
   flowTypeRegistry,
@@ -18,10 +17,10 @@ import { z } from "zod";
 /**
  * Simple typed flow - demonstrates basic type usage with built-in types
  *
- * Nodes: input → storage
+ * Nodes: input (sink)
  *
- * This flow uses built-in types (storage-output-v1)
- * which are automatically registered. No custom type registration needed.
+ * This flow uses the simplest architecture where the input node acts as a sink.
+ * The file is automatically persisted to target storage.
  *
  * Use case: Basic file upload with type-safe result access.
  *
@@ -45,9 +44,8 @@ export const simpleTypedFlow = createFlow({
   name: "Simple Typed Flow",
   nodes: {
     input: createInputNode("input"),
-    storage: createStorageNode("storage"),
   },
-  edges: [{ source: "input", target: "storage" }],
+  edges: [],
 });
 
 /**
@@ -112,26 +110,25 @@ export const createThumbnailNode = (
 /**
  * Multi-output flow - demonstrates flow with multiple typed outputs
  *
- * Nodes: input → storage (original) + thumbnail (200x200)
+ * Nodes: input → thumbnail (200x200 sink)
  *
- * This flow produces two outputs:
- * 1. storage-output-v1 (full-size original)
- * 2. thumbnail-output-v1 (200x200 thumbnail)
+ * This flow produces a thumbnail output:
+ * - thumbnail-output-v1 (200x200 thumbnail)
  *
- * Use case: Upload an image and generate multiple sizes/formats simultaneously.
+ * Use case: Upload an image and generate a thumbnail. The thumbnail node is
+ * a sink (no outgoing edges), so the thumbnail is automatically persisted to
+ * target storage.
  *
  * @example
  * ```ts
  * import { multiOutputFlow, isThumbnailOutput } from '@uploadista/example-flows';
- * import { isStorageOutput, filterOutputsByType } from '@uploadista/core';
+ * import { filterOutputsByType } from '@uploadista/core';
  *
  * const result = await executeFlow(multiOutputFlow, imageFile);
  *
  * // Access specific output types
- * const storage = filterOutputsByType(result.outputs, isStorageOutput);
  * const thumbnails = filterOutputsByType(result.outputs, isThumbnailOutput);
  *
- * console.log('Original:', storage[0]?.data.url);
  * console.log('Thumbnail:', thumbnails[0]?.data.url);
  * ```
  */
@@ -140,7 +137,6 @@ export const multiOutputFlow = createFlow({
   name: "Multi-Output Flow",
   nodes: {
     input: createInputNode("input"),
-    storage: createStorageNode("storage"),
     thumbnail: createThumbnailNode("thumbnail", {
       width: 200,
       height: 200,
@@ -148,7 +144,6 @@ export const multiOutputFlow = createFlow({
     }),
   },
   edges: [
-    { source: "input", target: "storage" },
     { source: "input", target: "thumbnail" },
   ],
 });
@@ -204,29 +199,25 @@ export const createDescribeImageNode = (id: string) =>
 /**
  * Complex multi-output flow with multiple custom types
  *
- * Nodes: input → storage + thumbnail + description
+ * Nodes: input → thumbnail (sink) + description (sink)
  *
- * This flow produces three different output types:
- * 1. storage-output-v1 (original file)
- * 2. thumbnail-output-v1 (thumbnail)
- * 3. description-output-v1 (AI description)
+ * This flow produces two different output types:
+ * 1. thumbnail-output-v1 (thumbnail)
+ * 2. description-output-v1 (AI description)
  *
- * Use case: Comprehensive image processing pipeline with storage,
- * thumbnail generation, and AI-powered description.
+ * Use case: Comprehensive image processing pipeline with thumbnail generation
+ * and AI-powered description. Both nodes are sinks (no outgoing edges), so the
+ * outputs are automatically persisted to target storage.
  *
  * @example
  * ```ts
  * import { complexTypedFlow } from '@uploadista/example-flows';
- * import { isStorageOutput, hasOutputOfType } from '@uploadista/core';
+ * import { hasOutputOfType } from '@uploadista/core';
  * import { isThumbnailOutput, isDescriptionOutput } from '@uploadista/example-flows';
  *
  * const result = await executeFlow(complexTypedFlow, imageFile);
  *
  * // Check which outputs are present
- * if (hasOutputOfType(result.outputs, isStorageOutput)) {
- *   console.log('Original file stored');
- * }
- *
  * if (hasOutputOfType(result.outputs, isThumbnailOutput)) {
  *   console.log('Thumbnail generated');
  * }
@@ -237,9 +228,7 @@ export const createDescribeImageNode = (id: string) =>
  *
  * // Process each output by type
  * for (const output of result.outputs) {
- *   if (isStorageOutput(output)) {
- *     console.log('Storage:', output.data.url);
- *   } else if (isThumbnailOutput(output)) {
+ *   if (isThumbnailOutput(output)) {
  *     console.log('Thumbnail:', `${output.data.width}x${output.data.height}`);
  *   } else if (isDescriptionOutput(output)) {
  *     console.log('Description:', output.data.description);
@@ -254,7 +243,6 @@ export const complexTypedFlow = createFlow({
   name: "Complex Typed Flow",
   nodes: {
     input: createInputNode("input"),
-    storage: createStorageNode("storage"),
     thumbnail: createThumbnailNode("thumbnail", {
       width: 200,
       height: 200,
@@ -263,7 +251,6 @@ export const complexTypedFlow = createFlow({
     description: createDescribeImageNode("description"),
   },
   edges: [
-    { source: "input", target: "storage" },
     { source: "input", target: "thumbnail" },
     { source: "input", target: "description" },
   ],

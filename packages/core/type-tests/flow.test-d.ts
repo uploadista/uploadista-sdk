@@ -27,26 +27,26 @@ type TestInputNode = ResolveEffect<typeof inputNode>;
 // The node's type field should be the literal "input", not the union NodeType
 expectType<NodeType.input>(({} as TestInputNode).type);
 
-const outputNode = createFlowNode({
-  id: "output-node",
-  name: "Output Node",
-  description: "Output Node",
-  type: NodeType.output,
+const processNode = createFlowNode({
+  id: "process-node",
+  name: "Process Node",
+  description: "Process Node",
+  type: NodeType.process,
   inputSchema: z.object({ result: z.string() }),
   outputSchema: z.object({ value: z.string() }),
   run: ({ data }) =>
     Effect.succeed({ type: "complete", data: { value: data.result } }),
 });
 
-type TestOutputNode = ResolveEffect<typeof outputNode>;
+type TestProcessNode = ResolveEffect<typeof processNode>;
 
-// The node's type field should be the literal "output", not the union NodeType
-expectType<NodeType.output>(({} as TestOutputNode).type);
+// The node's type field should be the literal "process", not the union NodeType
+expectType<NodeType.process>(({} as TestProcessNode).type);
 
 // Test 2: Verify FlowInputMap and FlowOutputMap
 const nodes = {
   input: inputNode,
-  output: outputNode,
+  process: processNode,
 };
 
 type NodesType = typeof nodes;
@@ -57,10 +57,12 @@ expectType<{
   input: { value: string };
 }>({} as InputMapTest);
 
-// FlowOutputMap should only include keys of output nodes
+// FlowOutputMap now includes all nodes (sink-based architecture)
+// Outputs are determined by edges at runtime
 type OutputMapTest = FlowOutputMap<NodesType>;
 expectType<{
-  output: { value: string };
+  input: { result: string };
+  process: { value: string };
 }>({} as OutputMapTest);
 
 // Test 3: Verify typed flow
@@ -68,7 +70,7 @@ const flow = createFlow({
   flowId: "test-flow",
   name: "Test Flow",
   nodes,
-  edges: [{ source: "input", target: "output" }],
+  edges: [{ source: "input", target: "process" }],
 });
 
 // Test that run() returns the correct output type
@@ -79,15 +81,18 @@ Effect.runPromise(
       inputs: { input: { value: "test" } },
       storageId: "storage-1",
       jobId: "job-1",
+      clientId: null,
     });
 
     if (result.type === "completed") {
       // result.result should be FlowOutputMap<NodesType>
-      // Which means it should have an "output" key with the output schema
-      expectType<{ output: { value: string } }>(result.result);
+      // With sink-based architecture, process node becomes the sink (no outgoing edges)
+      expectType<{ input: { result: string }; process: { value: string } }>(
+        result.result,
+      );
 
-      // We should be able to access output node result
-      expectType<{ value: string }>(result.result.output);
+      // We should be able to access process node result (the sink)
+      expectType<{ value: string }>(result.result.process);
     }
   }),
 );

@@ -1,6 +1,7 @@
 import {
   createTransformNode,
   ImagePlugin,
+  STORAGE_OUTPUT_TYPE_ID,
   type TransformImageParams,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -71,6 +72,7 @@ export function createTransformImageNode(
       id,
       name: "Transform Image",
       description: `Apply ${transformations.length} transformation${transformations.length === 1 ? "" : "s"} to the image`,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes) =>
         applyTransformationChain(imageService, inputBytes, transformations),
     });

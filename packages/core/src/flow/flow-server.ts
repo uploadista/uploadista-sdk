@@ -518,9 +518,11 @@ function withFlowEvents<
                 );
 
                 // Track intermediate files for cleanup
-                // Check if result is an UploadFile and node is not an output node
-                const node = flow.nodes.find((n) => n.id === event.nodeId);
-                const isOutputNode = node?.type === "output";
+                // Check if result is an UploadFile based on topology (sink vs non-sink)
+                // A sink node is one with no outgoing edges
+                const isSinkNode = !flow.edges.some(
+                  (edge) => edge.source === event.nodeId,
+                );
                 const result = event.result;
                 // Extract data from TypedOutput if present
                 const resultData = extractResultData(result);
@@ -528,21 +530,21 @@ function withFlowEvents<
                 let intermediateFiles = job.intermediateFiles || [];
 
                 if (
-                  isOutputNode &&
+                  isSinkNode &&
                   isResultUploadFile(resultData) &&
                   resultData.id
                 ) {
-                  // If this is an output node and it returns a file that was an intermediate file,
+                  // If this is a sink node and it returns a file that was an intermediate file,
                   // remove it from the intermediate files list (it's now the final output)
                   intermediateFiles = intermediateFiles.filter(
                     (fileId) => fileId !== resultData.id,
                   );
                 } else if (
-                  !isOutputNode &&
+                  !isSinkNode &&
                   isResultUploadFile(resultData) &&
                   resultData.id
                 ) {
-                  // Only add to intermediate files if it's not an output node
+                  // Only add to intermediate files if it's not a sink node
                   if (!intermediateFiles.includes(resultData.id)) {
                     intermediateFiles.push(resultData.id);
                   }

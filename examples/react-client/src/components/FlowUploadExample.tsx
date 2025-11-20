@@ -479,7 +479,7 @@ function FlowUploadContent() {
                         <Fragment key={output.nodeId}>
                           {output.nodeType === "storage-output-v1" && (
                             <FilePreview
-                              result={output.data}
+                              result={output.data as any}
                               className="mb-4"
                             />
                           )}

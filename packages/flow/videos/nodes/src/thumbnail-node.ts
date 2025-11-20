@@ -1,6 +1,7 @@
 import {
   createTransformNode,
   type ExtractFrameVideoParams,
+  STORAGE_OUTPUT_TYPE_ID,
   VideoPlugin,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -36,6 +37,7 @@ export function createVideoThumbnailNode(
       id,
       name: "Generate Thumbnail",
       description: "Extracts a frame from video as an image",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes, file) =>
         Effect.map(
           videoService.extractFrame(inputBytes, params),

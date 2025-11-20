@@ -2,6 +2,7 @@ import {
   createTransformNode,
   ImagePlugin,
   type OptimizeParams,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
 
@@ -32,6 +33,7 @@ export function createOptimizeNode(
       id,
       name: "Optimize",
       description: "Optimizes an image for web delivery",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes, file) =>
         Effect.map(
           imageService.optimize(inputBytes, { quality, format }),

@@ -1,7 +1,6 @@
 import {
   createFlow,
   createInputNode,
-  createStorageNode,
 } from "@uploadista/core";
 import {
   createOptimizeNode,
@@ -12,10 +11,12 @@ import {
 /**
  * Simple flow - demonstrates the minimal viable flow structure
  *
- * Nodes: input → output
+ * Nodes: input (sink)
  *
  * Use case: Basic file upload without any processing. This is the simplest
- * possible flow that accepts a file and stores it directly.
+ * possible flow that accepts a file and stores it directly. The input node
+ * is a sink (no outgoing edges), so the file is automatically persisted to
+ * target storage.
  *
  * @example
  * ```ts
@@ -28,22 +29,22 @@ export const simpleFlow = createFlow({
   name: "Simple Flow",
   nodes: {
     input: createInputNode("input"),
-    output: createStorageNode("output"),
   },
-  edges: [{ source: "input", target: "output" }],
+  edges: [],
 });
 
 /**
  * Image optimization flow - compresses and converts images to WebP format
  *
- * Nodes: input → optimize → output
+ * Nodes: input → optimize (sink)
  *
  * Configuration:
  * - Quality: 80 (good balance between size and visual quality)
  * - Format: webp (modern format with excellent compression)
  *
  * Use case: Optimize uploaded images for web delivery, reducing bandwidth
- * and improving page load times.
+ * and improving page load times. The optimize node is a sink, so the optimized
+ * file is automatically persisted to target storage.
  *
  * @example
  * ```ts
@@ -60,18 +61,16 @@ export const optimizeFlow = createFlow({
       quality: 80,
       format: "webp",
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "optimize" },
-    { source: "optimize", target: "output" },
   ],
 });
 
 /**
  * Image resize flow - resizes images to specified dimensions
  *
- * Nodes: input → resize → output
+ * Nodes: input → resize (sink)
  *
  * Configuration:
  * - Width: 800px
@@ -79,7 +78,8 @@ export const optimizeFlow = createFlow({
  * - Fit: cover (maintains aspect ratio, crops if necessary)
  *
  * Use case: Create thumbnails or ensure images fit specific dimensions for
- * consistent display in galleries or listings.
+ * consistent display in galleries or listings. The resize node is a sink,
+ * so the resized file is automatically persisted to target storage.
  *
  * @example
  * ```ts
@@ -97,25 +97,25 @@ export const resizeFlow = createFlow({
       height: 600,
       fit: "cover",
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "resize" },
-    { source: "resize", target: "output" },
   ],
 });
 
 /**
  * Image transformation flow - applies transformations like rotation and flipping
  *
- * Nodes: input → transform → output
+ * Nodes: input → transform (sink)
  *
  * Configuration:
  * - Rotate: 90 degrees
  * - Flip: horizontal
  *
  * Use case: Apply basic image transformations such as rotation, flipping,
- * or other manipulations to correct orientation or create variations.
+ * or other manipulations to correct orientation or create variations. The
+ * transform node is a sink, so the transformed file is automatically persisted
+ * to target storage.
  *
  * @example
  * ```ts
@@ -134,10 +134,8 @@ export const transformFlow = createFlow({
         { type: "flip", direction: "horizontal" },
       ],
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "transform" },
-    { source: "transform", target: "output" },
   ],
 });

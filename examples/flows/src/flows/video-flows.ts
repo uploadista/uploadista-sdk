@@ -1,7 +1,6 @@
 import {
   createFlow,
   createInputNode,
-  createStorageNode,
 } from "@uploadista/core";
 import {
   createDescribeVideoNode,
@@ -14,7 +13,7 @@ import {
 /**
  * Video transcoding flow - converts videos to different formats and codecs
  *
- * Nodes: input → transcode → output
+ * Nodes: input → transcode (sink)
  *
  * Configuration:
  * - Codec: h264 (widely supported)
@@ -22,7 +21,9 @@ import {
  * - Container: mp4
  *
  * Use case: Convert uploaded videos to web-friendly formats, ensure consistent
- * codec across platforms, or reduce file size for streaming.
+ * codec across platforms, or reduce file size for streaming. The transcode node
+ * is a sink (no outgoing edges), so the transcoded file is automatically persisted
+ * to target storage.
  *
  * @example
  * ```ts
@@ -40,25 +41,24 @@ export const transcodeVideoFlow = createFlow({
       codec: "vp9",
       videoBitrate: "1000k",
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "transcode" },
-    { source: "transcode", target: "output" },
   ],
 });
 
 /**
  * Video trimming flow - cuts videos to specified time ranges
  *
- * Nodes: input → trim → output
+ * Nodes: input → trim (sink)
  *
  * Configuration:
  * - Start: 5 seconds
  * - End: 30 seconds
  *
  * Use case: Extract clips from longer videos, remove intro/outro sections,
- * or create preview clips from full videos.
+ * or create preview clips from full videos. The trim node is a sink (no outgoing
+ * edges), so the trimmed file is automatically persisted to target storage.
  *
  * @example
  * ```ts
@@ -76,18 +76,16 @@ export const trimVideoFlow = createFlow({
       startTime: 5,
       endTime: 30,
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "trim" },
-    { source: "trim", target: "output" },
   ],
 });
 
 /**
  * Video thumbnail flow - extracts a frame from video as an image
  *
- * Nodes: input → thumbnail → output
+ * Nodes: input → thumbnail (sink)
  *
  * Configuration:
  * - Timestamp: 10 seconds
@@ -95,7 +93,8 @@ export const trimVideoFlow = createFlow({
  * - Quality: 85
  *
  * Use case: Generate preview images for video listings, create thumbnail
- * galleries, or extract key frames for analysis.
+ * galleries, or extract key frames for analysis. The thumbnail node is a sink
+ * (no outgoing edges), so the thumbnail is automatically persisted to target storage.
  *
  * @example
  * ```ts
@@ -114,18 +113,16 @@ export const thumbnailFlow = createFlow({
       format: "jpeg",
       quality: 85,
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "thumbnail" },
-    { source: "thumbnail", target: "output" },
   ],
 });
 
 /**
  * Video resize flow - changes video dimensions while maintaining aspect ratio
  *
- * Nodes: input → resize → output
+ * Nodes: input → resize (sink)
  *
  * Configuration:
  * - Width: 1280px
@@ -133,7 +130,9 @@ export const thumbnailFlow = createFlow({
  * - Fit: cover
  *
  * Use case: Standardize video dimensions for consistent display, reduce
- * file size, or create mobile-optimized versions.
+ * file size, or create mobile-optimized versions. The resize node is a sink
+ * (no outgoing edges), so the resized video is automatically persisted to
+ * target storage.
  *
  * @example
  * ```ts
@@ -153,25 +152,25 @@ export const resizeVideoFlow = createFlow({
       aspectRatio: "keep",
       scaling: "bicubic",
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "resize" },
-    { source: "resize", target: "output" },
   ],
 });
 
 /**
  * Video description flow - generates AI-powered descriptions of video content
  *
- * Nodes: input → describe-video → output
+ * Nodes: input → describe-video (sink)
  *
  * Configuration:
  * - Uses AI vision models to analyze video frames and motion
  * - Generates descriptions of actions, scenes, and objects
  *
  * Use case: Automatically generate video captions, create searchable metadata,
- * provide content moderation insights, or improve accessibility.
+ * provide content moderation insights, or improve accessibility. The describe-video
+ * node is a sink (no outgoing edges), so the described video is automatically
+ * persisted to target storage.
  *
  * Note: Requires AI service credentials (e.g., OpenAI, Replicate) to be configured.
  *
@@ -188,10 +187,8 @@ export const describeVideoFlow = createFlow({
   nodes: {
     input: createInputNode("input"),
     "describe-video": createDescribeVideoNode("describe-video"),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input", target: "describe-video" },
-    { source: "describe-video", target: "output" },
   ],
 });

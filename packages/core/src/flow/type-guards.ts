@@ -25,6 +25,13 @@
 import { Effect } from "effect";
 import { UploadistaError } from "../errors";
 import type { UploadFile } from "../types";
+import { uploadFileSchema } from "../types";
+import {
+  IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
+  type ImageDescriptionOutput,
+  OCR_OUTPUT_TYPE_ID,
+  type OcrOutput,
+} from "./node-types";
 import { flowTypeRegistry } from "./type-registry";
 import type { TypedOutput } from "./types/flow-types";
 
@@ -79,6 +86,33 @@ export function createTypeGuard<T>(
 }
 
 /**
+ * Type guard for UploadFile objects.
+ *
+ * Validates that a value is a valid UploadFile by checking its structure against the schema.
+ * This is useful for determining if a node result is an UploadFile, which affects
+ * auto-persistence and intermediate file tracking.
+ *
+ * @param value - The value to check
+ * @returns True if the value is a valid UploadFile
+ *
+ * @example
+ * ```typescript
+ * import { isUploadFile } from "@uploadista/core/flow";
+ *
+ * if (isUploadFile(nodeResult)) {
+ *   // nodeResult is typed as UploadFile
+ *   console.log("File ID:", nodeResult.id);
+ *   console.log("Storage:", nodeResult.storage.id);
+ * }
+ * ```
+ */
+export function isUploadFile(value: unknown): value is UploadFile {
+  if (!value || typeof value !== "object") return false;
+  const result = uploadFileSchema.safeParse(value);
+  return result.success;
+}
+
+/**
  * Type guard for storage output nodes.
  *
  * Validates that an output is from a storage node and contains valid UploadFile data.
@@ -98,6 +132,51 @@ export function createTypeGuard<T>(
  * ```
  */
 export const isStorageOutput = createTypeGuard<UploadFile>("storage-output-v1");
+
+/**
+ * Type guard for OCR output nodes.
+ *
+ * Validates that an output is from an OCR node and contains valid structured OCR data.
+ *
+ * @param output - The output to check
+ * @returns True if the output is an OCR output with valid structured text data
+ *
+ * @example
+ * ```typescript
+ * import { isOcrOutput } from "@uploadista/core/flow";
+ *
+ * if (isOcrOutput(output)) {
+ *   // output.data is typed as OcrOutput
+ *   console.log("Extracted text:", output.data.extractedText);
+ *   console.log("Format:", output.data.format);
+ *   console.log("Task type:", output.data.taskType);
+ * }
+ * ```
+ */
+export const isOcrOutput = createTypeGuard<OcrOutput>(OCR_OUTPUT_TYPE_ID);
+
+/**
+ * Type guard for image description output nodes.
+ *
+ * Validates that an output is from an image description node and contains valid description data.
+ *
+ * @param output - The output to check
+ * @returns True if the output is an image description output with valid description data
+ *
+ * @example
+ * ```typescript
+ * import { isImageDescriptionOutput } from "@uploadista/core/flow";
+ *
+ * if (isImageDescriptionOutput(output)) {
+ *   // output.data is typed as ImageDescriptionOutput
+ *   console.log("Description:", output.data.description);
+ *   console.log("Confidence:", output.data.confidence);
+ * }
+ * ```
+ */
+export const isImageDescriptionOutput = createTypeGuard<ImageDescriptionOutput>(
+  IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
+);
 
 /**
  * Filter an array of outputs to only those matching a specific type.

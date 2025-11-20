@@ -46,11 +46,11 @@ describe("Flow Engine", () => {
             Effect.succeed({ type: "complete", data: { value: data.value } }),
         });
 
-        const outputNode = yield* createFlowNode({
-          id: "output-1",
-          name: "Output Node",
-          description: "Test output",
-          type: NodeType.output,
+        const processNode = yield* createFlowNode({
+          id: "process-1",
+          name: "Process Node",
+          description: "Test process",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.string() }),
           outputSchema: z.object({ value: z.string() }),
           run: ({ data }) =>
@@ -64,15 +64,15 @@ describe("Flow Engine", () => {
           outputSchema: z.object({ value: z.string() }),
           nodes: {
             "input-1": inputNode,
-            "output-1": outputNode,
+            "process-1": processNode,
           },
-          edges: [{ source: "input-1", target: "output-1" }],
+          edges: [{ source: "input-1", target: "process-1" }],
         });
 
         expect(flow.nodes).toHaveLength(2);
         expect(flow.edges).toHaveLength(1);
         expect(flow.nodes[0]?.id).toBe("input-1");
-        expect(flow.nodes[1]?.id).toBe("output-1");
+        expect(flow.nodes[1]?.id).toBe("process-1");
       }).pipe(Effect.runPromise));
 
     it("should handle empty flow creation", () =>
@@ -195,18 +195,7 @@ describe("Flow Engine", () => {
             }),
         });
 
-        const outputNode = yield* createFlowNode({
-          id: "output",
-          name: "Output",
-          description: "Output node",
-          type: NodeType.output,
-          inputSchema: z.object({ value: z.string() }),
-          outputSchema: z.object({ value: z.string() }),
-          run: ({ data }) =>
-            Effect.succeed({ type: "complete", data: { value: data.value } }),
-        });
-
-        // Valid DAG: input -> process-1 -> process-2 -> output
+        // Valid DAG: input -> process-1 -> process-2 (process-2 is sink)
         const flow = yield* createFlow({
           flowId: "valid-dag",
           name: "Valid DAG Flow",
@@ -216,17 +205,15 @@ describe("Flow Engine", () => {
             input: inputNode,
             "process-1": process1,
             "process-2": process2,
-            output: outputNode,
           },
           edges: [
             { source: "input", target: "process-1" },
             { source: "process-1", target: "process-2" },
-            { source: "process-2", target: "output" },
           ],
         });
 
-        expect(flow.nodes).toHaveLength(4);
-        expect(flow.edges).toHaveLength(3);
+        expect(flow.nodes).toHaveLength(3);
+        expect(flow.edges).toHaveLength(2);
       }).pipe(Effect.runPromise));
 
     it("should handle disconnected nodes", () =>
@@ -288,11 +275,11 @@ describe("Flow Engine", () => {
             }),
         });
 
-        const outputNode = yield* createFlowNode({
-          id: "output-node",
-          name: "Output Node",
-          description: "Test output node",
-          type: NodeType.output,
+        const processNode = yield* createFlowNode({
+          id: "process-node",
+          name: "Process Node",
+          description: "Test process node (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.string() }),
           outputSchema: z.object({ result: z.string() }),
           run: ({ data }) =>
@@ -309,9 +296,9 @@ describe("Flow Engine", () => {
           outputSchema: z.object({ result: z.string() }),
           nodes: {
             "input-node": inputNode,
-            "output-node": outputNode,
+            "process-node": processNode,
           },
-          edges: [{ source: "input-node", target: "output-node" }],
+          edges: [{ source: "input-node", target: "process-node" }],
         });
 
         const result = yield* flow.run({
@@ -322,7 +309,7 @@ describe("Flow Engine", () => {
 
         expect(result.type).toBe("completed");
         if (result.type === "completed") {
-          expect(result.result["output-node"]).toEqual({
+          expect(result.result["process-node"]).toEqual({
             result: "processed-test",
           });
         }
@@ -361,8 +348,8 @@ describe("Flow Engine", () => {
         const node3 = yield* createFlowNode({
           id: "seq-node-3",
           name: "Sequential Node 3",
-          description: "Third node in sequence",
-          type: NodeType.output,
+          description: "Third node in sequence (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.number() }),
           outputSchema: z.object({ value: z.number() }),
           run: ({ data }) =>
@@ -467,8 +454,8 @@ describe("Flow Engine", () => {
         const targetNode = yield* createFlowNode({
           id: "target",
           name: "Target",
-          description: "Target node",
-          type: NodeType.output,
+          description: "Target node (sink)",
+          type: NodeType.process,
           inputSchema: z.object({
             text: z.string(),
             metadata: z.object({ processed: z.boolean() }),
@@ -533,8 +520,8 @@ describe("Flow Engine", () => {
         const target1 = yield* createFlowNode({
           id: "target-1",
           name: "Target 1",
-          description: "First target",
-          type: NodeType.output,
+          description: "First target (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.number() }),
           outputSchema: z.object({ value: z.number() }),
           run: ({ data }) =>
@@ -547,8 +534,8 @@ describe("Flow Engine", () => {
         const target2 = yield* createFlowNode({
           id: "target-2",
           name: "Target 2",
-          description: "Second target",
-          type: NodeType.output,
+          description: "Second target (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.number() }),
           outputSchema: z.object({ value: z.number() }),
           run: ({ data }) =>
@@ -612,8 +599,8 @@ describe("Flow Engine", () => {
         const successNode = yield* createFlowNode({
           id: "success-node",
           name: "Success Node",
-          description: "Node that succeeds",
-          type: NodeType.output,
+          description: "Node that succeeds (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.string() }),
           outputSchema: z.object({
             result: z.string(),
@@ -674,8 +661,8 @@ describe("Flow Engine", () => {
         const errorNode = yield* createFlowNode({
           id: "error-node",
           name: "Error Node",
-          description: "Node that throws error",
-          type: NodeType.output,
+          description: "Node that throws error (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.string() }),
           outputSchema: z.object({ value: z.string() }),
           run: () =>
@@ -739,8 +726,8 @@ describe("Flow Engine", () => {
         const strictNode = yield* createFlowNode({
           id: "strict-node",
           name: "Strict Node",
-          description: "Node with strict input validation",
-          type: NodeType.output,
+          description: "Node with strict input validation (sink)",
+          type: NodeType.process,
           inputSchema: z.object({
             value: z.string().min(5),
             count: z.number().positive(),
@@ -804,8 +791,8 @@ describe("Flow Engine", () => {
         const invalidOutputNode = yield* createFlowNode({
           id: "invalid-output-node",
           name: "Invalid Output Node",
-          description: "Node that produces invalid output",
-          type: NodeType.output,
+          description: "Node that produces invalid output (sink)",
+          type: NodeType.process,
           inputSchema: z.object({ value: z.string() }),
           outputSchema: z.object({
             value: z.string(),

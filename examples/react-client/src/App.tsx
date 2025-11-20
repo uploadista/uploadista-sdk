@@ -22,9 +22,6 @@ function App() {
       storageId="local"
       chunkSize={1024 * 1024} // 1MB chunks
       storeFingerprintForResuming={true}
-      onEvent={(event) => {
-        console.log("Global upload event:", event);
-      }}
     >
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         {/* Header */}

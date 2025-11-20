@@ -2,6 +2,7 @@ import { httpFailure } from "@uploadista/core/errors";
 import {
   createTransformNode,
   type ScanMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
   VirusScanPlugin,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -76,6 +77,7 @@ export function createScanVirusNode(
       id,
       name: "Scan Virus",
       description: "Scans files for viruses and malware using ClamAV",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       transform: (inputBytes, file) =>
         Effect.gen(function* () {
           // Perform virus scan

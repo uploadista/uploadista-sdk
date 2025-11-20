@@ -16,8 +16,6 @@ export enum NodeType {
   input = "input",
   /** Transforms data during flow execution */
   process = "process",
-  /** Saves data to storage backends */
-  output = "output",
   /** Routes data based on conditions */
   conditional = "conditional",
   /** Splits data to multiple outputs */
@@ -70,7 +68,7 @@ export type ConditionValue = string | number;
  * @param config.id - Unique identifier for this node in the flow
  * @param config.name - Human-readable name for the node
  * @param config.description - Description of what this node does
- * @param config.type - The type of node (input, process, output, conditional, multiplex, merge)
+ * @param config.type - The type of node (input, process, conditional, multiplex, merge)
  * @param config.inputSchema - Zod schema for validating input data
  * @param config.outputSchema - Zod schema for validating output data
  * @param config.run - The processing function to execute for this node
@@ -82,7 +80,7 @@ export type ConditionValue = string | number;
  * @param config.retry.maxRetries - Maximum number of retry attempts (default: 0)
  * @param config.retry.retryDelay - Base delay in milliseconds between retries (default: 1000)
  * @param config.retry.exponentialBackoff - Whether to use exponential backoff for retries (default: true)
- * @param config.nodeTypeId - Optional type ID from the registry (e.g., "storage-output-v1"). If provided, the node type must be registered and its category must match the node type (input/output).
+ * @param config.nodeTypeId - Optional type ID from the registry (e.g., "storage-output-v1"). If provided, the node type must be registered.
  *
  * @returns An Effect that succeeds with the created FlowNode
  *
@@ -177,7 +175,7 @@ export function createFlowNode<
         }).toEffect();
       }
 
-      // Validate category matches for input/output nodes
+      // Validate category matches for input nodes
       if (type === NodeType.input && typeDef.category !== "input") {
         return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
           body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
@@ -185,17 +183,6 @@ export function createFlowNode<
             nodeTypeId,
             nodeId: id,
             expectedCategory: "input",
-            actualCategory: typeDef.category,
-          },
-        }).toEffect();
-      }
-      if (type === NodeType.output && typeDef.category !== "output") {
-        return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
-          body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
-          details: {
-            nodeTypeId,
-            nodeId: id,
-            expectedCategory: "output",
             actualCategory: typeDef.category,
           },
         }).toEffect();

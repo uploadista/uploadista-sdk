@@ -5,6 +5,7 @@ import {
   DocumentPlugin,
   NodeType,
   resolveUploadMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
@@ -16,10 +17,7 @@ export type SplitPdfNodeParams = {
   endPage?: number;
 };
 
-export function createSplitPdfNode(
-  id: string,
-  params: SplitPdfNodeParams,
-) {
+export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
     const uploadServer = yield* UploadServer;
@@ -29,6 +27,7 @@ export function createSplitPdfNode(
       name: "Split PDF",
       description: "Split PDF into pages or page ranges",
       type: NodeType.process,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {
@@ -94,7 +93,7 @@ export function createSplitPdfNode(
                 storageId: file.storage.id,
                 size: pdfBytes.byteLength,
                 type: "application/pdf",
-                fileName: `${metadata?.fileName || 'document'}-page-1.pdf`,
+                fileName: `${metadata?.fileName || "document"}-page-1.pdf`,
                 lastModified: 0,
                 metadata: JSON.stringify({
                   ...metadata,
@@ -120,9 +119,10 @@ export function createSplitPdfNode(
           }
 
           // Range mode - return single PDF with selected pages
-          const pageCount = params.endPage && params.startPage
-            ? params.endPage - params.startPage + 1
-            : 1;
+          const pageCount =
+            params.endPage && params.startPage
+              ? params.endPage - params.startPage + 1
+              : 1;
 
           const pdfBytes = result.pdf;
 
@@ -140,7 +140,7 @@ export function createSplitPdfNode(
               storageId: file.storage.id,
               size: pdfBytes.byteLength,
               type: "application/pdf",
-              fileName: `${metadata?.fileName || 'document'}-pages-${params.startPage}-${params.endPage}.pdf`,
+              fileName: `${metadata?.fileName || "document"}-pages-${params.startPage}-${params.endPage}.pdf`,
               lastModified: 0,
               metadata: JSON.stringify({
                 ...metadata,
