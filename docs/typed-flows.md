@@ -22,7 +22,7 @@ import { createFlow, createInputNode, createStorageNode } from '@uploadista/core
 const flow = createFlow({
   id: 'image-upload',
   nodes: [
-    yield* createInputNode('input'),      // Uses streaming-input-v1
+    yield* createInputNode('input'),      
     yield* createStorageNode('storage'),  // Uses storage-output-v1
   ],
   edges: [
@@ -102,7 +102,7 @@ interface TypedOutput<T = unknown> {
 ```typescript
 import { createInputNode, createStorageNode } from '@uploadista/core/flow';
 
-// Input node - automatically uses "streaming-input-v1"
+
 const inputNode = yield* createInputNode('upload');
 
 // Storage node - automatically uses "storage-output-v1"
@@ -257,18 +257,13 @@ for (const output of outputs) {
       console.log(output.data.mimeType);
       break;
 
-    case 'streaming-input-v1':
-      // Also automatic!
-      console.log(output.data.name);
-      console.log(output.data.size);
-      break;
+ 
   }
 }
 ```
 
 **Built-in types with automatic narrowing:**
 - `storage-output-v1` - Storage node outputs (UploadFile)
-- `streaming-input-v1` - Streaming input nodes (UploadFile)
 
 This provides the **best developer experience** for common cases with zero boilerplate.
 

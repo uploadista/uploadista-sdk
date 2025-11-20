@@ -57,19 +57,12 @@ export type FlowNodeData = {
  * }
  * ```
  */
-export type BuiltInTypedOutput =
-  | {
-      nodeType: "storage-output-v1";
-      data: UploadFile;
-      nodeId: string;
-      timestamp: string;
-    }
-  | {
-      nodeType: "streaming-input-v1";
-      data: UploadFile;
-      nodeId: string;
-      timestamp: string;
-    };
+export type BuiltInTypedOutput = {
+  nodeType: "storage-output-v1";
+  data: UploadFile;
+  nodeId: string;
+  timestamp: string;
+};
 
 /**
  * Custom typed output for user-defined node types.
@@ -106,7 +99,6 @@ export type CustomTypedOutput<T = unknown> = {
  * @remarks
  * **Built-in types (automatic narrowing):**
  * - `storage-output-v1` - Storage node output (UploadFile)
- * - `streaming-input-v1` - Streaming input node (UploadFile)
  *
  * Use switch statements for automatic narrowing:
  * ```typescript
@@ -115,10 +107,6 @@ export type CustomTypedOutput<T = unknown> = {
  *     case 'storage-output-v1':
  *       // ✅ output.data is automatically UploadFile
  *       console.log(output.data.url);
- *       break;
- *     case 'streaming-input-v1':
- *       // ✅ output.data is automatically UploadFile
- *       console.log(output.data.size);
  *       break;
  *   }
  * }

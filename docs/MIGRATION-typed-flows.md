@@ -60,7 +60,7 @@ import { createFlow, createInputNode, createStorageNode } from '@uploadista/core
 const flow = createFlow({
   id: 'image-upload',
   nodes: [
-    yield* createInputNode('input'),      // Auto-uses: streaming-input-v1
+    yield* createInputNode('input'),      
     yield* createStorageNode('storage'),  // Auto-uses: storage-output-v1
   ],
   edges: [

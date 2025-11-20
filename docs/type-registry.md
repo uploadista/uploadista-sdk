@@ -90,18 +90,6 @@ Once registered, types cannot be modified or removed. This ensures:
 
 Uploadista provides two built-in types that are auto-registered:
 
-### `streaming-input-v1`
-
-Input type for nodes that accept chunked file uploads.
-
-```typescript
-import { STREAMING_INPUT_TYPE_ID } from '@uploadista/core/flow';
-
-// Used automatically by createInputNode()
-const inputNode = yield* createInputNode('input-1');
-```
-
-**Schema**: `UploadFile` (from `@uploadista/core/types`)
 
 ### `storage-output-v1`
 
