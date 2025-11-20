@@ -90,7 +90,7 @@ export const createThumbnailNode = (
     id,
     name: "Generate Thumbnail",
     description: "Creates a thumbnail with specified dimensions",
-    type: NodeType.output,
+    type: NodeType.process,
     inputSchema: uploadFileSchema,
     outputSchema: thumbnailSchema,
     nodeTypeId: THUMBNAIL_OUTPUT_TYPE_ID,
@@ -143,9 +143,7 @@ export const multiOutputFlow = createFlow({
       format: "webp",
     }),
   },
-  edges: [
-    { source: "input", target: "thumbnail" },
-  ],
+  edges: [{ source: "input", target: "thumbnail" }],
 });
 
 /**
@@ -180,7 +178,7 @@ export const createDescribeImageNode = (id: string) =>
     id,
     name: "Describe Image",
     description: "Generate AI description of image content",
-    type: NodeType.output,
+    type: NodeType.process,
     inputSchema: uploadFileSchema,
     outputSchema: descriptionSchema,
     nodeTypeId: DESCRIPTION_OUTPUT_TYPE_ID,
@@ -296,12 +294,14 @@ export function exampleFilterByType(outputs: TypedOutput[]): void {
  * ```
  */
 export function exampleGetSingleOutput(outputs: TypedOutput[]): void {
-  try {
-    const storage = getSingleOutputByType(outputs, isStorageOutput);
-    console.log("Storage URL:", storage.data.url);
-  } catch (error) {
-    console.error("Failed to get storage output:", error);
-  }
+  Effect.gen(function* () {
+    try {
+      const storage = yield* getSingleOutputByType(outputs, isStorageOutput);
+      console.log("Storage URL:", storage.data.url);
+    } catch (error) {
+      console.error("Failed to get storage output:", error);
+    }
+  });
 }
 
 /**
