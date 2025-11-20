@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/typescript-config",
-  "version": "0.0.17-beta.2",
+  "version": "0.0.17-beta.3",
   "description": "Typescript config for Uploadista",
   "author": "Uploadista",
   "private": true,
