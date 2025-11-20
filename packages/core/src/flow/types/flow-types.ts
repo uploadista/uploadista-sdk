@@ -502,19 +502,33 @@ export type FlowConfig<
      * The hook receives the output and context, and can optionally modify
      * and return the output (e.g., adding metadata fields).
      *
+     * **Important**: The hook must not have any service requirements (Effect requirements must be `never`).
+     * All necessary services should be captured in the closure when defining the hook.
+     *
      * @param context - Output context including the output data, node ID, flow ID, etc.
-     * @returns Effect that resolves to the (optionally modified) output
+     * @returns Effect or Promise that resolves to the (optionally modified) output
      *
      * @example
      * ```typescript
+     * // Using Effect
      * hooks: {
      *   onNodeOutput: ({ output, nodeId, flowId }) =>
      *     Effect.gen(function* () {
      *       // Save to database
-     *       yield* saveToDatabase(output);
+     *       yield* Effect.promise(() => db.save(output));
      *       // Return output with additional metadata
      *       return { ...output, metadata: { ...output.metadata, tracked: true } };
      *     })
+     * }
+     *
+     * // Using Promise (simpler for most users)
+     * hooks: {
+     *   onNodeOutput: async ({ output, nodeId, flowId }) => {
+     *     // Save to database
+     *     await db.save(output);
+     *     // Return output with additional metadata
+     *     return { ...output, metadata: { ...output.metadata, tracked: true } };
+     *   }
      * }
      * ```
      */
@@ -525,7 +539,9 @@ export type FlowConfig<
       jobId: string;
       storageId: string;
       clientId: string | null;
-    }) => Effect.Effect<TOutput, UploadistaError, any>;
+    }) =>
+      | Effect.Effect<TOutput, UploadistaError, never>
+      | Promise<TOutput>;
   };
 };
 

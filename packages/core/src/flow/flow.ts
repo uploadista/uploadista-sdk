@@ -751,7 +751,7 @@ export function createFlowWithSchema<
                 yield* Effect.logDebug(
                   `Calling onNodeOutput hook for sink node ${nodeId}`,
                 );
-                result = yield* config.hooks.onNodeOutput({
+                const hookResult = config.hooks.onNodeOutput({
                   output: result,
                   nodeId,
                   flowId,
@@ -759,6 +759,11 @@ export function createFlowWithSchema<
                   storageId,
                   clientId,
                 });
+
+                // Support both Effect and Promise
+                result = yield* (Effect.isEffect(hookResult)
+                  ? hookResult
+                  : Effect.promise(() => hookResult as Promise<unknown>));
               }
             }
 

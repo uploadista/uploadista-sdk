@@ -238,6 +238,40 @@ export type TypedFlowConfig<TNodes extends NodeDefinitionsRecord> = {
   };
   inputSchema?: z.ZodTypeAny;
   outputSchema?: z.ZodTypeAny;
+  hooks?: {
+    /**
+     * Called when a sink node (terminal node with no outgoing edges) produces an output.
+     * This hook runs after auto-persistence for UploadFile outputs.
+     *
+     * Use this hook to perform additional post-processing such as:
+     * - Saving output metadata to a database
+     * - Tracking outputs in external systems
+     * - Adding custom metadata to outputs
+     * - Triggering downstream workflows
+     *
+     * **Important**: The hook must not have any service requirements (Effect requirements must be `never`).
+     * All necessary services should be captured in the closure when defining the hook.
+     *
+     * @example
+     * ```typescript
+     * // Using Promise (simpler for most users)
+     * hooks: {
+     *   onNodeOutput: async ({ output }) => {
+     *     await db.save(output);
+     *     return output;
+     *   }
+     * }
+     * ```
+     */
+    onNodeOutput?: <TOutput>(context: {
+      output: TOutput;
+      nodeId: string;
+      flowId: string;
+      jobId: string;
+      storageId: string;
+      clientId: string | null;
+    }) => Effect.Effect<TOutput, CoreUploadistaError, never> | Promise<TOutput>;
+  };
 };
 
 declare const typedFlowInputsSymbol: unique symbol;
@@ -419,6 +453,7 @@ export function createFlow<TNodes extends NodeDefinitionsRecord>(
       typeChecker: config.typeChecker,
       onEvent: config.onEvent,
       parallelExecution: config.parallelExecution,
+      hooks: config.hooks,
     });
 
     return flow as unknown as TypedFlow<
