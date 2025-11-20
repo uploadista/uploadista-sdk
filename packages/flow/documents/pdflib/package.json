@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-pdflib",
   "type": "module",
-  "version": "0.0.16",
+  "version": "0.0.17-beta.1",
   "description": "pdf-lib plugin for Uploadista document processing",
   "license": "MIT",
   "author": "Uploadista",

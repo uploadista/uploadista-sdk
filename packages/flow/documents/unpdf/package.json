@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-unpdf",
   "type": "module",
-  "version": "0.0.16",
+  "version": "0.0.17-beta.1",
   "description": "unpdf plugin for Uploadista document text extraction",
   "license": "MIT",
   "author": "Uploadista",
