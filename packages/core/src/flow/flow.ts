@@ -180,6 +180,11 @@ export type Flow<
     TFlowOutputSchema,
     TRequirements
   >["checkJobStatus"];
+  hooks?: FlowConfig<
+    TFlowInputSchema,
+    TFlowOutputSchema,
+    TRequirements
+  >["hooks"];
   run: (args: {
     inputs?: Record<string, z.infer<TFlowInputSchema>>;
     storageId: string;
@@ -727,10 +732,10 @@ export function createFlowWithSchema<
             // Node completed successfully
             let result = executionResult.data;
 
-            // Auto-persistence: if this is a sink node and result is an UploadFile,
-            // automatically transfer it to target storage if needed
-            if (isSink(nodeId) && isUploadFile(result)) {
-              if (result.storage.id !== storageId) {
+            // Auto-persistence and hooks for sink nodes
+            if (isSink(nodeId)) {
+              // If result is an UploadFile, transfer to target storage if needed
+              if (isUploadFile(result) && result.storage.id !== storageId) {
                 yield* Effect.logDebug(
                   `Auto-persisting sink node ${nodeId} output from ${result.storage.id} to ${storageId}`,
                 );
@@ -739,6 +744,21 @@ export function createFlowWithSchema<
                   storageId,
                   clientId,
                 );
+              }
+
+              // Call onNodeOutput hook if provided (for all sink outputs)
+              if (config.hooks?.onNodeOutput) {
+                yield* Effect.logDebug(
+                  `Calling onNodeOutput hook for sink node ${nodeId}`,
+                );
+                result = yield* config.hooks.onNodeOutput({
+                  output: result,
+                  nodeId,
+                  flowId,
+                  jobId,
+                  storageId,
+                  clientId,
+                });
               }
             }
 
@@ -1230,6 +1250,7 @@ export function createFlowWithSchema<
       outputSchema,
       onEvent,
       checkJobStatus,
+      hooks: config.hooks,
       run,
       resume,
       validateTypes,

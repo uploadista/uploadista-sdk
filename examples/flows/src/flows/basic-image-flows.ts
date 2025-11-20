@@ -1,7 +1,4 @@
-import {
-  createFlow,
-  createInputNode,
-} from "@uploadista/core";
+import { createFlow, createInputNode } from "@uploadista/core";
 import {
   createOptimizeNode,
   createResizeNode,
@@ -62,9 +59,7 @@ export const optimizeFlow = createFlow({
       format: "webp",
     }),
   },
-  edges: [
-    { source: "input", target: "optimize" },
-  ],
+  edges: [{ source: "input", target: "optimize" }],
 });
 
 /**
@@ -98,9 +93,7 @@ export const resizeFlow = createFlow({
       fit: "cover",
     }),
   },
-  edges: [
-    { source: "input", target: "resize" },
-  ],
+  edges: [{ source: "input", target: "resize" }],
 });
 
 /**
@@ -135,7 +128,5 @@ export const transformFlow = createFlow({
       ],
     }),
   },
-  edges: [
-    { source: "input", target: "transform" },
-  ],
+  edges: [{ source: "input", target: "transform" }],
 });

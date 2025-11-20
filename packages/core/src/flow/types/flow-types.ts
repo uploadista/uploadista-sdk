@@ -488,6 +488,45 @@ export type FlowConfig<
     enabled?: boolean;
     maxConcurrency?: number;
   };
+  hooks?: {
+    /**
+     * Called when a sink node (terminal node with no outgoing edges) produces an output.
+     * This hook runs after auto-persistence for UploadFile outputs.
+     *
+     * Use this hook to perform additional post-processing such as:
+     * - Saving output metadata to a database
+     * - Tracking outputs in external systems
+     * - Adding custom metadata to outputs
+     * - Triggering downstream workflows
+     *
+     * The hook receives the output and context, and can optionally modify
+     * and return the output (e.g., adding metadata fields).
+     *
+     * @param context - Output context including the output data, node ID, flow ID, etc.
+     * @returns Effect that resolves to the (optionally modified) output
+     *
+     * @example
+     * ```typescript
+     * hooks: {
+     *   onNodeOutput: ({ output, nodeId, flowId }) =>
+     *     Effect.gen(function* () {
+     *       // Save to database
+     *       yield* saveToDatabase(output);
+     *       // Return output with additional metadata
+     *       return { ...output, metadata: { ...output.metadata, tracked: true } };
+     *     })
+     * }
+     * ```
+     */
+    onNodeOutput?: <TOutput>(context: {
+      output: TOutput;
+      nodeId: string;
+      flowId: string;
+      jobId: string;
+      storageId: string;
+      clientId: string | null;
+    }) => Effect.Effect<TOutput, UploadistaError, any>;
+  };
 };
 
 // Re-export existing types for compatibility
