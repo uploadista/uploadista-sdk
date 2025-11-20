@@ -18,7 +18,7 @@
  *
  * // Check registered types
  * const inputTypes = flowTypeRegistry.listByCategory("input");
- * console.log(inputTypes.map(t => t.id)); // ["streaming-input-v1"]
+ * console.log(inputTypes.map(t => t.id)); // ["storage-output-v1"]
  * ```
  */
 
@@ -41,22 +41,7 @@ import { flowTypeRegistry } from "../type-registry";
  * });
  * ```
  */
-export const STREAMING_INPUT_TYPE_ID = "streaming-input-v1";
 export const STORAGE_OUTPUT_TYPE_ID = "storage-output-v1";
-
-/**
- * Register streaming input node type.
- *
- * This is the standard input type for flows that accept chunked file uploads.
- * It produces UploadFile objects as output after processing chunks.
- */
-flowTypeRegistry.register({
-  id: STREAMING_INPUT_TYPE_ID,
-  category: "input",
-  schema: uploadFileSchema,
-  version: "1.0.0",
-  description: "Streaming file input node that accepts chunked uploads",
-});
 
 /**
  * Register storage output node type.

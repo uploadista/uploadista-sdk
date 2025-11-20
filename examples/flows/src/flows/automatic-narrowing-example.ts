@@ -11,7 +11,7 @@ import { isStorageOutput } from "@uploadista/core";
 /**
  * Example 1: Built-in types with automatic narrowing (NO type guards needed!)
  *
- * Built-in types ('storage-output-v1', 'streaming-input-v1') use discriminated
+ * Built-in types ('storage-output-v1') use discriminated
  * unions, which means TypeScript automatically narrows the type in switch statements.
  */
 export function exampleAutomaticNarrowing(outputs: TypedOutput[]): void {
@@ -27,14 +27,6 @@ export function exampleAutomaticNarrowing(outputs: TypedOutput[]): void {
         console.log(`  - Size: ${output.data.size} bytes`);
         console.log(`  - MIME: ${output.data.mimeType}`);
         console.log(`  - ID: ${output.data.id}`);
-        break;
-
-      case "streaming-input-v1":
-        // ✅ TypeScript knows output.data is UploadFile - NO type guard needed!
-        console.log("Input Output:");
-        console.log(`  - URL: ${output.data.url}`);
-        console.log(`  - Name: ${output.data.name}`);
-        console.log(`  - Size: ${output.data.size} bytes`);
         break;
 
       default:
@@ -150,7 +142,9 @@ export function exampleBeforeAfter(outputs: TypedOutput[]): void {
  *
  * Extract data from built-in types without any type guards.
  */
-export function exampleTypeSafeExtraction(outputs: TypedOutput[]): UploadFile[] {
+export function exampleTypeSafeExtraction(
+  outputs: TypedOutput[],
+): UploadFile[] {
   console.log("\n=== Type-Safe Extraction (No Type Guards) ===\n");
 
   const storageFiles: UploadFile[] = [];
@@ -177,7 +171,9 @@ export function exampleArrayOperations(outputs: TypedOutput[]): void {
 
   // Filter for storage outputs - automatic narrowing!
   const storageOutputs = outputs.filter(
-    (output): output is Extract<TypedOutput, { nodeType: "storage-output-v1" }> =>
+    (
+      output,
+    ): output is Extract<TypedOutput, { nodeType: "storage-output-v1" }> =>
       output.nodeType === "storage-output-v1",
   );
 
@@ -186,7 +182,9 @@ export function exampleArrayOperations(outputs: TypedOutput[]): void {
   const sizes = storageOutputs.map((output) => output.data.size);
 
   console.log(`URLs: ${urls.join(", ")}`);
-  console.log(`Total size: ${sizes.reduce((sum, size) => sum + size, 0)} bytes`);
+  console.log(
+    `Total size: ${sizes.reduce((sum, size) => sum + size, 0)} bytes`,
+  );
 }
 
 /**

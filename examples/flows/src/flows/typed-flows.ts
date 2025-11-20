@@ -1,6 +1,4 @@
 import {
-  type TypedOutput,
-  NodeType,
   createFlow,
   createFlowNode,
   createInputNode,
@@ -10,6 +8,8 @@ import {
   flowTypeRegistry,
   getSingleOutputByType,
   isStorageOutput,
+  NodeType,
+  type TypedOutput,
   uploadFileSchema,
 } from "@uploadista/core";
 import { Effect } from "effect";
@@ -20,7 +20,7 @@ import { z } from "zod";
  *
  * Nodes: input → storage
  *
- * This flow uses built-in types (streaming-input-v1, storage-output-v1)
+ * This flow uses built-in types (storage-output-v1)
  * which are automatically registered. No custom type registration needed.
  *
  * Use case: Basic file upload with type-safe result access.
@@ -343,7 +343,11 @@ export function exampleSwitchByType(outputs: TypedOutput[]): void {
   for (const output of outputs) {
     switch (output.nodeType) {
       case "storage-output-v1":
-        if (typeof output.data === "object" && output.data !== null && "url" in output.data) {
+        if (
+          typeof output.data === "object" &&
+          output.data !== null &&
+          "url" in output.data
+        ) {
           console.log("Storage:", output.data.url);
         }
         break;
@@ -396,7 +400,9 @@ export function exampleProgressiveEnhancement(outputs: TypedOutput[]): void {
   const typedOutputs = outputs.filter((o) => o.nodeType);
   const untypedOutputs = outputs.filter((o) => !o.nodeType);
 
-  console.log(`Typed: ${typedOutputs.length}, Untyped: ${untypedOutputs.length}`);
+  console.log(
+    `Typed: ${typedOutputs.length}, Untyped: ${untypedOutputs.length}`,
+  );
 
   if (typedOutputs.length > 0) {
     console.log("Processing with type guards...");

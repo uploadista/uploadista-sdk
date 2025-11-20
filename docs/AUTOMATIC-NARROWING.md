@@ -42,12 +42,6 @@ export type BuiltInTypedOutput =
       data: UploadFile;
       nodeId: string;
       timestamp: string;
-    }
-  | {
-      nodeType: "streaming-input-v1";
-      data: UploadFile;
-      nodeId: string;
-      timestamp: string;
     };
 
 // Custom types remain flexible
@@ -77,12 +71,7 @@ switch (output.nodeType) {
     output.data.url;  // ✅ Valid - data is UploadFile
     break;
 
-  case 'streaming-input-v1':
-    // Here, TypeScript knows:
-    // output: { nodeType: "streaming-input-v1"; data: UploadFile; ... }
-    output.data.size;  // ✅ Valid - data is UploadFile
-    break;
-
+  
   default:
     // Here, TypeScript knows:
     // output: CustomTypedOutput<unknown>
@@ -103,10 +92,7 @@ for (const output of state.flowOutputs) {
       console.log('Storage:', output.data.url);
       break;
 
-    case 'streaming-input-v1':
-      console.log('Input:', output.data.name);
-      break;
-
+  
     default:
       // Handle custom types with type guards
       if (isThumbnailOutput(output)) {
@@ -192,7 +178,7 @@ function processOutputsAfter(outputs: TypedOutput[]): void {
 
 ### Use Automatic Narrowing (Switch)
 
-- ✅ When working with built-in types (`storage-output-v1`, `streaming-input-v1`)
+- ✅ When working with built-in types (`storage-output-v1`)
 - ✅ When handling multiple types in sequence
 - ✅ When you want zero boilerplate
 - ✅ When performance matters (switch is optimized)
@@ -233,9 +219,6 @@ Current built-in types with automatic narrowing:
    - Data type: `UploadFile`
    - Used by: `createStorageNode()`
 
-2. **`streaming-input-v1`** - Streaming input nodes
-   - Data type: `UploadFile`
-   - Used by: `createInputNode()`
 
 ### Adding New Built-in Types
 
@@ -244,7 +227,6 @@ When adding new built-in types, update the discriminated union:
 ```typescript
 export type BuiltInTypedOutput =
   | { nodeType: "storage-output-v1"; data: UploadFile; nodeId: string; timestamp: string }
-  | { nodeType: "streaming-input-v1"; data: UploadFile; nodeId: string; timestamp: string }
   | { nodeType: "new-builtin-v1"; data: NewBuiltInType; nodeId: string; timestamp: string }  // NEW
 ```
 
