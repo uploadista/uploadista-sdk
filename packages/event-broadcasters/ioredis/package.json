@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-broadcaster-ioredis",
   "type": "module",
-  "version": "0.0.17-beta.4",
+  "version": "0.0.17-beta.5",
   "description": "Redis event broadcaster for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
