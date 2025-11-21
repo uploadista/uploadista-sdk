@@ -10,11 +10,13 @@ import { uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
 import { Effect } from "effect";
 
-export type DescribeDocumentNodeParams = Record<string, never>; // No parameters needed
+export type DescribeDocumentNodeParams = {
+  keepOutput?: boolean;
+};
 
 export function createDescribeDocumentNode(
   id: string,
-  _params: DescribeDocumentNodeParams = {},
+  params: DescribeDocumentNodeParams = {},
 ) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
@@ -25,6 +27,7 @@ export function createDescribeDocumentNode(
       name: "Describe Document",
       description: "Extract metadata from PDF documents",
       type: NodeType.process,
+      keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {

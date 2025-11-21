@@ -19,6 +19,12 @@ export interface TransformNodeConfig {
   description: string;
   /** Optional node type ID for result type registration */
   nodeTypeId?: string;
+  /**
+   * Whether to keep this node's output as a flow result even if it has outgoing edges.
+   * When true, the node's output will be included in the final flow outputs alongside topology sinks.
+   * Defaults to false.
+   */
+  keepOutput?: boolean;
   /** Function that transforms file bytes */
   transform: (
     bytes: Uint8Array,
@@ -54,6 +60,17 @@ export interface TransformNodeConfig {
  *   }
  * });
  *
+ * // Create a transform node with keepOutput enabled
+ * const processedNode = yield* createTransformNode({
+ *   id: "process-image",
+ *   name: "Process Image",
+ *   description: "Processes images and preserves output",
+ *   keepOutput: true, // Output will be included in flow results
+ *   transform: (bytes, file) => {
+ *     return Effect.succeed(transformedBytes);
+ *   }
+ * });
+ *
  * // Create a transform node that changes file metadata
  * const metadataTransformNode = yield* createTransformNode({
  *   id: "add-metadata",
@@ -74,6 +91,7 @@ export function createTransformNode({
   name,
   description,
   nodeTypeId,
+  keepOutput,
   transform,
 }: TransformNodeConfig) {
   return Effect.gen(function* () {
@@ -85,6 +103,7 @@ export function createTransformNode({
       description,
       type: NodeType.process,
       nodeTypeId,
+      keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, storageId, flowId, jobId, clientId }) => {

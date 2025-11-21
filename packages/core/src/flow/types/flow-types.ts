@@ -33,12 +33,14 @@ export type NodeTypeMap = Record<string, { input: unknown; output: unknown }>;
  * @property name - Human-readable node name
  * @property description - Explanation of what the node does
  * @property type - Node category (input, transform, conditional, output, etc.)
+ * @property keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false)
  */
 export type FlowNodeData = {
   id: string;
   name: string;
   description: string;
   type: NodeType;
+  keepOutput?: boolean;
 };
 
 /**

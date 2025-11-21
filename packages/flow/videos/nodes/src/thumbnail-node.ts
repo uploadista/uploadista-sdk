@@ -27,6 +27,7 @@ import { Effect } from "effect";
 export function createVideoThumbnailNode(
   id: string,
   params: ExtractFrameVideoParams,
+  options?: { keepOutput?: boolean },
 ) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
@@ -38,6 +39,7 @@ export function createVideoThumbnailNode(
       name: "Generate Thumbnail",
       description: "Extracts a frame from video as an image",
       nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: options?.keepOutput,
       transform: (inputBytes, file) =>
         Effect.map(
           videoService.extractFrame(inputBytes, params),

@@ -463,14 +463,23 @@ export function createFlowWithSchema<
       return !edges.some((edge) => edge.source === nodeId);
     };
 
-    // Collect outputs from sink nodes (nodes with no outgoing edges)
+    // Utility to check if a node should be included in outputs
+    // Includes both sink nodes (topology-based) and nodes with keepOutput flag
+    const shouldIncludeInOutputs = (nodeId: string): boolean => {
+      const node = nodes.find((n: any) => n.id === nodeId);
+      return isSink(nodeId) || node?.keepOutput === true;
+    };
+
+    // Collect outputs from sink nodes (nodes with no outgoing edges) and nodes with keepOutput
     const collectFlowOutputs = (
       nodeResults: Map<string, unknown>,
     ): Record<string, z.infer<TFlowInputSchema>> => {
-      const sinkNodes = nodes.filter((node: any) => isSink(node.id));
+      const outputNodes = nodes.filter((node: any) =>
+        shouldIncludeInOutputs(node.id),
+      );
       const flowOutputs: Record<string, unknown> = {};
 
-      sinkNodes.forEach((node: any) => {
+      outputNodes.forEach((node: any) => {
         const result = nodeResults.get(node.id);
         if (result !== undefined) {
           flowOutputs[node.id] = result;
@@ -480,15 +489,17 @@ export function createFlowWithSchema<
       return flowOutputs as Record<string, z.infer<TFlowInputSchema>>;
     };
 
-    // Collect typed outputs from sink nodes with metadata
+    // Collect typed outputs from sink nodes and keepOutput nodes with metadata
     const collectTypedOutputs = (
       nodeResults: Map<string, unknown>,
       nodeTypesMap: Map<string, string>,
     ): TypedOutput[] => {
-      const sinkNodes = nodes.filter((node: any) => isSink(node.id));
+      const outputNodes = nodes.filter((node: any) =>
+        shouldIncludeInOutputs(node.id),
+      );
       const typedOutputs: TypedOutput[] = [];
 
-      sinkNodes.forEach((node: any) => {
+      outputNodes.forEach((node: any) => {
         const result = nodeResults.get(node.id);
         if (result !== undefined) {
           // Get the nodeType from the nodeTypes map
@@ -732,12 +743,12 @@ export function createFlowWithSchema<
             // Node completed successfully
             let result = executionResult.data;
 
-            // Auto-persistence and hooks for sink nodes
-            if (isSink(nodeId)) {
+            // Auto-persistence and hooks for sink nodes and nodes with keepOutput
+            if (shouldIncludeInOutputs(nodeId)) {
               // If result is an UploadFile, transfer to target storage if needed
               if (isUploadFile(result) && result.storage.id !== storageId) {
                 yield* Effect.logDebug(
-                  `Auto-persisting sink node ${nodeId} output from ${result.storage.id} to ${storageId}`,
+                  `Auto-persisting output node ${nodeId} output from ${result.storage.id} to ${storageId}`,
                 );
                 result = yield* transferFileToTargetStorage(
                   result,
@@ -1111,8 +1122,8 @@ export function createFlowWithSchema<
         // Validate the final result against the output schema
         const parseResult = finalResultSchema.safeParse(finalResult);
         if (!parseResult.success) {
-          const validationError = `Flow output validation failed: ${parseResult.error.message}. Expected outputs: ${JSON.stringify(Object.keys(collectFlowOutputs(nodeResults)))}. Sink nodes: ${nodes
-            .filter((n: any) => isSink(n.id))
+          const validationError = `Flow output validation failed: ${parseResult.error.message}. Expected outputs: ${JSON.stringify(Object.keys(collectFlowOutputs(nodeResults)))}. Output nodes (sinks + keepOutput): ${nodes
+            .filter((n: any) => shouldIncludeInOutputs(n.id))
             .map((n: any) => n.id)
             .join(", ")}`;
 

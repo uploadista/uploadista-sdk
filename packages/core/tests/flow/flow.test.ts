@@ -837,4 +837,467 @@ describe("Flow Engine", () => {
         }
       }).pipe(Effect.runPromise));
   });
+
+  describe("KeepOutput Behavior", () => {
+    it("should preserve output from node with keepOutput: true even when it has outgoing edges", () =>
+      Effect.gen(function* () {
+        const inputNode = yield* createFlowNode({
+          id: "input-1",
+          name: "Input Node",
+          description: "Input node",
+          type: NodeType.input,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value },
+            }),
+        });
+
+        const middleNode = yield* createFlowNode({
+          id: "middle-1",
+          name: "Middle Node with keepOutput",
+          description: "Process node that keeps output",
+          type: NodeType.process,
+          keepOutput: true, // This node should appear in final outputs
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-middle` },
+            }),
+        });
+
+        const sinkNode = yield* createFlowNode({
+          id: "sink-1",
+          name: "Sink Node",
+          description: "Final sink node",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-sink` },
+            }),
+        });
+
+        const flow = yield* createFlow({
+          flowId: "keep-output-flow",
+          name: "Keep Output Flow",
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          nodes: {
+            "input-1": inputNode,
+            "middle-1": middleNode,
+            "sink-1": sinkNode,
+          },
+          edges: [
+            { source: "input-1", target: "middle-1" },
+            { source: "middle-1", target: "sink-1" },
+          ],
+        });
+
+        const result = yield* flow.run({
+          inputs: { "input-1": { value: "test" } },
+          storageId: "test-storage",
+          jobId: "test-job",
+        });
+
+        expect(result.type).toBe("completed");
+        if (result.type === "completed") {
+          // Both middle node (keepOutput) and sink should be in results
+          expect(result.result["middle-1"]).toEqual({ value: "test-middle" });
+          expect(result.result["sink-1"]).toEqual({
+            value: "test-middle-sink",
+          });
+        }
+      }).pipe(Effect.runPromise));
+
+    it("should follow topology rules for nodes with keepOutput: false or undefined", () =>
+      Effect.gen(function* () {
+        const inputNode = yield* createFlowNode({
+          id: "input-2",
+          name: "Input Node",
+          description: "Input node",
+          type: NodeType.input,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value },
+            }),
+        });
+
+        const middleNode = yield* createFlowNode({
+          id: "middle-2",
+          name: "Middle Node without keepOutput",
+          description: "Process node that follows topology",
+          type: NodeType.process,
+          // keepOutput not set - should follow topology rules (not appear in output)
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-middle` },
+            }),
+        });
+
+        const sinkNode = yield* createFlowNode({
+          id: "sink-2",
+          name: "Sink Node",
+          description: "Final sink node",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-sink` },
+            }),
+        });
+
+        const flow = yield* createFlow({
+          flowId: "topology-flow",
+          name: "Topology Flow",
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          nodes: {
+            "input-2": inputNode,
+            "middle-2": middleNode,
+            "sink-2": sinkNode,
+          },
+          edges: [
+            { source: "input-2", target: "middle-2" },
+            { source: "middle-2", target: "sink-2" },
+          ],
+        });
+
+        const result = yield* flow.run({
+          inputs: { "input-2": { value: "test" } },
+          storageId: "test-storage",
+          jobId: "test-job",
+        });
+
+        expect(result.type).toBe("completed");
+        if (result.type === "completed") {
+          // Only sink should be in results (middle-2 has outgoing edges and keepOutput is false)
+          expect(result.result["middle-2"]).toBeUndefined();
+          expect(result.result["sink-2"]).toEqual({
+            value: "test-middle-sink",
+          });
+        }
+      }).pipe(Effect.runPromise));
+
+    it("should preserve outputs from multiple nodes with keepOutput: true", () =>
+      Effect.gen(function* () {
+        const inputNode = yield* createFlowNode({
+          id: "input-3",
+          name: "Input Node",
+          description: "Input node",
+          type: NodeType.input,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value },
+            }),
+        });
+
+        const process1 = yield* createFlowNode({
+          id: "process-1",
+          name: "Process 1 with keepOutput",
+          description: "First process node",
+          type: NodeType.process,
+          keepOutput: true,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value * 2 },
+            }),
+        });
+
+        const process2 = yield* createFlowNode({
+          id: "process-2",
+          name: "Process 2 with keepOutput",
+          description: "Second process node",
+          type: NodeType.process,
+          keepOutput: true,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value + 10 },
+            }),
+        });
+
+        const sinkNode = yield* createFlowNode({
+          id: "sink-3",
+          name: "Sink Node",
+          description: "Final sink node",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value + 1 },
+            }),
+        });
+
+        const flow = yield* createFlow({
+          flowId: "multiple-keep-output-flow",
+          name: "Multiple Keep Output Flow",
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          nodes: {
+            "input-3": inputNode,
+            "process-1": process1,
+            "process-2": process2,
+            "sink-3": sinkNode,
+          },
+          edges: [
+            { source: "input-3", target: "process-1" },
+            { source: "process-1", target: "process-2" },
+            { source: "process-2", target: "sink-3" },
+          ],
+        });
+
+        const result = yield* flow.run({
+          inputs: { "input-3": { value: 5 } },
+          storageId: "test-storage",
+          jobId: "test-job",
+        });
+
+        expect(result.type).toBe("completed");
+        if (result.type === "completed") {
+          // All keepOutput nodes and sink should be in results
+          expect(result.result["process-1"]).toEqual({ value: 10 }); // 5 * 2
+          expect(result.result["process-2"]).toEqual({ value: 20 }); // 10 + 10
+          expect(result.result["sink-3"]).toEqual({ value: 21 }); // 20 + 1
+        }
+      }).pipe(Effect.runPromise));
+
+    it("should include both keepOutput node and topology sink in outputs", () =>
+      Effect.gen(function* () {
+        const inputNode = yield* createFlowNode({
+          id: "input-4",
+          name: "Input Node",
+          description: "Input node",
+          type: NodeType.input,
+          keepOutput: true, // Input with keepOutput
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-input` },
+            }),
+        });
+
+        const sinkNode = yield* createFlowNode({
+          id: "sink-4",
+          name: "Sink Node",
+          description: "Topology sink node",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-sink` },
+            }),
+        });
+
+        const flow = yield* createFlow({
+          flowId: "keep-and-sink-flow",
+          name: "Keep Output and Sink Flow",
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          nodes: {
+            "input-4": inputNode,
+            "sink-4": sinkNode,
+          },
+          edges: [{ source: "input-4", target: "sink-4" }],
+        });
+
+        const result = yield* flow.run({
+          inputs: { "input-4": { value: "test" } },
+          storageId: "test-storage",
+          jobId: "test-job",
+        });
+
+        expect(result.type).toBe("completed");
+        if (result.type === "completed") {
+          // Both input (keepOutput) and sink (topology) should be in results
+          expect(result.result["input-4"]).toEqual({ value: "test-input" });
+          expect(result.result["sink-4"]).toEqual({
+            value: "test-input-sink",
+          });
+        }
+      }).pipe(Effect.runPromise));
+
+    it("should handle keepOutput with multiple parallel sinks", () =>
+      Effect.gen(function* () {
+        const inputNode = yield* createFlowNode({
+          id: "input-5",
+          name: "Input Node",
+          description: "Input node with keepOutput",
+          type: NodeType.input,
+          keepOutput: true,
+          multiOutput: true,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value },
+            }),
+        });
+
+        const sink1 = yield* createFlowNode({
+          id: "sink-5a",
+          name: "Sink 1",
+          description: "First sink",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value * 2 },
+            }),
+        });
+
+        const sink2 = yield* createFlowNode({
+          id: "sink-5b",
+          name: "Sink 2",
+          description: "Second sink",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value * 3 },
+            }),
+        });
+
+        const flow = yield* createFlow({
+          flowId: "keep-parallel-sinks-flow",
+          name: "Keep Output with Parallel Sinks Flow",
+          inputSchema: z.object({ value: z.number() }),
+          outputSchema: z.object({ value: z.number() }),
+          nodes: {
+            "input-5": inputNode,
+            "sink-5a": sink1,
+            "sink-5b": sink2,
+          },
+          edges: [
+            { source: "input-5", target: "sink-5a" },
+            { source: "input-5", target: "sink-5b" },
+          ],
+        });
+
+        const result = yield* flow.run({
+          inputs: { "input-5": { value: 10 } },
+          storageId: "test-storage",
+          jobId: "test-job",
+        });
+
+        expect(result.type).toBe("completed");
+        if (result.type === "completed") {
+          // Input (keepOutput) and both sinks should be in results
+          expect(result.result["input-5"]).toEqual({ value: 10 });
+          expect(result.result["sink-5a"]).toEqual({ value: 20 }); // 10 * 2
+          expect(result.result["sink-5b"]).toEqual({ value: 30 }); // 10 * 3
+        }
+      }).pipe(Effect.runPromise));
+
+    it("should handle keepOutput: false explicitly", () =>
+      Effect.gen(function* () {
+        const inputNode = yield* createFlowNode({
+          id: "input-6",
+          name: "Input Node",
+          description: "Input node",
+          type: NodeType.input,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: data.value },
+            }),
+        });
+
+        const middleNode = yield* createFlowNode({
+          id: "middle-6",
+          name: "Middle Node with keepOutput: false",
+          description: "Process node explicitly not keeping output",
+          type: NodeType.process,
+          keepOutput: false, // Explicitly false
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-middle` },
+            }),
+        });
+
+        const sinkNode = yield* createFlowNode({
+          id: "sink-6",
+          name: "Sink Node",
+          description: "Final sink node",
+          type: NodeType.process,
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          run: ({ data }) =>
+            Effect.succeed({
+              type: "complete",
+              data: { value: `${data.value}-sink` },
+            }),
+        });
+
+        const flow = yield* createFlow({
+          flowId: "explicit-false-flow",
+          name: "Explicit False Keep Output Flow",
+          inputSchema: z.object({ value: z.string() }),
+          outputSchema: z.object({ value: z.string() }),
+          nodes: {
+            "input-6": inputNode,
+            "middle-6": middleNode,
+            "sink-6": sinkNode,
+          },
+          edges: [
+            { source: "input-6", target: "middle-6" },
+            { source: "middle-6", target: "sink-6" },
+          ],
+        });
+
+        const result = yield* flow.run({
+          inputs: { "input-6": { value: "test" } },
+          storageId: "test-storage",
+          jobId: "test-job",
+        });
+
+        expect(result.type).toBe("completed");
+        if (result.type === "completed") {
+          // Middle node should not be in results (keepOutput: false)
+          expect(result.result["middle-6"]).toBeUndefined();
+          // Only sink should be in results
+          expect(result.result["sink-6"]).toEqual({
+            value: "test-middle-sink",
+          });
+        }
+      }).pipe(Effect.runPromise));
+  });
 });

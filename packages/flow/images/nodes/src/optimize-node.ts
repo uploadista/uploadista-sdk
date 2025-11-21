@@ -25,6 +25,7 @@ const formatToExtension: Record<OptimizeParams["format"], string> = {
 export function createOptimizeNode(
   id: string,
   { quality, format }: OptimizeParams,
+  options?: { keepOutput?: boolean },
 ) {
   return Effect.gen(function* () {
     const imageService = yield* ImagePlugin;
@@ -34,6 +35,7 @@ export function createOptimizeNode(
       name: "Optimize",
       description: "Optimizes an image for web delivery",
       nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: options?.keepOutput,
       transform: (inputBytes, file) =>
         Effect.map(
           imageService.optimize(inputBytes, { quality, format }),

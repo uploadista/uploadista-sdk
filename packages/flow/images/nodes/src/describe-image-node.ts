@@ -14,7 +14,7 @@ import { waitForUrlAvailability } from "./wait-for-url";
 
 export function createDescribeImageNode(
   id: string,
-  { credentialId }: { credentialId?: string } = {},
+  { credentialId, keepOutput }: { credentialId?: string; keepOutput?: boolean } = {},
 ) {
   return Effect.gen(function* () {
     const imageAiService = yield* ImageAiPlugin;
@@ -25,6 +25,7 @@ export function createDescribeImageNode(
       description: "Describes the image using AI",
       type: NodeType.process,
       nodeTypeId: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
+      keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: imageDescriptionOutputSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {

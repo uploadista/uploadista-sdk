@@ -66,6 +66,7 @@ export type ScanVirusParams = z.infer<typeof ScanVirusParams>;
 export function createScanVirusNode(
   id: string,
   params: ScanVirusParams = { action: "fail", timeout: 60000 },
+  options?: { keepOutput?: boolean },
 ) {
   return Effect.gen(function* () {
     const virusScanService = yield* VirusScanPlugin;
@@ -78,6 +79,7 @@ export function createScanVirusNode(
       name: "Scan Virus",
       description: "Scans files for viruses and malware using ClamAV",
       nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: options?.keepOutput,
       transform: (inputBytes, file) =>
         Effect.gen(function* () {
           // Perform virus scan

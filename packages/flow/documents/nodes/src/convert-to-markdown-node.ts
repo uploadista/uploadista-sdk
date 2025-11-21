@@ -15,6 +15,7 @@ import { Effect, Either } from "effect";
 export type ConvertToMarkdownNodeParams = {
   credentialId?: string;
   resolution?: "tiny" | "small" | "base" | "gundam" | "large";
+  keepOutput?: boolean;
 };
 
 export function createConvertToMarkdownNode(
@@ -33,6 +34,7 @@ export function createConvertToMarkdownNode(
         "Convert documents to Markdown format (intelligently uses OCR if needed)",
       type: NodeType.process,
       nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {

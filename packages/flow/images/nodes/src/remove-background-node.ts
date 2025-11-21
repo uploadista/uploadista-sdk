@@ -14,7 +14,7 @@ import { waitForUrlAvailability } from "./wait-for-url";
 
 export function createRemoveBackgroundNode(
   id: string,
-  { credentialId }: { credentialId?: string } = {},
+  { credentialId, keepOutput }: { credentialId?: string; keepOutput?: boolean } = {},
 ) {
   return Effect.gen(function* () {
     const imageAiService = yield* ImageAiPlugin;
@@ -26,6 +26,7 @@ export function createRemoveBackgroundNode(
       description: "Removes the background from an image",
       type: NodeType.process,
       nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, storageId, clientId }) => {

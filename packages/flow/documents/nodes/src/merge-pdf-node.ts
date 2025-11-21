@@ -14,6 +14,7 @@ import { z } from "zod";
 
 export type MergePdfNodeParams = {
   inputCount?: number;
+  keepOutput?: boolean;
 };
 
 // Schema for multiple file inputs
@@ -21,7 +22,7 @@ const multipleFilesSchema = z.array(uploadFileSchema);
 
 export function createMergePdfNode(
   id: string,
-  _params: MergePdfNodeParams = {},
+  params: MergePdfNodeParams = {},
 ) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
@@ -33,6 +34,7 @@ export function createMergePdfNode(
       description: "Merge multiple PDF documents into one",
       type: NodeType.process,
       nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: params.keepOutput,
       inputSchema: multipleFilesSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: files, flowId, jobId, clientId }) => {

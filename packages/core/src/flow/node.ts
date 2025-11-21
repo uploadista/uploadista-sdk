@@ -81,6 +81,7 @@ export type ConditionValue = string | number;
  * @param config.retry.retryDelay - Base delay in milliseconds between retries (default: 1000)
  * @param config.retry.exponentialBackoff - Whether to use exponential backoff for retries (default: true)
  * @param config.nodeTypeId - Optional type ID from the registry (e.g., "storage-output-v1"). If provided, the node type must be registered.
+ * @param config.keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false). Useful for flows where intermediate results need to be kept (e.g., preserving the original file when also running OCR on it).
  *
  * @returns An Effect that succeeds with the created FlowNode
  *
@@ -132,6 +133,7 @@ export function createFlowNode<
   pausable = false,
   retry,
   nodeTypeId,
+  keepOutput = false,
 }: {
   id: string;
   name: string;
@@ -160,6 +162,7 @@ export function createFlowNode<
     exponentialBackoff?: boolean;
   };
   nodeTypeId?: string;
+  keepOutput?: boolean;
 }): Effect.Effect<
   FlowNode<Input, Output, UploadistaError> & { type: TType },
   UploadistaError
@@ -194,6 +197,7 @@ export function createFlowNode<
       name,
       description,
       type,
+      keepOutput,
       inputSchema,
       outputSchema,
       pausable,
