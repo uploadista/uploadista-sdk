@@ -32,6 +32,6 @@
     "@uploadista/typescript-config": "workspace:*",
     "pdf-lib": "^1.17.1",
     "tsdown": "catalog:",
-    "vitest": "4.0.10"
+    "vitest": "4.0.13"
   }
 }

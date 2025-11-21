@@ -31,6 +31,6 @@
     "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.10"
+    "vitest": "4.0.13"
   }
 }
