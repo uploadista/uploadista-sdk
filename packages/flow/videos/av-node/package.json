@@ -23,7 +23,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "node-av": "4.0.0",
+    "node-av": "5.0.1",
     "@uploadista/core": "workspace:*",
     "effect": "catalog:",
     "zod": "catalog:"
