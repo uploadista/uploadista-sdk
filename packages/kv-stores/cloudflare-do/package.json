@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-cloudflare-do",
   "type": "module",
-  "version": "0.0.17-beta.7",
+  "version": "0.0.17-beta.8",
   "description": "Cloudflare Durable Object KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
