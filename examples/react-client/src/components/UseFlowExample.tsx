@@ -6,7 +6,7 @@ import {
   type InputExecutionState,
   useFlow,
 } from "@uploadista/react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { FilePreview } from "./FilePreview";
 import { Card } from "./ui/card";
 import { Label } from "./ui/label";
@@ -231,7 +231,9 @@ const flowsByCategory = Object.entries(flowDescriptions).reduce(
 function UseFlowContent() {
   const [flowId, setFlowId] = useState<FlowId>("optimize-flow");
   const [outputs, setOutputs] = useState<TypedOutput[]>([]);
-  const [inputValues, setInputValues] = useState<Record<string, File | string>>({});
+  const [inputValues, setInputValues] = useState<Record<string, File | string>>(
+    {},
+  );
 
   const flowData = useMemo(() => flowDescriptions[flowId], [flowId]);
 
@@ -248,6 +250,10 @@ function UseFlowContent() {
       console.error("Flow failed:", error);
     },
   });
+
+  useEffect(() => {
+    console.log("flow.inputMetadata", flow.inputMetadata);
+  }, [flow.inputMetadata]);
 
   const handleFlowIdChange = (value: string) => {
     setFlowId(value as FlowId);

@@ -197,6 +197,7 @@ export function createFlowNode<
       name,
       description,
       type,
+      nodeTypeId: nodeTypeId || `${type}-node`,
       keepOutput,
       inputSchema,
       outputSchema,
