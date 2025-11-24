@@ -2,7 +2,7 @@
   "name": "@uploadista/react-native-bare",
   "type": "module",
   "description": "Bare React Native Client for Uploadista",
-  "version": "0.0.17-beta.5",
+  "version": "0.0.17-beta.6",
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
