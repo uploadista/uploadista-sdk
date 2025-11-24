@@ -6,7 +6,7 @@ packages:
 catalog:
   '@effect/vitest': 0.27.0
   '@types/node': 24.10.1
-  effect: 3.19.4
+  effect: 3.19.6
   hono: 4.10.6
   react: 19.2.0
   react-dom: 19.2.0
