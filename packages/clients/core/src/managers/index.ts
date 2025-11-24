@@ -15,7 +15,10 @@ export {
   type FlowUploadInput,
   type FlowUploadState,
   type FlowUploadStatus,
+  type InputExecutionState,
   type InternalFlowUploadOptions,
+  type MultiInputCallbacks,
+  type MultiInputFlowUploadFunction,
 } from "./flow-manager";
 export {
   type UploadAbortController,

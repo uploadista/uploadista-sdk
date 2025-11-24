@@ -44,6 +44,7 @@ export type UploadistaErrorName =
   | "FLOW_NO_UPLOAD_ID"
   | "FLOW_TIMEOUT"
   | "FLOW_FINALIZE_FAILED"
+  | "VALIDATION_ERROR"
   | "JOB_NOT_FOUND"
   | "WEBSOCKET_AUTH_FAILED";
 

@@ -24,8 +24,14 @@ import type {
 import { SmartChunker, type SmartChunkerConfig } from "../smart-chunker";
 import type { ClientStorage } from "../storage/client-storage";
 import type { FlowUploadConfig } from "../types/flow-upload-config";
+import { detectInputType } from "../utils/input-detection";
 
 import { performFlowUpload, startFlowUpload } from "../upload/flow-upload";
+import {
+  finalizeFlowInput,
+  initializeFlowInput,
+  uploadInputChunks,
+} from "../upload/flow-upload-orchestrator";
 import { startParallelUpload } from "../upload/parallel-upload";
 import {
   type Callbacks,
@@ -771,10 +777,236 @@ export function createUploadistaClient<UploadInput>({
     };
   };
 
+  /**
+   * Upload multiple inputs through a flow with parallel coordination.
+   * Supports mixed input types: File/Blob (upload), URL strings (fetch), structured data.
+   *
+   * @param inputs - Record of nodeId to input data (File, URL string, or object)
+   * @param flowConfig - Flow configuration
+   * @param callbacks - Upload lifecycle callbacks
+   * @returns Abort controller and job ID
+   */
+  const multiInputFlowUpload = async (
+    inputs: Record<string, unknown>,
+    flowConfig: FlowUploadConfig,
+    {
+      onProgress,
+      onChunkComplete,
+      onShouldRetry,
+      onJobStart,
+      onError,
+      onInputProgress,
+      onInputComplete,
+      onInputError,
+    }: Omit<
+      UploadistaUploadOptions,
+      "uploadLengthDeferred" | "uploadSize" | "metadata"
+    > & {
+      onInputProgress?: (
+        nodeId: string,
+        progress: number,
+        bytesUploaded: number,
+        totalBytes: number | null,
+      ) => void;
+      onInputComplete?: (nodeId: string) => void;
+      onInputError?: (nodeId: string, error: Error) => void;
+    } = {},
+  ): Promise<{
+    abort: () => Promise<void>;
+    pause: () => Promise<void>;
+    jobId: string;
+  }> => {
+    // Start the flow and get job ID
+    const { job } = await uploadistaApi.runFlow(
+      flowConfig.flowId,
+      flowConfig.storageId || storageId,
+      {},
+    );
+    const jobId = job.id;
+
+    logger.log(`Multi-input flow started: ${jobId}`);
+    onJobStart?.(jobId);
+
+    // Open flow WebSocket for flow events
+    await wsManager.openFlowWebSocket(jobId);
+
+    const abortControllers: Map<string, ReturnType<typeof abortControllerFactory.create>> = new Map();
+    const uploadIds: Map<string, string> = new Map();
+    const timeoutIds: Timeout[] = [];
+
+    try {
+      // Initialize all inputs in parallel
+      const inputEntries = Object.entries(inputs);
+      const initPromises = inputEntries.map(async ([nodeId, data]) => {
+        const inputType = detectInputType(data);
+
+        if (inputType === "file") {
+          // File/Blob upload
+          const file = data as UploadInput;
+          const source = await fileReader.openFile(file, chunkSize);
+
+          const initResult = await initializeFlowInput({
+            nodeId,
+            jobId,
+            source,
+            storageId: flowConfig.storageId || storageId,
+            metadata: {},
+            uploadistaApi,
+            logger,
+            platformService,
+            callbacks: {
+              onStart: ({ uploadId }) => {
+                uploadIds.set(nodeId, uploadId);
+                // Open WebSocket for this upload
+                wsManager.openUploadWebSocket(uploadId);
+              },
+              onError,
+            },
+          });
+
+          return { nodeId, uploadFile: initResult.uploadFile, source, inputType };
+        } else if (inputType === "url") {
+          // URL input - send to server immediately
+          await uploadistaApi.resumeFlow(
+            jobId,
+            nodeId,
+            {
+              operation: "url",
+              url: data as string,
+              storageId: flowConfig.storageId || storageId,
+            },
+            { contentType: "application/json" },
+          );
+
+          return { nodeId, uploadFile: null, source: null, inputType };
+        } else {
+          // Structured data input
+          await uploadistaApi.resumeFlow(
+            jobId,
+            nodeId,
+            data,
+            { contentType: "application/json" },
+          );
+
+          return { nodeId, uploadFile: null, source: null, inputType };
+        }
+      });
+
+      const initializedInputs = await Promise.all(initPromises);
+
+      // Upload all file inputs in parallel
+      const initializedSmartChunker = await initializeSmartChunker();
+      const uploadPromises = initializedInputs
+        .filter((input) => input.inputType === "file" && input.uploadFile && input.source)
+        .map(async ({ nodeId, uploadFile, source }) => {
+          const abortController = abortControllerFactory.create();
+          abortControllers.set(nodeId, abortController);
+
+          const metrics = new UploadMetrics({
+            enableDetailedMetrics: smartChunking?.enabled !== false,
+          });
+
+          if (!uploadFile || !source) {
+            throw new Error(`Missing uploadFile or source for node ${nodeId}`);
+          }
+
+          try {
+            await uploadInputChunks({
+              nodeId,
+              jobId,
+              uploadFile,
+              source,
+              offset: uploadFile.offset,
+              retryAttempt: 0,
+              abortController,
+              retryDelays,
+              smartChunker: initializedSmartChunker,
+              uploadistaApi,
+              logger,
+              smartChunking,
+              metrics,
+              platformService,
+              onRetry: (timeout) => {
+                timeoutIds.push(timeout);
+              },
+              callbacks: {
+                onProgress: (uploadId, bytesUploaded, totalBytes) => {
+                  onProgress?.(uploadId, bytesUploaded, totalBytes);
+
+                  // Calculate progress percentage
+                  const progress = totalBytes ? Math.round((bytesUploaded / totalBytes) * 100) : 0;
+                  onInputProgress?.(nodeId, progress, bytesUploaded, totalBytes);
+                },
+                onChunkComplete,
+                onShouldRetry,
+              },
+            });
+
+            // Finalize this input
+            await finalizeFlowInput({
+              nodeId,
+              jobId,
+              uploadId: uploadFile.id,
+              uploadistaApi,
+              logger,
+              callbacks: { onError },
+            });
+
+            onInputComplete?.(nodeId);
+          } catch (err) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            onInputError?.(nodeId, error);
+            throw error;
+          }
+        });
+
+      await Promise.all(uploadPromises);
+
+      logger.log(`All inputs uploaded for job: ${jobId}`);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.log(`Multi-input flow upload failed: ${error.message}`);
+      onError?.(error);
+      throw error;
+    }
+
+    return {
+      abort: async () => {
+        try {
+          await uploadistaApi.cancelFlow(jobId);
+          logger.log(`Flow cancelled on server: ${jobId}`);
+        } catch (err) {
+          logger.log(`Failed to cancel flow on server: ${err}`);
+        }
+
+        // Abort all uploads
+        for (const controller of abortControllers.values()) {
+          controller.abort();
+        }
+
+        // Clear all timeouts
+        for (const timeoutId of timeoutIds) {
+          platformService.clearTimeout(timeoutId);
+        }
+
+        // Close all WebSockets
+        wsManager.closeWebSocket(jobId);
+        for (const uploadId of uploadIds.values()) {
+          wsManager.closeUploadWebSocket(uploadId);
+        }
+      },
+      pause: async () => {
+        await uploadistaApi.pauseFlow(jobId);
+      },
+      jobId,
+    };
+  };
+
   return {
     // Upload operations
     upload,
     uploadWithFlow,
+    multiInputFlowUpload,
     abort: (params: Parameters<typeof abort>[0]) => abort(params),
 
     // Flow operations

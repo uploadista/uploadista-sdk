@@ -1,4 +1,7 @@
 // Flow Upload Components
+export type { FlowInputProps } from "./flow-input";
+export { FlowInput } from "./flow-input";
+
 export type {
   FlowUploadListProps,
   FlowUploadListRenderProps,

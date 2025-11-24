@@ -155,6 +155,7 @@ export function FlowManagerProvider({ children }: FlowManagerProviderProps) {
         client.uploadWithFlow,
         callbacks,
         options,
+        client.multiInputFlowUpload,
       );
 
       managersRef.current.set(flowId, {

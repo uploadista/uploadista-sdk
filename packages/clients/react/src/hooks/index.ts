@@ -16,6 +16,13 @@ export { useUploadEvents } from "./use-upload-events";
 
 // Flow Upload Hooks
 export type {
+  FlowInputMetadata,
+  InputExecutionState,
+  UseFlowReturn,
+} from "./use-flow";
+export { useFlow } from "./use-flow";
+
+export type {
   InputBuilder,
   UseFlowExecutionOptions,
   UseFlowExecutionReturn,
