@@ -295,5 +295,6 @@ export const getNodeData = (
     name: node.name,
     description: node.description,
     type: node.type,
+    nodeTypeId: node.nodeTypeId,
   };
 };

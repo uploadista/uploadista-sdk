@@ -40,6 +40,7 @@ export type FlowNodeData = {
   name: string;
   description: string;
   type: NodeType;
+  nodeTypeId: string;
   keepOutput?: boolean;
 };
 
@@ -541,9 +542,7 @@ export type FlowConfig<
       jobId: string;
       storageId: string;
       clientId: string | null;
-    }) =>
-      | Effect.Effect<TOutput, UploadistaError, never>
-      | Promise<TOutput>;
+    }) => Effect.Effect<TOutput, UploadistaError, never> | Promise<TOutput>;
   };
 };
 

@@ -5,7 +5,6 @@ import type {
   FlowUploadStatus,
   InputExecutionState,
 } from "@uploadista/client-core";
-import type { Flow } from "@uploadista/core/flow";
 import type { TypedOutput } from "@uploadista/core/flow";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
@@ -25,7 +24,7 @@ export interface FlowInputMetadata {
   /** Node description explaining what input is needed */
   nodeDescription: string;
   /** Input node type */
-  nodeType: string;
+  nodeTypeId: string;
   /** Whether this input is required */
   required: boolean;
 }
@@ -244,10 +243,14 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
   const { client } = useUploadistaContext();
   const { getManager, releaseManager } = useFlowManagerContext();
   const [state, setState] = useState<FlowUploadState>(initialState);
-  const [inputMetadata, setInputMetadata] = useState<FlowInputMetadata[] | null>(null);
+  const [inputMetadata, setInputMetadata] = useState<
+    FlowInputMetadata[] | null
+  >(null);
   const [isDiscoveringInputs, setIsDiscoveringInputs] = useState(false);
   const [inputs, setInputs] = useState<Record<string, unknown>>({});
-  const [inputStates, setInputStates] = useState<ReadonlyMap<string, InputExecutionState>>(new Map());
+  const [inputStates, setInputStates] = useState<
+    ReadonlyMap<string, InputExecutionState>
+  >(new Map());
   const managerRef = useRef<FlowManager<unknown> | null>(null);
 
   // Store callbacks in refs so they can be updated without recreating the manager
@@ -272,7 +275,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
           nodeId: node.id,
           nodeName: node.name,
           nodeDescription: node.description,
-          nodeType: node.nodeType,
+          nodeTypeId: node.nodeTypeId,
           // TODO: Add required field to node schema to determine if input is required
           required: true,
         }));
@@ -368,29 +371,37 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     }
 
     if (Object.keys(inputs).length === 0) {
-      throw new Error("No inputs provided. Use setInput() to provide inputs before calling execute()");
+      throw new Error(
+        "No inputs provided. Use setInput() to provide inputs before calling execute()",
+      );
     }
 
     await managerRef.current.executeFlow(inputs);
   }, [inputs]);
 
   // Convenience method for single file upload
-  const upload = useCallback(async (file: File | Blob) => {
-    if (!managerRef.current) {
-      throw new Error("FlowManager not initialized");
-    }
+  const upload = useCallback(
+    async (file: File | Blob) => {
+      if (!managerRef.current) {
+        throw new Error("FlowManager not initialized");
+      }
 
-    // If we have input metadata, use the first input node
-    // Otherwise, let the manager discover it
-    if (inputMetadata && inputMetadata.length > 0) {
-      const firstInputNode = inputMetadata[0];
-      setInputs({ [firstInputNode.nodeId]: file });
-      await managerRef.current.executeFlow({ [firstInputNode.nodeId]: file });
-    } else {
-      // Fall back to direct upload (manager will handle discovery)
-      await managerRef.current.upload(file);
-    }
-  }, [inputMetadata]);
+      // If we have input metadata, use the first input node
+      // Otherwise, let the manager discover it
+      if (inputMetadata && inputMetadata.length > 0) {
+        const firstInputNode = inputMetadata[0];
+        if (!firstInputNode) {
+          throw new Error("No input nodes found");
+        }
+        setInputs({ [firstInputNode.nodeId]: file });
+        await managerRef.current.executeFlow({ [firstInputNode.nodeId]: file });
+      } else {
+        // Fall back to direct upload (manager will handle discovery)
+        await managerRef.current.upload(file);
+      }
+    },
+    [inputMetadata],
+  );
 
   const abort = useCallback(() => {
     managerRef.current?.abort();

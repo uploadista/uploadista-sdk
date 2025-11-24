@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/a11y/useSemanticElements: button is inside a div*/
 "use client";
 
 import { useDragDrop } from "../hooks/use-drag-drop";
@@ -54,11 +55,11 @@ export function FlowInput({
   const isUrlValue = typeof value === "string" && value.length > 0;
 
   // Determine input mode based on node type
-  const supportsFileUpload = input.nodeType === "streaming-input-v1";
+  const supportsFileUpload = input.nodeTypeId === "streaming-input-v1";
   const supportsUrl =
     allowUrl &&
-    (input.nodeType === "url-input-v1" ||
-      input.nodeType === "streaming-input-v1");
+    (input.nodeTypeId === "url-input-v1" ||
+      input.nodeTypeId === "streaming-input-v1");
 
   const dragDrop = useDragDrop({
     onFilesReceived: (files) => {
@@ -93,7 +94,7 @@ export function FlowInput({
           <h4 className="font-semibold text-gray-900">{input.nodeName}</h4>
           {input.required && <span className="text-red-500 text-sm">*</span>}
           <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-            {input.nodeType}
+            {input.nodeTypeId}
           </span>
         </div>
         {input.nodeDescription && (

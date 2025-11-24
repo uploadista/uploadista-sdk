@@ -47,11 +47,11 @@
 
 import type { FlowUploadOptions } from "@uploadista/client-browser";
 import type {
+  FlowInputs,
   FlowManager,
   FlowUploadState,
   FlowUploadStatus,
 } from "@uploadista/client-core";
-import type { FlowInputs } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
@@ -379,86 +379,83 @@ export function useFlowExecution<TTrigger = unknown, TOutput = TypedOutput[]>(
    * Execute the flow with trigger data.
    * Calls inputBuilder to transform trigger into flow inputs.
    */
-  const execute = useCallback(
-    async (trigger: TTrigger) => {
-      try {
-        // Build flow inputs from trigger data
-        const flowInputs = await inputBuilderRef.current(trigger);
+  const execute = useCallback(async (trigger: TTrigger) => {
+    try {
+      // Build flow inputs from trigger data
+      const flowInputs = await inputBuilderRef.current(trigger);
 
-        // For now, we need to determine if this is a file upload or URL operation
-        // by inspecting the flowInputs structure
-        const firstInputNodeId = Object.keys(flowInputs)[0];
-        if (!firstInputNodeId) {
-          throw new Error("flowInputs must contain at least one input node");
+      // For now, we need to determine if this is a file upload or URL operation
+      // by inspecting the flowInputs structure
+      const firstInputNodeId = Object.keys(flowInputs)[0];
+      if (!firstInputNodeId) {
+        throw new Error("flowInputs must contain at least one input node");
+      }
+      const firstInput = flowInputs[firstInputNodeId];
+
+      // Type guard: check if this is an init operation (file upload)
+      const isFileUpload =
+        typeof firstInput === "object" &&
+        firstInput !== null &&
+        "operation" in firstInput &&
+        firstInput.operation === "init";
+
+      if (isFileUpload) {
+        // File upload path: use the standard upload mechanism
+        // This requires the trigger to be a File/Blob
+        if (managerRef.current) {
+          await managerRef.current.upload(trigger as unknown);
         }
-        const firstInput = flowInputs[firstInputNodeId];
-
-        // Type guard: check if this is an init operation (file upload)
-        const isFileUpload =
-          typeof firstInput === "object" &&
-          firstInput !== null &&
-          "operation" in firstInput &&
-          firstInput.operation === "init";
-
-        if (isFileUpload) {
-          // File upload path: use the standard upload mechanism
-          // This requires the trigger to be a File/Blob
-          if (managerRef.current) {
-            await managerRef.current.upload(trigger as unknown);
-          }
-        } else {
-          // Non-file path (URL, structured data, etc.)
-          // Skip chunked upload and execute flow directly with provided inputs
-          setState((prev) => ({
-            ...prev,
-            status: "processing",
-            flowStarted: true,
-          }));
-
-          // Execute flow with the built inputs
-          const result = await client.executeFlowWithInputs(
-            options.flowConfig.flowId,
-            flowInputs,
-            {
-              storageId: options.flowConfig.storageId,
-              onJobStart: (jobId: string) => {
-                setState((prev) => ({
-                  ...prev,
-                  jobId,
-                }));
-                callbacksRef.current.onJobStart?.(jobId);
-              },
-            },
-          );
-
-          // If job was created successfully, the FlowManager will handle
-          // flow events via WebSocket and update state accordingly
-          if (result.job?.id) {
-            // State updates will come from flow events
-            // Manager will receive FlowEnd event and update state to "success"
-          } else {
-            // No job created - treat as immediate completion
-            setState((prev) => ({
-              ...prev,
-              status: "success",
-              progress: 100,
-              flowStarted: true,
-            }));
-          }
-        }
-      } catch (error) {
-        // Handle inputBuilder errors
-        const err = error instanceof Error ? error : new Error(String(error));
+      } else {
+        // Non-file path (URL, structured data, etc.)
+        // Skip chunked upload and execute flow directly with provided inputs
         setState((prev) => ({
           ...prev,
-          status: "error",
-          error: err,
+          status: "processing",
+          flowStarted: true,
         }));
-        callbacksRef.current.onError?.(err);
+
+        // Execute flow with the built inputs
+        const result = await client.executeFlowWithInputs(
+          options.flowConfig.flowId,
+          flowInputs,
+          {
+            storageId: options.flowConfig.storageId,
+            onJobStart: (jobId: string) => {
+              setState((prev) => ({
+                ...prev,
+                jobId,
+              }));
+              callbacksRef.current.onJobStart?.(jobId);
+            },
+          },
+        );
+
+        // If job was created successfully, the FlowManager will handle
+        // flow events via WebSocket and update state accordingly
+        if (result.job?.id) {
+          // State updates will come from flow events
+          // Manager will receive FlowEnd event and update state to "success"
+        } else {
+          // No job created - treat as immediate completion
+          setState((prev) => ({
+            ...prev,
+            status: "success",
+            progress: 100,
+            flowStarted: true,
+          }));
+        }
       }
-    },
-    [],
-  );
+    } catch (error) {
+      // Handle inputBuilder errors
+      const err = error instanceof Error ? error : new Error(String(error));
+      setState((prev) => ({
+        ...prev,
+        status: "error",
+        error: err,
+      }));
+      callbacksRef.current.onError?.(err);
+    }
+  }, []);
 
   /**
    * Abort the current execution
