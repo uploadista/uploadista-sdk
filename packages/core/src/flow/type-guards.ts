@@ -1,23 +1,29 @@
 /**
- * Type guards and helpers for safe type narrowing of flow results.
+ * Type guards and helpers for safe type narrowing of flow results and inputs.
  *
  * This module provides runtime type guards for discriminating between different
- * types of flow outputs. Type guards validate both the type tag and the data
- * structure against registered schemas.
+ * types of flow outputs and input operations. Type guards validate both the type
+ * tag and the data structure against registered schemas.
  *
  * @module flow/type-guards
  *
  * @example
  * ```typescript
- * import { isStorageOutput, filterOutputsByType } from "@uploadista/core/flow";
+ * import { isStorageOutput, filterOutputsByType, isUrlOperation } from "@uploadista/core/flow";
  *
- * // Type-safe result consumption
+ * // Type-safe output result consumption
  * if (result.success && result.flowOutputs) {
  *   const storageOutputs = filterOutputsByType(result.flowOutputs, isStorageOutput);
  *   for (const output of storageOutputs) {
  *     // output.data is typed as UploadFile
  *     console.log("Stored at:", output.data.url);
  *   }
+ * }
+ *
+ * // Type-safe input operation handling
+ * if (isUrlOperation(inputData)) {
+ *   // TypeScript knows inputData has url property
+ *   console.log("Fetching from", inputData.url);
  * }
  * ```
  */
@@ -32,6 +38,7 @@ import {
   OCR_OUTPUT_TYPE_ID,
   type OcrOutput,
 } from "./node-types";
+import type { InputData } from "./nodes/input-node";
 import { flowTypeRegistry } from "./type-registry";
 import type { TypedOutput } from "./types/flow-types";
 
@@ -367,4 +374,103 @@ export function hasOutputOfType<T>(
   typeGuard: (output: TypedOutput) => output is TypedOutput<T>,
 ): boolean {
   return outputs.some(typeGuard);
+}
+
+// ============================================================================
+// Input Operation Type Guards
+// ============================================================================
+
+/**
+ * Type guard for init operation (streaming file upload initialization).
+ *
+ * Checks if the input data is an init operation that starts a streaming
+ * file upload session.
+ *
+ * @param data - Input data to check
+ * @returns True if data is an init operation
+ *
+ * @example
+ * ```typescript
+ * if (isInitOperation(inputData)) {
+ *   console.log("Storage ID:", inputData.storageId);
+ *   console.log("Metadata:", inputData.metadata);
+ * }
+ * ```
+ */
+export function isInitOperation(
+  data: InputData,
+): data is Extract<InputData, { operation: "init" }> {
+  return data.operation === "init";
+}
+
+/**
+ * Type guard for finalize operation (complete streaming upload).
+ *
+ * Checks if the input data is a finalize operation that completes a
+ * previously initialized streaming upload.
+ *
+ * @param data - Input data to check
+ * @returns True if data is a finalize operation
+ *
+ * @example
+ * ```typescript
+ * if (isFinalizeOperation(inputData)) {
+ *   console.log("Upload ID:", inputData.uploadId);
+ * }
+ * ```
+ */
+export function isFinalizeOperation(
+  data: InputData,
+): data is Extract<InputData, { operation: "finalize" }> {
+  return data.operation === "finalize";
+}
+
+/**
+ * Type guard for URL operation (direct file fetch from URL).
+ *
+ * Checks if the input data is a URL operation that fetches a file
+ * directly from an external URL.
+ *
+ * @param data - Input data to check
+ * @returns True if data is a URL operation
+ *
+ * @example
+ * ```typescript
+ * if (isUrlOperation(inputData)) {
+ *   console.log("Fetching from:", inputData.url);
+ *   console.log("Optional storage:", inputData.storageId);
+ * }
+ * ```
+ */
+export function isUrlOperation(
+  data: InputData,
+): data is Extract<InputData, { operation: "url" }> {
+  return data.operation === "url";
+}
+
+/**
+ * Type guard for upload operations (init or url).
+ *
+ * Checks if the input data is either an init or URL operation (i.e., operations
+ * that trigger new uploads, as opposed to finalize which completes an existing upload).
+ *
+ * @param data - Input data to check
+ * @returns True if data is an init or URL operation
+ *
+ * @example
+ * ```typescript
+ * if (isUploadOperation(inputData)) {
+ *   // This is a new upload, not a finalization
+ *   if (isInitOperation(inputData)) {
+ *     console.log("Streaming upload");
+ *   } else {
+ *     console.log("URL fetch");
+ *   }
+ * }
+ * ```
+ */
+export function isUploadOperation(
+  data: InputData,
+): data is Extract<InputData, { operation: "init" | "url" }> {
+  return data.operation === "init" || data.operation === "url";
 }

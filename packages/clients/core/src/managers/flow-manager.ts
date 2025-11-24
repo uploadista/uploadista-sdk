@@ -126,7 +126,14 @@ export interface FlowManagerCallbacks {
 }
 
 /**
- * Generic flow upload input type - can be any value that the upload client accepts
+ * Generic flow execution input type - can be any value that the flow execution client accepts.
+ * Common types include File, Blob, string (for URLs), or structured data objects.
+ *
+ * @remarks
+ * The flexibility of this type enables different flow execution patterns:
+ * - File/Blob: Traditional chunked file upload with init/finalize operations
+ * - string (URL): Direct file fetch from external URL
+ * - object: Structured data for non-file input nodes (future)
  */
 export type FlowUploadInput = unknown;
 
@@ -200,34 +207,32 @@ const initialState: FlowUploadState = {
 };
 
 /**
- * Platform-agnostic flow upload manager that handles flow upload state machine,
+ * Platform-agnostic flow execution manager that handles flow state machine,
  * progress tracking, flow event handling, error handling, abort, pause, reset, and retry logic.
+ *
+ * Supports multiple input types through generic TInput parameter:
+ * - File/Blob: Chunked file upload with progress tracking
+ * - string (URL): Direct file fetch from external source
+ * - object: Structured data for custom input nodes
  *
  * Framework packages (React, Vue, React Native) should wrap this manager
  * with framework-specific hooks/composables.
  *
+ * @template TInput - The type of input data accepted by the flow (File, Blob, string, object, etc.)
+ *
  * @example
  * ```typescript
- * const flowUploadFn = (input, options) => client.uploadWithFlow(input, options.flowConfig, options);
- * const manager = new FlowManager(flowUploadFn, {
- *   onStateChange: (state) => setState(state),
- *   onProgress: (progress, bytes, total) => console.log(`${progress}%`),
- *   onSuccess: (result) => console.log('Flow complete:', result),
- *   onError: (error) => console.error('Flow failed:', error),
- * }, {
- *   flowConfig: { flowId: 'my-flow', storageId: 'storage1' }
- * });
+ * // File upload flow
+ * const fileFlowManager = new FlowManager<File>(...);
+ * await fileFlowManager.upload(myFile);
  *
- * // Subscribe to events and forward them to the manager
- * const unsubscribe = client.subscribeToEvents((event) => {
- *   if (isFlowEvent(event)) {
- *     manager.handleFlowEvent(event);
- *   } else if (isUploadProgress(event)) {
- *     manager.handleUploadProgress(event);
- *   }
- * });
+ * // URL fetch flow
+ * const urlFlowManager = new FlowManager<string>(...);
+ * await urlFlowManager.upload("https://example.com/image.jpg");
  *
- * await manager.upload(file);
+ * // Structured data flow
+ * const dataFlowManager = new FlowManager<{ text: string }>(...);
+ * await dataFlowManager.upload({ text: "Process this" });
  * ```
  */
 export class FlowManager<TInput = FlowUploadInput> {
@@ -449,12 +454,27 @@ export class FlowManager<TInput = FlowUploadInput> {
   }
 
   /**
-   * Start uploading a file through the flow
+   * Execute a flow with the provided input data.
    *
-   * @param input - File or input to upload (type depends on platform)
+   * The input type and execution behavior depends on the generic TInput type:
+   * - File/Blob: Initiates chunked upload with progress tracking
+   * - string (URL): Directly passes URL to flow for fetching
+   * - object: Passes structured data to flow input nodes
+   *
+   * @param input - Input data for the flow execution (type determined by TInput generic)
+   *
+   * @example
+   * ```typescript
+   * // File upload
+   * await manager.upload(fileObject);
+   *
+   * // URL fetch
+   * await manager.upload("https://example.com/image.jpg");
+   * ```
    */
   async upload(input: TInput): Promise<void> {
     // Determine totalBytes from input if possible (File/Blob on browser platforms)
+    // For non-file inputs (URLs, structured data), totalBytes remains null
     let totalBytes: number | null = null;
     if (input && typeof input === "object") {
       if ("size" in input && typeof input.size === "number") {

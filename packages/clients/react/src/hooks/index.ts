@@ -15,6 +15,19 @@ export type {
 export { useUploadEvents } from "./use-upload-events";
 
 // Flow Upload Hooks
+export type {
+  InputBuilder,
+  UseFlowExecutionOptions,
+  UseFlowExecutionReturn,
+} from "./use-flow-execution";
+export { useFlowExecution } from "./use-flow-execution";
+
+export type {
+  FlowUploadState,
+  FlowUploadStatus,
+  UseFlowUploadReturn,
+} from "./use-flow-upload";
+export { useFlowUpload } from "./use-flow-upload";
 
 // Upload Hooks
 export type {
@@ -23,12 +36,6 @@ export type {
   UseDragDropReturn,
 } from "./use-drag-drop";
 export { useDragDrop } from "./use-drag-drop";
-export type {
-  FlowUploadState,
-  FlowUploadStatus,
-  UseFlowUploadReturn,
-} from "./use-flow-upload";
-export { useFlowUpload } from "./use-flow-upload";
 export type { UseMultiFlowUploadReturn } from "./use-multi-flow-upload";
 export { useMultiFlowUpload } from "./use-multi-flow-upload";
 

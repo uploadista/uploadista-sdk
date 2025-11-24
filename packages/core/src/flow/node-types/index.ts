@@ -24,6 +24,7 @@
 
 import { z } from "zod";
 import { uploadFileSchema } from "../../types/upload-file";
+import { inputDataSchema } from "../nodes/input-node";
 import { flowTypeRegistry } from "../type-registry";
 
 /**
@@ -42,6 +43,7 @@ import { flowTypeRegistry } from "../type-registry";
  * });
  * ```
  */
+export const STREAMING_INPUT_TYPE_ID = "streaming-input-v1";
 export const STORAGE_OUTPUT_TYPE_ID = "storage-output-v1";
 export const OCR_OUTPUT_TYPE_ID = "ocr-output-v1";
 export const IMAGE_DESCRIPTION_OUTPUT_TYPE_ID = "image-description-output-v1";
@@ -79,6 +81,24 @@ export const imageDescriptionOutputSchema = z.object({
 export type ImageDescriptionOutput = z.infer<
   typeof imageDescriptionOutputSchema
 >;
+
+/**
+ * Register streaming input node type.
+ *
+ * This is the standard input type for flows that accept file uploads via
+ * streaming chunks or direct URL fetches. It supports three operations:
+ * - init: Initialize a streaming file upload session
+ * - finalize: Complete the upload after all chunks are uploaded
+ * - url: Fetch a file directly from a URL
+ */
+flowTypeRegistry.register({
+  id: STREAMING_INPUT_TYPE_ID,
+  category: "input",
+  schema: inputDataSchema,
+  version: "1.0.0",
+  description:
+    "Streaming file input with init/finalize/url operations for flexible file ingestion",
+});
 
 /**
  * Register storage output node type.

@@ -824,6 +824,99 @@ export function createUploadistaClient<UploadInput>({
       return uploadistaApi.cancelFlow(jobId);
     },
 
+    /**
+     * Find input nodes in a flow.
+     *
+     * Discovers all input nodes in a flow and returns their metadata.
+     * Useful for auto-discovering input node IDs in single-input flows.
+     *
+     * @param flowId - The flow ID to inspect
+     * @returns Discovery result with input node information
+     *
+     * @example
+     * ```typescript
+     * const { inputNodes, single } = await client.findInputNode("my-flow");
+     *
+     * if (single) {
+     *   // Flow has exactly one input node, can auto-map input data
+     *   const inputNodeId = inputNodes[0].id;
+     * } else {
+     *   // Multi-input flow, requires explicit node IDs
+     *   console.log("Input nodes:", inputNodes.map(n => n.id));
+     * }
+     * ```
+     */
+    findInputNode: async (flowId: string) => {
+      const { flow } = await uploadistaApi.getFlow(flowId);
+      const inputNodes = flow.nodes
+        .filter((node) => node.type === "input")
+        .map((node) => ({
+          id: node.id,
+          type: node.type,
+          name: node.name,
+        }));
+
+      return {
+        inputNodes,
+        single: inputNodes.length === 1,
+      };
+    },
+
+    /**
+     * Execute a flow with arbitrary inputs (URL, structured data, etc.).
+     *
+     * This method supports flexible flow execution beyond traditional file uploads.
+     * It directly executes flows with provided inputs, bypassing chunked upload for
+     * non-file operations like URL fetching or structured data processing.
+     *
+     * @param flowId - The flow ID to execute
+     * @param inputs - Map of node IDs to their input data
+     * @param options - Optional execution options
+     * @returns Job status and initial result
+     *
+     * @example
+     * ```typescript
+     * // URL-based flow execution
+     * const { job } = await client.executeFlowWithInputs("optimize-flow", {
+     *   "input-node": {
+     *     operation: "url",
+     *     url: "https://example.com/image.jpg",
+     *     storageId: "s3"
+     *   }
+     * });
+     *
+     * // Listen for flow events
+     * client.openFlowWebSocket(job.id);
+     * client.subscribeToEvents((event) => {
+     *   if (event.eventType === EventType.FlowEnd) {
+     *     console.log("Flow complete:", event.outputs);
+     *   }
+     * });
+     * ```
+     */
+    executeFlowWithInputs: async (
+      flowId: string,
+      inputs: Record<string, unknown>,
+      options?: {
+        storageId?: string;
+        onJobStart?: (jobId: string) => void;
+      },
+    ) => {
+      // Execute flow with provided inputs
+      const { status, job } = await uploadistaApi.runFlow(
+        flowId,
+        options?.storageId || storageId,
+        inputs,
+      );
+
+      // Notify callback if job started successfully
+      if (job?.id && options?.onJobStart) {
+        options.onJobStart(job.id);
+      }
+
+      return { status, job };
+    },
+
     // Job operations (unified for both uploads and flows)
     getJobStatus: async (jobId: string) => {
       return uploadistaApi.getJobStatus(jobId);
