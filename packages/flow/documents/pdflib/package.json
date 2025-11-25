@@ -23,13 +23,16 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "effect": "catalog:",
     "pdf-lib": "^1.17.1"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
     "vitest": "4.0.13"
   }

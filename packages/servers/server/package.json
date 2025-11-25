@@ -33,9 +33,7 @@
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "@uploadista/event-emitter-websocket": "workspace:*",
-    "@uploadista/event-broadcaster-memory": "workspace:*",
-    "effect": "catalog:",
-    "zod": "catalog:"
+    "@uploadista/event-broadcaster-memory": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20251125.0",
@@ -43,13 +41,17 @@
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsd": "0.33.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.13",
+    "zod": "catalog:"
   },
   "peerDependencies": {
+    "effect": "^3.0.0",
     "express": "^4.0.0 || ^5.0.0",
-    "hono": "^4.0.0"
+    "hono": "^4.0.0",
+    "zod": "^4.0.0"
   }
 }

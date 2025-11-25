@@ -31,16 +31,20 @@
   "dependencies": {
     "@cf-wasm/photon": "0.2.2",
     "@uploadista/core": "workspace:*",
-    "effect": "catalog:",
-    "tinycolor2": "1.6.0",
-    "zod": "catalog:"
+    "tinycolor2": "1.6.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@types/tinycolor2": "1.4.6",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.13",
+    "zod": "catalog:"
   }
 }

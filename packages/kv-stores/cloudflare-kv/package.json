@@ -24,12 +24,15 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "@cloudflare/workers-types": "4.20251125.0",
-    "effect": "catalog:"
+    "@cloudflare/workers-types": "4.20251125.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
     "vitest": "4.0.13"
   }

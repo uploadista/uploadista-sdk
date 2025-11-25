@@ -30,21 +30,23 @@
     "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/event-emitter-websocket": "workspace:*",
     "@uploadista/event-emitter-durable-object": "workspace:*",
-    "@uploadista/server": "workspace:*",
-    "effect": "catalog:",
-    "zod": "catalog:"
+    "@uploadista/server": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0",
+    "hono": "^4.0.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "hono": "^4.0.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.13"
-  },
-  "peerDependencies": {
-    "hono": "^4.0.0"
+    "vitest": "4.0.13",
+    "zod": "catalog:"
   }
 }

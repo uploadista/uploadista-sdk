@@ -22,12 +22,15 @@
   "dependencies": {
     "@uploadista/core": "workspace:*",
     "@uploadista/flow-documents-pdflib": "workspace:*",
-    "@uploadista/flow-documents-unpdf": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/flow-documents-unpdf": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:"
   }
 }

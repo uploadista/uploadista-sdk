@@ -23,12 +23,15 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@uploadista/core": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
     "vitest": "4.0.13"
   }

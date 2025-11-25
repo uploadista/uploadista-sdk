@@ -23,17 +23,18 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@uploadista/core": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/core": "workspace:*"
   },
   "peerDependencies": {
-    "@redis/client": ">=5.8.0 <6.0.0"
+    "@redis/client": ">=5.8.0 <6.0.0",
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@redis/client": "5.10.0",
     "@uploadista/typescript-config": "workspace:*",
     "@types/node": "catalog:",
+    "effect": "catalog:",
     "tsdown": "catalog:",
     "vitest": "4.0.13"
   }
