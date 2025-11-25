@@ -12,14 +12,17 @@
 
 /** biome-ignore-all lint/suspicious/noExplicitAny: any is used to allow for dynamic types */
 
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 import { z } from "zod";
 
 import { UploadistaError } from "../errors";
+import { UploadFileDataStores } from "../types/data-store";
+import type { UploadFile } from "../types/upload-file";
 import type { FlowEdge } from "./edge";
 import { EventType } from "./event";
 import { getNodeData } from "./node";
 import { ParallelScheduler } from "./parallel-scheduler";
+import { isUploadFile } from "./type-guards";
 import type {
   FlowConfig,
   FlowNode,
@@ -177,6 +180,11 @@ export type Flow<
     TFlowOutputSchema,
     TRequirements
   >["checkJobStatus"];
+  hooks?: FlowConfig<
+    TFlowInputSchema,
+    TFlowOutputSchema,
+    TRequirements
+  >["hooks"];
   run: (args: {
     inputs?: Record<string, z.infer<TFlowInputSchema>>;
     storageId: string;
@@ -185,7 +193,7 @@ export type Flow<
   }) => Effect.Effect<
     FlowExecutionResult<Record<string, z.infer<TFlowOutputSchema>>>,
     UploadistaError,
-    TRequirements
+    TRequirements | UploadFileDataStores
   >;
   resume: (args: {
     jobId: string;
@@ -200,7 +208,7 @@ export type Flow<
   }) => Effect.Effect<
     FlowExecutionResult<Record<string, z.infer<TFlowOutputSchema>>>,
     UploadistaError,
-    TRequirements
+    TRequirements | UploadFileDataStores
   >;
   validateTypes: () => { isValid: boolean; errors: string[] };
   validateInputs: (inputs: unknown) => { isValid: boolean; errors: string[] };
@@ -450,11 +458,25 @@ export function createFlowWithSchema<
       return mappedInputs;
     };
 
-    // Collect outputs from output nodes
+    // Utility to detect sink nodes (nodes with no outgoing edges)
+    const isSink = (nodeId: string): boolean => {
+      return !edges.some((edge) => edge.source === nodeId);
+    };
+
+    // Utility to check if a node should be included in outputs
+    // Includes both sink nodes (topology-based) and nodes with keepOutput flag
+    const shouldIncludeInOutputs = (nodeId: string): boolean => {
+      const node = nodes.find((n: any) => n.id === nodeId);
+      return isSink(nodeId) || node?.keepOutput === true;
+    };
+
+    // Collect outputs from sink nodes (nodes with no outgoing edges) and nodes with keepOutput
     const collectFlowOutputs = (
       nodeResults: Map<string, unknown>,
     ): Record<string, z.infer<TFlowInputSchema>> => {
-      const outputNodes = nodes.filter((node: any) => node.type === "output");
+      const outputNodes = nodes.filter((node: any) =>
+        shouldIncludeInOutputs(node.id),
+      );
       const flowOutputs: Record<string, unknown> = {};
 
       outputNodes.forEach((node: any) => {
@@ -467,12 +489,14 @@ export function createFlowWithSchema<
       return flowOutputs as Record<string, z.infer<TFlowInputSchema>>;
     };
 
-    // Collect typed outputs from output nodes with metadata
+    // Collect typed outputs from sink nodes and keepOutput nodes with metadata
     const collectTypedOutputs = (
       nodeResults: Map<string, unknown>,
       nodeTypesMap: Map<string, string>,
     ): TypedOutput[] => {
-      const outputNodes = nodes.filter((node: any) => node.type === "output");
+      const outputNodes = nodes.filter((node: any) =>
+        shouldIncludeInOutputs(node.id),
+      );
       const typedOutputs: TypedOutput[] = [];
 
       outputNodes.forEach((node: any) => {
@@ -494,6 +518,60 @@ export function createFlowWithSchema<
       return typedOutputs;
     };
 
+    // Transfer an UploadFile from one storage to another
+    const transferFileToTargetStorage = (
+      file: UploadFile,
+      targetStorageId: string,
+      clientId: string | null,
+    ): Effect.Effect<UploadFile, UploadistaError, UploadFileDataStores> => {
+      return Effect.gen(function* () {
+        // If file is already in target storage, no transfer needed
+        if (file.storage.id === targetStorageId) {
+          return file;
+        }
+
+        // Get source and target data stores
+        const dataStores = yield* UploadFileDataStores;
+        const sourceDataStore = yield* dataStores.getDataStore(
+          file.storage.id,
+          clientId,
+        );
+        const targetDataStore = yield* dataStores.getDataStore(
+          targetStorageId,
+          clientId,
+        );
+
+        // Read file from source storage
+        const fileData = yield* sourceDataStore.read(file.id);
+
+        // Create stream from file data
+        const dataStream = Stream.make(fileData);
+
+        // Create new file record in target storage
+        const transferredFile: UploadFile = {
+          ...file,
+          storage: {
+            id: targetStorageId,
+            type: file.storage.type, // Keep same type for now
+          },
+        };
+
+        const createdFile = yield* targetDataStore.create(transferredFile);
+
+        // Write file data to target storage
+        yield* targetDataStore.write(
+          {
+            file_id: createdFile.id,
+            stream: dataStream,
+            offset: 0,
+          },
+          {},
+        );
+
+        return createdFile;
+      });
+    };
+
     // Execute a single node using Effect
     const executeNode = (
       nodeId: string,
@@ -511,7 +589,8 @@ export function createFlowWithSchema<
         waiting: boolean;
         nodeType?: string;
       },
-      UploadistaError
+      UploadistaError,
+      UploadFileDataStores
     > => {
       return Effect.gen(function* () {
         const node = nodeMap.get(nodeId);
@@ -662,7 +741,42 @@ export function createFlowWithSchema<
             }
 
             // Node completed successfully
-            const result = executionResult.data;
+            let result = executionResult.data;
+
+            // Auto-persistence and hooks for sink nodes and nodes with keepOutput
+            if (shouldIncludeInOutputs(nodeId)) {
+              // If result is an UploadFile, transfer to target storage if needed
+              if (isUploadFile(result) && result.storage.id !== storageId) {
+                yield* Effect.logDebug(
+                  `Auto-persisting output node ${nodeId} output from ${result.storage.id} to ${storageId}`,
+                );
+                result = yield* transferFileToTargetStorage(
+                  result,
+                  storageId,
+                  clientId,
+                );
+              }
+
+              // Call onNodeOutput hook if provided (for all sink outputs)
+              if (config.hooks?.onNodeOutput) {
+                yield* Effect.logDebug(
+                  `Calling onNodeOutput hook for sink node ${nodeId}`,
+                );
+                const hookResult = config.hooks.onNodeOutput({
+                  output: result,
+                  nodeId,
+                  flowId,
+                  jobId,
+                  storageId,
+                  clientId,
+                });
+
+                // Support both Effect and Promise
+                result = yield* (Effect.isEffect(hookResult)
+                  ? hookResult
+                  : Effect.promise(() => hookResult as Promise<unknown>));
+              }
+            }
 
             // Emit NodeEnd event with result
             if (onEvent) {
@@ -772,7 +886,8 @@ export function createFlowWithSchema<
             inputs: Record<string, z.infer<TFlowInputSchema>>;
           };
         },
-      UploadistaError
+      UploadistaError,
+      UploadFileDataStores
     > => {
       return Effect.gen(function* () {
         // Emit FlowStart event only if starting fresh
@@ -1007,8 +1122,8 @@ export function createFlowWithSchema<
         // Validate the final result against the output schema
         const parseResult = finalResultSchema.safeParse(finalResult);
         if (!parseResult.success) {
-          const validationError = `Flow output validation failed: ${parseResult.error.message}. Expected outputs: ${JSON.stringify(Object.keys(collectFlowOutputs(nodeResults)))}. Output nodes: ${nodes
-            .filter((n: any) => n.type === "output")
+          const validationError = `Flow output validation failed: ${parseResult.error.message}. Expected outputs: ${JSON.stringify(Object.keys(collectFlowOutputs(nodeResults)))}. Output nodes (sinks + keepOutput): ${nodes
+            .filter((n: any) => shouldIncludeInOutputs(n.id))
             .map((n: any) => n.id)
             .join(", ")}`;
 
@@ -1076,7 +1191,7 @@ export function createFlowWithSchema<
           };
         },
       UploadistaError,
-      TRequirements
+      TRequirements | UploadFileDataStores
     > => {
       return executeFlow({ inputs, storageId, jobId, clientId });
     };
@@ -1112,7 +1227,8 @@ export function createFlowWithSchema<
             inputs: Record<string, z.infer<TFlowInputSchema>>;
           };
         },
-      UploadistaError
+      UploadistaError,
+      TRequirements | UploadFileDataStores
     > => {
       return executeFlow({
         inputs: executionState.inputs,
@@ -1150,6 +1266,7 @@ export function createFlowWithSchema<
       outputSchema,
       onEvent,
       checkJobStatus,
+      hooks: config.hooks,
       run,
       resume,
       validateTypes,

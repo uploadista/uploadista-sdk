@@ -102,6 +102,138 @@ const mergeNode = createMergeNode("merge-files", {
 - **Batch**: Returns files as a batch
 - **Concat**: Concatenates all files into one
 
+### 5. Preserving Intermediate Outputs with keepOutput
+
+By default, the flow engine uses topology-based output detection: only nodes with no outgoing edges (sink nodes) have their outputs preserved. Intermediate nodes (those with outgoing edges) have their outputs automatically cleaned up after flow completion to save storage.
+
+However, there are common use cases where you need to preserve both intermediate and final outputs:
+
+**Use Case: Invoice OCR**
+```typescript
+// Problem: Input has an outgoing edge, so it gets deleted
+input → ocr
+// Solution: Mark input with keepOutput: true
+```
+
+**Use Case: Multi-Format Image Processing**
+```typescript
+// Problem: Resize is intermediate, gets deleted
+                    → optimize-webp
+input → resize →
+                    → optimize-jpeg
+// Solution: Mark resize with keepOutput: true
+```
+
+#### How to Use keepOutput
+
+Add the `keepOutput: true` flag when creating nodes:
+
+```typescript
+import { createFlowNode } from "./node";
+import { createInputNode } from "./nodes/input-node";
+
+// Example: Invoice processing - keep both original and OCR result
+const inputNode = createInputNode("upload-invoice", {
+  keepOutput: true, // ← Preserve the uploaded file
+});
+
+const ocrNode = createOCRNode("extract-text");
+// OCR is a sink (no outgoing edges), so it's automatically preserved
+
+const flow = createFlow({
+  nodes: [inputNode, ocrNode],
+  edges: [{ source: "upload-invoice", target: "extract-text" }],
+});
+
+// Result: Both the uploaded PDF and the extracted text are available
+```
+
+#### When to Use keepOutput
+
+✅ **Use keepOutput when:**
+- You need the original file for auditing (e.g., invoice uploads with OCR)
+- Multi-format outputs require intermediate versions (e.g., resize before multiple optimizations)
+- Debugging or troubleshooting requires intermediate processing steps
+
+❌ **Don't use keepOutput when:**
+- You only need the final output (use topology-based sinks)
+- Storage costs are a concern and intermediate files aren't needed
+- The node is a utility node (conditional, multiplex, merge, zip) - these don't support keepOutput
+
+#### keepOutput vs Topology-Based Sinks
+
+The flow engine supports two ways to preserve outputs:
+
+1. **Topology-based (automatic)**: Nodes with no outgoing edges are sinks and outputs are preserved
+2. **keepOutput flag (explicit)**: Nodes marked with `keepOutput: true` are preserved regardless of topology
+
+These work together:
+- `isSink && !keepOutput` → output preserved (topology)
+- `!isSink && keepOutput` → output preserved (explicit flag)
+- `isSink && keepOutput` → output preserved (redundant but harmless)
+- `!isSink && !keepOutput` → output deleted (intermediate)
+
+#### Best Practices
+
+1. **Be conservative**: Only use `keepOutput` when you truly need intermediate outputs
+2. **Consider storage costs**: Each preserved output consumes storage space
+3. **Document intent**: Comment why you're using `keepOutput` in your flow definitions
+4. **Use topology when possible**: Let the engine detect sinks automatically for cleaner flows
+
+#### Examples
+
+**Example 1: Invoice Processing**
+```typescript
+// Keep both the uploaded document AND the extracted text
+const uploadNode = createInputNode("upload", { keepOutput: true });
+const ocrNode = createOCRNode("extract-text");
+
+createFlow({
+  nodes: [uploadNode, ocrNode],
+  edges: [{ source: "upload", target: "extract-text" }],
+});
+// Outputs: [uploaded_document.pdf, extracted_text.json]
+```
+
+**Example 2: Responsive Images**
+```typescript
+// Keep original, resized, and all optimized versions
+const inputNode = createInputNode("upload", { keepOutput: true });
+const resizeNode = createResizeNode("resize", {
+  width: 800,
+  keepOutput: true, // ← Keep resized version too
+});
+const webpNode = createOptimizeNode("webp", { format: "webp" });
+const jpegNode = createOptimizeNode("jpeg", { format: "jpeg" });
+
+createFlow({
+  nodes: [inputNode, resizeNode, webpNode, jpegNode],
+  edges: [
+    { source: "upload", target: "resize" },
+    { source: "resize", target: "webp" },
+    { source: "resize", target: "jpeg" },
+  ],
+});
+// Outputs: [original.png, resized.png, optimized.webp, optimized.jpeg]
+```
+
+**Example 3: Document Pipeline**
+```typescript
+// Keep all processing stages for audit trail
+const uploadNode = createInputNode("upload", { keepOutput: true });
+const extractNode = createExtractTextNode("extract", { keepOutput: true });
+const analyzeNode = createAnalyzeNode("analyze");
+
+createFlow({
+  nodes: [uploadNode, extractNode, analyzeNode],
+  edges: [
+    { source: "upload", target: "extract" },
+    { source: "extract", target: "analyze" },
+  ],
+});
+// Outputs: [contract.docx, extracted_text.txt, analysis.json]
+```
+
 ## Usage
 
 ### Basic Example

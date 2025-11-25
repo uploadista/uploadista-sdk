@@ -33,12 +33,15 @@ export type NodeTypeMap = Record<string, { input: unknown; output: unknown }>;
  * @property name - Human-readable node name
  * @property description - Explanation of what the node does
  * @property type - Node category (input, transform, conditional, output, etc.)
+ * @property keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false)
  */
 export type FlowNodeData = {
   id: string;
   name: string;
   description: string;
   type: NodeType;
+  nodeTypeId: string;
+  keepOutput?: boolean;
 };
 
 /**
@@ -487,6 +490,59 @@ export type FlowConfig<
   parallelExecution?: {
     enabled?: boolean;
     maxConcurrency?: number;
+  };
+  hooks?: {
+    /**
+     * Called when a sink node (terminal node with no outgoing edges) produces an output.
+     * This hook runs after auto-persistence for UploadFile outputs.
+     *
+     * Use this hook to perform additional post-processing such as:
+     * - Saving output metadata to a database
+     * - Tracking outputs in external systems
+     * - Adding custom metadata to outputs
+     * - Triggering downstream workflows
+     *
+     * The hook receives the output and context, and can optionally modify
+     * and return the output (e.g., adding metadata fields).
+     *
+     * **Important**: The hook must not have any service requirements (Effect requirements must be `never`).
+     * All necessary services should be captured in the closure when defining the hook.
+     *
+     * @param context - Output context including the output data, node ID, flow ID, etc.
+     * @returns Effect or Promise that resolves to the (optionally modified) output
+     *
+     * @example
+     * ```typescript
+     * // Using Effect
+     * hooks: {
+     *   onNodeOutput: ({ output, nodeId, flowId }) =>
+     *     Effect.gen(function* () {
+     *       // Save to database
+     *       yield* Effect.promise(() => db.save(output));
+     *       // Return output with additional metadata
+     *       return { ...output, metadata: { ...output.metadata, tracked: true } };
+     *     })
+     * }
+     *
+     * // Using Promise (simpler for most users)
+     * hooks: {
+     *   onNodeOutput: async ({ output, nodeId, flowId }) => {
+     *     // Save to database
+     *     await db.save(output);
+     *     // Return output with additional metadata
+     *     return { ...output, metadata: { ...output.metadata, tracked: true } };
+     *   }
+     * }
+     * ```
+     */
+    onNodeOutput?: <TOutput>(context: {
+      output: TOutput;
+      nodeId: string;
+      flowId: string;
+      jobId: string;
+      storageId: string;
+      clientId: string | null;
+    }) => Effect.Effect<TOutput, UploadistaError, never> | Promise<TOutput>;
   };
 };
 

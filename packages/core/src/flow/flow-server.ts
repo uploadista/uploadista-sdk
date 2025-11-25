@@ -518,31 +518,47 @@ function withFlowEvents<
                 );
 
                 // Track intermediate files for cleanup
-                // Check if result is an UploadFile and node is not an output node
-                const node = flow.nodes.find((n) => n.id === event.nodeId);
-                const isOutputNode = node?.type === "output";
+                // Check if result is an UploadFile based on topology (sink vs non-sink) and keepOutput flag
+                // A sink node is one with no outgoing edges
+                const isSinkNode = !flow.edges.some(
+                  (edge) => edge.source === event.nodeId,
+                );
+                // Find the node to check if it has keepOutput enabled
+                const node = flow.nodes.find((n: any) => n.id === event.nodeId);
+                const hasKeepOutput = node?.keepOutput === true;
+
                 const result = event.result;
                 // Extract data from TypedOutput if present
                 const resultData = extractResultData(result);
 
                 let intermediateFiles = job.intermediateFiles || [];
 
+                // Node should preserve output if: it's a sink OR has keepOutput enabled
+                const shouldPreserveOutput = isSinkNode || hasKeepOutput;
+
                 if (
-                  isOutputNode &&
+                  shouldPreserveOutput &&
                   isResultUploadFile(resultData) &&
                   resultData.id
                 ) {
-                  // If this is an output node and it returns a file that was an intermediate file,
-                  // remove it from the intermediate files list (it's now the final output)
+                  // If this node should preserve output and it returns a file that was an intermediate file,
+                  // remove it from the intermediate files list (it's now a final output)
                   intermediateFiles = intermediateFiles.filter(
                     (fileId) => fileId !== resultData.id,
                   );
+
+                  // Log when files are preserved due to keepOutput
+                  if (hasKeepOutput && !isSinkNode) {
+                    Effect.logInfo(
+                      `Preserving output from node ${event.nodeId} due to keepOutput flag`,
+                    );
+                  }
                 } else if (
-                  !isOutputNode &&
+                  !shouldPreserveOutput &&
                   isResultUploadFile(resultData) &&
                   resultData.id
                 ) {
-                  // Only add to intermediate files if it's not an output node
+                  // Only add to intermediate files if it's not a sink and doesn't have keepOutput
                   if (!intermediateFiles.includes(resultData.id)) {
                     intermediateFiles.push(resultData.id);
                   }

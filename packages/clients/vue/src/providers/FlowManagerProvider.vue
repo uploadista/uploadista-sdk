@@ -121,7 +121,15 @@ const getManager = (
     return client.value.uploadWithFlow(input, flowConfig, internalOptions);
   };
 
-  const manager = new FlowManager<unknown>(flowUploadFn, callbacks, options);
+  const multiInputUploadFn = (
+    inputs: Record<string, unknown>,
+    flowConfig: FlowUploadOptions["flowConfig"],
+    internalOptions: unknown,
+  ) => {
+    return client.value.multiInputFlowUpload(inputs, flowConfig, internalOptions);
+  };
+
+  const manager = new FlowManager<unknown>(flowUploadFn, callbacks, options, multiInputUploadFn);
 
   managers.set(flowId, {
     manager,

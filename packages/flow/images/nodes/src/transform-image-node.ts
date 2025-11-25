@@ -1,6 +1,7 @@
 import {
   createTransformNode,
   ImagePlugin,
+  STORAGE_OUTPUT_TYPE_ID,
   type TransformImageParams,
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
@@ -63,6 +64,7 @@ function applyTransformationChain(
 export function createTransformImageNode(
   id: string,
   { transformations }: TransformImageParams,
+  options?: { keepOutput?: boolean },
 ) {
   return Effect.gen(function* () {
     const imageService = yield* ImagePlugin;
@@ -71,6 +73,8 @@ export function createTransformImageNode(
       id,
       name: "Transform Image",
       description: `Apply ${transformations.length} transformation${transformations.length === 1 ? "" : "s"} to the image`,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: options?.keepOutput,
       transform: (inputBytes) =>
         applyTransformationChain(imageService, inputBytes, transformations),
     });

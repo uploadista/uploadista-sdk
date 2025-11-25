@@ -1,7 +1,6 @@
 import {
   createFlow,
   createInputNode,
-  createStorageNode,
 } from "@uploadista/core";
 import {
   createConditionalNode,
@@ -13,21 +12,22 @@ import {
 /**
  * Conditional flow - routes files based on metadata conditions
  *
- * Nodes: input → conditional → branching outputs
+ * Nodes: input → conditional (sink, branches to two outputs)
  *
  * Configuration:
  * - Condition: file size > 1MB
- * - True branch: stores to "large-files" output
- * - False branch: stores to "small-files" output
+ * - The conditional node acts as a sink with two branches based on the condition
  *
  * Use case: Route files based on properties like size, type, or custom metadata.
  * Useful for creating different processing pipelines based on file characteristics.
+ * The conditional node is a sink (no further processing), so files are automatically
+ * persisted to target storage based on which branch they take.
  *
  * @example
  * ```ts
  * import { conditionalFlow } from '@uploadista/example-flows';
  * const result = await executeFlow(conditionalFlow, file);
- * // Large files go to one output, small files to another
+ * // Large files and small files are both persisted
  * ```
  */
 export const conditionalFlow = createFlow({
@@ -40,29 +40,27 @@ export const conditionalFlow = createFlow({
       operator: "greaterThan",
       value: 1000000, // 1MB
     }),
-    "output-large": createStorageNode("output-large"),
-    "output-small": createStorageNode("output-small"),
   },
   edges: [
     { source: "input", target: "conditional" },
-    { source: "conditional", target: "output-large" },
-    { source: "conditional", target: "output-small" },
   ],
 });
 
 /**
  * Merge flow - combines multiple input files into a single processing stream
  *
- * Nodes: multiple inputs → merge → output
+ * Nodes: multiple inputs → merge (sink)
  *
  * Use case: Accept multiple file uploads and process them together,
- * useful for batch operations or multi-file uploads.
+ * useful for batch operations or multi-file uploads. The merge node is a sink
+ * (no outgoing edges), so the merged result is automatically persisted to
+ * target storage.
  *
  * @example
  * ```ts
  * import { mergeFlow } from '@uploadista/example-flows';
  * const result = await executeFlow(mergeFlow, [file1, file2, file3]);
- * // All files processed through single output
+ * // All files processed through merge and persisted
  * ```
  */
 export const mergeFlow = createFlow({
@@ -73,23 +71,23 @@ export const mergeFlow = createFlow({
     "input-2": createInputNode("input-2"),
     "input-3": createInputNode("input-3"),
     merge: createMergeNode("merge", { strategy: "concat", inputCount: 3 }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input-1", target: "merge" },
     { source: "input-2", target: "merge" },
     { source: "input-3", target: "merge" },
-    { source: "merge", target: "output" },
   ],
 });
 
 /**
  * Multiplex flow - splits a single input into parallel processing paths
  *
- * Nodes: input → multiplex → multiple parallel outputs
+ * Nodes: input → multiplex (sink with 3 outputs)
  *
  * Use case: Create multiple versions of the same file with different processing,
- * such as generating thumbnails, web versions, and originals simultaneously.
+ * such as generating thumbnails, web versions, and originals simultaneously. The
+ * multiplex node is a sink (no outgoing edges), so all multiplexed outputs are
+ * automatically persisted to target storage.
  *
  * @example
  * ```ts
@@ -107,29 +105,25 @@ export const multiplexFlow = createFlow({
       outputCount: 3,
       strategy: "copy",
     }),
-    "output-1": createStorageNode("output-1"),
-    "output-2": createStorageNode("output-2"),
-    "output-3": createStorageNode("output-3"),
   },
   edges: [
     { source: "input", target: "multiplex" },
-    { source: "multiplex", target: "output-1" },
-    { source: "multiplex", target: "output-2" },
-    { source: "multiplex", target: "output-3" },
   ],
 });
 
 /**
  * Zip flow - archives multiple files into a single compressed file
  *
- * Nodes: multiple inputs → zip → output
+ * Nodes: multiple inputs → zip (sink)
  *
  * Configuration:
  * - Format: ZIP archive
  * - Compression: standard deflate
  *
  * Use case: Bundle multiple uploads into a single downloadable archive,
- * useful for batch downloads or packaging related files together.
+ * useful for batch downloads or packaging related files together. The zip
+ * node is a sink (no outgoing edges), so the archive is automatically persisted
+ * to target storage.
  *
  * @example
  * ```ts
@@ -150,12 +144,10 @@ export const zipFlow = createFlow({
       includeMetadata: false,
       inputCount: 3,
     }),
-    output: createStorageNode("output"),
   },
   edges: [
     { source: "input-1", target: "zip" },
     { source: "input-2", target: "zip" },
     { source: "input-3", target: "zip" },
-    { source: "zip", target: "output" },
   ],
 });

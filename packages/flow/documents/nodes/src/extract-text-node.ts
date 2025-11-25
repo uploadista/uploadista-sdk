@@ -5,16 +5,19 @@ import {
   DocumentPlugin,
   NodeType,
   resolveUploadMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
 import { Effect } from "effect";
 
-export type ExtractTextNodeParams = Record<string, never>; // No parameters needed
+export type ExtractTextNodeParams = {
+  keepOutput?: boolean;
+};
 
 export function createExtractTextNode(
   id: string,
-  _params: ExtractTextNodeParams = {},
+  params: ExtractTextNodeParams = {},
 ) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
@@ -25,6 +28,8 @@ export function createExtractTextNode(
       name: "Extract Text",
       description: "Extract text from searchable PDF documents",
       type: NodeType.process,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {
@@ -35,9 +40,7 @@ export function createExtractTextNode(
             jobId,
           };
 
-          yield* Effect.logInfo(
-            `Extracting text from PDF file ${file.id}`,
-          );
+          yield* Effect.logInfo(`Extracting text from PDF file ${file.id}`);
 
           // Read file bytes from upload server
           const fileBytes = yield* uploadServer.read(file.id, clientId);

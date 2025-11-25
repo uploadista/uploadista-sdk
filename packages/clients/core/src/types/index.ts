@@ -3,6 +3,7 @@ export * from "./flow-result";
 export * from "./flow-upload-config";
 export * from "./flow-upload-item";
 export * from "./flow-upload-options";
+export * from "./flow-inputs";
 export * from "./multi-flow-upload-options";
 export * from "./multi-flow-upload-state";
 export * from "./performance-insights";

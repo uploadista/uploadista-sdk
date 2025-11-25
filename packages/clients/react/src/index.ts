@@ -15,6 +15,8 @@ export type {
 export { useUploadEvents } from "./hooks/use-upload-events";
 
 // Flow Upload Hooks
+export type { FlowInputProps } from "./components/flow-input";
+export { FlowInput } from "./components/flow-input";
 
 export type {
   FlowUploadListProps,
@@ -47,6 +49,19 @@ export type { UseMultiFlowUploadReturn } from "./hooks/use-multi-flow-upload";
 export { useMultiFlowUpload } from "./hooks/use-multi-flow-upload";
 
 // Flow Hooks
+export type {
+  FlowInputMetadata,
+  InputExecutionState,
+  UseFlowReturn,
+} from "./hooks/use-flow";
+export { useFlow } from "./hooks/use-flow";
+
+export type {
+  InputBuilder,
+  UseFlowExecutionOptions,
+  UseFlowExecutionReturn,
+} from "./hooks/use-flow-execution";
+export { useFlowExecution } from "./hooks/use-flow-execution";
 
 // Upload Hooks
 export type {

@@ -4,9 +4,10 @@ import {
   createFlowNode,
   DocumentAiPlugin,
   NodeType,
-  type OcrTaskType,
+  OCR_OUTPUT_TYPE_ID,
   type OcrResolution,
-  resolveUploadMetadata,
+  type OcrTaskType,
+  ocrOutputSchema,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 import { Effect } from "effect";
@@ -16,12 +17,10 @@ export type OcrNodeParams = {
   resolution?: OcrResolution;
   credentialId?: string;
   referenceText?: string;
+  keepOutput?: boolean;
 };
 
-export function createOcrNode(
-  id: string,
-  params: OcrNodeParams,
-) {
+export function createOcrNode(id: string, params: OcrNodeParams) {
   return Effect.gen(function* () {
     const documentAiService = yield* DocumentAiPlugin;
 
@@ -30,8 +29,10 @@ export function createOcrNode(
       name: "OCR",
       description: "Extract text from scanned documents using AI",
       type: NodeType.process,
+      nodeTypeId: OCR_OUTPUT_TYPE_ID,
+      keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
-      outputSchema: uploadFileSchema,
+      outputSchema: ocrOutputSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           const flow = {
@@ -68,7 +69,7 @@ export function createOcrNode(
                 resolution: params.resolution,
                 referenceText: params.referenceText,
               },
-              context
+              context,
             )
             .pipe(
               Effect.catchAll((error) =>
@@ -84,24 +85,16 @@ export function createOcrNode(
               ),
             );
 
-          const { metadata } = resolveUploadMetadata(file.metadata);
-
-          // Add OCR results to metadata
-          const newMetadata = {
-            ...file.metadata,
-            ...metadata,
-            ocrText: ocrResult.extractedText,
-            ocrFormat: ocrResult.format,
-            ocrTaskType: params.taskType,
-          };
-
           yield* Effect.logInfo(
             `Successfully completed OCR for file ${file.id}, extracted ${ocrResult.extractedText.length} characters`,
           );
 
+          // Return structured OCR output (not UploadFile)
           return completeNodeExecution({
-            ...file,
-            metadata: newMetadata,
+            extractedText: ocrResult.extractedText,
+            format: ocrResult.format,
+            taskType: params.taskType,
+            confidence: ocrResult.confidence,
             flow,
           });
         });

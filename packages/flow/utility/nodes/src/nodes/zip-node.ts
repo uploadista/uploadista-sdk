@@ -3,6 +3,7 @@ import {
   completeNodeExecution,
   createFlowNode,
   NodeType,
+  STORAGE_OUTPUT_TYPE_ID,
   ZipPlugin,
 } from "@uploadista/core/flow";
 import { type UploadFile, uploadFileSchema } from "@uploadista/core/types";
@@ -26,6 +27,7 @@ export function createZipNode(
       name: "Zip Files",
       description: "Combines multiple files into a zip archive",
       type: NodeType.process,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema,
       outputSchema,
       multiInput: true,

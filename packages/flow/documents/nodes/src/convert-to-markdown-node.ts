@@ -6,6 +6,7 @@ import {
   DocumentPlugin,
   NodeType,
   resolveUploadMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
@@ -14,6 +15,7 @@ import { Effect, Either } from "effect";
 export type ConvertToMarkdownNodeParams = {
   credentialId?: string;
   resolution?: "tiny" | "small" | "base" | "gundam" | "large";
+  keepOutput?: boolean;
 };
 
 export function createConvertToMarkdownNode(
@@ -31,6 +33,8 @@ export function createConvertToMarkdownNode(
       description:
         "Convert documents to Markdown format (intelligently uses OCR if needed)",
       type: NodeType.process,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, clientId }) => {

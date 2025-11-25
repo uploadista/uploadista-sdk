@@ -343,3 +343,37 @@ export class FlowTypeRegistry {
  * ```
  */
 export const flowTypeRegistry = new FlowTypeRegistry();
+
+/**
+ * Validates flow input data against a registered node type.
+ *
+ * This helper function looks up the node type by ID and validates the provided
+ * data against its schema. It's specifically designed for input validation
+ * before flow execution.
+ *
+ * @param typeId - The registered type ID (e.g., "streaming-input-v1")
+ * @param data - The input data to validate
+ * @returns A validation result with either the typed data or an error
+ *
+ * @example
+ * ```typescript
+ * import { validateFlowInput } from "@uploadista/core/flow";
+ *
+ * const result = validateFlowInput("streaming-input-v1", {
+ *   operation: "url",
+ *   url: "https://example.com/image.jpg"
+ * });
+ *
+ * if (result.success) {
+ *   console.log("Valid input:", result.data);
+ * } else {
+ *   console.error("Validation error:", result.error);
+ * }
+ * ```
+ */
+export function validateFlowInput<T = unknown>(
+  typeId: string,
+  data: unknown,
+): ValidationResult<T> {
+  return flowTypeRegistry.validate<T>(typeId, data);
+}

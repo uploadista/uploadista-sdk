@@ -5,6 +5,7 @@ import {
   ImageAiPlugin,
   NodeType,
   resolveUploadMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
@@ -13,7 +14,7 @@ import { waitForUrlAvailability } from "./wait-for-url";
 
 export function createRemoveBackgroundNode(
   id: string,
-  { credentialId }: { credentialId?: string } = {},
+  { credentialId, keepOutput }: { credentialId?: string; keepOutput?: boolean } = {},
 ) {
   return Effect.gen(function* () {
     const imageAiService = yield* ImageAiPlugin;
@@ -24,6 +25,8 @@ export function createRemoveBackgroundNode(
       name: "Remove Background",
       description: "Removes the background from an image",
       type: NodeType.process,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, flowId, jobId, storageId, clientId }) => {

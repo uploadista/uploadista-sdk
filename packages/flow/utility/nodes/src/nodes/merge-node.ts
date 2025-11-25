@@ -3,6 +3,7 @@ import {
   completeNodeExecution,
   createFlowNode,
   NodeType,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { type UploadFile, uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
@@ -25,6 +26,7 @@ export function createMergeNode(
       name: "Merge Files",
       description: `Merges multiple files using ${strategy} strategy`,
       type: NodeType.merge,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema,
       outputSchema,
       multiInput: true,

@@ -83,6 +83,10 @@ const initialState: FlowUploadState = {
  * Handles both the file upload phase and the flow processing phase, providing
  * real-time progress updates and flow node execution tracking.
  *
+ * This is a convenience wrapper around the generic useFlowExecution hook,
+ * specialized for the common case of file uploads. For more flexible input types
+ * (URLs, structured data), use useFlowExecution directly with an inputBuilder.
+ *
  * The flow engine processes the uploaded file through a DAG of nodes, which can
  * perform operations like image optimization, storage saving, webhooks, etc.
  *
@@ -91,6 +95,25 @@ const initialState: FlowUploadState = {
  *
  * @param options - Flow upload configuration including flow ID and event handlers
  * @returns Flow upload state and control methods
+ *
+ * @remarks
+ * **Future refactoring**: This hook could be implemented as a thin wrapper around
+ * useFlowExecution with a file-specific inputBuilder:
+ * ```typescript
+ * return useFlowExecution<File | Blob>({
+ *   ...options,
+ *   inputBuilder: async (file) => {
+ *     const { inputNodes } = await client.findInputNode(options.flowConfig.flowId);
+ *     return {
+ *       [inputNodes[0].id]: {
+ *         operation: "init",
+ *         storageId: options.flowConfig.storageId,
+ *         metadata: { originalName: file.name, mimeType: file.type, size: file.size }
+ *       }
+ *     };
+ *   }
+ * });
+ * ```
  *
  * @example
  * ```tsx

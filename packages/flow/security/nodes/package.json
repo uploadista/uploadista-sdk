@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-security-nodes",
   "type": "module",
-  "version": "0.0.16",
+  "version": "0.0.17-beta.9",
   "description": "Security processing nodes for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -32,6 +32,6 @@
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.8"
+    "vitest": "4.0.13"
   }
 }

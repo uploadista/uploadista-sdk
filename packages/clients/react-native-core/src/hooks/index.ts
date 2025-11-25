@@ -5,6 +5,16 @@ export {
 } from "./uploadista-context";
 export { useCameraUpload } from "./use-camera-upload";
 export { useFileUpload } from "./use-file-upload";
+// Flow hooks
+export type {
+  FlowInputMetadata,
+  FlowUploadState,
+  FlowUploadStatus,
+  InputExecutionState,
+  UseFlowOptions,
+  UseFlowReturn,
+} from "./use-flow";
+export { useFlow } from "./use-flow";
 export { useFlowUpload } from "./use-flow-upload";
 export { useGalleryUpload } from "./use-gallery-upload";
 // Multi-upload hooks

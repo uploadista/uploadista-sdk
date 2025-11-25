@@ -167,7 +167,12 @@ function validateFile(
  * const openInputNode = yield* createInputNode("open-input");
  * ```
  */
-export function createInputNode(id: string, params?: InputNodeParams) {
+export function createInputNode(
+  id: string,
+  params?: InputNodeParams,
+  options?: { keepOutput?: boolean },
+) {
+  const keepOutput = options?.keepOutput ?? false;
   return Effect.gen(function* () {
     const uploadServer = yield* UploadServer;
     return yield* createFlowNode({
@@ -178,6 +183,7 @@ export function createInputNode(id: string, params?: InputNodeParams) {
       type: NodeType.input,
       inputSchema: inputDataSchema,
       outputSchema: uploadFileSchema,
+      keepOutput,
       nodeTypeId: STREAMING_INPUT_TYPE_ID,
       run: ({ data, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {

@@ -189,11 +189,12 @@ export type FlowInputMap<TNodes extends NodeDefinitionsRecord> = {
   >]: SchemaInfer<InferNode<TNodes[K]>["inputSchema"]>;
 };
 
+// Note: With sink-based outputs, any node can be an output if it has no outgoing edges.
+// Output map includes all potential outputs (sinks are determined at runtime by edges).
 export type FlowOutputMap<TNodes extends NodeDefinitionsRecord> = {
-  [K in Extract<
-    ExtractKeysByNodeType<TNodes, NodeType.output>,
-    string
-  >]: SchemaInfer<InferNode<TNodes[K]>["outputSchema"]>;
+  [K in Extract<keyof TNodes, string>]: SchemaInfer<
+    InferNode<TNodes[K]>["outputSchema"]
+  >;
 };
 
 type FlowInputUnion<TNodes extends NodeDefinitionsRecord> = {
@@ -203,12 +204,12 @@ type FlowInputUnion<TNodes extends NodeDefinitionsRecord> = {
   >]: SchemaInfer<InferNode<TNodes[K]>["inputSchema"]>;
 }[Extract<ExtractKeysByNodeType<TNodes, NodeType.input>, string>];
 
+// With sink-based outputs, any node can be an output
 type FlowOutputUnion<TNodes extends NodeDefinitionsRecord> = {
-  [K in Extract<
-    ExtractKeysByNodeType<TNodes, NodeType.output>,
-    string
-  >]: SchemaInfer<InferNode<TNodes[K]>["outputSchema"]>;
-}[Extract<ExtractKeysByNodeType<TNodes, NodeType.output>, string>];
+  [K in Extract<keyof TNodes, string>]: SchemaInfer<
+    InferNode<TNodes[K]>["outputSchema"]
+  >;
+}[Extract<keyof TNodes, string>];
 
 type NodeKey<TNodes extends NodeDefinitionsRecord> = Extract<
   keyof TNodes,
@@ -237,6 +238,40 @@ export type TypedFlowConfig<TNodes extends NodeDefinitionsRecord> = {
   };
   inputSchema?: z.ZodTypeAny;
   outputSchema?: z.ZodTypeAny;
+  hooks?: {
+    /**
+     * Called when a sink node (terminal node with no outgoing edges) produces an output.
+     * This hook runs after auto-persistence for UploadFile outputs.
+     *
+     * Use this hook to perform additional post-processing such as:
+     * - Saving output metadata to a database
+     * - Tracking outputs in external systems
+     * - Adding custom metadata to outputs
+     * - Triggering downstream workflows
+     *
+     * **Important**: The hook must not have any service requirements (Effect requirements must be `never`).
+     * All necessary services should be captured in the closure when defining the hook.
+     *
+     * @example
+     * ```typescript
+     * // Using Promise (simpler for most users)
+     * hooks: {
+     *   onNodeOutput: async ({ output }) => {
+     *     await db.save(output);
+     *     return output;
+     *   }
+     * }
+     * ```
+     */
+    onNodeOutput?: <TOutput>(context: {
+      output: TOutput;
+      nodeId: string;
+      flowId: string;
+      jobId: string;
+      storageId: string;
+      clientId: string | null;
+    }) => Effect.Effect<TOutput, CoreUploadistaError, never> | Promise<TOutput>;
+  };
 };
 
 declare const typedFlowInputsSymbol: unique symbol;
@@ -380,8 +415,26 @@ export function createFlow<TNodes extends NodeDefinitionsRecord>(
       .filter(([, node]) => node.type === NodeType.input)
       .map(([, node]) => node.inputSchema);
 
+    // Build flow edges first (needed for sink detection)
+    const flowEdges: FlowEdge[] = config.edges.map((edge) => ({
+      source: resolvedRecord[edge.source]?.id ?? edge.source,
+      target: resolvedRecord[edge.target]?.id ?? edge.target,
+      sourcePort: edge.sourcePort,
+      targetPort: edge.targetPort,
+    }));
+
+    // With sink-based outputs, determine sinks by checking edges
+    const sinkNodeIds = new Set(
+      resolvedEntries
+        .map(([key]) => resolvedRecord[key]?.id)
+        .filter(
+          (nodeId) =>
+            nodeId && !flowEdges.some((edge) => edge.source === nodeId),
+        ),
+    );
+
     const outputSchemas = resolvedEntries
-      .filter(([, node]) => node.type === NodeType.output)
+      .filter(([, node]) => sinkNodeIds.has(node.id))
       .map(([, node]) => node.outputSchema);
 
     const inputSchema =
@@ -389,13 +442,6 @@ export function createFlow<TNodes extends NodeDefinitionsRecord>(
 
     const outputSchema =
       config.outputSchema ?? buildUnionSchema(outputSchemas, z.unknown());
-
-    const flowEdges: FlowEdge[] = config.edges.map((edge) => ({
-      source: resolvedRecord[edge.source]?.id ?? edge.source,
-      target: resolvedRecord[edge.target]?.id ?? edge.target,
-      sourcePort: edge.sourcePort,
-      targetPort: edge.targetPort,
-    }));
 
     const flow = yield* createFlowWithSchema({
       flowId: config.flowId,
@@ -407,6 +453,7 @@ export function createFlow<TNodes extends NodeDefinitionsRecord>(
       typeChecker: config.typeChecker,
       onEvent: config.onEvent,
       parallelExecution: config.parallelExecution,
+      hooks: config.hooks,
     });
 
     return flow as unknown as TypedFlow<

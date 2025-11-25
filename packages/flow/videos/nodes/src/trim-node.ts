@@ -1,6 +1,7 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import {
   createTransformNode,
+  STORAGE_OUTPUT_TYPE_ID,
   type TrimVideoParams,
   VideoPlugin,
 } from "@uploadista/core/flow";
@@ -29,7 +30,11 @@ import { Effect } from "effect";
  * });
  * ```
  */
-export function createTrimVideoNode(id: string, params: TrimVideoParams) {
+export function createTrimVideoNode(
+  id: string,
+  params: TrimVideoParams,
+  options?: { keepOutput?: boolean },
+) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
 
@@ -63,6 +68,8 @@ export function createTrimVideoNode(id: string, params: TrimVideoParams) {
       id,
       name: "Trim Video",
       description: "Extracts a segment from the video",
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      keepOutput: options?.keepOutput,
       transform: (inputBytes, _file) =>
         Effect.map(videoService.trim(inputBytes, params), (trimmedBytes) => {
           // Pass through video bytes

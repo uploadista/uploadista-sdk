@@ -66,19 +66,8 @@ describe("Flow Node", () => {
           run: ({ data }) => Effect.succeed({ type: "complete", data }),
         });
 
-        const outputNode = yield* createFlowNode({
-          id: "output",
-          name: "Output",
-          description: "Output node",
-          type: NodeType.output,
-          inputSchema: z.object({ data: z.string() }),
-          outputSchema: z.object({ data: z.string() }),
-          run: ({ data }) => Effect.succeed({ type: "complete", data }),
-        });
-
         expect(inputNode.type).toBe(NodeType.input);
         expect(processNode.type).toBe(NodeType.process);
-        expect(outputNode.type).toBe(NodeType.output);
       }),
     );
 
@@ -346,7 +335,10 @@ describe("Flow Node", () => {
           run: ({ data }) =>
             Effect.succeed({
               type: "waiting" as const,
-              partialData: { value: data.value, reason: "Waiting for external input" },
+              partialData: {
+                value: data.value,
+                reason: "Waiting for external input",
+              },
             }),
           pausable: true,
         });

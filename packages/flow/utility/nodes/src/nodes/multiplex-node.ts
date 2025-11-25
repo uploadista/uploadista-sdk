@@ -4,6 +4,7 @@ import {
   createFlowNode,
   NodeType,
   resolveUploadMetadata,
+  STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { type UploadFile, uploadFileSchema } from "@uploadista/core/types";
 import { UploadServer } from "@uploadista/core/upload";
@@ -22,6 +23,7 @@ export function createMultiplexNode(
       name: "Multiplex",
       description: `Multiplexes input using ${strategy} strategy`,
       type: NodeType.multiplex,
+      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       multiOutput: true,

@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/core",
-  "version": "0.0.16",
+  "version": "0.0.17-beta.9",
   "description": "Core package of Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -83,7 +83,7 @@
     "@types/node": "catalog:",
     "tsd": "0.33.0",
     "tsdown": "catalog:",
-    "vitest": "4.0.9"
+    "vitest": "4.0.13"
   },
   "publishConfig": {
     "access": "public",

@@ -12,7 +12,7 @@
  * - Helper functions (filter, getSingle)
  */
 
-import { Effect } from "effect";
+import { Context, Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createFlow } from "../../src/flow";
@@ -24,8 +24,6 @@ import {
   isStorageOutput,
 } from "../../src/flow/type-guards";
 import { flowTypeRegistry } from "../../src/flow/type-registry";
-import type { TypedOutput } from "../../src/flow/types/flow-types";
-import type { UploadFile } from "../../src/types/upload-file";
 // Import built-in type registrations
 import "../../src/flow/node-types";
 
@@ -45,6 +43,27 @@ function createMockUploadFile(overrides?: Partial<UploadFile>): UploadFile {
     ...overrides,
   };
 }
+
+// Mock UploadFileDataStores service for tests
+const MockUploadFileDataStores = Layer.succeed(
+  UploadFileDataStores,
+  UploadFileDataStores.of({
+    getDataStore: () =>
+      Effect.succeed({
+        create: (file: UploadFile) => Effect.succeed(file),
+        remove: () => Effect.succeed(undefined),
+        read: () => Effect.succeed(new Uint8Array()),
+        write: () => Effect.succeed(0),
+        getCapabilities: () => ({
+          supportsMultipart: false,
+          supportsResumable: false,
+          supportsDirectUpload: false,
+        }),
+        validateUploadStrategy: () => Effect.succeed(true),
+      }),
+    bufferedDataStore: Effect.succeed(undefined),
+  }),
+);
 
 describe("Type System", () => {
   describe("TypedOutput Discriminated Unions", () => {
