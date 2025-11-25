@@ -456,7 +456,11 @@ importers:
         version: link:../../packages/typescript-config
       wrangler:
         specifier: 4.45.3
+<<<<<<< HEAD
         version: 4.45.3(@cloudflare/workers-types@4.20251125.0)
+=======
+        version: 4.45.3(@cloudflare/workers-types@4.20251121.0)
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
 
   examples/hono-server:
     dependencies:
@@ -1067,8 +1071,13 @@ importers:
   packages/data-stores/r2:
     dependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1207,8 +1216,13 @@ importers:
   packages/event-emitters/durable-object:
     dependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1701,8 +1715,13 @@ importers:
   packages/kv-stores/cloudflare-do:
     dependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1726,8 +1745,13 @@ importers:
   packages/kv-stores/cloudflare-kv:
     dependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1870,8 +1894,13 @@ importers:
         version: 3.19.6
     devDependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.27.0(effect@3.19.6)(vitest@4.0.13(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
@@ -1998,8 +2027,13 @@ importers:
   packages/servers/adapters-hono:
     dependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -2078,8 +2112,13 @@ importers:
         version: 4.1.13
     devDependencies:
       '@cloudflare/workers-types':
+<<<<<<< HEAD
         specifier: 4.20251125.0
         version: 4.20251125.0
+=======
+        specifier: 4.20251121.0
+        version: 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.27.0(effect@3.19.6)(vitest@4.0.13(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
@@ -3183,8 +3222,13 @@ packages:
     cpu: [x64]
     os: [win32]
 
+<<<<<<< HEAD
   '@cloudflare/workers-types@4.20251125.0':
     resolution: {integrity: sha512-YZdO/IX10DiHb2v+7H2CL5SKAbxJQIG22jNefgtW86YMf5LvQk6f75v5T/j1ju56MBwm6RzcqvsECF+cXs2h3g==}
+=======
+  '@cloudflare/workers-types@4.20251121.0':
+    resolution: {integrity: sha512-jzFg7hEGKzpEalxTCanN6lM8IdkvO/brsERp/+OyMms4Zi0nhDPUAg9dUcKU8wDuDUnzbjkplY6YRwle7Cq6gA==}
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -13260,7 +13304,11 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20251011.0':
     optional: true
 
+<<<<<<< HEAD
   '@cloudflare/workers-types@4.20251125.0': {}
+=======
+  '@cloudflare/workers-types@4.20251121.0': {}
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -23487,7 +23535,11 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20251011.0
       '@cloudflare/workerd-windows-64': 1.20251011.0
 
+<<<<<<< HEAD
   wrangler@4.45.3(@cloudflare/workers-types@4.20251125.0):
+=======
+  wrangler@4.45.3(@cloudflare/workers-types@4.20251121.0):
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.0
       '@cloudflare/unenv-preset': 2.7.8(unenv@2.0.0-rc.21)(workerd@1.20251011.0)
@@ -23498,7 +23550,11 @@ snapshots:
       unenv: 2.0.0-rc.21
       workerd: 1.20251011.0
     optionalDependencies:
+<<<<<<< HEAD
       '@cloudflare/workers-types': 4.20251125.0
+=======
+      '@cloudflare/workers-types': 4.20251121.0
+>>>>>>> 557a61b (fix(deps): update dependency @cloudflare/workers-types to v4.20251121.0)
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
