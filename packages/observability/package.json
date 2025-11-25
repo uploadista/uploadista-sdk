@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/observability",
   "type": "module",
-  "version": "0.0.18-beta.1",
+  "version": "0.0.18-beta.2",
   "description": "Observability package for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
