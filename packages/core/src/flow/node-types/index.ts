@@ -43,10 +43,10 @@ import { flowTypeRegistry } from "../type-registry";
  * });
  * ```
  */
-export const STREAMING_INPUT_TYPE_ID = "streaming-input-v1";
 export const STORAGE_OUTPUT_TYPE_ID = "storage-output-v1";
 export const OCR_OUTPUT_TYPE_ID = "ocr-output-v1";
 export const IMAGE_DESCRIPTION_OUTPUT_TYPE_ID = "image-description-output-v1";
+export const STREAMING_INPUT_TYPE_ID = "streaming-input-v1";
 
 /**
  * OCR output schema - structured text extraction result.
@@ -59,7 +59,12 @@ export const IMAGE_DESCRIPTION_OUTPUT_TYPE_ID = "image-description-output-v1";
 export const ocrOutputSchema = z.object({
   extractedText: z.string(),
   format: z.enum(["markdown", "plain", "structured"]),
-  taskType: z.enum(["convertToMarkdown", "freeOcr", "parseFigure", "locateObject"]),
+  taskType: z.enum([
+    "convertToMarkdown",
+    "freeOcr",
+    "parseFigure",
+    "locateObject",
+  ]),
   confidence: z.number().min(0).max(1).optional(),
 });
 
