@@ -1644,8 +1644,8 @@ importers:
         specifier: workspace:*
         version: link:../../../core
       node-av:
-        specifier: 5.0.1
-        version: 5.0.1
+        specifier: 5.0.2
+        version: 5.0.2
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
@@ -5665,50 +5665,50 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
-  '@seydx/node-av-darwin-arm64@5.0.1':
-    resolution: {integrity: sha512-dO6Kd9MaCyohOXfqpmH66G8+JQXVOM7RQdG9VN4sUaNPIlxlK5kCrnjNG53dn59X+fJoREPPPqUzN3CejPlU9g==}
+  '@seydx/node-av-darwin-arm64@5.0.2':
+    resolution: {integrity: sha512-ddmg1id1GfSvdnYPv1UskJqkzjadNFyluFtMVr2j/pNDizqiCmR0jmX68HqaZjvyKEuttBVN9RUsRJVgrrkQsg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [darwin]
 
-  '@seydx/node-av-darwin-x64@5.0.1':
-    resolution: {integrity: sha512-fbZe0Bz12ooKM7qtcOL0Niy30p87uRNXJW/5ZTJJWzLNEvZQRwYim5TCcGKSkTZ0XkEsVZ5KyTVSEm81x+sdPw==}
+  '@seydx/node-av-darwin-x64@5.0.2':
+    resolution: {integrity: sha512-ahiNSasdjNUx5U37+sjKLgptM0Q/y1ylvoGb110aVjcnNTcGze4HVxychDp9dVh1CJ789KcuKu7UciQxIgCwCg==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [darwin]
 
-  '@seydx/node-av-linux-arm64@5.0.1':
-    resolution: {integrity: sha512-kTe9QaBXIGFc1tcLabWy0u/RpmmenPDoaHp4HRZ8jNT66nGyNNY0Qb/tg8h0dQiGBJd38LVCKIkUgdQSN6uB1g==}
+  '@seydx/node-av-linux-arm64@5.0.2':
+    resolution: {integrity: sha512-2UGd8CeBHPmT2qr9NEQJrr8VOYdzjqbPWgV9xSrIorTObnyJemwk9DggiXsd2gttcHTavgOs/LZ76Q24vby8sA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [linux]
 
-  '@seydx/node-av-linux-x64@5.0.1':
-    resolution: {integrity: sha512-SezXufBcdH5bisvfkG0uBFfvMc8ej4tTLRyY8n7lijN22PBfvIVC9ett/guC2EFHp2VtuuFcc3c6llqdnKK1bQ==}
+  '@seydx/node-av-linux-x64@5.0.2':
+    resolution: {integrity: sha512-k1wJymAdYSTUvKlRdnJrihSDN+jdepwUXD6XOIx0XODrgm0pZCeIL7eUGRrfssr6EnCgM2Xhu7ATsf5K4lHojA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [linux]
 
-  '@seydx/node-av-win32-arm64-mingw@5.0.1':
-    resolution: {integrity: sha512-xSwYTnwmr79J/i26swxdRRDjY3YoREGpV+jGEIHBD9In7bI3PEbj76O26faRS3A1YDHtP8MJGGpZMCyXxvDoUQ==}
+  '@seydx/node-av-win32-arm64-mingw@5.0.2':
+    resolution: {integrity: sha512-qE8Fy9i5n7N+Bhs22rGGJCF1VrdjEIKS9gVK1spNpGq3/ZPR356RYg05jNfoYrO1/ZBLEqNFIJorjydxslh+yA==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [win32]
 
-  '@seydx/node-av-win32-arm64-msvc@5.0.1':
-    resolution: {integrity: sha512-bE4Xic2G9YcROgrLPPJ4BkPFWna8zpbyNIjMB8z9hPMEgv5PepADYYpxEJgwja4ie6onCrD8Cn2sIvHBA2fWpQ==}
+  '@seydx/node-av-win32-arm64-msvc@5.0.2':
+    resolution: {integrity: sha512-vSODX+a254WxOycnudjv2utU0IJ/auoZ1uvoEbIEHD/kyu0uF3Or4EK52rtI0W/9tCsYH5v0gxw0rLM0uz2p6g==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [arm64]
     os: [win32]
 
-  '@seydx/node-av-win32-x64-mingw@5.0.1':
-    resolution: {integrity: sha512-QZrA2Y5rkCfPkPu/QlI8hXXMlWPH8tE+Z59QX44lH2jApeZK/313mXlvNkHM4OHxUbaamqVaHgdXEKz1cs89sQ==}
+  '@seydx/node-av-win32-x64-mingw@5.0.2':
+    resolution: {integrity: sha512-kby0c4UI+TAgoGDRZC7HcvqU/E1GAxnAGkzr52Ll0huOuZbBSl6GJFmyTYlwo2etFWSjRKWMiQwdGHLMRf8Yag==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
 
-  '@seydx/node-av-win32-x64-msvc@5.0.1':
-    resolution: {integrity: sha512-H4Zd3H6bWZkxfMoV65w5DFlJ0m9iwprslEbBSUYUyeaJggu6Y5MssVQYbUuLpTG36u0kfV8BCtEozGNJqxN6nw==}
+  '@seydx/node-av-win32-x64-msvc@5.0.2':
+    resolution: {integrity: sha512-wRveR2A6/nldFJ0XEWMbvtM7UAiDMqSNwFolRJqHUdwXvUxfseP4oabyOQZ6wx1z6DFgRS9Z3zobcrRlr/do2A==}
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
@@ -9482,8 +9482,8 @@ packages:
       sass:
         optional: true
 
-  node-av@5.0.1:
-    resolution: {integrity: sha512-20A6lHSq8nR2bEy10+4To108eLO272uTvslKMM5VdE28MEJHkIxRqjxQCxnwX3MfYCUD53XyBtusD2qXz7RPVw==}
+  node-av@5.0.2:
+    resolution: {integrity: sha512-maqij1UEorOwTBmdU9U744SmG7n54Tv18NmsWVSWzPT7wAo84rvlvCxCOTulRkEH10xNTupDO37zxXEneIbHeA==}
 
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
@@ -16091,42 +16091,42 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
-  '@seydx/node-av-darwin-arm64@5.0.1':
+  '@seydx/node-av-darwin-arm64@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-darwin-x64@5.0.1':
+  '@seydx/node-av-darwin-x64@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-linux-arm64@5.0.1':
+  '@seydx/node-av-linux-arm64@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-linux-x64@5.0.1':
+  '@seydx/node-av-linux-x64@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-arm64-mingw@5.0.1':
+  '@seydx/node-av-win32-arm64-mingw@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-arm64-msvc@5.0.1':
+  '@seydx/node-av-win32-arm64-msvc@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-x64-mingw@5.0.1':
+  '@seydx/node-av-win32-x64-mingw@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
 
-  '@seydx/node-av-win32-x64-msvc@5.0.1':
+  '@seydx/node-av-win32-x64-msvc@5.0.2':
     dependencies:
       unzipper: 0.12.3
     optional: true
@@ -20855,19 +20855,19 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  node-av@5.0.1:
+  node-av@5.0.2:
     dependencies:
       unzipper: 0.12.3
       werift: 0.22.2
     optionalDependencies:
-      '@seydx/node-av-darwin-arm64': 5.0.1
-      '@seydx/node-av-darwin-x64': 5.0.1
-      '@seydx/node-av-linux-arm64': 5.0.1
-      '@seydx/node-av-linux-x64': 5.0.1
-      '@seydx/node-av-win32-arm64-mingw': 5.0.1
-      '@seydx/node-av-win32-arm64-msvc': 5.0.1
-      '@seydx/node-av-win32-x64-mingw': 5.0.1
-      '@seydx/node-av-win32-x64-msvc': 5.0.1
+      '@seydx/node-av-darwin-arm64': 5.0.2
+      '@seydx/node-av-darwin-x64': 5.0.2
+      '@seydx/node-av-linux-arm64': 5.0.2
+      '@seydx/node-av-linux-x64': 5.0.2
+      '@seydx/node-av-win32-arm64-mingw': 5.0.2
+      '@seydx/node-av-win32-arm64-msvc': 5.0.2
+      '@seydx/node-av-win32-x64-mingw': 5.0.2
+      '@seydx/node-av-win32-x64-msvc': 5.0.2
     transitivePeerDependencies:
       - supports-color
 
