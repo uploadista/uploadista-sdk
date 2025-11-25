@@ -43,6 +43,21 @@ import { outputTypeRegistry } from "./output-type-registry";
 import type { TypedOutput } from "./types/flow-types";
 
 /**
+ * A narrowed typed output with a specific node type and data type.
+ * Unlike TypedOutput<T>, this type has a required nodeType field and
+ * excludes BuiltInTypedOutput from the union, providing better type narrowing.
+ *
+ * @template T - The TypeScript type of the output data
+ * @template TNodeType - The literal string type of the node type ID
+ */
+export type NarrowedTypedOutput<T, TNodeType extends string = string> = {
+  nodeType: TNodeType;
+  data: T;
+  nodeId: string;
+  timestamp: string;
+};
+
+/**
  * Factory function to create type guards for specific node types.
  *
  * Creates a TypeScript type guard that validates both the type tag and
@@ -50,8 +65,9 @@ import type { TypedOutput } from "./types/flow-types";
  * narrowing of TypedOutput objects in TypeScript.
  *
  * @template T - The expected TypeScript type after narrowing
+ * @template TNodeType - The literal string type of the node type ID
  * @param typeId - The registered type ID to check against (e.g., "storage-output-v1")
- * @returns A type guard function that narrows TypedOutput to TypedOutput<T>
+ * @returns A type guard function that narrows TypedOutput to NarrowedTypedOutput<T, TNodeType>
  *
  * @example
  * ```typescript
@@ -76,10 +92,10 @@ import type { TypedOutput } from "./types/flow-types";
  * }
  * ```
  */
-export function createTypeGuard<T>(
-  typeId: string,
-): (output: TypedOutput) => output is TypedOutput<T> {
-  return (output: TypedOutput): output is TypedOutput<T> => {
+export function createTypeGuard<T, TNodeType extends string = string>(
+  typeId: TNodeType,
+): (output: TypedOutput) => output is NarrowedTypedOutput<T, TNodeType> {
+  return (output: TypedOutput): output is NarrowedTypedOutput<T, TNodeType> => {
     // Check type matches
     if (output.nodeType !== typeId) return false;
 
@@ -192,7 +208,7 @@ export const isImageDescriptionOutput = createTypeGuard<ImageDescriptionOutput>(
  * properly typed array of results. It's useful for extracting specific
  * output types from multi-output flows.
  *
- * @template T - The expected output data type
+ * @template TOutput - The expected narrowed output type
  * @param outputs - Array of typed outputs to filter
  * @param typeGuard - Type guard function to use for filtering
  * @returns Array of outputs that match the type guard, properly typed
@@ -213,10 +229,10 @@ export const isImageDescriptionOutput = createTypeGuard<ImageDescriptionOutput>(
  * }
  * ```
  */
-export function filterOutputsByType<T>(
+export function filterOutputsByType<TOutput extends TypedOutput>(
   outputs: TypedOutput[],
-  typeGuard: (output: TypedOutput) => output is TypedOutput<T>,
-): TypedOutput<T>[] {
+  typeGuard: (output: TypedOutput) => output is TOutput,
+): TOutput[] {
   return outputs.filter(typeGuard);
 }
 
@@ -227,7 +243,7 @@ export function filterOutputsByType<T>(
  * It throws an error if no outputs match or if multiple outputs match,
  * ensuring the caller receives exactly the expected result.
  *
- * @template T - The expected output data type
+ * @template TOutput - The expected narrowed output type
  * @param outputs - Array of typed outputs to search
  * @param typeGuard - Type guard function to use for matching
  * @returns The single matching output, properly typed
@@ -254,10 +270,10 @@ export function filterOutputsByType<T>(
  * }
  * ```
  */
-export function getSingleOutputByType<T>(
+export function getSingleOutputByType<TOutput extends TypedOutput>(
   outputs: TypedOutput[],
-  typeGuard: (output: TypedOutput) => output is TypedOutput<T>,
-): Effect.Effect<TypedOutput<T>, UploadistaError> {
+  typeGuard: (output: TypedOutput) => output is TOutput,
+): Effect.Effect<TOutput, UploadistaError> {
   return Effect.gen(function* () {
     const filtered = filterOutputsByType(outputs, typeGuard);
 
@@ -290,7 +306,7 @@ export function getSingleOutputByType<T>(
  * match, and returns the first match if multiple outputs exist. This is useful
  * when you want a more lenient matching strategy.
  *
- * @template T - The expected output data type
+ * @template TOutput - The expected narrowed output type
  * @param outputs - Array of typed outputs to search
  * @param typeGuard - Type guard function to use for matching
  * @returns The first matching output, or undefined if none match
@@ -311,10 +327,10 @@ export function getSingleOutputByType<T>(
  * }
  * ```
  */
-export function getFirstOutputByType<T>(
+export function getFirstOutputByType<TOutput extends TypedOutput>(
   outputs: TypedOutput[],
-  typeGuard: (output: TypedOutput) => output is TypedOutput<T>,
-): TypedOutput<T> | undefined {
+  typeGuard: (output: TypedOutput) => output is TOutput,
+): TOutput | undefined {
   const filtered = filterOutputsByType(outputs, typeGuard);
   return filtered[0];
 }
@@ -353,7 +369,7 @@ export function getOutputByNodeId(
  * Simple predicate function to check if at least one output of a given
  * type exists in the results.
  *
- * @template T - The expected output data type
+ * @template TOutput - The expected narrowed output type
  * @param outputs - Array of typed outputs to check
  * @param typeGuard - Type guard function to use for checking
  * @returns True if at least one output matches the type guard
@@ -369,9 +385,9 @@ export function getOutputByNodeId(
  * }
  * ```
  */
-export function hasOutputOfType<T>(
+export function hasOutputOfType<TOutput extends TypedOutput>(
   outputs: TypedOutput[],
-  typeGuard: (output: TypedOutput) => output is TypedOutput<T>,
+  typeGuard: (output: TypedOutput) => output is TOutput,
 ): boolean {
   return outputs.some(typeGuard);
 }
