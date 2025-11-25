@@ -5,7 +5,6 @@ import type {
 } from "@uploadista/core/flow";
 import { Effect } from "effect";
 import { Decoder, Demuxer, Encoder, Muxer } from "node-av/api";
-import type { Packet } from "node-av/lib";
 import {
   audioCodecToAVName,
   codecToAVName,
@@ -112,17 +111,20 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
           for await (using frame of videoDecoder.frames(
             mediaInput.packets(videoStream.index),
           )) {
-            const packet = await videoEncoder.encode(frame);
-            if (packet) {
+            if (!frame) continue;
+            await videoEncoder.encode(frame);
+            let packet = await videoEncoder.receive();
+            while (packet) {
               await mediaOutput.writePacket(packet, videoOutputIndex);
               packet.free();
+              packet = await videoEncoder.receive();
             }
           }
 
           // Flush remaining packets
           await videoEncoder.flush();
-          let transcodeVPacket: Packet | null = await videoEncoder.receive();
-          while (transcodeVPacket !== null) {
+          let transcodeVPacket = await videoEncoder.receive();
+          while (transcodeVPacket) {
             await mediaOutput.writePacket(transcodeVPacket, videoOutputIndex);
             transcodeVPacket.free();
             transcodeVPacket = await videoEncoder.receive();
@@ -147,17 +149,20 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             for await (using frame of audioDecoder.frames(
               mediaInput.packets(audioStream.index),
             )) {
-              const packet = await audioEncoder.encode(frame);
-              if (packet) {
+              if (!frame) continue;
+              await audioEncoder.encode(frame);
+              let packet = await audioEncoder.receive();
+              while (packet) {
                 await mediaOutput.writePacket(packet, audioOutputIndex);
                 packet.free();
+                packet = await audioEncoder.receive();
               }
             }
 
             // Flush remaining packets
             await audioEncoder.flush();
-            let transcodeAPacket: Packet | null = await audioEncoder.receive();
-            while (transcodeAPacket !== null) {
+            let transcodeAPacket = await audioEncoder.receive();
+            while (transcodeAPacket) {
               await mediaOutput.writePacket(transcodeAPacket, audioOutputIndex);
               transcodeAPacket.free();
               transcodeAPacket = await audioEncoder.receive();
@@ -217,19 +222,22 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
           for await (using frame of videoDecoder.frames(
             mediaInput.packets(videoStream.index),
           )) {
+            if (!frame) continue;
             // TODO: Apply scale filter here for better quality
             // For now, encoder will handle basic resizing
-            const packet = await videoEncoder.encode(frame);
-            if (packet) {
+            await videoEncoder.encode(frame);
+            let packet = await videoEncoder.receive();
+            while (packet) {
               await mediaOutput.writePacket(packet, videoOutputIndex);
               packet.free();
+              packet = await videoEncoder.receive();
             }
           }
 
           // Flush remaining packets
           await videoEncoder.flush();
-          let vPacket: Packet | null = await videoEncoder.receive();
-          while (vPacket !== null) {
+          let vPacket = await videoEncoder.receive();
+          while (vPacket) {
             await mediaOutput.writePacket(vPacket, videoOutputIndex);
             vPacket.free();
             vPacket = await videoEncoder.receive();
@@ -246,17 +254,20 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             for await (using frame of audioDecoder.frames(
               mediaInput.packets(audioStream.index),
             )) {
-              const packet = await audioEncoder.encode(frame);
-              if (packet) {
+              if (!frame) continue;
+              await audioEncoder.encode(frame);
+              let packet = await audioEncoder.receive();
+              while (packet) {
                 await mediaOutput.writePacket(packet, audioOutputIndex);
                 packet.free();
+                packet = await audioEncoder.receive();
               }
             }
 
             // Flush remaining packets
             await audioEncoder.flush();
-            let resizeAPacket: Packet | null = await audioEncoder.receive();
-            while (resizeAPacket !== null) {
+            let resizeAPacket = await audioEncoder.receive();
+            while (resizeAPacket) {
               await mediaOutput.writePacket(resizeAPacket, audioOutputIndex);
               resizeAPacket.free();
               resizeAPacket = await audioEncoder.receive();
@@ -311,18 +322,21 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
           for await (using frame of videoDecoder.frames(
             mediaInput.packets(videoStream.index),
           )) {
+            if (!frame) continue;
             // Calculate frame timestamp
-            const pts = frame?.pts || 0n;
+            const pts = frame.pts || 0n;
             const timeBase = videoStream.timeBase
               ? videoStream.timeBase.num / videoStream.timeBase.den
               : 1;
             const timestamp = Number(pts) * timeBase;
 
             if (timestamp >= options.startTime && timestamp < endTime) {
-              const packet = await videoEncoder.encode(frame);
-              if (packet) {
+              await videoEncoder.encode(frame);
+              let packet = await videoEncoder.receive();
+              while (packet) {
                 await mediaOutput.writePacket(packet, videoOutputIndex);
                 packet.free();
+                packet = await videoEncoder.receive();
               }
             }
 
@@ -331,8 +345,8 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
 
           // Flush remaining packets
           await videoEncoder.flush();
-          let trimVPacket: Packet | null = await videoEncoder.receive();
-          while (trimVPacket !== null) {
+          let trimVPacket = await videoEncoder.receive();
+          while (trimVPacket) {
             await mediaOutput.writePacket(trimVPacket, videoOutputIndex);
             trimVPacket.free();
             trimVPacket = await videoEncoder.receive();
@@ -349,17 +363,20 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             for await (using frame of audioDecoder.frames(
               mediaInput.packets(audioStream.index),
             )) {
-              const pts = frame?.pts || 0n;
+              if (!frame) continue;
+              const pts = frame.pts || 0n;
               const timeBase = audioStream.timeBase
                 ? audioStream.timeBase.num / audioStream.timeBase.den
                 : 1;
               const timestamp = Number(pts) * timeBase;
 
               if (timestamp >= options.startTime && timestamp < endTime) {
-                const packet = await audioEncoder.encode(frame);
-                if (packet) {
+                await audioEncoder.encode(frame);
+                let packet = await audioEncoder.receive();
+                while (packet) {
                   await mediaOutput.writePacket(packet, audioOutputIndex);
                   packet.free();
+                  packet = await audioEncoder.receive();
                 }
               }
 
@@ -368,8 +385,8 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
 
             // Flush remaining packets
             await audioEncoder.flush();
-            let trimAPacket: Packet | null = await audioEncoder.receive();
-            while (trimAPacket !== null) {
+            let trimAPacket = await audioEncoder.receive();
+            while (trimAPacket) {
               await mediaOutput.writePacket(trimAPacket, audioOutputIndex);
               trimAPacket.free();
               trimAPacket = await audioEncoder.receive();
@@ -408,8 +425,9 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
           for await (using frame of decoder.frames(
             mediaInput.packets(videoStream.index),
           )) {
+            if (!frame) continue;
             // Calculate frame timestamp
-            const pts = frame?.pts || 0n;
+            const pts = frame.pts || 0n;
             const timeBase = videoStream.timeBase
               ? videoStream.timeBase.num / videoStream.timeBase.den
               : 1;
@@ -424,7 +442,8 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
 
               // Encode the frame as image
               // The encoder will initialize from the first frame's properties
-              const packet = await imageEncoder.encode(frame);
+              await imageEncoder.encode(frame);
+              const packet = await imageEncoder.receive();
               if (packet?.data) {
                 // Convert Buffer to Uint8Array
                 frameData = new Uint8Array(packet.data);
