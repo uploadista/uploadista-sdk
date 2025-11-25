@@ -33,6 +33,8 @@ export type NodeTypeMap = Record<string, { input: unknown; output: unknown }>;
  * @property name - Human-readable node name
  * @property description - Explanation of what the node does
  * @property type - Node category (input, transform, conditional, output, etc.)
+ * @property inputTypeId - Optional input type ID from inputTypeRegistry (for input nodes)
+ * @property outputTypeId - Optional output type ID from outputTypeRegistry (for result typing)
  * @property keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false)
  */
 export type FlowNodeData = {
@@ -40,7 +42,10 @@ export type FlowNodeData = {
   name: string;
   description: string;
   type: NodeType;
-  nodeTypeId: string;
+  /** Input type ID from inputTypeRegistry - describes how external clients interact with this node */
+  inputTypeId?: string;
+  /** Output type ID from outputTypeRegistry - describes the data shape this node produces */
+  outputTypeId?: string;
   keepOutput?: boolean;
 };
 
@@ -179,7 +184,7 @@ export type TypedOutput<T = unknown> =
  *
  * Results now include optional type information (`nodeType` and `nodeId`) to
  * enable type-safe result consumption. These fields are automatically added
- * by the node execution wrapper when a node is created with a `nodeTypeId`.
+ * by the node execution wrapper when a node is created with an `outputTypeId`.
  *
  * @example
  * ```typescript

@@ -28,7 +28,7 @@ export function createExtractTextNode(
       name: "Extract Text",
       description: "Extract text from searchable PDF documents",
       type: NodeType.process,
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,

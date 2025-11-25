@@ -37,7 +37,7 @@ export function createVideoResizeNode(
       id,
       name: "Resize Video",
       description: "Changes video resolution",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       transform: (inputBytes, _file) =>
         Effect.map(videoService.resize(inputBytes, params), (resizedBytes) => {

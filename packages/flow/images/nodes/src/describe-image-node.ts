@@ -24,7 +24,7 @@ export function createDescribeImageNode(
       name: "Describe Image",
       description: "Describes the image using AI",
       type: NodeType.process,
-      nodeTypeId: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
+      outputTypeId: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
       keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: imageDescriptionOutputSchema,

@@ -11,12 +11,14 @@ This guide helps you migrate existing Uploadista flows to use the new type regis
 3. **FlowEventFlowEnd** - Added `outputs: TypedOutput[]` field
 4. **FlowUploadState** - Added `flowOutputs: TypedOutput[]` field
 5. **FlowUploadCallbacks** - `onFlowComplete` now receives `TypedOutput[]`
+6. **Separate Registries** - `inputTypeRegistry` for input types, `outputTypeRegistry` for output types
+7. **New Node Fields** - `inputTypeId` and `outputTypeId` replace the old `nodeTypeId`
 
 ### Backward Compatibility
 
-✅ **All existing flows continue to work without changes**
+All existing flows continue to work without changes
 
-- Nodes without `nodeTypeId` produce untyped results (`nodeType` will be `undefined`)
+- Nodes without `outputTypeId` produce untyped results (`nodeType` will be `undefined`)
 - Legacy `result` fields are maintained for compatibility
 - Client callbacks work with both typed and untyped flows
 
@@ -24,11 +26,11 @@ This guide helps you migrate existing Uploadista flows to use the new type regis
 
 You can migrate gradually:
 
-1. ✅ **Phase 1**: No changes needed - everything works as before
-2. ✅ **Phase 2**: Start using `onFlowComplete` for new features
-3. ✅ **Phase 3**: Adopt type guards for safer code
-4. ✅ **Phase 4**: Register custom types for new nodes
-5. ✅ **Phase 5**: Fully migrate to typed system
+1. **Phase 1**: No changes needed - everything works as before
+2. **Phase 2**: Start using `onFlowComplete` for new features
+3. **Phase 3**: Adopt type guards for safer code
+4. **Phase 4**: Register custom types for new nodes
+5. **Phase 5**: Fully migrate to typed system
 
 ## Server-Side Migration
 
@@ -60,8 +62,8 @@ import { createFlow, createInputNode, createStorageNode } from '@uploadista/core
 const flow = createFlow({
   id: 'image-upload',
   nodes: [
-    yield* createInputNode('input'),      
-    yield* createStorageNode('storage'),  // Auto-uses: storage-output-v1
+    yield* createInputNode('input'),      // Auto-uses: inputTypeId: streaming-input-v1, outputTypeId: storage-output-v1
+    yield* createStorageNode('storage'),  // Auto-uses: outputTypeId: storage-output-v1
   ],
   edges: [
     { source: 'input', target: 'storage' },
@@ -86,12 +88,11 @@ const customNode = yield* createFlowNode({
 ### Custom Nodes: After (Typed)
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 
 // 1. Register your type (do this once at app startup)
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'custom-output-v1',
-  category: 'output',
   schema: myOutputSchema,
   version: '1.0.0',
   description: 'Custom processing output',
@@ -103,7 +104,7 @@ const customNode = yield* createFlowNode({
   type: NodeType.output,
   inputSchema: myInputSchema,
   outputSchema: myOutputSchema,
-  nodeTypeId: 'custom-output-v1', // NEW: Link to registered type
+  outputTypeId: 'custom-output-v1', // NEW: Link to registered output type
   run: ({ data }) => {
     // No changes needed in implementation
   },
@@ -175,7 +176,7 @@ function UploadComponent() {
 
 ## Breaking Changes
 
-### ⚠️ Direct FlowJob.result Access
+### Direct FlowJob.result Access
 
 If you were directly accessing `FlowJob.result`:
 
@@ -206,7 +207,7 @@ if (job.status === 'completed' && job.result) {
 }
 ```
 
-### ⚠️ Custom FlowEnd Event Handlers
+### Custom FlowEnd Event Handlers
 
 If you have custom handlers for FlowEnd events:
 
@@ -311,12 +312,11 @@ Register custom types for domain-specific nodes:
 
 ```typescript
 // App initialization
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 
 export function initializeTypes() {
-  flowTypeRegistry.register({
+  outputTypeRegistry.register({
     id: 'thumbnail-output-v1',
-    category: 'output',
     schema: thumbnailSchema,
     version: '1.0.0',
     description: 'Thumbnail generation',
@@ -388,7 +388,7 @@ Callback not firing even though flow completes.
 Check that flow has output nodes:
 
 ```typescript
-// ❌ No output nodes
+// No output nodes
 const flow = createFlow({
   nodes: [
     yield* createInputNode('input'),
@@ -396,7 +396,7 @@ const flow = createFlow({
   ],
 });
 
-// ✅ Has output node
+// Has output node
 const flow = createFlow({
   nodes: [
     yield* createInputNode('input'),
@@ -414,13 +414,13 @@ const flow = createFlow({
 `isStorageOutput(output)` returns false unexpectedly.
 
 **Solution:**
-Check node has nodeTypeId:
+Check node has outputTypeId:
 
 ```typescript
 // Check if node has type information
 console.log('Node type:', output.nodeType); // Should be "storage-output-v1"
 
-// If undefined, node wasn't created with nodeTypeId
+// If undefined, node wasn't created with outputTypeId
 // Built-in nodes (createStorageNode) automatically include type
 ```
 
@@ -483,10 +483,10 @@ If you encounter issues, you can safely roll back:
 ### 1. Remove Type IDs
 
 ```typescript
-// Remove nodeTypeId from custom nodes
+// Remove outputTypeId from custom nodes
 const node = yield* createFlowNode({
   // ... other config
-  // nodeTypeId: 'custom-type', // Remove this line
+  // outputTypeId: 'custom-type', // Remove this line
 });
 ```
 
@@ -553,15 +553,19 @@ If you encounter migration issues:
 
 **A:** Use semantic versioning in the type ID (e.g., `custom-v1`, `custom-v2`).
 
+### Q: What's the difference between inputTypeId and outputTypeId?
+
+**A:** `inputTypeId` describes how external clients interact with input nodes (the external interface). `outputTypeId` describes the data shape that the node produces (the output data type). Input nodes can have both.
+
 ## Next Steps
 
 After migration:
 
-1. ✅ Review [Type Registry Guide](./type-registry.md)
-2. ✅ Explore [Typed Flows Guide](./typed-flows.md)
-3. ✅ Add type guards to your code
-4. ✅ Register custom types for domain nodes
-5. ✅ Update documentation for your team
+1. Review [Type Registry Guide](./type-registry.md)
+2. Explore [Typed Flows Guide](./typed-flows.md)
+3. Add type guards to your code
+4. Register custom types for domain nodes
+5. Update documentation for your team
 
 ---
 

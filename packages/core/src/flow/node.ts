@@ -1,7 +1,8 @@
 import { Effect } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
-import { flowTypeRegistry } from "./type-registry";
+import { inputTypeRegistry } from "./input-type-registry";
+import { outputTypeRegistry } from "./output-type-registry";
 import type {
   FlowNode,
   FlowNodeData,
@@ -80,7 +81,8 @@ export type ConditionValue = string | number;
  * @param config.retry.maxRetries - Maximum number of retry attempts (default: 0)
  * @param config.retry.retryDelay - Base delay in milliseconds between retries (default: 1000)
  * @param config.retry.exponentialBackoff - Whether to use exponential backoff for retries (default: true)
- * @param config.nodeTypeId - Optional type ID from the registry (e.g., "storage-output-v1"). If provided, the node type must be registered.
+ * @param config.inputTypeId - Optional input type ID from inputTypeRegistry (e.g., "streaming-input-v1"). Used for input nodes to describe external interface.
+ * @param config.outputTypeId - Optional output type ID from outputTypeRegistry (e.g., "storage-output-v1"). Used for result type tagging.
  * @param config.keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false). Useful for flows where intermediate results need to be kept (e.g., preserving the original file when also running OCR on it).
  *
  * @returns An Effect that succeeds with the created FlowNode
@@ -132,7 +134,8 @@ export function createFlowNode<
   multiOutput = false,
   pausable = false,
   retry,
-  nodeTypeId,
+  inputTypeId,
+  outputTypeId,
   keepOutput = false,
 }: {
   id: string;
@@ -161,33 +164,34 @@ export function createFlowNode<
     retryDelay?: number;
     exponentialBackoff?: boolean;
   };
-  nodeTypeId?: string;
+  /** Input type ID from inputTypeRegistry - for input nodes describing external interface */
+  inputTypeId?: string;
+  /** Output type ID from outputTypeRegistry - for result type tagging */
+  outputTypeId?: string;
   keepOutput?: boolean;
 }): Effect.Effect<
   FlowNode<Input, Output, UploadistaError> & { type: TType },
   UploadistaError
 > {
   return Effect.gen(function* () {
-    // Validate type registration if nodeTypeId provided
-    if (nodeTypeId) {
-      const typeDef = flowTypeRegistry.get(nodeTypeId);
-      if (!typeDef) {
-        return yield* UploadistaError.fromCode("INVALID_NODE_TYPE", {
-          body: `Node type "${nodeTypeId}" is not registered`,
-          details: { nodeTypeId, nodeId: id },
+    // Validate inputTypeId against inputTypeRegistry if provided
+    if (inputTypeId) {
+      const inputTypeDef = inputTypeRegistry.get(inputTypeId);
+      if (!inputTypeDef) {
+        return yield* UploadistaError.fromCode("INVALID_INPUT_TYPE", {
+          body: `Input type "${inputTypeId}" is not registered in inputTypeRegistry`,
+          details: { inputTypeId, nodeId: id },
         }).toEffect();
       }
+    }
 
-      // Validate category matches for input nodes
-      if (type === NodeType.input && typeDef.category !== "input") {
-        return yield* UploadistaError.fromCode("TYPE_CATEGORY_MISMATCH", {
-          body: `Node type "${nodeTypeId}" is registered as "${typeDef.category}" but node "${id}" is type "${type}"`,
-          details: {
-            nodeTypeId,
-            nodeId: id,
-            expectedCategory: "input",
-            actualCategory: typeDef.category,
-          },
+    // Validate outputTypeId against outputTypeRegistry if provided
+    if (outputTypeId) {
+      const outputTypeDef = outputTypeRegistry.get(outputTypeId);
+      if (!outputTypeDef) {
+        return yield* UploadistaError.fromCode("INVALID_OUTPUT_TYPE", {
+          body: `Output type "${outputTypeId}" is not registered in outputTypeRegistry`,
+          details: { outputTypeId, nodeId: id },
         }).toEffect();
       }
     }
@@ -197,7 +201,8 @@ export function createFlowNode<
       name,
       description,
       type,
-      nodeTypeId: nodeTypeId || `${type}-node`,
+      inputTypeId,
+      outputTypeId,
       keepOutput,
       inputSchema,
       outputSchema,
@@ -243,7 +248,7 @@ export function createFlowNode<
             return {
               type: "waiting" as const,
               partialData: result.partialData,
-              nodeType: nodeTypeId,
+              nodeType: outputTypeId,
               nodeId: id,
             };
           }
@@ -261,11 +266,11 @@ export function createFlowNode<
             },
           });
 
-          // Return with type information
+          // Return with type information (using outputTypeId for result typing)
           return {
             type: "complete" as const,
             data: validatedResult,
-            nodeType: nodeTypeId,
+            nodeType: outputTypeId,
             nodeId: id,
           };
         }),
@@ -285,7 +290,7 @@ export function createFlowNode<
  * the executable run function or schemas.
  *
  * @param node - The flow node to extract data from
- * @returns A plain object containing the node's metadata (id, name, description, type)
+ * @returns A plain object containing the node's metadata (id, name, description, type, inputTypeId, outputTypeId)
  */
 export const getNodeData = (
   // biome-ignore lint/suspicious/noExplicitAny: maybe type later
@@ -296,6 +301,7 @@ export const getNodeData = (
     name: node.name,
     description: node.description,
     type: node.type,
-    nodeTypeId: node.nodeTypeId,
+    inputTypeId: node.inputTypeId,
+    outputTypeId: node.outputTypeId,
   };
 };

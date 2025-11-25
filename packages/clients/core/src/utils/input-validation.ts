@@ -5,8 +5,8 @@
  */
 
 import type { FlowData } from "@uploadista/core/flow";
-import type { FlowInputs } from "../types/flow-inputs";
 import { UploadistaError } from "../error";
+import type { FlowInputs } from "../types/flow-inputs";
 
 /**
  * Validation error details for a specific input node.
@@ -30,7 +30,7 @@ export type InputValidationResult =
  *
  * This function:
  * 1. Fetches flow metadata to get input node types
- * 2. Looks up each node type in the flowTypeRegistry
+ * 2. Looks up each node type in the inputTypeRegistry
  * 3. Validates each input against its node's schema using Zod
  * 4. Returns validation errors before any network calls
  *
@@ -91,7 +91,6 @@ export function validateFlowInputs(
         nodeType: node.type,
         error: `Input data for node "${nodeId}" is null or undefined`,
       });
-      continue;
     }
 
     // Note: Schema validation is done server-side.

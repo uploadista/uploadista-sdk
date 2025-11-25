@@ -22,7 +22,7 @@ import { createFlow, createInputNode, createStorageNode } from '@uploadista/core
 const flow = createFlow({
   id: 'image-upload',
   nodes: [
-    yield* createInputNode('input'),      
+    yield* createInputNode('input'),
     yield* createStorageNode('storage'),  // Uses storage-output-v1
   ],
   edges: [
@@ -114,7 +114,7 @@ const storageNode = yield* createStorageNode('save');
 #### 1. Register Your Type
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 import { z } from 'zod';
 
 const thumbnailSchema = z.object({
@@ -124,9 +124,8 @@ const thumbnailSchema = z.object({
   format: z.enum(['jpeg', 'png', 'webp']),
 });
 
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'thumbnail-output-v1',
-  category: 'output',
   schema: thumbnailSchema,
   version: '1.0.0',
   description: 'Generated thumbnail with dimensions',
@@ -145,7 +144,7 @@ const thumbnailNode = yield* createFlowNode({
   type: NodeType.output,
   inputSchema: uploadFileSchema,
   outputSchema: thumbnailSchema,
-  nodeTypeId: 'thumbnail-output-v1', // Links to registered type
+  outputTypeId: 'thumbnail-output-v1', // Links to registered output type
   run: ({ data }) => {
     return Effect.gen(function* () {
       const thumbnail = yield* generateThumbnail(data, 200, 200);
@@ -242,12 +241,12 @@ onFlowComplete: (outputs) => {
 
 The typed flow system provides **two ways** to safely narrow types:
 
-### 1. Automatic Narrowing (Built-in Types) ✨ **Recommended**
+### 1. Automatic Narrowing (Built-in Types) - Recommended
 
 Built-in types use discriminated unions for **automatic TypeScript narrowing** - no type guards needed!
 
 ```typescript
-// ✅ Automatic narrowing for built-in types (80% of use cases)
+// Automatic narrowing for built-in types (80% of use cases)
 for (const output of outputs) {
   switch (output.nodeType) {
     case 'storage-output-v1':
@@ -257,7 +256,7 @@ for (const output of outputs) {
       console.log(output.data.mimeType);
       break;
 
- 
+
   }
 }
 ```
@@ -549,13 +548,13 @@ onFlowComplete: (outputs) => {
 ### 1. Validate Early
 
 ```typescript
-// ✅ Good: Validate in node creation
+// Good: Validate in node creation
 const node = yield* createFlowNode({
-  nodeTypeId: 'my-output-v1', // Validates immediately
+  outputTypeId: 'my-output-v1', // Validates immediately
   // ...
 });
 
-// ❌ Bad: Hope it works at runtime
+// Bad: Hope it works at runtime
 const node = yield* createFlowNode({
   // No type ID, no validation
 });
@@ -564,9 +563,9 @@ const node = yield* createFlowNode({
 ### 2. Handle Validation Errors
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 
-const result = flowTypeRegistry.validate('storage-output-v1', data);
+const result = outputTypeRegistry.validate('storage-output-v1', data);
 
 if (!result.success) {
   console.error('Validation failed:', result.error.body);
@@ -584,12 +583,12 @@ processFile(result.data);
 ```typescript
 import type { TypedOutput } from '@uploadista/core/flow';
 
-// ✅ Good: Type-safe function
+// Good: Type-safe function
 function processStorageOutput(output: TypedOutput<UploadFile>) {
   console.log(output.data.url); // TypeScript knows this exists
 }
 
-// ❌ Bad: Loses type safety
+// Bad: Loses type safety
 function processOutput(output: TypedOutput) {
   console.log((output.data as any).url); // Type cast needed
 }
@@ -600,14 +599,17 @@ function processOutput(output: TypedOutput) {
 ### Check Available Types
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry, inputTypeRegistry } from '@uploadista/core/flow';
 
-// List all registered types
-console.log('Registered types:', flowTypeRegistry.size());
+// List all registered output types
+console.log('Output types:', outputTypeRegistry.size());
+const outputs = outputTypeRegistry.list();
+console.log('Output type IDs:', outputs.map(t => t.id));
 
-// List output types
-const outputs = flowTypeRegistry.listByCategory('output');
-console.log('Output types:', outputs.map(t => t.id));
+// List all registered input types
+console.log('Input types:', inputTypeRegistry.size());
+const inputs = inputTypeRegistry.list();
+console.log('Input type IDs:', inputs.map(t => t.id));
 ```
 
 ### Inspect Flow Results
@@ -630,10 +632,10 @@ onFlowComplete: (outputs) => {
 ### Validate Against Schema
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 
 // Manually validate to debug schema issues
-const result = flowTypeRegistry.validate('my-type-v1', data);
+const result = outputTypeRegistry.validate('my-type-v1', data);
 
 if (!result.success) {
   console.error('Schema validation failed:');
@@ -649,7 +651,7 @@ For maximum developer experience, use **automatic narrowing for built-in types**
 ```typescript
 onFlowComplete: (outputs) => {
   for (const output of outputs) {
-    // ✅ Step 1: Automatic narrowing for built-in types
+    // Step 1: Automatic narrowing for built-in types
     switch (output.nodeType) {
       case 'storage-output-v1':
         // No type guard needed!
@@ -657,13 +659,8 @@ onFlowComplete: (outputs) => {
         saveToDatabase(output.data);
         break;
 
-      case 'streaming-input-v1':
-        // No type guard needed!
-        console.log('Input:', output.data.name);
-        break;
-
       default:
-        // ✅ Step 2: Type guards for custom types
+        // Step 2: Type guards for custom types
         if (isThumbnailOutput(output)) {
           console.log('Thumbnail:', `${output.data.width}x${output.data.height}`);
         } else if (isDescriptionOutput(output)) {

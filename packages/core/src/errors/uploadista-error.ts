@@ -48,6 +48,8 @@ export type UploadistaErrorCode =
   | "FFMPEG_NOT_INSTALLED"
   | "INVALID_NODE_TYPE"
   | "TYPE_CATEGORY_MISMATCH"
+  | "INVALID_INPUT_TYPE"
+  | "INVALID_OUTPUT_TYPE"
   | "OUTPUT_NOT_FOUND"
   | "MULTIPLE_OUTPUTS_FOUND"
   | "VIRUS_SCAN_FAILED"
@@ -235,6 +237,14 @@ export const ERROR_CATALOG: Readonly<
   TYPE_CATEGORY_MISMATCH: {
     status: 500,
     body: "Node type category does not match the node configuration\n",
+  },
+  INVALID_INPUT_TYPE: {
+    status: 500,
+    body: "The input type is not registered\n",
+  },
+  INVALID_OUTPUT_TYPE: {
+    status: 500,
+    body: "The output type is not registered\n",
   },
   OUTPUT_NOT_FOUND: {
     status: 404,

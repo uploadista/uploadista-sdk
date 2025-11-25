@@ -1,4 +1,4 @@
-import { flowTypeRegistry } from "@uploadista/core/flow";
+import { inputTypeRegistry } from "@uploadista/core/flow";
 import type { Flow } from "@uploadista/core/flow";
 import { beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -19,7 +19,7 @@ const mockFlow: Flow = {
       id: "input-1",
       name: "File Input",
       type: "input",
-      nodeTypeId: "streaming-input-v1",
+      inputTypeId: "streaming-input-v1",
       input: null,
       output: [],
     },
@@ -27,7 +27,7 @@ const mockFlow: Flow = {
       id: "input-2",
       name: "Data Input",
       type: "input",
-      nodeTypeId: "custom-data-input-v1",
+      inputTypeId: "custom-data-input-v1",
       input: null,
       output: [],
     },
@@ -48,10 +48,9 @@ beforeAll(() => {
   // streaming-input-v1 is already registered by core package
 
   // Register a custom test input type
-  if (!flowTypeRegistry.has("custom-data-input-v1")) {
-    flowTypeRegistry.register({
+  if (!inputTypeRegistry.has("custom-data-input-v1")) {
+    inputTypeRegistry.register({
       id: "custom-data-input-v1",
-      category: "input",
       schema: z.object({
         title: z.string(),
         count: z.number().min(0),
@@ -115,7 +114,7 @@ describe("validateFlowInputs", () => {
           id: "input-unknown",
           name: "Unknown Input",
           type: "input",
-          nodeTypeId: "unregistered-type-v1",
+          inputTypeId: "unregistered-type-v1",
           input: null,
           output: [],
         },
@@ -187,7 +186,7 @@ describe("validateFlowInputs", () => {
     }
   });
 
-  it("uses default nodeTypeId when not specified", () => {
+  it("uses default inputTypeId when not specified", () => {
     const flowWithDefaultType: Flow = {
       ...mockFlow,
       nodes: [
@@ -195,7 +194,7 @@ describe("validateFlowInputs", () => {
           id: "input-default",
           name: "Default Input",
           type: "input",
-          // nodeTypeId not specified - should default to streaming-input-v1
+          // inputTypeId not specified - should default to streaming-input-v1
           input: null,
           output: [],
         },

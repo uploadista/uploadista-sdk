@@ -29,7 +29,7 @@ export function createOcrNode(id: string, params: OcrNodeParams) {
       name: "OCR",
       description: "Extract text from scanned documents using AI",
       type: NodeType.process,
-      nodeTypeId: OCR_OUTPUT_TYPE_ID,
+      outputTypeId: OCR_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: ocrOutputSchema,

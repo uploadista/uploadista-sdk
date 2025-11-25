@@ -17,8 +17,8 @@ export interface TransformNodeConfig {
   name: string;
   /** Description of what the node does */
   description: string;
-  /** Optional node type ID for result type registration */
-  nodeTypeId?: string;
+  /** Optional output type ID from outputTypeRegistry for result type registration */
+  outputTypeId?: string;
   /**
    * Whether to keep this node's output as a flow result even if it has outgoing edges.
    * When true, the node's output will be included in the final flow outputs alongside topology sinks.
@@ -90,7 +90,7 @@ export function createTransformNode({
   id,
   name,
   description,
-  nodeTypeId,
+  outputTypeId,
   keepOutput,
   transform,
 }: TransformNodeConfig) {
@@ -102,7 +102,7 @@ export function createTransformNode({
       name,
       description,
       type: NodeType.process,
-      nodeTypeId,
+      outputTypeId,
       keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,

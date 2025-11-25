@@ -54,12 +54,12 @@ export function FlowInput({
   const isFileValue = value instanceof File;
   const isUrlValue = typeof value === "string" && value.length > 0;
 
-  // Determine input mode based on node type
-  const supportsFileUpload = input.nodeTypeId === "streaming-input-v1";
+  // Determine input mode based on input type
+  const supportsFileUpload = input.inputTypeId === "streaming-input-v1";
   const supportsUrl =
     allowUrl &&
-    (input.nodeTypeId === "url-input-v1" ||
-      input.nodeTypeId === "streaming-input-v1");
+    (input.inputTypeId === "url-input-v1" ||
+      input.inputTypeId === "streaming-input-v1");
 
   const dragDrop = useDragDrop({
     onFilesReceived: (files) => {
@@ -94,7 +94,7 @@ export function FlowInput({
           <h4 className="font-semibold text-gray-900">{input.nodeName}</h4>
           {input.required && <span className="text-red-500 text-sm">*</span>}
           <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-            {input.nodeTypeId}
+            {input.inputTypeId}
           </span>
         </div>
         {input.nodeDescription && (

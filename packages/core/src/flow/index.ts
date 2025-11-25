@@ -4,8 +4,9 @@ export * from "./edge";
 
 export * from "./event";
 export type { Flow, FlowData } from "./flow";
-// Type registry
-export * from "./type-registry";
+// Type registries (separate registries for input and output types)
+export * from "./input-type-registry";
+export * from "./output-type-registry";
 // Built-in node types (auto-registers on import)
 import "./node-types";
 

@@ -24,8 +24,8 @@ export interface FlowInputMetadata {
   nodeName: string;
   /** Node description explaining what input is needed */
   nodeDescription: string;
-  /** Input node type */
-  nodeTypeId: string;
+  /** Input type ID from inputTypeRegistry - describes how clients interact with this node */
+  inputTypeId?: string;
   /** Whether this input is required */
   required: boolean;
 }
@@ -299,7 +299,7 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
           nodeId: node.id,
           nodeName: node.name,
           nodeDescription: node.description,
-          nodeTypeId: node.nodeTypeId,
+          inputTypeId: node.inputTypeId,
           required: true,
         }));
 

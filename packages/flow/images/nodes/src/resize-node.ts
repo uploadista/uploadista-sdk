@@ -18,7 +18,7 @@ export function createResizeNode(
       id,
       name: "Resize",
       description: "Resizes an image to the specified dimensions",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       transform: (inputBytes) =>
         imageService.resize(inputBytes, { height, width, fit }),

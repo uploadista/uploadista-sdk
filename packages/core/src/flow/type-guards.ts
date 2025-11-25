@@ -39,7 +39,7 @@ import {
   type OcrOutput,
 } from "./node-types";
 import type { InputData } from "./nodes/input-node";
-import { flowTypeRegistry } from "./type-registry";
+import { outputTypeRegistry } from "./output-type-registry";
 import type { TypedOutput } from "./types/flow-types";
 
 /**
@@ -84,7 +84,7 @@ export function createTypeGuard<T>(
     if (output.nodeType !== typeId) return false;
 
     // Validate against registered schema
-    const typeDef = flowTypeRegistry.get(typeId);
+    const typeDef = outputTypeRegistry.get(typeId);
     if (!typeDef) return false;
 
     const result = typeDef.schema.safeParse(output.data);

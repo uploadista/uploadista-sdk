@@ -502,13 +502,13 @@ export function createFlowWithSchema<
       outputNodes.forEach((node: any) => {
         const result = nodeResults.get(node.id);
         if (result !== undefined) {
-          // Get the nodeType from the nodeTypes map
-          const nodeTypeId = nodeTypesMap.get(node.id);
+          // Get the outputTypeId from the node types map (set from node execution results)
+          const outputTypeId = nodeTypesMap.get(node.id);
 
           // Create TypedOutput with metadata
           typedOutputs.push({
             nodeId: node.id,
-            nodeType: nodeTypeId,
+            nodeType: outputTypeId,
             data: result,
             timestamp: new Date().toISOString(),
           });

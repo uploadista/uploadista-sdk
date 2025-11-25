@@ -31,8 +31,8 @@ export interface FlowInputMetadata {
   nodeName: string;
   /** Node description explaining what input is needed */
   nodeDescription: string;
-  /** Input node type */
-  nodeTypeId: string;
+  /** Input type ID from inputTypeRegistry - describes how clients interact with this node */
+  inputTypeId?: string;
   /** Whether this input is required */
   required: boolean;
 }
@@ -228,7 +228,7 @@ const initialState: FlowUploadState = {
  *     <div v-for="input in flow.inputMetadata.value" :key="input.nodeId">
  *       <label>{{ input.nodeName }}</label>
  *       <input
- *         v-if="input.nodeTypeId === 'streaming-input-v1'"
+ *         v-if="input.inputTypeId === 'streaming-input-v1'"
  *         type="file"
  *         @change="(e) => handleInputChange(input.nodeId, e)"
  *       />
@@ -277,7 +277,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
         nodeId: node.id,
         nodeName: node.name,
         nodeDescription: node.description,
-        nodeTypeId: node.nodeTypeId,
+        inputTypeId: node.inputTypeId,
         // TODO: Add required field to node schema to determine if input is required
         required: true,
       }));

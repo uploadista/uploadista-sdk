@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { STREAMING_INPUT_TYPE_ID } from "../../src/flow/node-types";
-import { validateFlowInput } from "../../src/flow/type-registry";
+import { validateFlowInput } from "../../src/flow/input-type-registry";
 
 describe("Flow Input Validation", () => {
   describe("validateFlowInput", () => {

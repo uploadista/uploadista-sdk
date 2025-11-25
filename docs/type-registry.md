@@ -1,18 +1,30 @@
-# Flow Type Registry
+# Flow Type Registries
 
-The Flow Type Registry provides a centralized system for registering and validating node types in the Uploadista flow engine. It enables type-safe flow result consumption in dynamic client environments by allowing clients to safely cast flow results based on registered node types.
+The Flow Type Registries provide a centralized system for registering and validating node types in the Uploadista flow engine. It enables type-safe flow result consumption in dynamic client environments by allowing clients to safely cast flow results based on registered node types.
 
 ## Overview
 
-The type registry system consists of three main components:
+The type registry system consists of four main components:
 
-1. **Type Registry** - Central registry for node type definitions with schemas
-2. **Node Type Definitions** - Schema-based type definitions with metadata
-3. **Type Guards** - Runtime type checking and narrowing utilities
+1. **Input Type Registry** - Registry for input node type definitions (external interface)
+2. **Output Type Registry** - Registry for output node type definitions (data flow types)
+3. **Node Type Definitions** - Schema-based type definitions with metadata
+4. **Type Guards** - Runtime type checking and narrowing utilities
 
-## Why Use the Type Registry?
+### Two Registries Architecture
 
-### Problems It Solves
+Uploadista uses separate registries for input and output types:
+
+- **`inputTypeRegistry`** - Defines how external clients interact with input nodes (e.g., `streaming-input-v1` for chunked uploads)
+- **`outputTypeRegistry`** - Defines the data shapes that nodes produce and that flow through the system (e.g., `storage-output-v1` for file data)
+
+This separation is important because input nodes have both:
+- An **input type** describing their external interface
+- An **output type** describing what data they produce
+
+## Why Use the Type Registries?
+
+### Problems They Solve
 
 1. **Type Safety at Runtime** - Validate flow outputs against schemas
 2. **Multi-Output Flows** - Safely distinguish between different output types
@@ -24,15 +36,15 @@ The type registry system consists of three main components:
 
 Without type registry:
 ```typescript
-// ❌ Unsafe - what type is this?
+// Unsafe - what type is this?
 const result = await flowResult.outputs[0].data;
 console.log(result.url); // Could fail at runtime
 ```
 
 With type registry:
 ```typescript
-// ✅ Type-safe - validated at runtime
-const result = flowTypeRegistry.validate<UploadFile>(
+// Type-safe - validated at runtime
+const result = outputTypeRegistry.validate<UploadFile>(
   'storage-output-v1',
   flowResult.outputs[0].data
 );
@@ -44,18 +56,17 @@ if (result.success) {
 
 ## Core Concepts
 
-### Node Type Definition
+### Output Type Definition
 
-A node type definition includes:
+An output type definition includes:
 
 - **id**: Unique identifier with versioning (e.g., `"storage-output-v1"`)
-- **category**: Whether it's an `"input"` or `"output"` node
 - **schema**: Zod schema for runtime validation
 - **version**: Semantic version for tracking evolution
 - **description**: Human-readable explanation
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 import { z } from 'zod';
 
 const thumbnailSchema = z.object({
@@ -65,19 +76,35 @@ const thumbnailSchema = z.object({
   format: z.enum(['jpeg', 'png', 'webp']),
 });
 
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'thumbnail-output-v1',
-  category: 'output',
   schema: thumbnailSchema,
   version: '1.0.0',
   description: 'Thumbnail generation output with dimensions and format',
 });
 ```
 
-### Type Categories
+### Input Type Definition
 
-- **`input`** - Nodes that receive data from external sources
-- **`output`** - Nodes that produce final results
+Input types define how external clients interact with input nodes:
+
+```typescript
+import { inputTypeRegistry } from '@uploadista/core/flow';
+import { z } from 'zod';
+
+const webhookInputSchema = z.object({
+  payload: z.unknown(),
+  headers: z.record(z.string()),
+  signature: z.string().optional(),
+});
+
+inputTypeRegistry.register({
+  id: 'webhook-input-v1',
+  schema: webhookInputSchema,
+  version: '1.0.0',
+  description: 'Webhook-triggered file input',
+});
+```
 
 ### Registry Immutability
 
@@ -88,10 +115,25 @@ Once registered, types cannot be modified or removed. This ensures:
 
 ## Built-in Types
 
-Uploadista provides two built-in types that are auto-registered:
+Uploadista provides built-in types that are auto-registered:
 
+### Input Types
 
-### `storage-output-v1`
+#### `streaming-input-v1`
+
+Input type for streaming file uploads with init/finalize operations.
+
+```typescript
+import { STREAMING_INPUT_TYPE_ID } from '@uploadista/core/flow';
+
+// Used automatically by createInputNode()
+const inputNode = createInputNode('input-1');
+// inputNode has inputTypeId: STREAMING_INPUT_TYPE_ID
+```
+
+### Output Types
+
+#### `storage-output-v1`
 
 Output type for nodes that save files to storage backends (S3, Azure, GCS, etc.).
 
@@ -100,9 +142,18 @@ import { STORAGE_OUTPUT_TYPE_ID } from '@uploadista/core/flow';
 
 // Used automatically by createStorageNode()
 const storageNode = yield* createStorageNode('storage-1');
+// storageNode has outputTypeId: STORAGE_OUTPUT_TYPE_ID
 ```
 
 **Schema**: `UploadFile` (from `@uploadista/core/types`)
+
+#### `ocr-output-v1`
+
+Output type for OCR processing results.
+
+#### `image-description-output-v1`
+
+Output type for AI-generated image descriptions.
 
 ## Registering Custom Types
 
@@ -124,11 +175,10 @@ type DescriptionOutput = z.infer<typeof descriptionSchema>;
 ### Step 2: Register the Type
 
 ```typescript
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'description-output-v1',
-  category: 'output',
   schema: descriptionSchema,
   version: '1.0.0',
   description: 'AI-generated image description with confidence score',
@@ -147,7 +197,7 @@ const descriptionNode = yield* createFlowNode({
   type: NodeType.output,
   inputSchema: uploadFileSchema,
   outputSchema: descriptionSchema,
-  nodeTypeId: 'description-output-v1', // Link to registered type
+  outputTypeId: 'description-output-v1', // Link to registered output type
   run: ({ data }) => {
     return Effect.gen(function* () {
       const description = yield* generateDescription(data);
@@ -159,14 +209,15 @@ const descriptionNode = yield* createFlowNode({
 
 ## Registry API
 
+Both `inputTypeRegistry` and `outputTypeRegistry` share the same API:
+
 ### `register(definition)`
 
 Register a new node type.
 
 ```typescript
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'webhook-output-v1',
-  category: 'output',
   schema: z.object({
     statusCode: z.number(),
     response: z.unknown(),
@@ -184,35 +235,35 @@ flowTypeRegistry.register({
 Retrieve a registered type definition.
 
 ```typescript
-const typeDef = flowTypeRegistry.get('storage-output-v1');
+const typeDef = outputTypeRegistry.get('storage-output-v1');
 if (typeDef) {
   console.log(typeDef.description); // "Storage output node..."
   console.log(typeDef.version);     // "1.0.0"
 }
 ```
 
-**Returns**: `NodeTypeDefinition | undefined`
+**Returns**: `OutputTypeDefinition | undefined` (or `InputTypeDefinition`)
 
-### `listByCategory(category)`
+### `list()`
 
-List all types in a specific category.
+List all registered types.
 
 ```typescript
-const outputTypes = flowTypeRegistry.listByCategory('output');
+const outputTypes = outputTypeRegistry.list();
 console.log('Available output types:');
 for (const type of outputTypes) {
   console.log(`- ${type.id}: ${type.description}`);
 }
 ```
 
-**Returns**: `NodeTypeDefinition[]`
+**Returns**: `OutputTypeDefinition[]` (or `InputTypeDefinition[]`)
 
 ### `validate<T>(typeId, data)`
 
 Validate data against a registered type's schema.
 
 ```typescript
-const result = flowTypeRegistry.validate<UploadFile>(
+const result = outputTypeRegistry.validate<UploadFile>(
   'storage-output-v1',
   unknownData
 );
@@ -225,14 +276,14 @@ if (result.success) {
 }
 ```
 
-**Returns**: `ValidationResult<T>` with either data or error
+**Returns**: `OutputValidationResult<T>` (or `InputValidationResult<T>`)
 
 ### `has(id)`
 
 Check if a type is registered.
 
 ```typescript
-if (flowTypeRegistry.has('custom-output-v1')) {
+if (outputTypeRegistry.has('custom-output-v1')) {
   console.log('Custom output type available');
 }
 ```
@@ -244,7 +295,8 @@ if (flowTypeRegistry.has('custom-output-v1')) {
 Get the total number of registered types.
 
 ```typescript
-console.log(`Registry contains ${flowTypeRegistry.size()} types`);
+console.log(`Registry contains ${outputTypeRegistry.size()} output types`);
+console.log(`Registry contains ${inputTypeRegistry.size()} input types`);
 ```
 
 **Returns**: `number`
@@ -255,14 +307,14 @@ Use semantic versioning for type IDs:
 
 ```typescript
 // Version 1.0.0 - Initial release
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'thumbnail-output-v1',
   version: '1.0.0',
   // ...
 });
 
 // Version 2.0.0 - Breaking change (new required field)
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'thumbnail-output-v2',
   version: '2.0.0',
   schema: z.object({
@@ -275,11 +327,11 @@ flowTypeRegistry.register({
 
 ### Versioning Guidelines
 
-- **Major version** (v1 → v2): Breaking changes (schema incompatible)
-- **Minor version** (v1.0 → v1.1): Additive changes (optional fields)
-- **Patch version** (v1.0.0 → v1.0.1): Documentation/metadata only
+- **Major version** (v1 -> v2): Breaking changes (schema incompatible)
+- **Minor version** (v1.0 -> v1.1): Additive changes (optional fields)
+- **Patch version** (v1.0.0 -> v1.0.1): Documentation/metadata only
 
-⚠️ **Note**: The type ID should only change on major versions. Minor/patch changes keep the same ID.
+Note: The type ID should only change on major versions. Minor/patch changes keep the same ID.
 
 ## Best Practices
 
@@ -287,15 +339,15 @@ flowTypeRegistry.register({
 
 ```typescript
 // src/types/registry.ts
-import { flowTypeRegistry } from '@uploadista/core/flow';
+import { outputTypeRegistry } from '@uploadista/core/flow';
 
 export function registerCustomTypes() {
-  flowTypeRegistry.register({
+  outputTypeRegistry.register({
     id: 'thumbnail-output-v1',
     // ...
   });
 
-  flowTypeRegistry.register({
+  outputTypeRegistry.register({
     id: 'description-output-v1',
     // ...
   });
@@ -320,19 +372,19 @@ import { THUMBNAIL_OUTPUT_TYPE_ID } from './types/constants';
 
 const node = yield* createFlowNode({
   // ...
-  nodeTypeId: THUMBNAIL_OUTPUT_TYPE_ID,
+  outputTypeId: THUMBNAIL_OUTPUT_TYPE_ID,
 });
 ```
 
 ### 3. Use Descriptive IDs
 
 ```typescript
-// ✅ Good: Descriptive and versioned
+// Good: Descriptive and versioned
 'storage-output-v1'
 'thumbnail-generation-output-v1'
 'webhook-notification-output-v1'
 
-// ❌ Bad: Vague or unversioned
+// Bad: Vague or unversioned
 'output1'
 'storage'
 'node-type-a'
@@ -341,12 +393,11 @@ const node = yield* createFlowNode({
 ### 4. Document Schema Changes
 
 ```typescript
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: 'metadata-output-v2',
   version: '2.0.0',
   description: 'File metadata extraction output (v2: added blurhash support)',
   schema: metadataSchemaV2,
-  // ...
 });
 ```
 
@@ -355,7 +406,7 @@ flowTypeRegistry.register({
 ```typescript
 // Validate at node creation, not at runtime
 const node = yield* createFlowNode({
-  nodeTypeId: 'custom-output-v1', // Validates type exists
+  outputTypeId: 'custom-output-v1', // Validates type exists
   // ...
 });
 
@@ -364,41 +415,38 @@ const node = yield* createFlowNode({
 
 ## Error Handling
 
-### `INVALID_NODE_TYPE`
+### `INVALID_OUTPUT_TYPE`
 
-Thrown when referencing an unregistered type.
+Thrown when referencing an unregistered output type.
 
 ```typescript
 try {
   const node = yield* createFlowNode({
-    nodeTypeId: 'nonexistent-type',
+    outputTypeId: 'nonexistent-type',
     // ...
   });
 } catch (error) {
-  if (error.code === 'INVALID_NODE_TYPE') {
-    console.error('Type not registered:', error.details.typeId);
+  if (error.code === 'INVALID_OUTPUT_TYPE') {
+    console.error('Output type not registered:', error.details.typeId);
   }
 }
 ```
 
-### `TYPE_CATEGORY_MISMATCH`
+### `INVALID_INPUT_TYPE`
 
-Thrown when type category doesn't match node type.
+Thrown when referencing an unregistered input type.
 
 ```typescript
-// Register as output
-flowTypeRegistry.register({
-  id: 'my-type-v1',
-  category: 'output',
-  // ...
-});
-
-// Try to use with input node - will throw
-const node = yield* createFlowNode({
-  type: NodeType.input, // ❌ Mismatch!
-  nodeTypeId: 'my-type-v1',
-  // ...
-});
+try {
+  const node = yield* createFlowNode({
+    inputTypeId: 'nonexistent-input-type',
+    // ...
+  });
+} catch (error) {
+  if (error.code === 'INVALID_INPUT_TYPE') {
+    console.error('Input type not registered:', error.details.typeId);
+  }
+}
 ```
 
 ### `VALIDATION_ERROR` (Duplicate Registration)
@@ -406,8 +454,8 @@ const node = yield* createFlowNode({
 Thrown when attempting to re-register a type.
 
 ```typescript
-flowTypeRegistry.register({ id: 'my-type-v1', /* ... */ });
-flowTypeRegistry.register({ id: 'my-type-v1', /* ... */ }); // ❌ Throws!
+outputTypeRegistry.register({ id: 'my-type-v1', /* ... */ });
+outputTypeRegistry.register({ id: 'my-type-v1', /* ... */ }); // Throws!
 ```
 
 ## Advanced Usage
@@ -417,7 +465,7 @@ flowTypeRegistry.register({ id: 'my-type-v1', /* ... */ }); // ❌ Throws!
 While the registry handles schema validation, you can add additional checks:
 
 ```typescript
-const result = flowTypeRegistry.validate<ThumbnailOutput>(
+const result = outputTypeRegistry.validate<ThumbnailOutput>(
   'thumbnail-output-v1',
   data
 );
@@ -437,7 +485,7 @@ if (result.success) {
 
 ```typescript
 function listAvailableOutputs() {
-  const outputs = flowTypeRegistry.listByCategory('output');
+  const outputs = outputTypeRegistry.list();
 
   return outputs.map(type => ({
     id: type.id,

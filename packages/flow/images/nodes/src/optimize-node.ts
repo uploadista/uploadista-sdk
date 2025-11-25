@@ -34,7 +34,7 @@ export function createOptimizeNode(
       id,
       name: "Optimize",
       description: "Optimizes an image for web delivery",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       transform: (inputBytes, file) =>
         Effect.map(

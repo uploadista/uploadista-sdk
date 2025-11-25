@@ -78,7 +78,7 @@ export function createScanVirusNode(
       id,
       name: "Scan Virus",
       description: "Scans files for viruses and malware using ClamAV",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       transform: (inputBytes, file) =>
         Effect.gen(function* () {

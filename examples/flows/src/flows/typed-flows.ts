@@ -4,10 +4,10 @@ import {
   createInputNode,
   createTypeGuard,
   filterOutputsByType,
-  flowTypeRegistry,
   getSingleOutputByType,
   isStorageOutput,
   NodeType,
+  outputTypeRegistry,
   type TypedOutput,
   uploadFileSchema,
 } from "@uploadista/core";
@@ -69,9 +69,8 @@ export type ThumbnailOutput = z.infer<typeof thumbnailSchema>;
 // 2. Register the custom type (do this once at app startup)
 export const THUMBNAIL_OUTPUT_TYPE_ID = "thumbnail-output-v1";
 
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: THUMBNAIL_OUTPUT_TYPE_ID,
-  category: "output",
   schema: thumbnailSchema,
   version: "1.0.0",
   description: "Generated thumbnail with dimensions and format",
@@ -94,7 +93,7 @@ export const createThumbnailNode = (
     type: NodeType.process,
     inputSchema: uploadFileSchema,
     outputSchema: thumbnailSchema,
-    nodeTypeId: THUMBNAIL_OUTPUT_TYPE_ID,
+    outputTypeId: THUMBNAIL_OUTPUT_TYPE_ID,
     run: ({ data }) =>
       Effect.succeed({
         type: "complete" as const,
@@ -162,9 +161,8 @@ export type DescriptionOutput = z.infer<typeof descriptionSchema>;
 
 export const DESCRIPTION_OUTPUT_TYPE_ID = "description-output-v1";
 
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: DESCRIPTION_OUTPUT_TYPE_ID,
-  category: "output",
   schema: descriptionSchema,
   version: "1.0.0",
   description: "AI-generated image description with confidence and tags",
@@ -182,7 +180,7 @@ export const createDescribeImageNode = (id: string) =>
     type: NodeType.process,
     inputSchema: uploadFileSchema,
     outputSchema: descriptionSchema,
-    nodeTypeId: DESCRIPTION_OUTPUT_TYPE_ID,
+    outputTypeId: DESCRIPTION_OUTPUT_TYPE_ID,
     run: ({ data }) =>
       Effect.succeed({
         type: "complete" as const,

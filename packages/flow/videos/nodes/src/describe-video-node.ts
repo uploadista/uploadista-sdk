@@ -32,7 +32,7 @@ export function createDescribeVideoNode(
       name: "Describe Video",
       description:
         "Extracts video metadata (duration, resolution, codec, etc.)",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       transform: (inputBytes, file) =>
         Effect.gen(function* () {

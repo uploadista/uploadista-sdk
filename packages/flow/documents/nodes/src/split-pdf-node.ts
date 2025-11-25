@@ -28,7 +28,7 @@ export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
       name: "Split PDF",
       description: "Split PDF into pages or page ranges",
       type: NodeType.process,
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,

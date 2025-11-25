@@ -33,7 +33,7 @@ export function createConvertToMarkdownNode(
       description:
         "Convert documents to Markdown format (intelligently uses OCR if needed)",
       type: NodeType.process,
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
