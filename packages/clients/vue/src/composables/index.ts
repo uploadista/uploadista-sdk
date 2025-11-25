@@ -25,11 +25,16 @@ export type {
 // Drag and drop composable
 export { useDragDrop } from "./useDragDrop";
 
+// Flow composables
 export type {
+  FlowInputMetadata,
   FlowUploadState,
   FlowUploadStatus,
-} from "./useFlowUpload";
-// Flow upload composables
+  InputExecutionState,
+  UseFlowReturn,
+} from "./useFlow";
+export { useFlow } from "./useFlow";
+
 export { useFlowUpload } from "./useFlowUpload";
 export { useMultiFlowUpload } from "./useMultiFlowUpload";
 export type {
