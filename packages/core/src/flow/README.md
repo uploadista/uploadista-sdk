@@ -437,6 +437,108 @@ const conditionalNode: FlowNode<MyData, MyData> = {
 };
 ```
 
+### 6. File Naming for Transform Nodes
+
+Transform nodes (nodes that produce new files) support automatic file naming to avoid confusion in multi-output flows. When processing multiple files through a pipeline, automatic naming helps distinguish between original and processed versions.
+
+#### Naming Modes
+
+The flow engine supports three naming modes:
+
+- **None**: Keep the original filename unchanged
+- **Auto** (default): Automatically add a suffix based on the operation (e.g., `photo.jpg` → `photo-800x600.jpg`)
+- **Custom**: Use a template pattern or custom function
+
+#### Auto Naming
+
+When enabled, each transform node type adds a relevant suffix:
+
+| Node | Auto Suffix | Example |
+|------|-------------|---------|
+| resize | `${width}x${height}` | `photo-800x600.jpg` |
+| optimize | `${format}` | `photo-webp.webp` |
+| transform-image | `transformed` | `photo-transformed.jpg` |
+| remove-background | `nobg` | `photo-nobg.png` |
+| resize-video | `${width}x${height}` | `video-720p.mp4` |
+| transcode | `${format}` | `video-mp4.mp4` |
+| trim | `trimmed` | `video-trimmed.mp4` |
+| thumbnail | `thumb` | `video-thumb.jpg` |
+| split-pdf | `page-${pageNumber}` | `doc-page-1.pdf` |
+| merge-pdf | `merged` | `docs-merged.pdf` |
+
+#### Usage Example
+
+```typescript
+import { createResizeNode } from "@uploadista/flow-image-nodes";
+
+// Default: Auto naming enabled
+const resizeNode = yield* createResizeNode("resize", {
+  width: 800,
+  height: 600,
+}, {
+  naming: { mode: "auto" }, // Output: "photo-800x600.jpg"
+});
+
+// Custom naming with template
+const resizeNodeCustom = yield* createResizeNode("resize", {
+  width: 800,
+  height: 600,
+}, {
+  naming: {
+    mode: "custom",
+    pattern: "{{baseName}}-{{nodeType}}-{{width}}w.{{extension}}",
+  }, // Output: "photo-resize-800w.jpg"
+});
+
+// Custom naming with function
+const resizeNodeFn = yield* createResizeNode("resize", {
+  width: 800,
+  height: 600,
+}, {
+  naming: {
+    mode: "custom",
+    rename: (file, ctx) => `processed-${ctx.baseName}.${ctx.extension}`,
+  }, // Output: "processed-photo.jpg"
+});
+
+// Disable naming
+const resizeNodeNone = yield* createResizeNode("resize", {
+  width: 800,
+  height: 600,
+}, {
+  naming: { mode: "none" }, // Output: "photo.jpg" (unchanged)
+});
+```
+
+#### Available Template Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{{baseName}}` | Filename without extension | `photo` |
+| `{{extension}}` | File extension | `jpg` |
+| `{{fileName}}` | Full filename | `photo.jpg` |
+| `{{nodeType}}` | Type of processing node | `resize` |
+| `{{nodeId}}` | Node identifier | `resize-1` |
+| `{{flowId}}` | Flow identifier | `flow-abc` |
+| `{{jobId}}` | Job identifier | `job-123` |
+| `{{timestamp}}` | Processing timestamp | `2024-01-15T10:30:00Z` |
+| `{{width}}` | Output width (when applicable) | `800` |
+| `{{height}}` | Output height (when applicable) | `600` |
+| `{{format}}` | Output format (when applicable) | `webp` |
+| `{{quality}}` | Quality setting (when applicable) | `80` |
+| `{{pageNumber}}` | Page number (for PDF split) | `1` |
+
+#### Metadata-Only Nodes
+
+Nodes that only extract metadata (don't transform file bytes) don't support file naming:
+- `describe-image-node` - AI image description
+- `describe-document-node` - PDF metadata extraction
+- `describe-video-node` - Video metadata extraction
+- `extract-text-node` - PDF text extraction
+- `ocr-node` - OCR text extraction
+- `convert-to-markdown-node` - Markdown extraction to metadata
+- `scan-virus-node` - Virus scanning
+
 ## Best Practices
 
 1. **Use descriptive node names**: Make your nodes easy to understand and debug

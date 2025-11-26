@@ -330,6 +330,8 @@ export type FlowNode<
     retryDelay?: number; // Base delay in ms between retries (default: 1000)
     exponentialBackoff?: boolean; // Use exponential backoff (default: true)
   };
+  /** Circuit breaker configuration for this node (overrides flow defaults) */
+  circuitBreaker?: FlowCircuitBreakerConfig;
 };
 
 /**
@@ -409,6 +411,59 @@ export type NodeConnectionValidator = {
     targetSchema: z.ZodSchema<any>,
   ) => boolean;
 };
+
+// ============================================================================
+// Circuit Breaker Types (re-exported from circuit-breaker.ts for convenience)
+// ============================================================================
+
+/**
+ * Fallback behavior when circuit is open.
+ *
+ * - `fail`: Fail immediately with CIRCUIT_BREAKER_OPEN error (default)
+ * - `skip`: Skip node, pass input through as output
+ * - `default`: Return a configured default value
+ */
+export type FlowCircuitBreakerFallback =
+  | { type: "fail" }
+  | { type: "skip"; passThrough: true }
+  | { type: "default"; value: unknown };
+
+/**
+ * Configuration for a circuit breaker on a flow or node.
+ *
+ * @property enabled - Whether circuit breaker is active (default: false for backward compatibility)
+ * @property failureThreshold - Number of failures within window to trip circuit (default: 5)
+ * @property resetTimeout - Milliseconds to wait in open state before half-open (default: 30000)
+ * @property halfOpenRequests - Number of successful requests in half-open to close (default: 3)
+ * @property windowDuration - Sliding window duration in milliseconds (default: 60000)
+ * @property fallback - Behavior when circuit is open
+ *
+ * @example
+ * ```typescript
+ * const config: FlowCircuitBreakerConfig = {
+ *   enabled: true,
+ *   failureThreshold: 5,
+ *   resetTimeout: 30000,
+ *   halfOpenRequests: 3,
+ *   windowDuration: 60000,
+ *   fallback: { type: "fail" }
+ * };
+ * ```
+ */
+export interface FlowCircuitBreakerConfig {
+  /** Whether circuit breaker is active (default: false) */
+  enabled?: boolean;
+  /** Number of failures within window to trip circuit (default: 5) */
+  failureThreshold?: number;
+  /** Milliseconds to wait in open state before half-open (default: 30000) */
+  resetTimeout?: number;
+  /** Number of successful requests in half-open to close (default: 3) */
+  halfOpenRequests?: number;
+  /** Sliding window duration in milliseconds (default: 60000) */
+  windowDuration?: number;
+  /** Behavior when circuit is open */
+  fallback?: FlowCircuitBreakerFallback;
+}
 
 /**
  * Configuration object for creating a new flow.
@@ -495,6 +550,33 @@ export type FlowConfig<
   parallelExecution?: {
     enabled?: boolean;
     maxConcurrency?: number;
+  };
+  /**
+   * Circuit breaker configuration for the flow.
+   *
+   * When enabled, the circuit breaker monitors node execution failures and
+   * automatically prevents requests to failing services, protecting against
+   * cascade failures.
+   *
+   * @example
+   * ```typescript
+   * circuitBreaker: {
+   *   defaults: {
+   *     enabled: true,
+   *     failureThreshold: 5,
+   *     resetTimeout: 30000
+   *   },
+   *   nodeTypeOverrides: {
+   *     "virus-scan": { failureThreshold: 3 }
+   *   }
+   * }
+   * ```
+   */
+  circuitBreaker?: {
+    /** Default circuit breaker config for all nodes */
+    defaults?: FlowCircuitBreakerConfig;
+    /** Override circuit breaker config per node type */
+    nodeTypeOverrides?: Record<string, FlowCircuitBreakerConfig>;
   };
   hooks?: {
     /**

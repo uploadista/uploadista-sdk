@@ -117,6 +117,40 @@ export const createFlowMetrics = () => ({
     quantiles: [0.5, 0.9, 0.95, 0.99],
     description: "Node execution latency percentiles",
   }),
+
+  // ============================================================================
+  // Circuit Breaker Metrics
+  // ============================================================================
+
+  /** Total number of times circuit breakers opened */
+  circuitBreakerOpenTotal: Metric.counter("circuit_breaker_open_total", {
+    description: "Total number of times circuit breakers transitioned to open state",
+  }),
+
+  /** Total number of times circuit breakers closed */
+  circuitBreakerCloseTotal: Metric.counter("circuit_breaker_close_total", {
+    description: "Total number of times circuit breakers transitioned to closed state",
+  }),
+
+  /** Total number of requests rejected by open circuit breakers */
+  circuitBreakerRejectedTotal: Metric.counter("circuit_breaker_rejected_total", {
+    description: "Total number of requests rejected because circuit breaker is open",
+  }),
+
+  /** Total number of times circuit breakers transitioned to half-open */
+  circuitBreakerHalfOpenTotal: Metric.counter("circuit_breaker_half_open_total", {
+    description: "Total number of times circuit breakers transitioned to half-open state",
+  }),
+
+  /** Current state of circuit breakers (0=closed, 1=open, 2=half-open) */
+  circuitBreakerStateGauge: Metric.gauge("circuit_breaker_state", {
+    description: "Current circuit breaker state (0=closed, 1=open, 2=half-open)",
+  }),
+
+  /** Number of failures in circuit breaker sliding window */
+  circuitBreakerFailuresGauge: Metric.gauge("circuit_breaker_failures", {
+    description: "Number of failures currently in the circuit breaker sliding window",
+  }),
 });
 
 /**

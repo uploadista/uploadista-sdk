@@ -295,6 +295,34 @@ export interface UploadistaServerConfig<
    * ```
    */
   authCacheConfig?: AuthCacheConfig;
+
+  /**
+   * Optional: Enable circuit breakers for flow nodes.
+   *
+   * When enabled (default), circuit breaker state is stored in the KV store,
+   * allowing circuit breaker state to be shared across multiple server instances
+   * in a cluster deployment.
+   *
+   * Set to `false` to disable circuit breakers entirely.
+   *
+   * @default true
+   *
+   * @example
+   * ```typescript
+   * // Circuit breakers enabled by default (uses the provided kvStore)
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   // circuitBreaker: true (default)
+   * });
+   *
+   * // Disable circuit breakers
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   circuitBreaker: false
+   * });
+   * ```
+   */
+  circuitBreaker?: boolean;
 }
 
 /**

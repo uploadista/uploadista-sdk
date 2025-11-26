@@ -16,14 +16,18 @@ import { Effect, Stream } from "effect";
 import { z } from "zod";
 
 import { UploadistaError } from "../errors";
+import { CircuitBreakerStoreService } from "../types/circuit-breaker-store";
 import { UploadFileDataStores } from "../types/data-store";
 import type { UploadFile } from "../types/upload-file";
+import type { CircuitBreakerConfig } from "./circuit-breaker";
+import { DistributedCircuitBreakerRegistry } from "./distributed-circuit-breaker";
 import type { FlowEdge } from "./edge";
 import { EventType } from "./event";
 import { getNodeData } from "./node";
 import { ParallelScheduler } from "./parallel-scheduler";
 import { isUploadFile } from "./type-guards";
 import type {
+  FlowCircuitBreakerConfig,
   FlowConfig,
   FlowNode,
   FlowNodeData,
@@ -325,9 +329,43 @@ export function createFlowWithSchema<
       inputSchema,
       outputSchema,
       typeChecker,
+      circuitBreaker: circuitBreakerConfig,
     } = config;
     const nodes = resolvedNodes;
     const typeValidator = new FlowTypeValidator(typeChecker);
+
+    /**
+     * Gets the circuit breaker config for a specific node.
+     * Priority: node config > flow nodeTypeOverrides > flow defaults
+     */
+    const getCircuitBreakerConfigForNode = (
+      node: FlowNode<any, any, UploadistaError>,
+    ): CircuitBreakerConfig | undefined => {
+      // Get node-level config from the resolved node
+      const nodeConfig = node.circuitBreaker as
+        | FlowCircuitBreakerConfig
+        | undefined;
+
+      // Get flow-level config for this node type
+      const flowNodeTypeConfig = node.name
+        ? circuitBreakerConfig?.nodeTypeOverrides?.[node.name]
+        : undefined;
+
+      // Get flow defaults
+      const flowDefaults = circuitBreakerConfig?.defaults;
+
+      // If nothing is configured, return undefined (circuit breaker disabled)
+      if (!nodeConfig && !flowNodeTypeConfig && !flowDefaults) {
+        return undefined;
+      }
+
+      // Merge configs with priority: node > nodeTypeOverrides > defaults
+      return {
+        ...flowDefaults,
+        ...flowNodeTypeConfig,
+        ...nodeConfig,
+      } as CircuitBreakerConfig;
+    };
 
     // Build adjacency list for topological sorting
     const buildGraph = () => {
@@ -581,6 +619,7 @@ export function createFlowWithSchema<
       nodeMap: Map<string, FlowNode<any, any, UploadistaError>>,
       jobId: string,
       clientId: string | null,
+      circuitBreakerRegistry: DistributedCircuitBreakerRegistry | null,
     ): Effect.Effect<
       {
         nodeId: string;
@@ -633,6 +672,85 @@ export function createFlowWithSchema<
         const maxRetries = node.retry?.maxRetries ?? 0;
         const baseDelay = node.retry?.retryDelay ?? 1000;
         const useExponentialBackoff = node.retry?.exponentialBackoff ?? true;
+
+        // Get circuit breaker configuration for this node
+        const cbConfig = getCircuitBreakerConfigForNode(node);
+        const circuitBreaker =
+          cbConfig?.enabled && node.name && circuitBreakerRegistry
+            ? circuitBreakerRegistry.getOrCreate(node.name, cbConfig)
+            : null;
+
+        // Check circuit breaker before attempting execution
+        if (circuitBreaker) {
+          const {
+            allowed,
+            state: cbState,
+            failureCount: cbFailureCount,
+          } = yield* circuitBreaker.allowRequest();
+
+          if (!allowed) {
+            const fallback = circuitBreaker.getFallback();
+
+            yield* Effect.logWarning(
+              `Circuit breaker OPEN for node type "${node.name}" - applying fallback`,
+            );
+
+            // Handle fallback based on configuration
+            if (fallback.type === "skip") {
+              // Skip the node but continue flow execution
+              if (onEvent) {
+                yield* onEvent({
+                  jobId,
+                  flowId,
+                  nodeId,
+                  eventType: EventType.NodeEnd,
+                  nodeName: node.name,
+                });
+              }
+
+              // For skip fallback, we need to pass through some value
+              // Get the first input as pass-through data
+              const passThruInput = nodeInputs[nodeId];
+              return {
+                nodeId,
+                result: passThruInput,
+                success: true,
+                waiting: false,
+              };
+            }
+
+            if (fallback.type === "default") {
+              // Return configured default value
+              if (onEvent) {
+                yield* onEvent({
+                  jobId,
+                  flowId,
+                  nodeId,
+                  eventType: EventType.NodeEnd,
+                  nodeName: node.name,
+                  result: fallback.value,
+                });
+              }
+              return {
+                nodeId,
+                result: fallback.value,
+                success: true,
+                waiting: false,
+              };
+            }
+
+            // Default: fail immediately
+            return yield* UploadistaError.fromCode("CIRCUIT_BREAKER_OPEN", {
+              body: `Circuit breaker is open for node type "${node.name}"`,
+              details: {
+                nodeType: node.name,
+                nodeId,
+                state: cbState,
+                failureCount: cbFailureCount,
+              },
+            }).toEffect();
+          }
+        }
 
         let retryCount = 0;
         let lastError: UploadistaError | null = null;
@@ -778,6 +896,11 @@ export function createFlowWithSchema<
               }
             }
 
+            // Record success with circuit breaker
+            if (circuitBreaker) {
+              yield* circuitBreaker.recordSuccess();
+            }
+
             // Emit NodeEnd event with result
             if (onEvent) {
               yield* onEvent({
@@ -803,6 +926,11 @@ export function createFlowWithSchema<
               error instanceof UploadistaError
                 ? error
                 : UploadistaError.fromCode("FLOW_NODE_ERROR", { cause: error });
+
+            // Record failure with circuit breaker (on each retry attempt)
+            if (circuitBreaker) {
+              yield* circuitBreaker.recordFailure(lastError.body);
+            }
 
             // Check if we should retry
             if (retryCount < maxRetries) {
@@ -890,6 +1018,14 @@ export function createFlowWithSchema<
       UploadFileDataStores
     > => {
       return Effect.gen(function* () {
+        // Get circuit breaker store from context (optional - if not provided, circuit breakers are disabled)
+        const circuitBreakerStore = yield* Effect.serviceOption(
+          CircuitBreakerStoreService,
+        );
+        const circuitBreakerRegistry = circuitBreakerStore._tag === "Some"
+          ? new DistributedCircuitBreakerRegistry(circuitBreakerStore.value)
+          : null;
+
         // Emit FlowStart event only if starting fresh
         if (!resumeFrom && onEvent) {
           yield* onEvent({
@@ -1005,6 +1141,7 @@ export function createFlowWithSchema<
                     nodeMap,
                     jobId,
                     clientId,
+                    circuitBreakerRegistry,
                   );
 
                   return { nodeId, nodeResult };
@@ -1082,6 +1219,7 @@ export function createFlowWithSchema<
               nodeMap,
               jobId,
               clientId,
+              circuitBreakerRegistry,
             );
 
             if (nodeResult.waiting) {

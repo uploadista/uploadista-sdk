@@ -4,6 +4,7 @@ import { UploadistaError } from "../errors";
 import { inputTypeRegistry } from "./input-type-registry";
 import { outputTypeRegistry } from "./output-type-registry";
 import type {
+  FlowCircuitBreakerConfig,
   FlowNode,
   FlowNodeData,
   NodeExecutionResult,
@@ -84,6 +85,7 @@ export type ConditionValue = string | number;
  * @param config.inputTypeId - Optional input type ID from inputTypeRegistry (e.g., "streaming-input-v1"). Used for input nodes to describe external interface.
  * @param config.outputTypeId - Optional output type ID from outputTypeRegistry (e.g., "storage-output-v1"). Used for result type tagging.
  * @param config.keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false). Useful for flows where intermediate results need to be kept (e.g., preserving the original file when also running OCR on it).
+ * @param config.circuitBreaker - Optional circuit breaker configuration for resilience. Overrides flow-level circuit breaker defaults for this node.
  *
  * @returns An Effect that succeeds with the created FlowNode
  *
@@ -137,6 +139,7 @@ export function createFlowNode<
   inputTypeId,
   outputTypeId,
   keepOutput = false,
+  circuitBreaker,
 }: {
   id: string;
   name: string;
@@ -169,6 +172,8 @@ export function createFlowNode<
   /** Output type ID from outputTypeRegistry - for result type tagging */
   outputTypeId?: string;
   keepOutput?: boolean;
+  /** Circuit breaker configuration for resilience (overrides flow defaults) */
+  circuitBreaker?: FlowCircuitBreakerConfig;
 }): Effect.Effect<
   FlowNode<Input, Output, UploadistaError> & { type: TType },
   UploadistaError
@@ -278,6 +283,7 @@ export function createFlowNode<
       multiInput,
       multiOutput,
       retry,
+      circuitBreaker,
     } as FlowNode<Input, Output, UploadistaError> & { type: TType };
   });
 }

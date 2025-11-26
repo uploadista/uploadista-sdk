@@ -1,5 +1,10 @@
 import type { PluginLayer, UploadistaError } from "@uploadista/core";
-import { type Flow, FlowProvider, FlowWaitUntil } from "@uploadista/core/flow";
+import {
+  type Flow,
+  FlowProvider,
+  FlowWaitUntil,
+  kvCircuitBreakerStoreLayer,
+} from "@uploadista/core/flow";
 import {
   createDataStoreLayer,
   type UploadFileDataStores,
@@ -191,6 +196,7 @@ export const createUploadistaServer = async <
   bufferedDataStore,
   adapter,
   authCacheConfig,
+  circuitBreaker = true,
 }: UploadistaServerConfig<
   TContext,
   TResponse,
@@ -261,19 +267,27 @@ export const createUploadistaServer = async <
   // Metrics layer (defaults to NoOp if not provided)
   const effectiveMetricsLayer = metricsLayer ?? NoOpMetricsServiceLive;
 
+  // Create circuit breaker store layer if enabled (uses the provided kvStore)
+  const circuitBreakerStoreLayer = circuitBreaker
+    ? kvCircuitBreakerStoreLayer.pipe(Layer.provide(kvStore))
+    : null;
+
   /**
    * Merge all server layers including plugins.
    *
    * This combines the core server infrastructure (upload server, flow server,
-   * metrics, auth cache) with user-provided plugin layers.
+   * metrics, auth cache, circuit breaker) with user-provided plugin layers.
    */
-  const serverLayerRaw = Layer.mergeAll(
+  const baseServerLayer = Layer.mergeAll(
     uploadServerLayer,
     flowServerLayer,
     effectiveMetricsLayer,
     authCacheLayer,
     ...plugins,
   );
+  const serverLayerRaw = circuitBreakerStoreLayer
+    ? Layer.merge(baseServerLayer, circuitBreakerStoreLayer)
+    : baseServerLayer;
 
   /**
    * Type Casting Rationale for Plugin System
@@ -471,15 +485,18 @@ export const createUploadistaServer = async <
         }
       }
 
-      // Combine auth context, auth cache, metrics layers, plugins, and waitUntil
+      // Combine auth context, auth cache, metrics layers, plugins, circuit breaker, and waitUntil
       // This ensures that flow nodes have access to all required services
-      const requestContextLayer = Layer.mergeAll(
+      const baseRequestContextLayer = Layer.mergeAll(
         authContextLayer,
         authCacheLayer,
         effectiveMetricsLayer,
         ...plugins,
         ...waitUntilLayers,
       );
+      const requestContextLayer = circuitBreakerStoreLayer
+        ? Layer.merge(baseRequestContextLayer, circuitBreakerStoreLayer)
+        : baseRequestContextLayer;
 
       // Check for baseUrl/api/ prefix
       if (uploadistaRequest.type === "not-found") {

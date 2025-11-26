@@ -70,3 +70,72 @@ export const withExecutionContext = (context: {
     "execution.total_nodes": context.totalNodes?.toString() ?? "0",
     "execution.parallel_count": context.parallelCount?.toString() ?? "0",
   });
+
+// ============================================================================
+// Circuit Breaker Tracing
+// ============================================================================
+
+/**
+ * Circuit breaker state for tracing
+ */
+export type CircuitBreakerTracingState = "closed" | "open" | "half-open";
+
+/**
+ * Wrap an Effect with a circuit breaker evaluation span
+ */
+export const withCircuitBreakerSpan =
+  <A, E, R>(
+    nodeType: string,
+    state: CircuitBreakerTracingState,
+    attributes?: Record<string, unknown>,
+  ) =>
+  (effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+    effect.pipe(
+      Effect.withSpan(`circuit-breaker-${nodeType}`, {
+        attributes: {
+          "circuit_breaker.node_type": nodeType,
+          "circuit_breaker.state": state,
+          ...attributes,
+        },
+      }),
+    );
+
+/**
+ * Add circuit breaker context to the current span
+ */
+export const withCircuitBreakerContext = (context: {
+  nodeType: string;
+  state: CircuitBreakerTracingState;
+  failureCount?: number;
+  failureThreshold?: number;
+  resetTimeout?: number;
+  decision?: "allowed" | "rejected" | "fallback";
+}) =>
+  Effect.annotateCurrentSpan({
+    "circuit_breaker.node_type": context.nodeType,
+    "circuit_breaker.state": context.state,
+    "circuit_breaker.failure_count": context.failureCount?.toString() ?? "0",
+    "circuit_breaker.failure_threshold":
+      context.failureThreshold?.toString() ?? "5",
+    "circuit_breaker.reset_timeout": context.resetTimeout?.toString() ?? "30000",
+    "circuit_breaker.decision": context.decision ?? "unknown",
+  });
+
+/**
+ * Add a circuit breaker state change event to the current span
+ */
+export const annotateCircuitBreakerStateChange = (event: {
+  nodeType: string;
+  previousState: CircuitBreakerTracingState;
+  newState: CircuitBreakerTracingState;
+  failureCount?: number;
+  timestamp?: number;
+}) =>
+  Effect.annotateCurrentSpan({
+    "circuit_breaker.event": "state_change",
+    "circuit_breaker.node_type": event.nodeType,
+    "circuit_breaker.previous_state": event.previousState,
+    "circuit_breaker.new_state": event.newState,
+    "circuit_breaker.failure_count": event.failureCount?.toString() ?? "0",
+    "circuit_breaker.timestamp": event.timestamp?.toString() ?? Date.now().toString(),
+  });

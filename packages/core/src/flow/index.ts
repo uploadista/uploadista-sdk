@@ -1,3 +1,8 @@
+// Circuit breaker
+export * from "./circuit-breaker";
+export * from "./circuit-breaker-store";
+export * from "./distributed-circuit-breaker";
+
 // Edge types
 export type { FlowEdge } from "./edge";
 export * from "./edge";

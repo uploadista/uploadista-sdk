@@ -62,7 +62,8 @@ export type UploadistaErrorCode =
   | "OCR_FAILED"
   | "PDF_ENCRYPTED"
   | "PDF_CORRUPTED"
-  | "PAGE_RANGE_INVALID";
+  | "PAGE_RANGE_INVALID"
+  | "CIRCUIT_BREAKER_OPEN";
 
 /**
  * Catalog of all predefined errors in the Uploadista system.
@@ -297,6 +298,10 @@ export const ERROR_CATALOG: Readonly<
   PAGE_RANGE_INVALID: {
     status: 400,
     body: "The specified page range is invalid\n",
+  },
+  CIRCUIT_BREAKER_OPEN: {
+    status: 503,
+    body: "Circuit breaker is open - service temporarily unavailable\n",
   },
 } as const;
 

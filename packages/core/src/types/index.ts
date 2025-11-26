@@ -1,3 +1,4 @@
+export * from "./circuit-breaker-store";
 export * from "./data-store";
 export * from "./event-broadcaster";
 export * from "./event-emitter";
