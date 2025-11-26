@@ -1,6 +1,16 @@
 import { Effect } from "effect";
 import type { UploadistaRequest, UploadistaResponse } from "../routes";
 import {
+  handleDlqCleanup,
+  handleDlqDelete,
+  handleDlqGet,
+  handleDlqList,
+  handleDlqResolve,
+  handleDlqRetry,
+  handleDlqRetryAll,
+  handleDlqStats,
+} from "./dlq-http-handlers";
+import {
   handleCancelFlow,
   handleGetFlow,
   handleJobStatus,
@@ -44,6 +54,23 @@ export const handleUploadistaRequest = <TRequirements>(
         return (yield* handlePauseFlow(req)) as UploadistaResponse;
       case "cancel-flow":
         return (yield* handleCancelFlow(req)) as UploadistaResponse;
+      // DLQ Admin routes
+      case "dlq-list":
+        return (yield* handleDlqList(req)) as UploadistaResponse;
+      case "dlq-get":
+        return (yield* handleDlqGet(req)) as UploadistaResponse;
+      case "dlq-retry":
+        return (yield* handleDlqRetry(req)) as UploadistaResponse;
+      case "dlq-retry-all":
+        return (yield* handleDlqRetryAll(req)) as UploadistaResponse;
+      case "dlq-delete":
+        return (yield* handleDlqDelete(req)) as UploadistaResponse;
+      case "dlq-resolve":
+        return (yield* handleDlqResolve(req)) as UploadistaResponse;
+      case "dlq-cleanup":
+        return (yield* handleDlqCleanup(req)) as UploadistaResponse;
+      case "dlq-stats":
+        return (yield* handleDlqStats(req)) as UploadistaResponse;
       case "not-found":
         return {
           status: 404,

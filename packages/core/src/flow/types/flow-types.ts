@@ -18,6 +18,7 @@ import type { UploadistaError } from "../../errors";
 import type { UploadFile } from "../../types/upload-file";
 import type { FlowEvent, FlowEventFlowEnd, FlowEventFlowStart } from "../event";
 import { NodeType } from "../node";
+import type { RetryPolicy } from "./retry-policy";
 
 /**
  * Type mapping for node input/output schemas.
@@ -471,6 +472,57 @@ export interface FlowCircuitBreakerConfig {
   fallback?: FlowCircuitBreakerFallback;
 }
 
+// ============================================================================
+// Dead Letter Queue Types
+// ============================================================================
+
+/**
+ * Configuration for Dead Letter Queue on a flow.
+ *
+ * When enabled, failed flow jobs are captured in the DLQ for later retry,
+ * debugging, or manual intervention.
+ *
+ * @property enabled - Whether DLQ is enabled for this flow (default: true when service is provided)
+ * @property retryPolicy - Retry policy configuration for automatic retries
+ *
+ * @example
+ * ```typescript
+ * // Enable DLQ with custom retry policy
+ * const flowConfig = {
+ *   flowId: "image-pipeline",
+ *   deadLetterQueue: {
+ *     enabled: true,
+ *     retryPolicy: {
+ *       enabled: true,
+ *       maxRetries: 5,
+ *       backoff: {
+ *         type: "exponential",
+ *         initialDelayMs: 1000,
+ *         maxDelayMs: 60000,
+ *         multiplier: 2,
+ *         jitter: true
+ *       },
+ *       nonRetryableErrors: ["VALIDATION_ERROR"]
+ *     }
+ *   }
+ * };
+ *
+ * // Disable DLQ for best-effort flows
+ * const bestEffortFlow = {
+ *   flowId: "analytics-pipeline",
+ *   deadLetterQueue: {
+ *     enabled: false
+ *   }
+ * };
+ * ```
+ */
+export interface FlowDeadLetterQueueConfig {
+  /** Whether DLQ is enabled for this flow (default: true when service is provided) */
+  enabled?: boolean;
+  /** Retry policy configuration for automatic retries */
+  retryPolicy?: RetryPolicy;
+}
+
 /**
  * Configuration object for creating a new flow.
  *
@@ -584,6 +636,31 @@ export type FlowConfig<
     /** Override circuit breaker config per node type */
     nodeTypeOverrides?: Record<string, FlowCircuitBreakerConfig>;
   };
+  /**
+   * Dead Letter Queue configuration for the flow.
+   *
+   * When enabled, failed jobs are captured in the DLQ for later retry,
+   * debugging, or manual intervention.
+   *
+   * @example
+   * ```typescript
+   * deadLetterQueue: {
+   *   enabled: true,
+   *   retryPolicy: {
+   *     enabled: true,
+   *     maxRetries: 5,
+   *     backoff: {
+   *       type: "exponential",
+   *       initialDelayMs: 1000,
+   *       maxDelayMs: 60000,
+   *       multiplier: 2,
+   *       jitter: true
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  deadLetterQueue?: FlowDeadLetterQueueConfig;
   hooks?: {
     /**
      * Called when a sink node (terminal node with no outgoing edges) produces an output.

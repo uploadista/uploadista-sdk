@@ -57,6 +57,18 @@ export enum EventType {
   NodeStream = "node-stream",
   /** Emitted for node response data */
   NodeResponse = "node-response",
+  /** Emitted when a job is added to the Dead Letter Queue */
+  DlqItemAdded = "dlq-item-added",
+  /** Emitted when a DLQ retry attempt starts */
+  DlqRetryStart = "dlq-retry-start",
+  /** Emitted when a DLQ retry succeeds */
+  DlqRetrySuccess = "dlq-retry-success",
+  /** Emitted when a DLQ retry fails */
+  DlqRetryFailed = "dlq-retry-failed",
+  /** Emitted when a DLQ item is exhausted (max retries reached) */
+  DlqItemExhausted = "dlq-item-exhausted",
+  /** Emitted when a DLQ item is resolved */
+  DlqItemResolved = "dlq-item-resolved",
 }
 
 /**
@@ -246,6 +258,94 @@ export type FlowEventNodeResponse = {
   data: unknown;
 };
 
+// ============================================================================
+// Dead Letter Queue Events
+// ============================================================================
+
+/**
+ * Event emitted when a job is added to the Dead Letter Queue.
+ */
+export type FlowEventDlqItemAdded = {
+  eventType: EventType.DlqItemAdded;
+  dlqItemId: string;
+  jobId: string;
+  flowId: string;
+  errorCode: string;
+  errorMessage: string;
+  retryCount: number;
+  maxRetries: number;
+};
+
+/**
+ * Event emitted when a DLQ retry attempt starts.
+ */
+export type FlowEventDlqRetryStart = {
+  eventType: EventType.DlqRetryStart;
+  dlqItemId: string;
+  jobId: string;
+  flowId: string;
+  attemptNumber: number;
+};
+
+/**
+ * Event emitted when a DLQ retry succeeds.
+ */
+export type FlowEventDlqRetrySuccess = {
+  eventType: EventType.DlqRetrySuccess;
+  dlqItemId: string;
+  jobId: string;
+  flowId: string;
+  attemptNumber: number;
+  durationMs: number;
+};
+
+/**
+ * Event emitted when a DLQ retry fails.
+ */
+export type FlowEventDlqRetryFailed = {
+  eventType: EventType.DlqRetryFailed;
+  dlqItemId: string;
+  jobId: string;
+  flowId: string;
+  attemptNumber: number;
+  error: string;
+  durationMs: number;
+  nextRetryAt?: string; // ISO 8601 timestamp
+};
+
+/**
+ * Event emitted when a DLQ item is exhausted (max retries reached).
+ */
+export type FlowEventDlqItemExhausted = {
+  eventType: EventType.DlqItemExhausted;
+  dlqItemId: string;
+  jobId: string;
+  flowId: string;
+  totalAttempts: number;
+};
+
+/**
+ * Event emitted when a DLQ item is resolved.
+ */
+export type FlowEventDlqItemResolved = {
+  eventType: EventType.DlqItemResolved;
+  dlqItemId: string;
+  jobId: string;
+  flowId: string;
+  resolvedBy: "retry" | "manual";
+};
+
+/**
+ * Union of all DLQ-related events.
+ */
+export type DlqEvent =
+  | FlowEventDlqItemAdded
+  | FlowEventDlqRetryStart
+  | FlowEventDlqRetrySuccess
+  | FlowEventDlqRetryFailed
+  | FlowEventDlqItemExhausted
+  | FlowEventDlqItemResolved;
+
 /**
  * Union of all possible flow execution events.
  *
@@ -267,6 +367,9 @@ export type FlowEventNodeResponse = {
  *     case EventType.FlowCancel:
  *       console.log("Flow cancelled:", event.flowId);
  *       break;
+ *     case EventType.DlqItemAdded:
+ *       console.log("Job added to DLQ:", event.dlqItemId);
+ *       break;
  *   }
  * }
  * ```
@@ -283,4 +386,5 @@ export type FlowEvent =
   | FlowEventNodeEnd
   | FlowEventNodePause
   | FlowEventNodeResume
-  | FlowEventNodeError;
+  | FlowEventNodeError
+  | DlqEvent;

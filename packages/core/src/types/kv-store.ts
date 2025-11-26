@@ -1,6 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 import { UploadistaError } from "../errors";
-import type { FlowJob } from "../flow";
+import type { DeadLetterItem, FlowJob } from "../flow";
 import type { UploadFile } from "./upload-file";
 
 /**
@@ -195,7 +195,16 @@ export class TypedKvStore<TData> implements KvStore<TData> {
 
   list = (): Effect.Effect<Array<string>, UploadistaError> => {
     if (this.baseStore.list) {
-      return this.baseStore.list(this.keyPrefix);
+      // Get keys with prefix and strip the prefix for use with get/set/delete
+      return this.baseStore.list(this.keyPrefix).pipe(
+        Effect.map((keys) =>
+          keys.map((key) =>
+            key.startsWith(this.keyPrefix)
+              ? key.slice(this.keyPrefix.length)
+              : key,
+          ),
+        ),
+      );
     }
     return Effect.fail(
       new UploadistaError({
@@ -368,6 +377,77 @@ export const flowJobKvStore = Layer.effect(
     return new TypedKvStore<FlowJob>(
       baseStore,
       "uploadista:flow-job:",
+      jsonSerializer.serialize,
+      jsonSerializer.deserialize,
+    );
+  }),
+);
+
+/**
+ * Effect-TS context tag for the Dead Letter Queue typed KV store.
+ *
+ * This provides type-safe storage for DeadLetterItem objects, tracking
+ * failed flow jobs for retry, debugging, and manual intervention.
+ *
+ * @example
+ * ```typescript
+ * const dlqEffect = Effect.gen(function* () {
+ *   const dlqStore = yield* DeadLetterQueueKVStore;
+ *
+ *   // Store a DLQ item
+ *   const item: DeadLetterItem = {
+ *     id: "dlq_123",
+ *     jobId: "job_456",
+ *     flowId: "image-pipeline",
+ *     storageId: "s3",
+ *     clientId: "client_789",
+ *     error: { code: "FLOW_NODE_ERROR", message: "Timeout" },
+ *     inputs: { input: { uploadId: "upload_abc" } },
+ *     nodeResults: {},
+ *     retryCount: 0,
+ *     maxRetries: 3,
+ *     retryHistory: [],
+ *     createdAt: new Date(),
+ *     updatedAt: new Date(),
+ *     status: "pending"
+ *   };
+ *   yield* dlqStore.set("dlq_123", item);
+ *
+ *   // Retrieve with type safety
+ *   const retrieved = yield* dlqStore.get("dlq_123");
+ *   return retrieved.status;
+ * });
+ * ```
+ */
+export class DeadLetterQueueKVStore extends Context.Tag("DeadLetterQueueKVStore")<
+  DeadLetterQueueKVStore,
+  KvStore<DeadLetterItem>
+>() {}
+
+/**
+ * Effect Layer that creates the DeadLetterQueueKVStore from a BaseKvStore.
+ *
+ * This layer automatically wires up JSON serialization for DeadLetterItem objects
+ * with the "uploadista:dlq:" key prefix.
+ *
+ * @example
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const dlqStore = yield* DeadLetterQueueKVStore;
+ *   // Use the store...
+ * }).pipe(
+ *   Effect.provide(deadLetterQueueKvStore),
+ *   Effect.provide(baseStoreLayer)
+ * );
+ * ```
+ */
+export const deadLetterQueueKvStore = Layer.effect(
+  DeadLetterQueueKVStore,
+  Effect.gen(function* () {
+    const baseStore = yield* BaseKvStoreService;
+    return new TypedKvStore<DeadLetterItem>(
+      baseStore,
+      "uploadista:dlq:",
       jsonSerializer.serialize,
       jsonSerializer.deserialize,
     );

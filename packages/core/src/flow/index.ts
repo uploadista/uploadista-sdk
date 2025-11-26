@@ -44,6 +44,10 @@ export * from "./types/flow-file";
 export * from "./types/flow-job";
 export * from "./types/flow-types";
 export * from "./types/run-args";
+// Dead Letter Queue types and service
+export * from "./types/dead-letter-item";
+export * from "./types/retry-policy";
+export * from "./dead-letter-queue";
 export * from "./types/type-utils";
 export * from "./utils/resolve-upload-metadata";
 // File naming utilities

@@ -1075,6 +1075,108 @@ const program = Effect.acquireUseRelease(
 - `@uploadista/client` - Browser upload client
 - `@uploadista/server` - Server-side utilities
 
+## Dead Letter Queue (DLQ)
+
+The Dead Letter Queue provides automatic capture and retry capabilities for failed flow jobs. When a flow execution fails, the DLQ preserves the complete failure context for debugging, automatic retry, or manual intervention.
+
+### Enabling DLQ
+
+```typescript
+import {
+  DeadLetterQueueService,
+  deadLetterQueueService,
+  deadLetterQueueKvStore,
+} from "@uploadista/core/flow";
+
+// Provide the DLQ service in your Effect layer stack
+const program = myFlowProgram.pipe(
+  Effect.provide(deadLetterQueueService),
+  Effect.provide(deadLetterQueueKvStore),
+  Effect.provide(baseKvStoreLayer)
+);
+```
+
+### Flow-Level Configuration
+
+```typescript
+const flowConfig = {
+  flowId: "image-pipeline",
+  deadLetterQueue: {
+    enabled: true,
+    retryPolicy: {
+      enabled: true,
+      maxRetries: 5,
+      backoff: {
+        type: "exponential",
+        initialDelayMs: 1000,
+        maxDelayMs: 300000,
+        multiplier: 2,
+        jitter: true
+      },
+      nonRetryableErrors: ["VALIDATION_ERROR", "AUTH_ERROR"],
+      ttlMs: 604800000 // 7 days
+    }
+  }
+};
+```
+
+### Retry Policies
+
+Three backoff strategies are supported:
+
+```typescript
+// Immediate retry
+{ type: "immediate" }
+
+// Fixed delay
+{ type: "fixed", delayMs: 5000 }
+
+// Exponential backoff with jitter
+{
+  type: "exponential",
+  initialDelayMs: 1000,
+  maxDelayMs: 300000,
+  multiplier: 2,
+  jitter: true
+}
+```
+
+### Admin Operations
+
+```typescript
+const adminHandler = Effect.gen(function* () {
+  const dlq = yield* DeadLetterQueueService;
+
+  // Get statistics
+  const stats = yield* dlq.getStats();
+
+  // List pending items
+  const { items, total } = yield* dlq.list({ status: "pending" });
+
+  // Retry a specific item
+  yield* dlq.markRetrying(itemId);
+  // ... re-execute flow ...
+  yield* dlq.markResolved(itemId);
+
+  // Cleanup old items
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  yield* dlq.cleanup({ olderThan: weekAgo });
+});
+```
+
+### DLQ Events
+
+Monitor DLQ lifecycle with events:
+
+- `DlqItemAdded` - Job added to DLQ
+- `DlqRetryStart` - Retry attempt started
+- `DlqRetrySuccess` - Retry succeeded
+- `DlqRetryFailed` - Retry failed
+- `DlqItemExhausted` - Max retries reached
+- `DlqItemResolved` - Item resolved
+
+For complete documentation, see [docs/DEAD-LETTER-QUEUE.md](./docs/DEAD-LETTER-QUEUE.md).
+
 ## Development
 
 ### Build

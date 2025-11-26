@@ -1,5 +1,6 @@
 import type { PluginLayer, UploadistaError } from "@uploadista/core";
 import {
+  deadLetterQueueService,
   type Flow,
   FlowProvider,
   FlowWaitUntil,
@@ -7,6 +8,7 @@ import {
 } from "@uploadista/core/flow";
 import {
   createDataStoreLayer,
+  deadLetterQueueKvStore,
   type UploadFileDataStores,
   type UploadFileKVStore,
 } from "@uploadista/core/types";
@@ -197,6 +199,7 @@ export const createUploadistaServer = async <
   adapter,
   authCacheConfig,
   circuitBreaker = true,
+  deadLetterQueue = false,
 }: UploadistaServerConfig<
   TContext,
   TResponse,
@@ -272,22 +275,30 @@ export const createUploadistaServer = async <
     ? kvCircuitBreakerStoreLayer.pipe(Layer.provide(kvStore))
     : null;
 
+  // Create dead letter queue layer if enabled (uses the provided kvStore)
+  // The DLQ layer provides both the KV store wrapper and the service
+  const dlqLayer = deadLetterQueue
+    ? deadLetterQueueService.pipe(
+        Layer.provide(deadLetterQueueKvStore),
+        Layer.provide(kvStore),
+      )
+    : null;
+
   /**
    * Merge all server layers including plugins.
    *
    * This combines the core server infrastructure (upload server, flow server,
-   * metrics, auth cache, circuit breaker) with user-provided plugin layers.
+   * metrics, auth cache, circuit breaker, dead letter queue) with user-provided plugin layers.
    */
-  const baseServerLayer = Layer.mergeAll(
+  const serverLayerRaw = Layer.mergeAll(
     uploadServerLayer,
     flowServerLayer,
     effectiveMetricsLayer,
     authCacheLayer,
     ...plugins,
+    ...(circuitBreakerStoreLayer ? [circuitBreakerStoreLayer] : []),
+    ...(dlqLayer ? [dlqLayer] : []),
   );
-  const serverLayerRaw = circuitBreakerStoreLayer
-    ? Layer.merge(baseServerLayer, circuitBreakerStoreLayer)
-    : baseServerLayer;
 
   /**
    * Type Casting Rationale for Plugin System
@@ -485,7 +496,7 @@ export const createUploadistaServer = async <
         }
       }
 
-      // Combine auth context, auth cache, metrics layers, plugins, circuit breaker, and waitUntil
+      // Combine auth context, auth cache, metrics layers, plugins, circuit breaker, DLQ, and waitUntil
       // This ensures that flow nodes have access to all required services
       const baseRequestContextLayer = Layer.mergeAll(
         authContextLayer,
@@ -494,9 +505,12 @@ export const createUploadistaServer = async <
         ...plugins,
         ...waitUntilLayers,
       );
-      const requestContextLayer = circuitBreakerStoreLayer
+      const withCircuitBreakerContext = circuitBreakerStoreLayer
         ? Layer.merge(baseRequestContextLayer, circuitBreakerStoreLayer)
         : baseRequestContextLayer;
+      const requestContextLayer = dlqLayer
+        ? Layer.merge(withCircuitBreakerContext, dlqLayer)
+        : withCircuitBreakerContext;
 
       // Check for baseUrl/api/ prefix
       if (uploadistaRequest.type === "not-found") {

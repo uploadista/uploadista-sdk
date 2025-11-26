@@ -323,6 +323,34 @@ export interface UploadistaServerConfig<
    * ```
    */
   circuitBreaker?: boolean;
+
+  /**
+   * Optional: Enable dead letter queue for failed flow jobs.
+   *
+   * When enabled, failed flow jobs are captured in a DLQ with full context
+   * for debugging and retry. The DLQ state is stored in the KV store,
+   * allowing it to be shared across multiple server instances.
+   *
+   * Set to `false` to disable the DLQ entirely.
+   *
+   * @default false
+   *
+   * @example
+   * ```typescript
+   * // Enable DLQ (uses the provided kvStore)
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   deadLetterQueue: true
+   * });
+   *
+   * // DLQ is disabled by default
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   // deadLetterQueue: false (default)
+   * });
+   * ```
+   */
+  deadLetterQueue?: boolean;
 }
 
 /**

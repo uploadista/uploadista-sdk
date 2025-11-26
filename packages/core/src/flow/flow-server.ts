@@ -53,6 +53,7 @@ export class FlowWaitUntil extends Context.Tag("FlowWaitUntil")<
 
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadServer } from "../upload";
+import { DeadLetterQueueService } from "./dead-letter-queue";
 import type { FlowEvent } from "./event";
 import type { FlowJob } from "./types/flow-job";
 
@@ -710,6 +711,7 @@ export function createFlowServer() {
     const eventEmitter = yield* FlowEventEmitter;
     const kvStore = yield* FlowJobKVStore;
     const uploadServer = yield* UploadServer;
+    const dlqOption = yield* DeadLetterQueueService.optional;
 
     const updateJob = (jobId: string, updates: Partial<FlowJob>) =>
       Effect.gen(function* () {
@@ -764,6 +766,50 @@ export function createFlowServer() {
         yield* updateJob(jobId, {
           intermediateFiles: [],
         });
+      });
+
+    // Helper function to add failed job to Dead Letter Queue
+    const addToDeadLetterQueue = (
+      jobId: string,
+      error: UploadistaError,
+    ) =>
+      Effect.gen(function* () {
+        if (Option.isNone(dlqOption)) {
+          // DLQ not configured, skip
+          yield* Effect.logDebug(
+            `[FlowServer] DLQ not configured, skipping for job: ${jobId}`,
+          );
+          return;
+        }
+
+        const dlq = dlqOption.value;
+
+        // Get the job to add to DLQ
+        const job = yield* Effect.catchAll(kvStore.get(jobId), () =>
+          Effect.succeed(null as FlowJob | null),
+        );
+
+        if (!job) {
+          yield* Effect.logWarning(
+            `[FlowServer] Job ${jobId} not found when adding to DLQ`,
+          );
+          return;
+        }
+
+        // Add to DLQ
+        yield* Effect.catchAll(dlq.add(job, error), (dlqError) =>
+          Effect.gen(function* () {
+            yield* Effect.logError(
+              `[FlowServer] Failed to add job ${jobId} to DLQ`,
+              dlqError,
+            );
+            return Effect.succeed(undefined);
+          }),
+        );
+
+        yield* Effect.logInfo(
+          `[FlowServer] Added job ${jobId} to Dead Letter Queue`,
+        );
       });
 
     // Helper function to execute flow in background
@@ -894,6 +940,18 @@ export function createFlowServer() {
                 }),
               ),
             );
+
+            // Add failed job to Dead Letter Queue for retry/debugging
+            const uploadistaError =
+              error instanceof UploadistaError
+                ? error
+                : new UploadistaError({
+                    code: "UNKNOWN_ERROR",
+                    status: 500,
+                    body: String(error),
+                    cause: error,
+                  });
+            yield* addToDeadLetterQueue(jobId, uploadistaError);
 
             throw error;
           }),
@@ -1215,6 +1273,18 @@ export function createFlowServer() {
                     }),
                   ),
                 );
+
+                // Add failed job to Dead Letter Queue for retry/debugging
+                const uploadistaError =
+                  error instanceof UploadistaError
+                    ? error
+                    : new UploadistaError({
+                        code: "UNKNOWN_ERROR",
+                        status: 500,
+                        body: String(error),
+                        cause: error,
+                      });
+                yield* addToDeadLetterQueue(jobId, uploadistaError);
 
                 throw error;
               }),

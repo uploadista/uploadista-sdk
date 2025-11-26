@@ -1,5 +1,11 @@
 import type {
   DataStoreCapabilities,
+  DeadLetterCleanupOptions,
+  DeadLetterCleanupResult,
+  DeadLetterItem,
+  DeadLetterItemStatus,
+  DeadLetterListOptions,
+  DeadLetterQueueStats,
   FlowData,
   FlowJob,
   UploadFile,
@@ -17,6 +23,16 @@ export type UploadistaRouteType =
   | "resume-flow"
   | "pause-flow"
   | "cancel-flow"
+  // DLQ Admin routes
+  | "dlq-list"
+  | "dlq-get"
+  | "dlq-retry"
+  | "dlq-retry-all"
+  | "dlq-delete"
+  | "dlq-resolve"
+  | "dlq-cleanup"
+  | "dlq-stats"
+  // Error routes
   | "not-found"
   | "bad-request"
   | "method-not-allowed"
@@ -154,6 +170,69 @@ export type CancelFlowResponse = UploadistaStandardResponse<
   FlowJob
 >;
 
+// ============================================================================
+// Dead Letter Queue Admin Routes
+// ============================================================================
+
+export type DlqListRequest = UploadistaRoute<"dlq-list"> & {
+  options?: DeadLetterListOptions;
+};
+export type DlqListResponse = UploadistaStandardResponse<
+  "dlq-list",
+  { items: DeadLetterItem[]; total: number }
+>;
+
+export type DlqGetRequest = UploadistaRoute<"dlq-get"> & {
+  itemId: string;
+};
+export type DlqGetResponse = UploadistaStandardResponse<"dlq-get", DeadLetterItem>;
+
+export type DlqRetryRequest = UploadistaRoute<"dlq-retry"> & {
+  itemId: string;
+};
+export type DlqRetryResponse = UploadistaStandardResponse<
+  "dlq-retry",
+  { success: boolean; newJobId?: string }
+>;
+
+export type DlqRetryAllRequest = UploadistaRoute<"dlq-retry-all"> & {
+  options?: { status?: DeadLetterItemStatus; flowId?: string };
+};
+export type DlqRetryAllResponse = UploadistaStandardResponse<
+  "dlq-retry-all",
+  { retried: number; succeeded: number; failed: number }
+>;
+
+export type DlqDeleteRequest = UploadistaRoute<"dlq-delete"> & {
+  itemId: string;
+};
+export type DlqDeleteResponse = UploadistaStandardResponse<
+  "dlq-delete",
+  { success: boolean }
+>;
+
+export type DlqResolveRequest = UploadistaRoute<"dlq-resolve"> & {
+  itemId: string;
+};
+export type DlqResolveResponse = UploadistaStandardResponse<
+  "dlq-resolve",
+  DeadLetterItem
+>;
+
+export type DlqCleanupRequest = UploadistaRoute<"dlq-cleanup"> & {
+  options?: DeadLetterCleanupOptions;
+};
+export type DlqCleanupResponse = UploadistaStandardResponse<
+  "dlq-cleanup",
+  DeadLetterCleanupResult
+>;
+
+export type DlqStatsRequest = UploadistaRoute<"dlq-stats">;
+export type DlqStatsResponse = UploadistaStandardResponse<
+  "dlq-stats",
+  DeadLetterQueueStats
+>;
+
 export type UploadistaRequest =
   | CreateUploadRequest
   | GetCapabilitiesRequest
@@ -165,6 +244,16 @@ export type UploadistaRequest =
   | ResumeFlowRequest
   | PauseFlowRequest
   | CancelFlowRequest
+  // DLQ Admin requests
+  | DlqListRequest
+  | DlqGetRequest
+  | DlqRetryRequest
+  | DlqRetryAllRequest
+  | DlqDeleteRequest
+  | DlqResolveRequest
+  | DlqCleanupRequest
+  | DlqStatsRequest
+  // Error requests
   | NotFoundRequest
   | BadRequestRequest
   | MethodNotAllowedRequest
@@ -181,6 +270,16 @@ export type UploadistaResponse =
   | ResumeFlowResponse
   | PauseFlowResponse
   | CancelFlowResponse
+  // DLQ Admin responses
+  | DlqListResponse
+  | DlqGetResponse
+  | DlqRetryResponse
+  | DlqRetryAllResponse
+  | DlqDeleteResponse
+  | DlqResolveResponse
+  | DlqCleanupResponse
+  | DlqStatsResponse
+  // Error responses
   | NotFoundResponse
   | BadRequestResponse
   | MethodNotAllowedResponse
