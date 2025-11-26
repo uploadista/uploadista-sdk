@@ -42,6 +42,7 @@ export function createMergePdfNode(
       name: "Merge PDFs",
       description: "Merge multiple PDF documents into one",
       type: NodeType.process,
+      nodeTypeId: "merge-pdf",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: multipleFilesSchema,

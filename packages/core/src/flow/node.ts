@@ -86,6 +86,7 @@ export type ConditionValue = string | number;
  * @param config.outputTypeId - Optional output type ID from outputTypeRegistry (e.g., "storage-output-v1"). Used for result type tagging.
  * @param config.keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false). Useful for flows where intermediate results need to be kept (e.g., preserving the original file when also running OCR on it).
  * @param config.circuitBreaker - Optional circuit breaker configuration for resilience. Overrides flow-level circuit breaker defaults for this node.
+ * @param config.nodeTypeId - Stable node type identifier for circuit breaker configuration. Used to share circuit breaker state across nodes of the same type and for nodeTypeOverrides. Example: "describe-image", "remove-background", "scan-virus"
  *
  * @returns An Effect that succeeds with the created FlowNode
  *
@@ -140,6 +141,7 @@ export function createFlowNode<
   outputTypeId,
   keepOutput = false,
   circuitBreaker,
+  nodeTypeId,
 }: {
   id: string;
   name: string;
@@ -174,6 +176,12 @@ export function createFlowNode<
   keepOutput?: boolean;
   /** Circuit breaker configuration for resilience (overrides flow defaults) */
   circuitBreaker?: FlowCircuitBreakerConfig;
+  /**
+   * Stable node type identifier for circuit breaker configuration.
+   * Used to share circuit breaker state across nodes of the same type and for nodeTypeOverrides.
+   * Example: "describe-image", "remove-background", "scan-virus"
+   */
+  nodeTypeId?: string;
 }): Effect.Effect<
   FlowNode<Input, Output, UploadistaError> & { type: TType },
   UploadistaError
@@ -284,6 +292,7 @@ export function createFlowNode<
       multiOutput,
       retry,
       circuitBreaker,
+      nodeTypeId,
     } as FlowNode<Input, Output, UploadistaError> & { type: TType };
   });
 }
@@ -309,5 +318,6 @@ export const getNodeData = (
     type: node.type,
     inputTypeId: node.inputTypeId,
     outputTypeId: node.outputTypeId,
+    nodeTypeId: node.nodeTypeId,
   };
 };

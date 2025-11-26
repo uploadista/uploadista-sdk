@@ -12,6 +12,7 @@ import { createFlowWithSchema } from "./flow";
 import { NodeType } from "./node";
 import type { ExtractEffectRequirements, ResolveEffect } from "./types";
 import type {
+  FlowCircuitBreakerConfig,
   FlowEdge,
   FlowNode,
   TypeCompatibilityChecker,
@@ -272,6 +273,30 @@ export type TypedFlowConfig<TNodes extends NodeDefinitionsRecord> = {
       clientId: string | null;
     }) => Effect.Effect<TOutput, CoreUploadistaError, never> | Promise<TOutput>;
   };
+  /**
+   * Circuit breaker configuration for resilience against external service failures.
+   *
+   * @example
+   * ```typescript
+   * circuitBreaker: {
+   *   defaults: { enabled: false },
+   *   nodeTypeOverrides: {
+   *     "Describe Image": {
+   *       enabled: true,
+   *       failureThreshold: 5,
+   *       resetTimeout: 60000,
+   *       fallback: { type: "skip", passThrough: true }
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  circuitBreaker?: {
+    /** Default circuit breaker config for all nodes */
+    defaults?: FlowCircuitBreakerConfig;
+    /** Override circuit breaker config per node type (node name) */
+    nodeTypeOverrides?: Record<string, FlowCircuitBreakerConfig>;
+  };
 };
 
 declare const typedFlowInputsSymbol: unique symbol;
@@ -454,6 +479,7 @@ export function createFlow<TNodes extends NodeDefinitionsRecord>(
       onEvent: config.onEvent,
       parallelExecution: config.parallelExecution,
       hooks: config.hooks,
+      circuitBreaker: config.circuitBreaker,
     });
 
     return flow as unknown as TypedFlow<

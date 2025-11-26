@@ -27,6 +27,7 @@ export function createDescribeDocumentNode(
       name: "Describe Document",
       description: "Extract metadata from PDF documents",
       type: NodeType.process,
+      nodeTypeId: "describe-document",
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,

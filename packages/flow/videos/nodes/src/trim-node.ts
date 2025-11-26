@@ -76,6 +76,7 @@ export function createTrimVideoNode(
       id,
       name: "Trim Video",
       description: "Extracts a segment from the video",
+      nodeTypeId: "trim-video",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       naming: namingConfig,

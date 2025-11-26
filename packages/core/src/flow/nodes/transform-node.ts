@@ -5,6 +5,7 @@ import { uploadFileSchema } from "../../types";
 import { UploadServer } from "../../upload";
 import { createFlowNode, NodeType } from "../node";
 import { completeNodeExecution, type FileNamingConfig } from "../types";
+import type { FlowCircuitBreakerConfig } from "../types/flow-types";
 import {
   applyFileNaming,
   buildNamingContext,
@@ -42,11 +43,23 @@ export interface TransformNodeConfig {
    */
   nodeType?: string;
   /**
+   * Stable node type identifier for circuit breaker configuration.
+   * Used to share circuit breaker state across nodes of the same type
+   * and for nodeTypeOverrides in flow config.
+   * Example: "describe-image", "remove-background", "scan-virus"
+   */
+  nodeTypeId?: string;
+  /**
    * Additional variables to include in the naming context.
    * These are merged with the base context (flowId, jobId, etc.)
    * and can be used in templates.
    */
   namingVars?: Record<string, string | number | undefined>;
+  /**
+   * Circuit breaker configuration for resilience against external service failures.
+   * Overrides flow-level circuit breaker defaults for this node.
+   */
+  circuitBreaker?: FlowCircuitBreakerConfig;
   /** Function that transforms file bytes */
   transform: (
     bytes: Uint8Array,
@@ -115,8 +128,10 @@ export function createTransformNode({
   outputTypeId,
   keepOutput,
   naming,
-  nodeType: nodeTypeId = "transform",
+  nodeType: namingNodeType = "transform",
+  nodeTypeId,
   namingVars,
+  circuitBreaker,
   transform,
 }: TransformNodeConfig) {
   return Effect.gen(function* () {
@@ -129,6 +144,8 @@ export function createTransformNode({
       type: NodeType.process,
       outputTypeId,
       keepOutput,
+      nodeTypeId,
+      circuitBreaker,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, storageId, flowId, jobId, clientId }) => {
@@ -169,7 +186,7 @@ export function createTransformNode({
                 flowId,
                 jobId,
                 nodeId: id,
-                nodeType: nodeTypeId,
+                nodeType: namingNodeType,
               },
               namingVars,
             );

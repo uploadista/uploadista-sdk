@@ -47,6 +47,7 @@ export function createResizeNode(
       id,
       name: "Resize",
       description: "Resizes an image to the specified dimensions",
+      nodeTypeId: "resize-image",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       naming: namingConfig,

@@ -346,9 +346,9 @@ export function createFlowWithSchema<
         | FlowCircuitBreakerConfig
         | undefined;
 
-      // Get flow-level config for this node type
-      const flowNodeTypeConfig = node.name
-        ? circuitBreakerConfig?.nodeTypeOverrides?.[node.name]
+      // Get flow-level config for this node type (using nodeTypeId for stable identification)
+      const flowNodeTypeConfig = node.nodeTypeId
+        ? circuitBreakerConfig?.nodeTypeOverrides?.[node.nodeTypeId]
         : undefined;
 
       // Get flow defaults
@@ -676,8 +676,8 @@ export function createFlowWithSchema<
         // Get circuit breaker configuration for this node
         const cbConfig = getCircuitBreakerConfigForNode(node);
         const circuitBreaker =
-          cbConfig?.enabled && node.name && circuitBreakerRegistry
-            ? circuitBreakerRegistry.getOrCreate(node.name, cbConfig)
+          cbConfig?.enabled && node.nodeTypeId && circuitBreakerRegistry
+            ? circuitBreakerRegistry.getOrCreate(node.nodeTypeId, cbConfig)
             : null;
 
         // Check circuit breaker before attempting execution
@@ -692,7 +692,7 @@ export function createFlowWithSchema<
             const fallback = circuitBreaker.getFallback();
 
             yield* Effect.logWarning(
-              `Circuit breaker OPEN for node type "${node.name}" - applying fallback`,
+              `Circuit breaker OPEN for node type "${node.nodeTypeId}" - applying fallback`,
             );
 
             // Handle fallback based on configuration

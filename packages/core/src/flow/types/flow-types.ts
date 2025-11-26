@@ -47,6 +47,12 @@ export type FlowNodeData = {
   /** Output type ID from outputTypeRegistry - describes the data shape this node produces */
   outputTypeId?: string;
   keepOutput?: boolean;
+  /**
+   * Stable node type identifier for circuit breaker configuration.
+   * Used to share circuit breaker state across nodes of the same type and for nodeTypeOverrides.
+   * Example: "describe-image", "remove-background", "scan-virus"
+   */
+  nodeTypeId?: string;
 };
 
 /**

@@ -45,10 +45,18 @@ export function createRemoveBackgroundNode(
       name: "Remove Background",
       description: "Removes the background from an image",
       type: NodeType.process,
+      nodeTypeId: "remove-background",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
+      // AI service - enable circuit breaker with skip fallback
+      circuitBreaker: {
+        enabled: true,
+        failureThreshold: 5,
+        resetTimeout: 60000,
+        fallback: { type: "skip", passThrough: true },
+      },
       run: ({ data: file, flowId, jobId, storageId, clientId }) => {
         return Effect.gen(function* () {
           const flow = {

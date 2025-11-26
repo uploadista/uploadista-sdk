@@ -23,6 +23,7 @@ export function createMultiplexNode(
       name: "Multiplex",
       description: `Multiplexes input using ${strategy} strategy`,
       type: NodeType.multiplex,
+      nodeTypeId: "multiplex",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,

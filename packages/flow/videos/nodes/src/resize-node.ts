@@ -53,6 +53,7 @@ export function createVideoResizeNode(
       id,
       name: "Resize Video",
       description: "Changes video resolution",
+      nodeTypeId: "resize-video",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       naming: namingConfig,

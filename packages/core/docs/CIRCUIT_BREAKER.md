@@ -52,12 +52,13 @@ const flow = yield* createFlowWithSchema({
       windowDuration: 60000, // 1 minute
       fallback: { type: "fail" }
     },
+    // Override settings for specific node types (by nodeTypeId)
     nodeTypeOverrides: {
       "describe-image": {
         failureThreshold: 10,
         fallback: { type: "skip", passThrough: true }
       },
-      "virus-scan": {
+      "scan-virus": {
         failureThreshold: 3,
         fallback: { type: "fail" }
       }
@@ -76,6 +77,7 @@ const myNode = yield* createFlowNode({
   name: "My Node",
   description: "Node with circuit breaker",
   type: NodeType.process,
+  nodeTypeId: "my-external-service", // Stable ID for circuit breaker state
   inputSchema,
   outputSchema,
   run: ({ data }) => Effect.gen(function* () {
@@ -103,6 +105,45 @@ const myNode = yield* createFlowNode({
 | `halfOpenRequests` | number | `3` | Successful requests needed to close |
 | `windowDuration` | number | `60000` | Sliding window duration in milliseconds |
 | `fallback` | object | `{ type: "fail" }` | Behavior when circuit is open |
+
+## Built-in Node Defaults
+
+The following Uploadista nodes come with sensible circuit breaker defaults pre-configured. Users benefit from circuit breaker protection without any additional configuration.
+
+### AI/External Service Nodes
+
+| Node | `nodeTypeId` | Threshold | Timeout | Fallback |
+|------|--------------|-----------|---------|----------|
+| Describe Image | `describe-image` | 5 | 60s | skip + passThrough |
+| Remove Background | `remove-background` | 5 | 60s | skip + passThrough |
+| Convert to Markdown | `convert-to-markdown` | 5 | 60s | skip + passThrough |
+| OCR | `ocr` | 5 | 60s | skip + passThrough |
+| Scan Virus | `scan-virus` | 5 | 60s | **fail** |
+
+**Note:** The Scan Virus node uses `fallback: { type: "fail" }` because security checks should never be silently skipped.
+
+### Overriding Defaults
+
+You can override the built-in defaults at the flow level using `nodeTypeOverrides`:
+
+```typescript
+const flow = yield* createFlow({
+  // ...
+  circuitBreaker: {
+    nodeTypeOverrides: {
+      // Make AI description more tolerant
+      "describe-image": {
+        failureThreshold: 10,
+        resetTimeout: 120000, // 2 minutes
+      },
+      // Allow virus scan to be skipped in dev environment
+      "scan-virus": {
+        enabled: process.env.NODE_ENV === "production",
+      },
+    },
+  },
+});
+```
 
 ## Fallback Behaviors
 
@@ -132,11 +173,22 @@ fallback: { type: "default", value: { status: "skipped" } }
 
 ## Circuit Breaker Scope
 
-Circuit breakers are scoped **per node type** (node name). This means:
+Circuit breakers are scoped **per node type** using `nodeTypeId`. This means:
 
-- All nodes with the same name share circuit state
+- All nodes with the same `nodeTypeId` share circuit state
 - If a service is down, all nodes using it will see the open circuit
 - Different node types have independent circuit breakers
+
+The `nodeTypeId` is a stable identifier (e.g., `"describe-image"`, `"scan-virus"`) that doesn't change when node names are updated for display purposes.
+
+```typescript
+const myNode = yield* createFlowNode({
+  id: "my-unique-id",
+  name: "Describe Image",  // Display name (can change)
+  nodeTypeId: "describe-image",  // Stable ID for circuit breaker
+  // ...
+});
+```
 
 ## Observability
 
@@ -157,23 +209,26 @@ The following metrics are available:
 
 Circuit breaker spans include:
 
-- `circuit_breaker.node_type` - The node type
+- `circuit_breaker.node_type_id` - The node type ID
 - `circuit_breaker.state` - Current state
 - `circuit_breaker.failure_count` - Failures in window
 - `circuit_breaker.decision` - allowed/rejected/fallback
 
 ## Example: AI Image Processing Flow
 
+With built-in defaults, AI nodes automatically have circuit breaker protection:
+
 ```typescript
+import { createDescribeImageNode, createRemoveBackgroundNode } from "@uploadista/flow-images-nodes";
+
+// These nodes come with circuit breaker defaults pre-configured!
+const describeNode = yield* createDescribeImageNode("describe");
+const removeBackgroundNode = yield* createRemoveBackgroundNode("remove-bg");
+
 const flow = yield* createFlowWithSchema({
   flowId: "ai-image-flow",
   name: "AI Image Processing",
-  nodes: [
-    inputNode,
-    describeImageNode,
-    removeBackgroundNode,
-    storageNode
-  ],
+  nodes: [inputNode, describeNode, removeBackgroundNode, storageNode],
   edges: [
     { source: "input", target: "describe" },
     { source: "describe", target: "remove-bg" },
@@ -181,24 +236,15 @@ const flow = yield* createFlowWithSchema({
   ],
   inputSchema,
   outputSchema,
+  // Optional: Override defaults if needed
   circuitBreaker: {
-    defaults: {
-      enabled: true,
-      failureThreshold: 5,
-      resetTimeout: 30000
-    },
     nodeTypeOverrides: {
-      // AI description can fail gracefully - skip if service is down
+      // Use custom fallback for AI description
       "describe-image": {
         fallback: {
           type: "default",
           value: { description: "Description unavailable" }
         }
-      },
-      // Background removal is critical - fail fast
-      "remove-background": {
-        failureThreshold: 3,
-        fallback: { type: "fail" }
       }
     }
   }

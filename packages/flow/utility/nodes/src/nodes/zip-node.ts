@@ -27,6 +27,7 @@ export function createZipNode(
       name: "Zip Files",
       description: "Combines multiple files into a zip archive",
       type: NodeType.process,
+      nodeTypeId: "zip",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema,
       outputSchema,

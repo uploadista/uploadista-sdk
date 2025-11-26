@@ -61,6 +61,7 @@ export function createTranscodeVideoNode(
       id,
       name: "Transcode",
       description: "Converts video to specified format and codec",
+      nodeTypeId: "transcode-video",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       // Note: naming is handled in transform since format changes extension

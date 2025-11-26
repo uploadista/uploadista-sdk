@@ -81,6 +81,7 @@ export function createTransformImageNode(
       id,
       name: "Transform Image",
       description: `Apply ${transformations.length} transformation${transformations.length === 1 ? "" : "s"} to the image`,
+      nodeTypeId: "transform-image",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       naming: namingConfig,

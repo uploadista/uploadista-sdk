@@ -55,6 +55,7 @@ export function createOptimizeNode(
       id,
       name: "Optimize",
       description: "Optimizes an image for web delivery",
+      nodeTypeId: "optimize-image",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       // Note: naming is handled in transform since format changes extension

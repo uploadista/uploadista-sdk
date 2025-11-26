@@ -24,10 +24,18 @@ export function createDescribeImageNode(
       name: "Describe Image",
       description: "Describes the image using AI",
       type: NodeType.process,
+      nodeTypeId: "describe-image",
       outputTypeId: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
       keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: imageDescriptionOutputSchema,
+      // AI service - enable circuit breaker with skip fallback
+      circuitBreaker: {
+        enabled: true,
+        failureThreshold: 5,
+        resetTimeout: 60000,
+        fallback: { type: "skip", passThrough: true },
+      },
       run: ({ data: file, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           const flow = {

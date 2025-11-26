@@ -47,6 +47,7 @@ export function createVideoThumbnailNode(
       id,
       name: "Generate Thumbnail",
       description: "Extracts a frame from video as an image",
+      nodeTypeId: "thumbnail-video",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
       // Note: naming is handled in transform since format changes extension

@@ -181,6 +181,7 @@ export function createInputNode(
       description:
         "Handles file input through multiple methods - streaming upload (init/finalize) or direct URL fetch",
       type: NodeType.input,
+      nodeTypeId: "input",
       inputSchema: inputDataSchema,
       outputSchema: uploadFileSchema,
       keepOutput,

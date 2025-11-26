@@ -26,6 +26,7 @@ export function createMergeNode(
       name: "Merge Files",
       description: `Merges multiple files using ${strategy} strategy`,
       type: NodeType.merge,
+      nodeTypeId: "merge",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       inputSchema,
       outputSchema,
