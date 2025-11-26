@@ -1,6 +1,7 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import {
   createTransformNode,
+  type FileNamingConfig,
   STORAGE_OUTPUT_TYPE_ID,
   type TrimVideoParams,
   VideoPlugin,
@@ -14,26 +15,25 @@ import { Effect } from "effect";
  *
  * @param id - Unique node identifier
  * @param params - Trim parameters
- * @returns Effect that resolves to the configured node
+ * @param options - Optional configuration
+ * @param options.keepOutput - Whether to keep output in flow results
+ * @param options.naming - File naming configuration (auto suffix: `trimmed`)
  *
  * @example
  * ```typescript
- * const node = yield* createTrimNode("trim-1", {
+ * // With auto-naming: "video.mp4" -> "video-trimmed.mp4"
+ * const node = yield* createTrimVideoNode("trim-1", {
  *   startTime: 10,
  *   endTime: 30
- * });
- *
- * // Or using duration
- * const node2 = yield* createTrimNode("trim-2", {
- *   startTime: 10,
- *   duration: 20
+ * }, {
+ *   naming: { mode: "auto" }
  * });
  * ```
  */
 export function createTrimVideoNode(
   id: string,
   params: TrimVideoParams,
-  options?: { keepOutput?: boolean },
+  options?: { keepOutput?: boolean; naming?: FileNamingConfig },
 ) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
@@ -64,12 +64,22 @@ export function createTrimVideoNode(
       }).toEffect();
     }
 
+    // Build naming config with auto suffix for trim
+    const namingConfig: FileNamingConfig | undefined = options?.naming
+      ? {
+          ...options.naming,
+          autoSuffix: options.naming.autoSuffix ?? (() => "trimmed"),
+        }
+      : undefined;
+
     return yield* createTransformNode({
       id,
       name: "Trim Video",
       description: "Extracts a segment from the video",
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
+      naming: namingConfig,
+      nodeType: "trim",
       transform: (inputBytes, _file) =>
         Effect.map(videoService.trim(inputBytes, params), (trimmedBytes) => {
           // Pass through video bytes

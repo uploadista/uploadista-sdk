@@ -1,7 +1,10 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import {
+  applyFileNaming,
+  buildNamingContext,
   completeNodeExecution,
   createFlowNode,
+  type FileNamingConfig,
   ImageAiPlugin,
   NodeType,
   resolveUploadMetadata,
@@ -12,9 +15,26 @@ import { UploadServer } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import { waitForUrlAvailability } from "./wait-for-url";
 
+/**
+ * Creates a remove-background node that removes backgrounds from images using AI.
+ *
+ * @param id - Unique node identifier
+ * @param options - Optional configuration
+ * @param options.credentialId - Optional credential ID for AI service
+ * @param options.keepOutput - Whether to keep output in flow results
+ * @param options.naming - File naming configuration (auto suffix: `nobg`)
+ *
+ * @example
+ * ```typescript
+ * // With auto-naming: "photo.jpg" -> "photo-nobg.jpg"
+ * const node = yield* createRemoveBackgroundNode("remove-bg-1", {
+ *   naming: { mode: "auto" }
+ * });
+ * ```
+ */
 export function createRemoveBackgroundNode(
   id: string,
-  { credentialId, keepOutput }: { credentialId?: string; keepOutput?: boolean } = {},
+  { credentialId, keepOutput, naming }: { credentialId?: string; keepOutput?: boolean; naming?: FileNamingConfig } = {},
 ) {
   return Effect.gen(function* () {
     const imageAiService = yield* ImageAiPlugin;
@@ -80,6 +100,25 @@ export function createRemoveBackgroundNode(
           const { type, fileName, metadata, metadataJson } =
             resolveUploadMetadata(file.metadata);
 
+          // Apply file naming if configured
+          let outputFileName = fileName;
+          if (naming) {
+            const namingConfig: FileNamingConfig = {
+              ...naming,
+              autoSuffix: naming.autoSuffix ?? (() => "nobg"),
+            };
+            const namingContext = buildNamingContext(
+              file,
+              {
+                flowId,
+                jobId,
+                nodeId: id,
+                nodeType: "remove-background",
+              },
+            );
+            outputFileName = applyFileNaming(file, namingContext, namingConfig);
+          }
+
           yield* Effect.logInfo(`Uploading processed file to storage`);
 
           // Upload the transformed bytes back to the upload server with error handling
@@ -89,7 +128,7 @@ export function createRemoveBackgroundNode(
                 storageId,
                 size: 0,
                 type,
-                fileName,
+                fileName: outputFileName,
                 lastModified: 0,
                 metadata: metadataJson,
                 flow,
@@ -118,11 +157,24 @@ export function createRemoveBackgroundNode(
             `Successfully removed background for file ${file.id}`,
           );
 
+          // Update metadata with new filename if naming was applied
+          const updatedMetadata = metadata
+            ? {
+                ...metadata,
+                ...(outputFileName !== fileName && {
+                  fileName: outputFileName,
+                  originalName: outputFileName,
+                  name: outputFileName,
+                  extension: outputFileName.split(".").pop() || metadata.extension,
+                }),
+              }
+            : result.metadata;
+
           return completeNodeExecution(
-            metadata
+            updatedMetadata
               ? {
                   ...result,
-                  metadata,
+                  metadata: updatedMetadata,
                 }
               : result,
           );

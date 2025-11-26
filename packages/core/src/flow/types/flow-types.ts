@@ -551,6 +551,154 @@ export type FlowConfig<
   };
 };
 
+// ============================================================================
+// File Naming Types
+// ============================================================================
+
+/**
+ * Context provided to file naming functions and templates.
+ *
+ * Contains all relevant information about the current file, node, and flow
+ * execution that can be used to generate dynamic file names.
+ *
+ * @property baseName - Filename without extension (e.g., "photo" from "photo.jpg")
+ * @property extension - File extension without dot (e.g., "jpg")
+ * @property fileName - Full original filename (e.g., "photo.jpg")
+ * @property nodeType - Type of processing node (e.g., "resize", "optimize")
+ * @property nodeId - Specific node instance ID
+ * @property flowId - Flow identifier
+ * @property jobId - Execution job ID
+ * @property timestamp - ISO 8601 timestamp of processing
+ * @property width - Output width (image/video nodes only)
+ * @property height - Output height (image/video nodes only)
+ * @property format - Output format (e.g., "webp", "mp4")
+ * @property quality - Quality setting (e.g., 80)
+ *
+ * @example
+ * ```typescript
+ * // Available in templates as {{variable}}
+ * const pattern = "{{baseName}}-{{width}}x{{height}}.{{extension}}";
+ * // Result: "photo-800x600.jpg"
+ * ```
+ */
+export type NamingContext = {
+  /** Filename without extension */
+  baseName: string;
+  /** File extension without dot */
+  extension: string;
+  /** Full original filename */
+  fileName: string;
+  /** Type of processing node */
+  nodeType: string;
+  /** Specific node instance ID */
+  nodeId: string;
+  /** Flow identifier */
+  flowId: string;
+  /** Execution job ID */
+  jobId: string;
+  /** ISO 8601 timestamp of processing */
+  timestamp: string;
+  /** Output width (image/video nodes) */
+  width?: number;
+  /** Output height (image/video nodes) */
+  height?: number;
+  /** Output format */
+  format?: string;
+  /** Quality setting */
+  quality?: number;
+  /** Page number (document nodes) */
+  pageNumber?: number;
+  /** Additional custom variables */
+  [key: string]: string | number | undefined;
+};
+
+/**
+ * Function type for custom file naming logic.
+ *
+ * @param file - The UploadFile being processed
+ * @param context - Naming context with all available variables
+ * @returns The new filename (including extension)
+ *
+ * @example
+ * ```typescript
+ * const customRename: FileNamingFunction = (file, ctx) =>
+ *   `${ctx.flowId}-${ctx.baseName}-${ctx.timestamp}.${ctx.extension}`;
+ * ```
+ */
+export type FileNamingFunction = (
+  file: UploadFile,
+  context: NamingContext,
+) => string;
+
+/**
+ * Function type for generating auto-naming suffixes.
+ *
+ * Each node type can define its own auto suffix generator that creates
+ * a descriptive suffix based on the processing parameters.
+ *
+ * @param context - Naming context with all available variables
+ * @returns The suffix to append (without leading dash)
+ *
+ * @example
+ * ```typescript
+ * // Resize node auto suffix
+ * const resizeAutoSuffix: AutoNamingSuffixGenerator = (ctx) =>
+ *   `${ctx.width}x${ctx.height}`;
+ * // Result: "photo-800x600.jpg"
+ *
+ * // Optimize node auto suffix
+ * const optimizeAutoSuffix: AutoNamingSuffixGenerator = (ctx) =>
+ *   ctx.format ?? 'optimized';
+ * // Result: "photo-webp.webp"
+ * ```
+ */
+export type AutoNamingSuffixGenerator = (context: NamingContext) => string;
+
+/**
+ * Configuration for file naming behavior on a node.
+ *
+ * Supports three modes:
+ * - `undefined` or no config: Preserve original filename (backward compatible)
+ * - `mode: 'auto'`: Generate smart suffix based on node type
+ * - `mode: 'custom'`: Use template pattern or rename function
+ *
+ * @property mode - Naming mode: 'auto' for smart suffixes, 'custom' for templates/functions
+ * @property pattern - Mustache-style template string (for custom mode)
+ * @property rename - Custom function for full control (for custom mode, SDK only)
+ * @property autoSuffix - Generator function for auto mode suffix
+ *
+ * @example
+ * ```typescript
+ * // Auto mode with smart suffix
+ * const autoNaming: FileNamingConfig = {
+ *   mode: 'auto',
+ *   autoSuffix: (ctx) => `${ctx.width}x${ctx.height}`
+ * };
+ *
+ * // Custom mode with template
+ * const templateNaming: FileNamingConfig = {
+ *   mode: 'custom',
+ *   pattern: '{{baseName}}-{{nodeType}}.{{extension}}'
+ * };
+ *
+ * // Custom mode with function
+ * const functionNaming: FileNamingConfig = {
+ *   mode: 'custom',
+ *   rename: (file, ctx) => `processed-${ctx.fileName}`
+ * };
+ * ```
+ */
+export type FileNamingConfig = {
+  /** Naming mode: 'auto' for smart suffixes, 'custom' for templates/functions */
+  mode: "auto" | "custom";
+  /** Mustache-style template string (for custom mode) */
+  pattern?: string;
+  /** Custom function for full control (for custom mode, SDK only) */
+  rename?: FileNamingFunction;
+  /** Generator function for auto mode suffix */
+  autoSuffix?: AutoNamingSuffixGenerator;
+};
+
 // Re-export existing types for compatibility
 export { NodeType };
 export type { FlowEvent, FlowEventFlowEnd, FlowEventFlowStart };

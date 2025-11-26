@@ -4,7 +4,11 @@ import type { UploadFile } from "../../types";
 import { uploadFileSchema } from "../../types";
 import { UploadServer } from "../../upload";
 import { createFlowNode, NodeType } from "../node";
-import { completeNodeExecution } from "../types";
+import { completeNodeExecution, type FileNamingConfig } from "../types";
+import {
+  applyFileNaming,
+  buildNamingContext,
+} from "../utils/file-naming";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
 /**
@@ -25,6 +29,24 @@ export interface TransformNodeConfig {
    * Defaults to false.
    */
   keepOutput?: boolean;
+  /**
+   * Optional file naming configuration.
+   * - undefined: Preserve original filename (backward compatible)
+   * - mode: 'auto': Generate smart suffix based on node type
+   * - mode: 'custom': Use template pattern or rename function
+   */
+  naming?: FileNamingConfig;
+  /**
+   * Node type identifier used for auto-naming context.
+   * Defaults to "transform" if not specified.
+   */
+  nodeType?: string;
+  /**
+   * Additional variables to include in the naming context.
+   * These are merged with the base context (flowId, jobId, etc.)
+   * and can be used in templates.
+   */
+  namingVars?: Record<string, string | number | undefined>;
   /** Function that transforms file bytes */
   transform: (
     bytes: Uint8Array,
@@ -92,6 +114,9 @@ export function createTransformNode({
   description,
   outputTypeId,
   keepOutput,
+  naming,
+  nodeType: nodeTypeId = "transform",
+  namingVars,
   transform,
 }: TransformNodeConfig) {
   return Effect.gen(function* () {
@@ -130,10 +155,26 @@ export function createTransformNode({
               ? undefined
               : transformResult.type;
 
-          const outputFileName =
+          // Get fileName from transform result (if provided) or apply naming config
+          let outputFileName =
             transformResult instanceof Uint8Array
               ? undefined
               : transformResult.fileName;
+
+          // Apply file naming if configured and no explicit fileName from transform
+          if (!outputFileName && naming) {
+            const namingContext = buildNamingContext(
+              file,
+              {
+                flowId,
+                jobId,
+                nodeId: id,
+                nodeType: nodeTypeId,
+              },
+              namingVars,
+            );
+            outputFileName = applyFileNaming(file, namingContext, naming);
+          }
 
           // Create a stream from the output bytes
           const stream = new ReadableStream({

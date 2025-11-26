@@ -73,6 +73,9 @@
     "test:watch": "vitest --watch",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "micromustache": "^8.0.3"
+  },
   "peerDependencies": {
     "effect": "^3.0.0",
     "zod": "^4.0.0"

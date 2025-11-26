@@ -1,5 +1,6 @@
 import {
   createTransformNode,
+  type FileNamingConfig,
   ImagePlugin,
   STORAGE_OUTPUT_TYPE_ID,
   type TransformImageParams,
@@ -43,31 +44,38 @@ function applyTransformationChain(
  *
  * @param id - Unique identifier for this node
  * @param params - Parameters including the transformations array
- * @returns Effect that resolves to a transform node
+ * @param options - Optional configuration
+ * @param options.keepOutput - Whether to keep output in flow results
+ * @param options.naming - File naming configuration (auto suffix: `transformed`)
  *
  * @example
  * ```typescript
- * const node = createTransformImageNode("transform-1", {
+ * // With auto-naming: "photo.jpg" -> "photo-transformed.jpg"
+ * const node = yield* createTransformImageNode("transform-1", {
  *   transformations: [
  *     { type: 'resize', width: 800, height: 600, fit: 'cover' },
- *     { type: 'brightness', value: 20 },
- *     {
- *       type: 'watermark',
- *       imagePath: 'https://cdn.example.com/watermark.png',
- *       position: 'bottom-right',
- *       opacity: 0.5
- *     }
+ *     { type: 'brightness', value: 20 }
  *   ]
+ * }, {
+ *   naming: { mode: "auto" }
  * });
  * ```
  */
 export function createTransformImageNode(
   id: string,
   { transformations }: TransformImageParams,
-  options?: { keepOutput?: boolean },
+  options?: { keepOutput?: boolean; naming?: FileNamingConfig },
 ) {
   return Effect.gen(function* () {
     const imageService = yield* ImagePlugin;
+
+    // Build naming config with auto suffix for transform-image
+    const namingConfig: FileNamingConfig | undefined = options?.naming
+      ? {
+          ...options.naming,
+          autoSuffix: options.naming.autoSuffix ?? (() => "transformed"),
+        }
+      : undefined;
 
     return yield* createTransformNode({
       id,
@@ -75,6 +83,8 @@ export function createTransformImageNode(
       description: `Apply ${transformations.length} transformation${transformations.length === 1 ? "" : "s"} to the image`,
       outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
+      naming: namingConfig,
+      nodeType: "transform-image",
       transform: (inputBytes) =>
         applyTransformationChain(imageService, inputBytes, transformations),
     });

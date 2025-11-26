@@ -1,8 +1,12 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import {
+  applyFileNaming,
+  buildNamingContext,
   completeNodeExecution,
   createFlowNode,
   DocumentPlugin,
+  type FileNamingConfig,
+  getBaseName,
   NodeType,
   resolveUploadMetadata,
   STORAGE_OUTPUT_TYPE_ID,
@@ -16,6 +20,11 @@ export type SplitPdfNodeParams = {
   startPage?: number;
   endPage?: number;
   keepOutput?: boolean;
+  /**
+   * Optional file naming configuration.
+   * Auto suffix: `page-${pageNumber}` for individual mode, `pages-${start}-${end}` for range mode
+   */
+  naming?: FileNamingConfig;
 };
 
 export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
@@ -89,13 +98,29 @@ export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
               },
             });
 
+            // Generate output filename
+            let outputFileName = `${getBaseName(metadata?.fileName as string || "document")}-page-1.pdf`;
+            if (params.naming) {
+              const namingConfig: FileNamingConfig = {
+                ...params.naming,
+                autoSuffix: params.naming.autoSuffix ?? ((ctx) => `page-${ctx.pageNumber ?? 1}`),
+              };
+              const namingContext = buildNamingContext(
+                file,
+                { flowId, jobId, nodeId: id, nodeType: "split-pdf" },
+                { pageNumber: 1 },
+              );
+              const namedFile = applyFileNaming(file, namingContext, namingConfig);
+              outputFileName = `${getBaseName(namedFile)}.pdf`;
+            }
+
             // Upload the split PDF back to the upload server
             const uploadResult = yield* uploadServer.upload(
               {
                 storageId: file.storage.id,
                 size: pdfBytes.byteLength,
                 type: "application/pdf",
-                fileName: `${metadata?.fileName || "document"}-page-1.pdf`,
+                fileName: outputFileName,
                 lastModified: 0,
                 metadata: JSON.stringify({
                   ...metadata,
@@ -136,13 +161,29 @@ export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
             },
           });
 
+          // Generate output filename for range mode
+          let rangeOutputFileName = `${getBaseName(metadata?.fileName as string || "document")}-pages-${params.startPage}-${params.endPage}.pdf`;
+          if (params.naming) {
+            const namingConfig: FileNamingConfig = {
+              ...params.naming,
+              autoSuffix: params.naming.autoSuffix ?? ((ctx) => `pages-${params.startPage}-${params.endPage}`),
+            };
+            const namingContext = buildNamingContext(
+              file,
+              { flowId, jobId, nodeId: id, nodeType: "split-pdf" },
+              { startPage: params.startPage, endPage: params.endPage },
+            );
+            const namedFile = applyFileNaming(file, namingContext, namingConfig);
+            rangeOutputFileName = `${getBaseName(namedFile)}.pdf`;
+          }
+
           // Upload the split PDF back to the upload server
           const uploadResult = yield* uploadServer.upload(
             {
               storageId: file.storage.id,
               size: pdfBytes.byteLength,
               type: "application/pdf",
-              fileName: `${metadata?.fileName || "document"}-pages-${params.startPage}-${params.endPage}.pdf`,
+              fileName: rangeOutputFileName,
               lastModified: 0,
               metadata: JSON.stringify({
                 ...metadata,
