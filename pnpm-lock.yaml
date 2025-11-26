@@ -15,9 +15,6 @@ catalogs:
     effect:
       specifier: 3.19.6
       version: 3.19.6
-    hono:
-      specifier: 4.10.6
-      version: 4.10.6
     react:
       specifier: 19.2.0
       version: 19.2.0
@@ -434,10 +431,10 @@ importers:
         version: 3.19.6
       hono:
         specifier: 'catalog:'
-        version: 4.10.6
+        version: 4.10.7
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.6)(pino@10.1.0)
+        version: 0.10.3(hono@4.10.7)(pino@10.1.0)
       pino:
         specifier: 10.1.0
         version: 10.1.0
@@ -462,10 +459,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 1.19.5
-        version: 1.19.5(hono@4.10.6)
+        version: 1.19.5(hono@4.10.7)
       '@hono/node-ws':
         specifier: 1.2.0
-        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.6))(hono@4.10.6)
+        version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.7))(hono@4.10.7)
       '@redis/client':
         specifier: 5.8.3
         version: 5.8.3
@@ -519,10 +516,10 @@ importers:
         version: 3.19.6
       hono:
         specifier: 'catalog:'
-        version: 4.10.6
+        version: 4.10.7
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.10.6)(pino@10.0.0)
+        version: 0.10.3(hono@4.10.7)(pino@10.0.0)
       pino:
         specifier: 10.0.0
         version: 10.0.0
@@ -2039,7 +2036,7 @@ importers:
         version: 3.19.6
       hono:
         specifier: ^4.0.0
-        version: 4.10.6
+        version: 4.10.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.11.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -8438,8 +8435,8 @@ packages:
     resolution: {integrity: sha512-rpGNOfacO4WEPClfkEt1yfl8cbu10uB1lNpiI33AKoiAHwOS8lV748JiLx4b5ozO/u4qLjIvfpFsPXdY5Qjkmg==}
     engines: {node: '>=16.9.0'}
 
-  hono@4.10.6:
-    resolution: {integrity: sha512-BIdolzGpDO9MQ4nu3AUuDwHZZ+KViNm+EZ75Ae55eMXMqLVhDFqEMXxtUe9Qh8hjL+pIna/frs2j6Y2yD5Ua/g==}
+  hono@4.10.7:
+    resolution: {integrity: sha512-icXIITfw/07Q88nLSkB9aiUrd8rYzSweK681Kjo/TSggaGbOX4RRyxxm71v+3PC8C/j+4rlxGeoTRxQDkaJkUw==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -14112,14 +14109,14 @@ snapshots:
       - encoding
       - supports-color
 
-  '@hono/node-server@1.19.5(hono@4.10.6)':
+  '@hono/node-server@1.19.5(hono@4.10.7)':
     dependencies:
-      hono: 4.10.6
+      hono: 4.10.7
 
-  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.6))(hono@4.10.6)':
+  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.10.7))(hono@4.10.7)':
     dependencies:
-      '@hono/node-server': 1.19.5(hono@4.10.6)
-      hono: 4.10.6
+      '@hono/node-server': 1.19.5(hono@4.10.7)
+      hono: 4.10.7
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -19577,21 +19574,21 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono-pino@0.10.3(hono@4.10.6)(pino@10.0.0):
+  hono-pino@0.10.3(hono@4.10.7)(pino@10.0.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.6
+      hono: 4.10.7
       pino: 10.0.0
 
-  hono-pino@0.10.3(hono@4.10.6)(pino@10.1.0):
+  hono-pino@0.10.3(hono@4.10.7)(pino@10.1.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.10.6
+      hono: 4.10.7
       pino: 10.1.0
 
   hono@4.10.1: {}
 
-  hono@4.10.6: {}
+  hono@4.10.7: {}
 
   hookable@5.5.3: {}
 
