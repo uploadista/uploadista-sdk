@@ -45,7 +45,7 @@
     "effect": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.13",
+    "vitest": "4.0.14",
     "zod": "catalog:"
   }
 }
