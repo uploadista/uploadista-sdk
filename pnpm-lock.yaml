@@ -13,8 +13,8 @@ catalogs:
       specifier: 24.10.1
       version: 24.10.1
     effect:
-      specifier: 3.19.6
-      version: 3.19.6
+      specifier: 3.19.7
+      version: 3.19.7
     hono:
       specifier: 4.10.7
       version: 4.10.7
@@ -345,7 +345,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       fastify:
         specifier: 5.6.1
         version: 5.6.1
@@ -385,7 +385,7 @@ importers:
         version: link:../../packages/flow/videos/nodes
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       zod:
         specifier: 'catalog:'
         version: 4.1.13
@@ -431,7 +431,7 @@ importers:
         version: link:../../packages/servers/server
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       hono:
         specifier: 'catalog:'
         version: 4.10.7
@@ -516,7 +516,7 @@ importers:
         version: 17.2.3
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       hono:
         specifier: 'catalog:'
         version: 4.10.7
@@ -948,7 +948,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -957,7 +957,7 @@ importers:
         version: link:../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsd:
         specifier: 0.33.0
         version: 0.33.0
@@ -991,13 +991,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1016,7 +1016,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1028,7 +1028,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1050,7 +1050,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../kv-stores/memory
@@ -1059,7 +1059,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1081,7 +1081,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../kv-stores/memory
@@ -1090,7 +1090,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1112,7 +1112,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/kv-store-memory':
         specifier: workspace:*
         version: link:../../kv-stores/memory
@@ -1121,7 +1121,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1137,7 +1137,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1146,7 +1146,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
@@ -1165,13 +1165,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1187,7 +1187,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@redis/client':
         specifier: 5.10.0
         version: 5.10.0
@@ -1199,7 +1199,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1218,13 +1218,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1240,7 +1240,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/event-broadcaster-memory':
         specifier: workspace:*
         version: link:../../event-broadcasters/memory
@@ -1249,7 +1249,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1265,7 +1265,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1274,7 +1274,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1296,7 +1296,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1305,7 +1305,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1333,7 +1333,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1355,7 +1355,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1371,7 +1371,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1380,7 +1380,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
@@ -1399,7 +1399,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1408,7 +1408,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1433,7 +1433,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1445,7 +1445,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1467,7 +1467,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1476,7 +1476,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1501,7 +1501,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1513,7 +1513,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1535,7 +1535,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1544,7 +1544,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1563,7 +1563,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1572,7 +1572,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1591,7 +1591,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1600,7 +1600,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1622,7 +1622,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1631,7 +1631,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1653,7 +1653,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1662,7 +1662,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1681,7 +1681,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1690,7 +1690,7 @@ importers:
         version: link:../../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1712,13 +1712,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1737,13 +1737,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1759,7 +1759,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1768,7 +1768,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1784,13 +1784,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       ioredis:
         specifier: 5.8.2
         version: 5.8.2
@@ -1809,13 +1809,13 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1831,7 +1831,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@redis/client':
         specifier: 5.10.0
         version: 5.10.0
@@ -1840,7 +1840,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1852,7 +1852,7 @@ importers:
     dependencies:
       '@effect/opentelemetry':
         specifier: 0.59.1
-        version: 0.59.1(@effect/platform@0.93.3(effect@3.19.6))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.38.0)(effect@3.19.6)
+        version: 0.59.1(@effect/platform@0.93.3(effect@3.19.7))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.38.0)(effect@3.19.7)
       '@opentelemetry/sdk-logs':
         specifier: 0.208.0
         version: 0.208.0(@opentelemetry/api@1.9.0)
@@ -1874,7 +1874,7 @@ importers:
         version: 4.20251126.0
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1883,7 +1883,7 @@ importers:
         version: link:../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1920,7 +1920,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.5
@@ -1935,7 +1935,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -1975,7 +1975,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -1984,7 +1984,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsdown:
         specifier: 'catalog:'
         version: 0.16.7(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.1.5(typescript@5.9.3))
@@ -2024,7 +2024,7 @@ importers:
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.1
@@ -2036,7 +2036,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       hono:
         specifier: ^4.0.0
         version: 4.10.7
@@ -2079,7 +2079,7 @@ importers:
         version: 4.20251126.0
       '@effect/vitest':
         specifier: 'catalog:'
-        version: 0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
+        version: 0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.5
@@ -2091,7 +2091,7 @@ importers:
         version: link:../../typescript-config
       effect:
         specifier: 'catalog:'
-        version: 3.19.6
+        version: 3.19.7
       tsd:
         specifier: 0.33.0
         version: 0.33.0
@@ -7101,8 +7101,8 @@ packages:
   effect@3.18.4:
     resolution: {integrity: sha512-b1LXQJLe9D11wfnOKAk3PKxuqYshQ0Heez+y5pnkd3jLj1yx9QhM72zZ9uUrOQyNvrs2GZZd/3maL0ZV18YuDA==}
 
-  effect@3.19.6:
-    resolution: {integrity: sha512-Eh1E/CI+xCAcMSDC5DtyE29yWJINC0zwBbwHappQPorjKyS69rCA8qzpsHpfhKnPDYgxdg8zkknii8mZ+6YMQA==}
+  effect@3.19.7:
+    resolution: {integrity: sha512-mIUJjaKrnvoZufOpuzjL9SbYuKTLqJQMCcQXK0p8XrsJqf4sulCQzMRpdpXyAlc9GwDubxmnuw9ow7bZWZIhLw==}
 
   ejs@3.1.10:
     resolution: {integrity: sha512-UeJmFfOrAQS8OJWPZ4qtgHyWExa088/MtK5UEyoJGFH67cDEXkZSviOiKRCZ4Xij0zxI3JECgYs3oKx+AizQBA==}
@@ -12758,11 +12758,11 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@effect/opentelemetry@0.59.1(@effect/platform@0.93.3(effect@3.19.6))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.38.0)(effect@3.19.6)':
+  '@effect/opentelemetry@0.59.1(@effect/platform@0.93.3(effect@3.19.7))(@opentelemetry/api@1.9.0)(@opentelemetry/resources@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-logs@0.208.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-metrics@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-node@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-web@2.2.0(@opentelemetry/api@1.9.0))(@opentelemetry/semantic-conventions@1.38.0)(effect@3.19.7)':
     dependencies:
-      '@effect/platform': 0.93.3(effect@3.19.6)
+      '@effect/platform': 0.93.3(effect@3.19.7)
       '@opentelemetry/semantic-conventions': 1.38.0
-      effect: 3.19.6
+      effect: 3.19.7
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/resources': 2.2.0(@opentelemetry/api@1.9.0)
@@ -12772,16 +12772,16 @@ snapshots:
       '@opentelemetry/sdk-trace-node': 2.2.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-web': 2.2.0(@opentelemetry/api@1.9.0)
 
-  '@effect/platform@0.93.3(effect@3.19.6)':
+  '@effect/platform@0.93.3(effect@3.19.7)':
     dependencies:
-      effect: 3.19.6
+      effect: 3.19.7
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
 
-  '@effect/vitest@0.27.0(effect@3.19.6)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))':
+  '@effect/vitest@0.27.0(effect@3.19.7)(vitest@4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))':
     dependencies:
-      effect: 3.19.6
+      effect: 3.19.7
       vitest: 4.0.14(@opentelemetry/api@1.9.0)(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
 
   '@egjs/hammerjs@2.0.17':
@@ -17475,7 +17475,7 @@ snapshots:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
 
-  effect@3.19.6:
+  effect@3.19.7:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
