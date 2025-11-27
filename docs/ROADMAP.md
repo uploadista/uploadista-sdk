@@ -34,14 +34,14 @@
 ## 1. Production Hardening (CRITICAL)
 
 ### Circuit Breaker Pattern
-**Status**: NOT IMPLEMENTED - Critical gap for production resilience
-- Implement failure rate tracking for each node type
-- Add configurable failure thresholds and recovery strategies
-- Provide fallback mechanisms and graceful degradation
-- Include monitoring and alerting for circuit breaker states
+**Status**: IMPLEMENTED
+- Failure rate tracking for each node type with configurable thresholds
+- State machine: closed -> open -> half-open -> closed
+- Distributed state via KV store for cluster deployments
 - Integration with existing OpenTelemetry metrics
+- Configurable failure thresholds and recovery strategies
 
-**Implementation approach:**
+**Configuration:**
 ```typescript
 interface CircuitBreakerConfig {
   failureThreshold: number; // e.g., 5 failures
@@ -53,20 +53,21 @@ type CircuitState = "closed" | "open" | "half-open";
 ```
 
 ### Dead Letter Queue
-**Status**: NOT IMPLEMENTED
-- Handle failed flow jobs with configurable retry policies
+**Status**: IMPLEMENTED
+- Failed flow jobs captured with full context for debugging
 - Exponential backoff with jitter for retries
-- Dead letter storage for permanently failed jobs
-- Admin interface for job inspection and replay
+- Admin API endpoints: list, get, retry, retry-all, delete, resolve, cleanup, stats
+- Configurable retry limits and status tracking (pending, exhausted, resolved)
 - Integration with existing job state management
 
 ### Health Check Endpoints
-**Status**: NOT IMPLEMENTED
-- `/health` endpoint for basic liveness
-- `/ready` endpoint for readiness (dependencies available)
-- `/metrics` endpoint for Prometheus scraping
-- Component-specific health (storage, KV, event broadcaster)
-- SLA tracking and alerting integration
+**Status**: IMPLEMENTED
+- `/health` endpoint for basic liveness (no dependency checks)
+- `/ready` endpoint for readiness (checks storage, KV, event broadcaster)
+- `/health/components` endpoint for detailed component status
+- Circuit breaker and DLQ integration in health responses
+- Support for JSON and plain text response formats
+- Kubernetes probe aliases: `/healthz`, `/readyz`
 
 ## 2. Performance & Scalability
 
@@ -78,8 +79,15 @@ type CircuitState = "closed" | "open" | "half-open";
 - Reference implementation: auth cache with LRU + TTL
 
 ### Upload Compression
-**Status**: NOT IMPLEMENTED
-- Add optional compression for uploads (gzip/brotli/lz4)
+**Status**: DEPRIORITIZED
+**Reason**: Most uploaded files (images, videos, documents) are already compressed formats (JPEG, PNG, MP4, PDF, DOCX). Additional compression would add CPU overhead on both client and server with minimal bandwidth savings (~0-5%). HTTP response compression is handled automatically by web servers; request compression requires explicit implementation.
+
+**When it would be useful**: Log ingestion, CSV/JSON data pipelines, RAW photography, uncompressed video workflows.
+
+**Alternative**: Leverage storage backend compression (S3, GCS support server-side compression) rather than implementing at application level.
+
+If revisited:
+- Smart detection: Only compress uncompressed MIME types
 - Content-encoding negotiation with storage backends
 - Transparent decompression on read
 - Configurable compression levels per flow
@@ -227,20 +235,19 @@ type CircuitState = "closed" | "open" | "half-open";
 ## Implementation Priority (Updated November 2024)
 
 ### Phase 1: Production Hardening (Q4 2024)
-**Status**: CRITICAL - Required for production resilience
+**Status**: COMPLETE - All critical features implemented
 
 | Task | Priority | Effort | Status |
 |------|----------|--------|--------|
-| Circuit Breaker Pattern | CRITICAL | Medium | Not Started |
-| Dead Letter Queue | CRITICAL | Medium | Not Started |
-| Health Check Endpoints | CRITICAL | Low | Not Started |
+| Circuit Breaker Pattern | CRITICAL | Medium | **COMPLETE** |
+| Dead Letter Queue | CRITICAL | Medium | **COMPLETE** |
+| Health Check Endpoints | CRITICAL | Low | **COMPLETE** |
 | Flow Definition Caching | High | Low | Not Started |
 
 ### Phase 2: Performance Optimization (Q1 2025)
 
 | Task | Priority | Effort | Status |
 |------|----------|--------|--------|
-| Upload Compression | High | Medium | Not Started |
 | KV Store Memory Management | High | Low | Not Started |
 | Streaming Media Processing | Medium | High | Not Started |
 | Enhanced Path Sanitization | Medium | Low | Not Started |
@@ -272,42 +279,175 @@ type CircuitState = "closed" | "open" | "half-open";
 | Database Node | Low | High | Not Started |
 | End-to-End Encryption | Low | High | Not Started |
 | Smart Routing (ML) | Low | High | Not Started |
+| Upload Compression | Low | Medium | Deprioritized |
 
 ## Key Implementation Notes
 
-### Circuit Breaker Pattern (TOP PRIORITY)
-**Why Critical**: Without circuit breakers, a failing node can cascade failures across the entire system, leading to resource exhaustion and system-wide outages.
+### Circuit Breaker Pattern - IMPLEMENTED ✓
+**Status**: Complete (November 2024)
 
-**Implementation approach:**
-1. Create `CircuitBreaker` class with state machine (closed -> open -> half-open -> closed)
-2. Track failures per node type with sliding window
-3. Integrate with existing retry logic in flow.ts
-4. Emit OpenTelemetry events for circuit state changes
-5. Add circuit breaker config to flow and node definitions
+**Implementation Files:**
+- `packages/core/src/flow/circuit-breaker.ts` - Core types and configuration
+- `packages/core/src/flow/circuit-breaker-store.ts` - KV and Memory store implementations
+- `packages/core/src/flow/distributed-circuit-breaker.ts` - Distributed breaker with registry
+- `packages/core/docs/CIRCUIT_BREAKER.md` - Comprehensive documentation
 
-**Expected benefit**: Prevents cascade failures, enables graceful degradation
+**Key Components:**
+- `DistributedCircuitBreaker` class with state machine (closed → open → half-open → closed)
+- `DistributedCircuitBreakerRegistry` for managing multiple breakers
+- `CircuitBreakerStoreService` with KV store backing for cluster deployments
+- Memory store option for single-instance deployments
 
-### Dead Letter Queue (CRITICAL)
-**Why Critical**: Failed jobs currently disappear. DLQ enables debugging, manual intervention, and automatic retry.
+**Configuration Options:**
+```typescript
+interface CircuitBreakerConfig {
+  enabled?: boolean;           // default: false
+  failureThreshold?: number;   // default: 5
+  resetTimeout?: number;       // default: 30000ms
+  halfOpenRequests?: number;   // default: 3
+  windowDuration?: number;     // default: 60000ms
+  fallback?: CircuitBreakerFallback;
+}
+```
 
-**Implementation approach:**
-1. Create `DeadLetterQueue` interface with KV store backing
-2. Move failed jobs to DLQ with failure context
-3. Implement configurable retry policies (immediate, exponential, scheduled)
-4. Add admin API endpoints for DLQ inspection and replay
+**Fallback Strategies:**
+1. `{ type: "fail" }` - Fail immediately with CIRCUIT_BREAKER_OPEN error
+2. `{ type: "skip", passThrough: true }` - Skip node, pass input through
+3. `{ type: "default", value: unknown }` - Return configured default value
 
-### Health Check Endpoints (CRITICAL)
-**Why Critical**: No visibility into system health makes production operations difficult.
+**Built-in Node Defaults:**
+- AI nodes (Describe Image, Remove Background, OCR, etc.): 5 failures, 60s timeout, skip fallback
+- Virus Scan: 5 failures, 60s timeout, **fail fallback** (security critical)
 
-**Implementation approach:**
-1. Add `/health` to server adapters (Hono, Express, Fastify)
-2. Check dependencies: storage backends, KV stores, event broadcasters
-3. Return structured health response with component status
-4. Integrate with existing OpenTelemetry metrics
+**Benefits realized**: Prevents cascade failures, enables graceful degradation, distributed state for clusters
+
+### Dead Letter Queue - IMPLEMENTED ✓
+**Status**: Complete (November 2024)
+
+**Implementation Files:**
+- `packages/core/src/flow/dead-letter-queue.ts` - Core service (573 lines)
+- `packages/servers/server/src/core/http-handlers/dlq-http-handlers.ts` - Admin API handlers
+- `packages/core/src/flow/types/dead-letter-item.ts` - Type definitions
+- `packages/core/docs/DEAD-LETTER-QUEUE.md` - Comprehensive documentation
+- `packages/core/tests/flow/dead-letter-queue.test.ts` - Test coverage
+
+**Key Components:**
+- `DeadLetterQueueService` with full lifecycle management
+- Failed jobs captured with full error context, flow data, and timestamps
+- Retry scheduling with exponential backoff and jitter
+
+**Admin API Endpoints (8 total):**
+- `GET /api/dlq` - List items with filtering (status, flow, limit, offset)
+- `GET /api/dlq/:id` - Get item details
+- `POST /api/dlq/:id/retry` - Retry single item
+- `POST /api/dlq/retry-all` - Batch retry with filters
+- `DELETE /api/dlq/:id` - Delete item
+- `POST /api/dlq/:id/resolve` - Mark as resolved (manual resolution)
+- `POST /api/dlq/cleanup` - Remove old/expired items
+- `GET /api/dlq/stats` - Queue statistics (counts by status, by flow)
+
+**Retry Policies:**
+```typescript
+// Immediate retry
+{ type: "immediate" }
+
+// Fixed delay
+{ type: "fixed", delayMs: 5000 }
+
+// Exponential backoff with jitter
+{
+  type: "exponential",
+  initialDelayMs: 1000,
+  maxDelayMs: 300000,
+  multiplier: 2,
+  jitter: true
+}
+```
+
+**Error Filtering:**
+- `retryableErrors?: string[]` - Only retry these error codes
+- `nonRetryableErrors?: string[]` - Never retry these (takes precedence)
+- Examples: VALIDATION_ERROR, AUTH_ERROR, PERMISSION_DENIED are non-retryable
+
+**Item Status Lifecycle:**
+- `pending` → Awaiting retry or manual action
+- `retrying` → Currently being retried
+- `exhausted` → Max retries reached
+- `resolved` → Manually resolved
+
+### Health Check Endpoints - IMPLEMENTED ✓
+**Status**: Complete (November 2024)
+
+**Implementation Files:**
+- `packages/servers/server/src/core/health-check-service.ts` - Core service (368 lines)
+- `packages/servers/server/src/core/http-handlers/health-http-handlers.ts` - HTTP handlers
+- `packages/core/src/types/health-check.ts` - Type definitions
+- `packages/servers/server/docs/HEALTH_CHECKS.md` - Comprehensive documentation
+- `packages/servers/server/tests/core/health-check-service.test.ts` - Test coverage
+
+**Endpoints:**
+| Endpoint | Aliases | Purpose | HTTP Status |
+|----------|---------|---------|-------------|
+| `/health` | `/healthz` | Liveness probe (is server alive?) | Always 200 |
+| `/ready` | `/readyz` | Readiness probe (can accept traffic?) | 200 or 503 |
+| `/health/components` | - | Detailed component status | Always 200 |
+
+**Component Health Checks:**
+- Storage health (connectivity check)
+- KV store health (read/write test)
+- Event broadcaster health (publish test)
+- Circuit breaker summary (open circuits count)
+- Dead letter queue summary (pending/exhausted items)
+
+**Health Status Aggregation:**
+- `"healthy"` - All components operational
+- `"degraded"` - Optional component issues or open circuits
+- `"unhealthy"` - Critical component failure
+
+**Configuration:**
+```typescript
+interface HealthCheckConfig {
+  timeout?: number;              // default: 5000ms
+  checkStorage?: boolean;        // default: true
+  checkKvStore?: boolean;        // default: true
+  checkEventBroadcaster?: boolean; // default: true
+  version?: string;              // e.g., "1.2.3"
+}
+```
+
+**Response Formats:**
+- `application/json` - Full response with component details
+- `text/plain` - Simple "OK" or "Service Unavailable"
+
+**Kubernetes Integration Example:**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /uploadista/health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /uploadista/ready
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+```
 
 ## Recent Progress Summary (November 2024)
 
 The uploadista engine has achieved significant milestones:
+
+**Production Hardening COMPLETE ✓ (November 2024):**
+All three critical production hardening features are fully implemented and tested:
+
+| Feature | Key Capabilities | Status |
+|---------|------------------|--------|
+| **Circuit Breakers** | Distributed state, 3 fallback strategies, configurable thresholds | ✓ Complete |
+| **Dead Letter Queue** | 8 admin endpoints, 3 retry policies, error filtering | ✓ Complete |
+| **Health Checks** | Kubernetes probes, component aggregation, JSON/text | ✓ Complete |
 
 **Completed Since October 2024:**
 - Parallel flow execution FULLY INTEGRATED
@@ -331,10 +471,10 @@ The uploadista engine has achieved significant milestones:
 - Cloudflare Workers edge deployment
 - Traditional Node.js deployment
 
-**The focus now shifts to production hardening:**
-1. Circuit breakers for resilience
-2. Dead letter queues for reliability
-3. Health checks for operations
+**Next Focus: Performance Optimization**
+1. Flow definition caching
+2. KV store memory management
+3. Streaming media processing
 
 ## Ideas for Future Consideration
 

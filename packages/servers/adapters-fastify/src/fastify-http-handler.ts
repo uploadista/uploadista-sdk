@@ -14,8 +14,39 @@ export const extractFastifyRequest = (
       request.url,
       `${request.protocol}://${request.hostname}`,
     );
+    const acceptHeader = request.headers.accept;
 
-    // Check for baseUrl/api/ prefix
+    // Check for health check endpoints first (at /{baseUrl}/health, not under /api/)
+    const healthPrefix = `/${baseUrl}/`;
+    if (url.pathname.startsWith(healthPrefix) && request.method === "GET") {
+      const healthPath = url.pathname.slice(healthPrefix.length);
+
+      // /health or /healthz - Liveness probe
+      if (healthPath === "health" || healthPath === "healthz") {
+        return {
+          type: "health",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /ready or /readyz - Readiness probe
+      if (healthPath === "ready" || healthPath === "readyz") {
+        return {
+          type: "health-ready",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /health/components - Detailed component status
+      if (healthPath === "health/components") {
+        return {
+          type: "health-components",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+    }
+
+    // Check for baseUrl/api/ prefix for other routes
     const expectedPrefix = `/${baseUrl}/api/`;
     if (!url.pathname.includes(expectedPrefix)) {
       return {
@@ -146,10 +177,10 @@ export const extractFastifyRequest = (
               | string
               | undefined;
             const limit = url.searchParams.get("limit")
-              ? Number.parseInt(url.searchParams.get("limit") as string)
+              ? Number.parseInt(url.searchParams.get("limit") as string, 10)
               : undefined;
             const offset = url.searchParams.get("offset")
-              ? Number.parseInt(url.searchParams.get("offset") as string)
+              ? Number.parseInt(url.searchParams.get("offset") as string, 10)
               : undefined;
             return {
               type: "dlq-list",

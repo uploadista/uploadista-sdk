@@ -5,6 +5,7 @@ import type {
   BaseKvStoreService,
   DataStoreConfig,
   EventBroadcasterService,
+  HealthCheckConfig,
   UploadFileDataStore,
   UploadFileKVStore,
 } from "@uploadista/core/types";
@@ -351,6 +352,28 @@ export interface UploadistaServerConfig<
    * ```
    */
   deadLetterQueue?: boolean;
+
+  /**
+   * Optional: Health check configuration.
+   *
+   * Configures the behavior of health check endpoints (`/health`, `/ready`, `/health/components`).
+   * When not provided, default values are used:
+   * - timeout: 5000ms
+   * - checkStorage: true
+   * - checkKvStore: true
+   * - checkEventBroadcaster: true
+   *
+   * @example
+   * ```typescript
+   * healthCheck: {
+   *   timeout: 3000,          // 3 second timeout for dependency checks
+   *   checkStorage: true,     // Check storage backend health
+   *   checkKvStore: true,     // Check KV store health
+   *   version: "1.2.3"        // Include version in health responses
+   * }
+   * ```
+   */
+  healthCheck?: HealthCheckConfig;
 }
 
 /**

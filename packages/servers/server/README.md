@@ -8,6 +8,7 @@ This package provides framework-agnostic server components including authenticat
 
 - **Authentication Context** - User identity and metadata management
 - **Auth Caching** - LRU cache for auth contexts with TTL support
+- **Health Checks** - Kubernetes-compatible liveness/readiness probes
 - **Effect Layers** - Dependency injection for upload and flow servers
 - **Error Handling** - Standardized error responses with HTTP status codes
 - **HTTP Utilities** - Route parsing and error mapping helpers
@@ -390,6 +391,88 @@ const errorInfo = handleFlowError({
 });
 // => { status: 404, code: "FILE_NOT_FOUND", message: "File not found" }
 ```
+
+## Health Check Endpoints
+
+The server provides Kubernetes-compatible health check endpoints for production deployments.
+
+### Available Endpoints
+
+| Endpoint | Purpose | Checks |
+|----------|---------|--------|
+| `/{baseUrl}/health` | Liveness probe | None (always returns healthy) |
+| `/{baseUrl}/ready` | Readiness probe | Storage, KV store, event broadcaster |
+| `/{baseUrl}/health/components` | Detailed status | All components + circuit breakers + DLQ |
+
+Alternative paths `/healthz` and `/readyz` are also supported for Kubernetes compatibility.
+
+### Response Format
+
+Health endpoints support content negotiation via the `Accept` header:
+- `Accept: application/json` - JSON response with full details
+- `Accept: text/plain` - Simple text response (`OK`, `DEGRADED`, `UNHEALTHY`)
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-11-27T10:30:00.000Z",
+  "version": "1.0.0",
+  "uptime": 3600000,
+  "components": {
+    "storage": {
+      "status": "healthy",
+      "latency": 15,
+      "lastCheck": "2024-11-27T10:30:00.000Z"
+    },
+    "kvStore": {
+      "status": "healthy",
+      "latency": 5,
+      "lastCheck": "2024-11-27T10:30:00.000Z"
+    }
+  }
+}
+```
+
+### Configuration
+
+Configure health checks in your server setup:
+
+```typescript
+import { createUploadistaServer } from "@uploadista/server";
+
+const server = createUploadistaServer({
+  // ... other config
+  healthCheck: {
+    version: "1.0.0",           // Application version
+    checkStorage: true,          // Enable storage health checks
+    checkKvStore: true,          // Enable KV store health checks
+    checkEventBroadcaster: false, // Disable event broadcaster checks
+    timeout: 5000,               // Health check timeout in ms
+  },
+});
+```
+
+### Kubernetes Integration
+
+Example Kubernetes deployment configuration:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /uploadista/health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /uploadista/ready
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+```
+
+For complete documentation, see [docs/HEALTH_CHECKS.md](./docs/HEALTH_CHECKS.md).
 
 ## Framework Integration
 

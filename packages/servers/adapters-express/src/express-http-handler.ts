@@ -30,8 +30,39 @@ export const extractExpressRequest = (
   return Effect.promise(async () => {
     // Get request details
     const url = new URL(ctx.request.url, `http://${ctx.request.get("host")}`);
+    const acceptHeader = ctx.request.get("Accept");
 
-    // Check for baseUrl/api/ prefix
+    // Check for health check endpoints first (at /{baseUrl}/health, not under /api/)
+    const healthPrefix = `/${baseUrl}/`;
+    if (url.pathname.startsWith(healthPrefix) && ctx.request.method === "GET") {
+      const healthPath = url.pathname.slice(healthPrefix.length);
+
+      // /health or /healthz - Liveness probe
+      if (healthPath === "health" || healthPath === "healthz") {
+        return {
+          type: "health",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /ready or /readyz - Readiness probe
+      if (healthPath === "ready" || healthPath === "readyz") {
+        return {
+          type: "health-ready",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /health/components - Detailed component status
+      if (healthPath === "health/components") {
+        return {
+          type: "health-components",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+    }
+
+    // Check for baseUrl/api/ prefix for other routes
     const expectedPrefix = `/${baseUrl}/api/`;
     if (!url.pathname.includes(expectedPrefix)) {
       return {

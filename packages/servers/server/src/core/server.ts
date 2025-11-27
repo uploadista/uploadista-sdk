@@ -200,6 +200,7 @@ export const createUploadistaServer = async <
   authCacheConfig,
   circuitBreaker = true,
   deadLetterQueue = false,
+  healthCheck,
 }: UploadistaServerConfig<
   TContext,
   TResponse,
@@ -526,6 +527,7 @@ export const createUploadistaServer = async <
       // Handle the request
       const response = yield* handleUploadistaRequest<TRequirements>(
         uploadistaRequest,
+        { healthCheckConfig: healthCheck },
       ).pipe(Effect.provide(requestContextLayer));
 
       return yield* adapter.sendResponse(response, ctx);

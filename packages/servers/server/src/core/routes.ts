@@ -8,6 +8,7 @@ import type {
   DeadLetterQueueStats,
   FlowData,
   FlowJob,
+  HealthResponse as HealthResponseBody,
   UploadFile,
 } from "@uploadista/core";
 import type { StandardResponse } from "../adapter/types";
@@ -32,6 +33,10 @@ export type UploadistaRouteType =
   | "dlq-resolve"
   | "dlq-cleanup"
   | "dlq-stats"
+  // Health check routes
+  | "health"
+  | "health-ready"
+  | "health-components"
   // Error routes
   | "not-found"
   | "bad-request"
@@ -233,6 +238,65 @@ export type DlqStatsResponse = UploadistaStandardResponse<
   DeadLetterQueueStats
 >;
 
+// ============================================================================
+// Health Check Routes
+// ============================================================================
+
+/**
+ * Health check request base type with optional Accept header.
+ */
+type HealthCheckRequestBase = {
+  /** Accept header value for response format negotiation */
+  acceptHeader?: string | null;
+};
+
+/**
+ * Liveness health check request (GET /health or /healthz).
+ */
+export type HealthRequest = UploadistaRoute<"health"> & HealthCheckRequestBase;
+
+/**
+ * Liveness health check response.
+ * Can return JSON or plain text based on Accept header.
+ */
+export type HealthResponse = UploadistaRoute<"health"> & {
+  status: 200;
+  headers: { "Content-Type": "application/json" | "text/plain" };
+  body: HealthResponseBody | string;
+};
+
+/**
+ * Readiness health check request (GET /ready or /readyz).
+ */
+export type HealthReadyRequest = UploadistaRoute<"health-ready"> &
+  HealthCheckRequestBase;
+
+/**
+ * Readiness health check response.
+ * Returns 200 if healthy, 503 if unhealthy.
+ */
+export type HealthReadyResponse = UploadistaRoute<"health-ready"> & {
+  status: 200 | 503;
+  headers: { "Content-Type": "application/json" | "text/plain" };
+  body: HealthResponseBody | string;
+};
+
+/**
+ * Component details health check request (GET /health/components).
+ */
+export type HealthComponentsRequest = UploadistaRoute<"health-components"> &
+  HealthCheckRequestBase;
+
+/**
+ * Component details health check response.
+ * Always returns 200 for debugging purposes.
+ */
+export type HealthComponentsResponse = UploadistaRoute<"health-components"> & {
+  status: 200;
+  headers: { "Content-Type": "application/json" | "text/plain" };
+  body: HealthResponseBody | string;
+};
+
 export type UploadistaRequest =
   | CreateUploadRequest
   | GetCapabilitiesRequest
@@ -253,6 +317,10 @@ export type UploadistaRequest =
   | DlqResolveRequest
   | DlqCleanupRequest
   | DlqStatsRequest
+  // Health check requests
+  | HealthRequest
+  | HealthReadyRequest
+  | HealthComponentsRequest
   // Error requests
   | NotFoundRequest
   | BadRequestRequest
@@ -279,6 +347,10 @@ export type UploadistaResponse =
   | DlqResolveResponse
   | DlqCleanupResponse
   | DlqStatsResponse
+  // Health check responses
+  | HealthResponse
+  | HealthReadyResponse
+  | HealthComponentsResponse
   // Error responses
   | NotFoundResponse
   | BadRequestResponse

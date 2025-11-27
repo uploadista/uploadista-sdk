@@ -11,8 +11,39 @@ export const extractHonoRequest = <TEnv extends Env>(
     // Get request details
     const req = c.req.raw;
     const url = new URL(req.url);
+    const acceptHeader = req.headers.get("Accept");
 
-    // Check for baseUrl/api/ prefix
+    // Check for health check endpoints first (at /{baseUrl}/health, not under /api/)
+    const healthPrefix = `/${baseUrl}/`;
+    if (url.pathname.startsWith(healthPrefix) && req.method === "GET") {
+      const healthPath = url.pathname.slice(healthPrefix.length);
+
+      // /health or /healthz - Liveness probe
+      if (healthPath === "health" || healthPath === "healthz") {
+        return {
+          type: "health",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /ready or /readyz - Readiness probe
+      if (healthPath === "ready" || healthPath === "readyz") {
+        return {
+          type: "health-ready",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /health/components - Detailed component status
+      if (healthPath === "health/components") {
+        return {
+          type: "health-components",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+    }
+
+    // Check for baseUrl/api/ prefix for other routes
     const expectedPrefix = `/${baseUrl}/api/`;
     if (!url.pathname.includes(expectedPrefix)) {
       return {
@@ -129,10 +160,10 @@ export const extractHonoRequest = <TEnv extends Env>(
               | string
               | undefined;
             const limit = url.searchParams.get("limit")
-              ? Number.parseInt(url.searchParams.get("limit") as string)
+              ? Number.parseInt(url.searchParams.get("limit") as string, 10)
               : undefined;
             const offset = url.searchParams.get("offset")
-              ? Number.parseInt(url.searchParams.get("offset") as string)
+              ? Number.parseInt(url.searchParams.get("offset") as string, 10)
               : undefined;
             return {
               type: "dlq-list",
@@ -304,6 +335,15 @@ export const sendHonoResponse = <TEnv extends Env>(
     const headers = new Headers(response.headers);
     if (!headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
+    }
+
+    // Handle text/plain responses (for health check endpoints)
+    const contentType = headers.get("Content-Type");
+    if (contentType === "text/plain" && typeof response.body === "string") {
+      return new Response(response.body, {
+        status: response.status,
+        headers,
+      });
     }
 
     return new Response(JSON.stringify(response.body), {
