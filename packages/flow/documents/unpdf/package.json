@@ -35,6 +35,6 @@
     "effect": "catalog:",
     "pdf-lib": "^1.17.1",
     "tsdown": "catalog:",
-    "vitest": "4.0.14"
+    "vitest": "4.0.15"
   }
 }
