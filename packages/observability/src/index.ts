@@ -1,7 +1,5 @@
 // Main observability package exports
 export * from "./core/index.js";
-// Tracing specific exports
-export { NodeSdkLive, WebSdkLive, WorkersSdkLive } from "./core/tracing.js";
 export * from "./flow/index.js";
 export * from "./service/metrics.js";
 export * from "./storage/index.js";
