@@ -24,6 +24,7 @@ import { handleFlowError } from "../http-utils";
 import { createFlowServerLayer, createUploadServerLayer } from "../layer-utils";
 import { AuthContextServiceLive } from "../service";
 import type { AuthContext } from "../types";
+import { UsageHookServiceLive } from "../usage-hooks/service";
 import { handleUploadistaRequest } from "./http-handlers/http-handlers";
 import type { ExtractFlowPluginRequirements } from "./plugin-types";
 import type { NotFoundResponse } from "./routes";
@@ -201,6 +202,7 @@ export const createUploadistaServer = async <
   circuitBreaker = true,
   deadLetterQueue = false,
   healthCheck,
+  usageHooks,
 }: UploadistaServerConfig<
   TContext,
   TResponse,
@@ -285,17 +287,22 @@ export const createUploadistaServer = async <
       )
     : null;
 
+  // Create usage hook layer (defaults to no-op if not configured)
+  const usageHookLayer = UsageHookServiceLive(usageHooks);
+
   /**
    * Merge all server layers including plugins.
    *
    * This combines the core server infrastructure (upload server, flow server,
-   * metrics, auth cache, circuit breaker, dead letter queue) with user-provided plugin layers.
+   * metrics, auth cache, circuit breaker, dead letter queue, usage hooks)
+   * with user-provided plugin layers.
    */
   const serverLayerRaw = Layer.mergeAll(
     uploadServerLayer,
     flowServerLayer,
     effectiveMetricsLayer,
     authCacheLayer,
+    usageHookLayer,
     ...plugins,
     ...(circuitBreakerStoreLayer ? [circuitBreakerStoreLayer] : []),
     ...(dlqLayer ? [dlqLayer] : []),
@@ -497,12 +504,13 @@ export const createUploadistaServer = async <
         }
       }
 
-      // Combine auth context, auth cache, metrics layers, plugins, circuit breaker, DLQ, and waitUntil
+      // Combine auth context, auth cache, metrics layers, usage hooks, plugins, circuit breaker, DLQ, and waitUntil
       // This ensures that flow nodes have access to all required services
       const baseRequestContextLayer = Layer.mergeAll(
         authContextLayer,
         authCacheLayer,
         effectiveMetricsLayer,
+        usageHookLayer,
         ...plugins,
         ...waitUntilLayers,
       );

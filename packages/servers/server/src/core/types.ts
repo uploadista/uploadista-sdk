@@ -15,6 +15,7 @@ import type { Effect, Layer } from "effect";
 import type { z } from "zod";
 import type { ServerAdapter } from "../adapter";
 import type { AuthCacheConfig } from "../cache";
+import type { UsageHookConfig } from "../usage-hooks/types";
 
 /**
  * Function type for retrieving flows based on flow ID and client ID.
@@ -374,6 +375,40 @@ export interface UploadistaServerConfig<
    * ```
    */
   healthCheck?: HealthCheckConfig;
+
+  /**
+   * Optional: Usage hooks for tracking and billing integration.
+   *
+   * Usage hooks allow you to intercept upload and flow operations for:
+   * - Quota checking (e.g., verify user has subscription)
+   * - Usage tracking (e.g., count uploads, track bandwidth)
+   * - Billing integration (e.g., report usage to Stripe/Polar)
+   *
+   * Hooks follow a "fail-open" design - if a hook times out or errors,
+   * the operation proceeds (unless the hook explicitly aborts).
+   *
+   * @example
+   * ```typescript
+   * usageHooks: {
+   *   hooks: {
+   *     onUploadStart: (ctx) => Effect.gen(function* () {
+   *       // Check quota before upload starts
+   *       const quota = yield* checkUserQuota(ctx.clientId);
+   *       if (quota.exceeded) {
+   *         return { action: "abort", reason: "Storage quota exceeded" };
+   *       }
+   *       return { action: "continue" };
+   *     }),
+   *     onUploadComplete: (ctx) => Effect.gen(function* () {
+   *       // Track usage after upload completes
+   *       yield* reportUsage(ctx.clientId, ctx.metadata.fileSize);
+   *     }),
+   *   },
+   *   timeout: 5000, // 5 second timeout for hooks
+   * }
+   * ```
+   */
+  usageHooks?: UsageHookConfig;
 }
 
 /**

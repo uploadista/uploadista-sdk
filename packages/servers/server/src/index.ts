@@ -5,6 +5,8 @@ export * from "./core";
 export * from "./error-types";
 export * from "./http-utils";
 export * from "./layer-utils";
+export * from "./permissions";
 export * from "./plugins-typing";
 export * from "./service";
 export * from "./types";
+export * from "./usage-hooks";

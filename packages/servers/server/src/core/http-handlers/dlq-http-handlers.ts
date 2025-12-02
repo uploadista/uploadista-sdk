@@ -1,5 +1,7 @@
 import { DeadLetterQueueService } from "@uploadista/core/flow";
 import { Effect } from "effect";
+import { PERMISSIONS } from "../../permissions/types";
+import { AuthContextService } from "../../service";
 import type {
   DlqCleanupRequest,
   DlqCleanupResponse,
@@ -24,6 +26,11 @@ import type {
  */
 export const handleDlqList = (req: DlqListRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for reading DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_READ);
+
     const dlq = yield* DeadLetterQueueService;
     const result = yield* dlq.list(req.options);
 
@@ -40,6 +47,11 @@ export const handleDlqList = (req: DlqListRequest) =>
  */
 export const handleDlqGet = (req: DlqGetRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for reading DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_READ);
+
     const dlq = yield* DeadLetterQueueService;
     const item = yield* dlq.get(req.itemId);
 
@@ -56,6 +68,11 @@ export const handleDlqGet = (req: DlqGetRequest) =>
  */
 export const handleDlqRetry = (req: DlqRetryRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for writing to DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_WRITE);
+
     const dlq = yield* DeadLetterQueueService;
 
     // Mark item as retrying
@@ -79,6 +96,11 @@ export const handleDlqRetry = (req: DlqRetryRequest) =>
  */
 export const handleDlqRetryAll = (req: DlqRetryAllRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for writing to DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_WRITE);
+
     const dlq = yield* DeadLetterQueueService;
 
     // List items matching the filter
@@ -117,6 +139,11 @@ export const handleDlqRetryAll = (req: DlqRetryAllRequest) =>
  */
 export const handleDlqDelete = (req: DlqDeleteRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for writing to DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_WRITE);
+
     const dlq = yield* DeadLetterQueueService;
     yield* dlq.delete(req.itemId);
 
@@ -133,6 +160,11 @@ export const handleDlqDelete = (req: DlqDeleteRequest) =>
  */
 export const handleDlqResolve = (req: DlqResolveRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for writing to DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_WRITE);
+
     const dlq = yield* DeadLetterQueueService;
     const item = yield* dlq.markResolved(req.itemId);
 
@@ -149,6 +181,11 @@ export const handleDlqResolve = (req: DlqResolveRequest) =>
  */
 export const handleDlqCleanup = (req: DlqCleanupRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for writing to DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_WRITE);
+
     const dlq = yield* DeadLetterQueueService;
     const result = yield* dlq.cleanup(req.options);
 
@@ -165,6 +202,11 @@ export const handleDlqCleanup = (req: DlqCleanupRequest) =>
  */
 export const handleDlqStats = (_req: DlqStatsRequest) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for reading DLQ
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.DLQ_READ);
+
     const dlq = yield* DeadLetterQueueService;
     const stats = yield* dlq.getStats();
 

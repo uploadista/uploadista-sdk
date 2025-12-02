@@ -15,6 +15,8 @@ import {
   type HealthCheckConfig,
 } from "@uploadista/core/types";
 import { Effect } from "effect";
+import { PERMISSIONS } from "../../permissions/types";
+import { AuthContextService } from "../../service";
 import {
   createLivenessResponse,
   performComponentsCheck,
@@ -66,12 +68,19 @@ export const handleHealthLiveness = (
  * Checks all critical dependencies (storage, KV store) and returns:
  * - 200 OK if all dependencies are healthy
  * - 503 Service Unavailable if any critical dependency is unavailable
+ *
+ * Requires `engine:readiness` permission.
  */
 export const handleHealthReadiness = (
   req: HealthReadyRequest,
   config?: HealthCheckConfig,
 ) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for readiness endpoint
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.READINESS);
+
     const response = yield* performReadinessCheck(config);
     const format = getHealthResponseFormat(req.acceptHeader);
 
@@ -106,12 +115,19 @@ export const handleHealthReadiness = (
  * - Dead letter queue (if enabled)
  *
  * Always returns 200 OK for debugging purposes (even if components are degraded).
+ *
+ * Requires `engine:readiness` permission.
  */
 export const handleHealthComponents = (
   req: HealthComponentsRequest,
   config?: HealthCheckConfig,
 ) =>
   Effect.gen(function* () {
+    const authService = yield* AuthContextService;
+
+    // Check permission for components endpoint
+    yield* authService.requirePermission(PERMISSIONS.ENGINE.READINESS);
+
     const response = yield* performComponentsCheck(config);
     const format = getHealthResponseFormat(req.acceptHeader);
 

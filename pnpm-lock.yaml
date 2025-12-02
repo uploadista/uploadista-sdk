@@ -273,7 +273,7 @@ importers:
         version: 2.8.19
       '@types/express':
         specifier: 5.0.3
-        version: 5.0.6
+        version: 5.0.3
       '@types/multer':
         specifier: 2.0.0
         version: 2.0.0
@@ -5785,6 +5785,9 @@ packages:
 
   '@types/express-serve-static-core@5.1.0':
     resolution: {integrity: sha512-jnHMsrd0Mwa9Cf4IdOzbz543y4XJepXrbia2T4b6+spXC2We3t1y6K44D3mR8XMFSXMCf3/l7rCgddfx7UNVBA==}
+
+  '@types/express@5.0.3':
+    resolution: {integrity: sha512-wGA0NX93b19/dZC1J18tKWVIYWyyF2ZjT9vin/NRu0qzzvfVzWjs04iq2rQ3H65vCTQYlRqs3YHfY7zjdV+9Kw==}
 
   '@types/express@5.0.6':
     resolution: {integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA==}
@@ -15988,6 +15991,12 @@ snapshots:
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
 
+  '@types/express@5.0.3':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 5.1.0
+      '@types/serve-static': 2.2.0
+
   '@types/express@5.0.6':
     dependencies:
       '@types/body-parser': 1.19.6
@@ -15996,7 +16005,7 @@ snapshots:
 
   '@types/graceful-fs@4.1.9':
     dependencies:
-      '@types/node': 24.10.1
+      '@types/node': 24.3.1
 
   '@types/hammerjs@2.0.46': {}
 
@@ -16020,7 +16029,7 @@ snapshots:
 
   '@types/multer@2.0.0':
     dependencies:
-      '@types/express': 5.0.6
+      '@types/express': 5.0.3
 
   '@types/node@24.10.1':
     dependencies:
@@ -17097,7 +17106,7 @@ snapshots:
 
   chrome-launcher@0.15.2:
     dependencies:
-      '@types/node': 24.10.1
+      '@types/node': 24.3.1
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -17106,7 +17115,7 @@ snapshots:
 
   chromium-edge-launcher@0.2.0:
     dependencies:
-      '@types/node': 24.10.1
+      '@types/node': 24.3.1
       escape-string-regexp: 4.0.0
       is-wsl: 2.2.0
       lighthouse-logger: 1.4.2
@@ -19155,7 +19164,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.9
-      '@types/node': 24.10.1
+      '@types/node': 24.3.1
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -19207,7 +19216,7 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 24.10.1
+      '@types/node': 24.3.1
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
