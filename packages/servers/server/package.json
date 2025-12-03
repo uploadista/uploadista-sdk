@@ -45,7 +45,7 @@
     "tsd": "0.33.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.14",
+    "vitest": "4.0.15",
     "zod": "catalog:"
   },
   "peerDependencies": {

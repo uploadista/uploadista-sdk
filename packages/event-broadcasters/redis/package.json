@@ -36,6 +36,6 @@
     "@types/node": "catalog:",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.14"
+    "vitest": "4.0.15"
   }
 }
