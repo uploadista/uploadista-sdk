@@ -123,7 +123,8 @@ export function createOtlpTraceExporter(
 ): OTLPTraceExporter {
   const endpoint = getOtlpEndpoint("traces", config.endpoint);
   const headers = config.headers ?? parseOtlpHeaders();
-  const timeoutMillis = config.timeoutMillis ?? 5000;
+  // Default to 30 seconds to accommodate cloud endpoints like Grafana Cloud
+  const timeoutMillis = config.timeoutMillis ?? 30000;
 
   return new OTLPTraceExporter({
     url: `${endpoint}/v1/traces`,
@@ -156,7 +157,8 @@ export function createOtlpMetricExporter(
 ): OTLPMetricExporter {
   const endpoint = getOtlpEndpoint("metrics", config.endpoint);
   const headers = config.headers ?? parseOtlpHeaders();
-  const timeoutMillis = config.timeoutMillis ?? 5000;
+  // Default to 30 seconds to accommodate cloud endpoints like Grafana Cloud
+  const timeoutMillis = config.timeoutMillis ?? 30000;
 
   return new OTLPMetricExporter({
     url: `${endpoint}/v1/metrics`,

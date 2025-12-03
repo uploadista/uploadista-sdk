@@ -113,7 +113,8 @@ function createOtlpSpanProcessor(config: OtlpSdkConfig = {}): SpanProcessor {
     maxQueueSize: config.maxQueueSize ?? 512,
     maxExportBatchSize: config.maxExportBatchSize ?? 512,
     scheduledDelayMillis: config.scheduledDelayMillis ?? 5000,
-    exportTimeoutMillis: config.exportTimeoutMillis ?? 5000,
+    // Default to 30 seconds to accommodate cloud endpoints like Grafana Cloud
+    exportTimeoutMillis: config.exportTimeoutMillis ?? 30000,
   });
 }
 

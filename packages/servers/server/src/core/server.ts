@@ -310,6 +310,15 @@ export const createUploadistaServer = async <
   );
 
   /**
+   * Determine the tracing layer to use.
+   * This must be included in the runtime layer (not per-request) so that the
+   * BatchSpanProcessor can aggregate spans across requests and flush them properly.
+   */
+  const tracingLayer = withTracing
+    ? observabilityLayer ?? NodeSdkLive
+    : null;
+
+  /**
    * Type Casting Rationale for Plugin System
    *
    * The type assertion below is intentional and safe. This is not a bug or workaround,
@@ -386,16 +395,29 @@ export const createUploadistaServer = async <
    * @see validatePluginRequirements - Runtime validation helper
    * @see ValidatePlugins - Compile-time validation type utility
    */
-  const serverLayer = serverLayerRaw as unknown as Layer.Layer<
+  const serverLayerTyped = serverLayerRaw as unknown as Layer.Layer<
     // biome-ignore lint/suspicious/noExplicitAny: Dynamic plugin requirements require any - see comprehensive explanation above
     any,
     never,
     never
   >;
 
+  /**
+   * Final server layer with optional tracing.
+   * The tracing layer is merged at runtime level (not per-request) so that:
+   * 1. The OpenTelemetry SDK is initialized once for the server
+   * 2. The BatchSpanProcessor can aggregate spans across requests
+   * 3. Spans are properly flushed when the runtime is disposed
+   */
+  const serverLayer = tracingLayer
+    ? Layer.merge(serverLayerTyped, tracingLayer)
+    : serverLayerTyped;
+
   // Create a shared managed runtime from the server layer
   // This ensures all requests use the same layer instances (including event broadcaster)
   // ManagedRuntime properly handles scoped resources and provides convenient run methods
+  // When tracing is enabled, the OpenTelemetry SDK is part of this runtime and will be
+  // properly shut down (flushing all pending spans) when dispose() is called
 
   const managedRuntime = ManagedRuntime.make(serverLayer);
 
@@ -560,14 +582,8 @@ export const createUploadistaServer = async <
       }),
     );
 
-    // Use the shared managed runtime instead of creating a new one per request
-    if (withTracing) {
-      // Use custom observability layer if provided, otherwise fall back to default NodeSdkLive
-      const tracingLayer = observabilityLayer ?? NodeSdkLive;
-      return managedRuntime.runPromise(
-        program.pipe(Effect.provide(tracingLayer)),
-      );
-    }
+    // Use the shared managed runtime which includes all layers (including tracing if enabled)
+    // Tracing is now part of the runtime layer, so spans are properly aggregated and flushed
     return managedRuntime.runPromise(program);
   };
 
