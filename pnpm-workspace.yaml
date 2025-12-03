@@ -29,6 +29,7 @@ onlyBuiltDependencies:
   - node-av
   - nx
   - oxc-resolver
+  - protobufjs
   - sharp
   - unrs-resolver
   - workerd
