@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-images-sharp",
   "type": "module",
-  "version": "0.0.18-beta.11",
+  "version": "0.0.18-beta.12",
   "description": "Sharp image processing service for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
