@@ -1,3 +1,4 @@
+import { trace } from "@opentelemetry/api";
 import { Effect, Metric, MetricBoundaries } from "effect";
 import {
   type EventEmitter,
@@ -7,8 +8,26 @@ import {
   UploadEventType,
   type UploadFile,
   type UploadFileDataStoresShape,
+  type UploadFileTraceContext,
 } from "../types";
 import type { GenerateIdShape } from "../utils/generate-id";
+
+/**
+ * Captures the current OpenTelemetry trace context for distributed tracing.
+ * @returns TraceContext if there's an active span, undefined otherwise
+ */
+function captureTraceContext(): UploadFileTraceContext | undefined {
+  const currentSpan = trace.getActiveSpan();
+  if (!currentSpan) {
+    return undefined;
+  }
+  const spanContext = currentSpan.spanContext();
+  return {
+    traceId: spanContext.traceId,
+    spanId: spanContext.spanId,
+    traceFlags: spanContext.traceFlags,
+  };
+}
 
 /**
  * Creates a new upload and initializes it in the storage system.
@@ -111,6 +130,10 @@ export const createUpload = (
       metadataObject.lastModified = lastModified.toString();
     }
 
+    // Capture trace context for distributed tracing
+    // This allows subsequent chunk uploads to be linked to this upload's trace
+    const traceContext = captureTraceContext();
+
     const file: UploadFile = {
       id,
       size,
@@ -125,6 +148,7 @@ export const createUpload = (
         bucket: dataStore.bucket,
       },
       flow,
+      traceContext,
     };
 
     // Create file using Effect

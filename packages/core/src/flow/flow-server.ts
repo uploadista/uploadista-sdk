@@ -1,3 +1,4 @@
+import { trace } from "@opentelemetry/api";
 import { Context, Effect, Layer, Option, Runtime } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
@@ -17,6 +18,7 @@ import type {
   UploadFile,
   WebSocketConnection,
 } from "../types";
+import type { FlowJobTraceContext } from "./types/flow-job";
 
 /**
  * WaitUntil callback type for keeping background tasks alive.
@@ -812,6 +814,20 @@ export function createFlowServer() {
         );
       });
 
+    // Helper function to capture current trace context
+    const captureTraceContext = (): FlowJobTraceContext | undefined => {
+      const currentSpan = trace.getActiveSpan();
+      if (!currentSpan) {
+        return undefined;
+      }
+      const spanContext = currentSpan.spanContext();
+      return {
+        traceId: spanContext.traceId,
+        spanId: spanContext.spanId,
+        traceFlags: spanContext.traceFlags,
+      };
+    };
+
     // Helper function to execute flow in background
     const executeFlowInBackground = ({
       jobId,
@@ -831,9 +847,13 @@ export function createFlowServer() {
           `[FlowServer] executeFlowInBackground started for job: ${jobId}`,
         );
 
-        // Update job status to running
+        // Capture trace context for distributed tracing
+        const traceContext = captureTraceContext();
+
+        // Update job status to running and store trace context
         yield* updateJob(jobId, {
           status: "running",
+          traceContext,
         });
 
         console.log(`[FlowServer] Creating flowWithEvents for job: ${jobId}`);
@@ -876,6 +896,16 @@ export function createFlowServer() {
 
         return result;
       }).pipe(
+        // Wrap entire flow execution in a span for distributed tracing
+        Effect.withSpan("flow-execution", {
+          attributes: {
+            "flow.id": flow.id,
+            "flow.name": flow.name,
+            "flow.job_id": jobId,
+            "flow.storage_id": storageId,
+            "flow.node_count": flow.nodes.length,
+          },
+        }),
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Effect.logError("Flow execution failed", error);

@@ -979,7 +979,22 @@ export function createFlowWithSchema<
         return yield* UploadistaError.fromCode("FLOW_NODE_ERROR", {
           cause: new Error("Unexpected error in retry loop"),
         }).toEffect();
-      });
+      }).pipe(
+        // Wrap node execution in a span for distributed tracing
+        // Note: We get node info from the nodeMap since we're outside the Effect.gen scope
+        (() => {
+          const node = nodeMap.get(nodeId);
+          return Effect.withSpan(`node-${node?.type ?? "unknown"}`, {
+            attributes: {
+              "node.id": nodeId,
+              "node.type": node?.type ?? "unknown",
+              "node.name": node?.name ?? "unknown",
+              "flow.id": flowId,
+              "flow.job_id": jobId,
+            },
+          });
+        })(),
+      );
     };
 
     // Internal execution function that can start fresh or resume

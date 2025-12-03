@@ -1,5 +1,10 @@
 import { NodeSdk, WebSdk } from "@effect/opentelemetry";
 import {
+  context as otelContext,
+  type SpanContext,
+  trace,
+} from "@opentelemetry/api";
+import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
   type SpanProcessor,
@@ -11,6 +16,7 @@ import {
   isOtlpExportEnabled,
   parseResourceAttributes,
 } from "./exporters.js";
+import type { TraceContext } from "./types.js";
 
 // ============================================================================
 // Universal Tracing (Environment-agnostic)
@@ -320,4 +326,150 @@ export function createOtlpWorkersSdkLayer(config: OtlpSdkConfig = {}) {
       spanProcessor: createOtlpSpanProcessor(effectiveConfig),
     };
   });
+}
+
+// ============================================================================
+// Distributed Tracing Context Utilities
+// ============================================================================
+
+/**
+ * Captures the current OpenTelemetry trace context.
+ *
+ * Use this to save the trace context (traceId, spanId, traceFlags) for later
+ * use in distributed tracing. The captured context can be stored alongside
+ * data (e.g., in KV store with upload metadata) and restored later using
+ * `withParentContext` to link spans across HTTP requests.
+ *
+ * @returns TraceContext if there's an active span, undefined otherwise
+ *
+ * @example
+ * ```typescript
+ * // Capture context during upload creation
+ * const createUpload = Effect.gen(function* () {
+ *   const traceContext = captureTraceContext();
+ *
+ *   const file: UploadFile = {
+ *     id: uploadId,
+ *     traceContext, // Store for later
+ *     // ...
+ *   };
+ *   yield* kvStore.set(uploadId, file);
+ * }).pipe(Effect.withSpan("upload-create", { ... }));
+ * ```
+ */
+export function captureTraceContext(): TraceContext | undefined {
+  const currentSpan = trace.getActiveSpan();
+  if (!currentSpan) {
+    return undefined;
+  }
+
+  const spanContext = currentSpan.spanContext();
+  return {
+    traceId: spanContext.traceId,
+    spanId: spanContext.spanId,
+    traceFlags: spanContext.traceFlags,
+  };
+}
+
+/**
+ * Creates an Effect that captures the current trace context.
+ *
+ * This is the Effect-based version of `captureTraceContext` for use in
+ * Effect generators.
+ *
+ * @returns Effect yielding TraceContext or undefined
+ *
+ * @example
+ * ```typescript
+ * const program = Effect.gen(function* () {
+ *   const ctx = yield* captureTraceContextEffect;
+ *   if (ctx) {
+ *     yield* Effect.logInfo("Captured trace: " + ctx.traceId);
+ *   }
+ * });
+ * ```
+ */
+export const captureTraceContextEffect: Effect.Effect<
+  TraceContext | undefined
+> = Effect.sync(() => captureTraceContext());
+
+/**
+ * Wraps an Effect to execute within a restored parent trace context.
+ *
+ * This utility restores a previously captured trace context as the parent
+ * for new spans. Use this to link spans across HTTP requests (e.g., linking
+ * upload-chunk spans to the original upload-create trace).
+ *
+ * The trace context is marked as "remote" to indicate it came from another
+ * process/request.
+ *
+ * @param traceContext - Previously captured trace context to restore
+ * @returns Function that wraps an Effect to execute within the restored context
+ *
+ * @example
+ * ```typescript
+ * // In uploadChunk, restore the parent context from upload creation
+ * const uploadChunk = (uploadId: string, chunk: ReadableStream) =>
+ *   Effect.gen(function* () {
+ *     const file = yield* kvStore.get(uploadId);
+ *
+ *     const chunkEffect = Effect.gen(function* () {
+ *       // ... chunk upload logic
+ *     }).pipe(Effect.withSpan("upload-chunk", { ... }));
+ *
+ *     // Link to original upload trace if context exists
+ *     if (file.traceContext) {
+ *       return yield* withParentContext(file.traceContext)(chunkEffect);
+ *     }
+ *     return yield* chunkEffect;
+ *   });
+ * ```
+ */
+export function withParentContext(traceContext: TraceContext) {
+  return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
+    const spanContext: SpanContext = {
+      traceId: traceContext.traceId,
+      spanId: traceContext.spanId,
+      traceFlags: traceContext.traceFlags,
+      isRemote: true,
+    };
+
+    // Create a context with the parent span context set
+    const parentContext = trace.setSpanContext(
+      otelContext.active(),
+      spanContext,
+    );
+
+    // Run the effect within the parent context
+    return Effect.suspend(() => {
+      return otelContext.with(parentContext, () => {
+        // The effect needs to be run within this context
+        // We use Effect.provide with an empty layer to ensure the context is preserved
+        return effect;
+      });
+    });
+  };
+}
+
+/**
+ * Checks if there's an active trace context.
+ *
+ * Useful for conditional logic based on whether tracing is active.
+ *
+ * @returns true if there's an active span with valid trace context
+ *
+ * @example
+ * ```typescript
+ * if (hasActiveTraceContext()) {
+ *   console.log("Tracing is active");
+ * }
+ * ```
+ */
+export function hasActiveTraceContext(): boolean {
+  const span = trace.getActiveSpan();
+  if (!span) return false;
+
+  const ctx = span.spanContext();
+  // Check if the trace ID is valid (not all zeros)
+  return ctx.traceId !== "00000000000000000000000000000000";
 }

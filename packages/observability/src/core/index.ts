@@ -7,4 +7,5 @@ export * from "./logging.js";
 export * from "./metrics.js";
 export * from "./testing.js";
 export * from "./tracing.js";
+export * from "./types.js";
 export * from "./utilities.js";

@@ -1,3 +1,8 @@
+import {
+  context as otelContext,
+  trace,
+  type SpanContext,
+} from "@opentelemetry/api";
 import { Effect, Metric, MetricBoundaries } from "effect";
 import { UploadistaError } from "../errors/uploadista-error";
 import {
@@ -8,10 +13,32 @@ import {
   UploadEventType,
   type UploadFile,
   type UploadFileDataStoresShape,
+  type UploadFileTraceContext,
 } from "../types";
 import { computeChecksum } from "../utils/checksum";
 import { compareMimeTypes, detectMimeType } from "./mime";
 import { writeToStore } from "./write-to-store";
+
+/**
+ * Wraps an Effect to execute within a restored parent trace context.
+ * Used for linking chunk uploads to the original upload trace.
+ */
+function withParentContext(traceContext: UploadFileTraceContext) {
+  return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
+    const spanContext: SpanContext = {
+      traceId: traceContext.traceId,
+      spanId: traceContext.spanId,
+      traceFlags: traceContext.traceFlags,
+      isRemote: true,
+    };
+
+    const parentContext = trace.setSpanContext(otelContext.active(), spanContext);
+
+    return Effect.suspend(() => {
+      return otelContext.with(parentContext, () => effect);
+    });
+  };
+}
 
 /**
  * Uploads a chunk of data for an existing upload.
@@ -77,64 +104,77 @@ export const uploadChunk = (
   },
 ) =>
   Effect.gen(function* () {
-    // Get file from KV store
+    // Get file from KV store first to check for trace context
     const file = yield* kvStore.get(uploadId);
 
-    // Get datastore
-    const dataStore = yield* dataStoreService.getDataStore(
-      file.storage.id,
-      clientId,
-    );
+    // Core chunk processing logic
+    const processChunk = Effect.gen(function* () {
+      // Get datastore
+      const dataStore = yield* dataStoreService.getDataStore(
+        file.storage.id,
+        clientId,
+      );
 
-    // Note: AbortController could be used for cancellation if needed
+      // Note: AbortController could be used for cancellation if needed
 
-    // Write to store using writeToStore Effect
-    const controller = new AbortController();
+      // Write to store using writeToStore Effect
+      const controller = new AbortController();
 
-    const chunkSize = yield* writeToStore({
-      dataStore,
-      data: chunk,
-      upload: file,
-      maxFileSize: 100_000_000,
-      controller,
-      uploadProgressInterval: 200,
-      eventEmitter,
-    });
-
-    file.offset = chunkSize;
-
-    // Update KV store
-    yield* kvStore.set(uploadId, file);
-
-    // Emit progress event
-    yield* eventEmitter.emit(file.id, {
-      type: UploadEventType.UPLOAD_PROGRESS,
-      data: {
-        id: file.id,
-        progress: file.offset,
-        total: file.size ?? 0,
-      },
-      flow: file.flow,
-    });
-
-    // Check if upload is complete and run validation
-    if (file.size && file.offset === file.size) {
-      yield* validateUpload({
-        file,
+      const chunkSize = yield* writeToStore({
         dataStore,
+        data: chunk,
+        upload: file,
+        maxFileSize: 100_000_000,
+        controller,
+        uploadProgressInterval: 200,
         eventEmitter,
       });
+
+      file.offset = chunkSize;
+
+      // Update KV store
+      yield* kvStore.set(uploadId, file);
+
+      // Emit progress event
+      yield* eventEmitter.emit(file.id, {
+        type: UploadEventType.UPLOAD_PROGRESS,
+        data: {
+          id: file.id,
+          progress: file.offset,
+          total: file.size ?? 0,
+        },
+        flow: file.flow,
+      });
+
+      // Check if upload is complete and run validation
+      if (file.size && file.offset === file.size) {
+        yield* validateUpload({
+          file,
+          dataStore,
+          eventEmitter,
+        });
+      }
+
+      return file;
+    }).pipe(
+      // Add tracing span for chunk upload
+      Effect.withSpan("upload-chunk", {
+        attributes: {
+          "upload.id": uploadId,
+          "chunk.upload_id": uploadId,
+          "upload.has_trace_context": file.traceContext ? "true" : "false",
+        },
+      }),
+    );
+
+    // If upload has stored trace context, restore it as parent for this chunk
+    // This groups all chunks under the original upload trace
+    if (file.traceContext) {
+      return yield* withParentContext(file.traceContext)(processChunk);
     }
 
-    return file;
+    return yield* processChunk;
   }).pipe(
-    // Add tracing span for chunk upload
-    Effect.withSpan("upload-chunk", {
-      attributes: {
-        "upload.id": uploadId,
-        "chunk.upload_id": uploadId,
-      },
-    }),
     // Track chunk upload metrics
     Effect.tap((file) =>
       Effect.gen(function* () {
