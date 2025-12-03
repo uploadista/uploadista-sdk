@@ -231,6 +231,42 @@ export interface UploadistaServerConfig<
   withTracing?: boolean;
 
   /**
+   * Optional: Custom observability layer for distributed tracing.
+   *
+   * When provided, this layer will be used instead of the default NodeSdkLive.
+   * This allows you to configure custom OTLP exporters (e.g., for Grafana Cloud,
+   * Jaeger, or other OpenTelemetry-compatible backends).
+   *
+   * Requires `withTracing: true` to be effective.
+   *
+   * @example
+   * ```typescript
+   * import { OtlpNodeSdkLive, createOtlpNodeSdkLayer } from "@uploadista/observability";
+   *
+   * // Option 1: Use default OTLP layer (reads from env vars)
+   * const server = await createUploadistaServer({
+   *   withTracing: true,
+   *   observabilityLayer: OtlpNodeSdkLive,
+   *   // ...
+   * });
+   *
+   * // Option 2: Custom configuration with tenant attributes
+   * const server = await createUploadistaServer({
+   *   withTracing: true,
+   *   observabilityLayer: createOtlpNodeSdkLayer({
+   *     serviceName: "uploadista-cloud-api",
+   *     resourceAttributes: {
+   *       "deployment.environment": "production",
+   *     },
+   *   }),
+   *   // ...
+   * });
+   * ```
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: Observability layers from @effect/opentelemetry provide different services
+  observabilityLayer?: Layer.Layer<any, never, never>;
+
+  /**
    * Optional: Metrics layer for observability.
    *
    * Used to collect metrics about upload/flow performance, errors, and usage.

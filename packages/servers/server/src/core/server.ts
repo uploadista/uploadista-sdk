@@ -193,6 +193,7 @@ export const createUploadistaServer = async <
   eventEmitter,
   eventBroadcaster = memoryEventBroadcaster,
   withTracing = false,
+  observabilityLayer,
   baseUrl: configBaseUrl = "uploadista",
   generateId = GenerateIdLive,
   metricsLayer,
@@ -561,8 +562,10 @@ export const createUploadistaServer = async <
 
     // Use the shared managed runtime instead of creating a new one per request
     if (withTracing) {
+      // Use custom observability layer if provided, otherwise fall back to default NodeSdkLive
+      const tracingLayer = observabilityLayer ?? NodeSdkLive;
       return managedRuntime.runPromise(
-        program.pipe(Effect.provide(NodeSdkLive)),
+        program.pipe(Effect.provide(tracingLayer)),
       );
     }
     return managedRuntime.runPromise(program);
