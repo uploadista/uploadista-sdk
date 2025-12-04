@@ -828,26 +828,6 @@ export function createFlowServer() {
       };
     };
 
-    // Helper function to restore parent trace context for resumed flows
-    // This ensures the resumed flow execution continues under the same trace
-    // Uses Effect's native Tracer.externalSpan to properly link spans across requests
-    const withParentTraceContext = (traceContext: FlowJobTraceContext) => {
-      return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
-        // Create an ExternalSpan that references the parent trace context
-        const externalSpan = Tracer.externalSpan({
-          traceId: traceContext.traceId,
-          spanId: traceContext.spanId,
-          sampled: traceContext.traceFlags === 1,
-        });
-
-        // Provide the external span as the ParentSpan service
-        // Effect.withSpan will pick this up as the parent for new spans
-        return effect.pipe(
-          Effect.provideService(Tracer.ParentSpan, externalSpan),
-        );
-      };
-    };
-
     // Helper function to execute flow in background
     const executeFlowInBackground = ({
       jobId,
@@ -1209,8 +1189,18 @@ export function createFlowServer() {
           // Get the flow
           const flow = yield* flowProvider.getFlow(job.flowId, job.clientId);
 
+          // Create external span from stored trace context if available
+          // This links resumed flow to the original flow execution trace
+          const parentSpan = job.traceContext
+            ? Tracer.externalSpan({
+                traceId: job.traceContext.traceId,
+                spanId: job.traceContext.spanId,
+                sampled: job.traceContext.traceFlags === 1,
+              })
+            : undefined;
+
           // Helper to resume flow in background
-          const resumeFlowInBackgroundCore = Effect.gen(function* () {
+          const resumeFlowInBackground = Effect.gen(function* () {
             const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
 
             if (!job.executionState) {
@@ -1260,6 +1250,7 @@ export function createFlowServer() {
             return result;
           }).pipe(
             // Wrap resumed flow execution in a span for distributed tracing
+            // Pass parent directly to link to original flow execution
             Effect.withSpan("flow-execution-resume", {
               attributes: {
                 "flow.id": flow.id,
@@ -1268,14 +1259,9 @@ export function createFlowServer() {
                 "flow.storage_id": job.storageId,
                 "flow.resumed_from_node": nodeId,
               },
+              parent: parentSpan,
             }),
           );
-
-          // Restore parent trace context if available from the original flow execution
-          // This ensures the resumed flow continues under the same trace as the initial execution
-          const resumeFlowInBackground = job.traceContext
-            ? withParentTraceContext(job.traceContext)(resumeFlowInBackgroundCore)
-            : resumeFlowInBackgroundCore;
 
           const resumeFlowInBackgroundWithErrorHandling = resumeFlowInBackground.pipe(
             Effect.catchAll((error) =>

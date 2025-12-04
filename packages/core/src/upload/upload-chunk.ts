@@ -15,25 +15,15 @@ import { compareMimeTypes, detectMimeType } from "./mime";
 import { writeToStore } from "./write-to-store";
 
 /**
- * Wraps an Effect to execute within a restored parent trace context.
+ * Creates an ExternalSpan from stored trace context.
  * Used for linking chunk uploads to the original upload trace.
- * Uses Effect's native Tracer.externalSpan to properly link spans across requests.
  */
-function withParentContext(traceContext: UploadFileTraceContext) {
-  return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
-    // Create an ExternalSpan that references the parent trace context
-    const externalSpan = Tracer.externalSpan({
-      traceId: traceContext.traceId,
-      spanId: traceContext.spanId,
-      sampled: traceContext.traceFlags === 1,
-    });
-
-    // Provide the external span as the ParentSpan service
-    // Effect.withSpan will pick this up as the parent for new spans
-    return effect.pipe(
-      Effect.provideService(Tracer.ParentSpan, externalSpan),
-    );
-  };
+function createExternalSpan(traceContext: UploadFileTraceContext) {
+  return Tracer.externalSpan({
+    traceId: traceContext.traceId,
+    spanId: traceContext.spanId,
+    sampled: traceContext.traceFlags === 1,
+  });
 }
 
 /**
@@ -103,6 +93,12 @@ export const uploadChunk = (
     // Get file from KV store first to check for trace context
     const file = yield* kvStore.get(uploadId);
 
+    // Create external span from stored trace context if available
+    // This links chunk uploads to the original upload trace
+    const parentSpan = file.traceContext
+      ? createExternalSpan(file.traceContext)
+      : undefined;
+
     // Core chunk processing logic
     const processChunk = Effect.gen(function* () {
       // Get datastore
@@ -153,21 +149,16 @@ export const uploadChunk = (
 
       return file;
     }).pipe(
-      // Add tracing span for chunk upload
+      // Add tracing span for chunk upload with parent from stored trace context
       Effect.withSpan("upload-chunk", {
         attributes: {
           "upload.id": uploadId,
           "chunk.upload_id": uploadId,
           "upload.has_trace_context": file.traceContext ? "true" : "false",
         },
+        parent: parentSpan,
       }),
     );
-
-    // If upload has stored trace context, restore it as parent for this chunk
-    // This groups all chunks under the original upload trace
-    if (file.traceContext) {
-      return yield* withParentContext(file.traceContext)(processChunk);
-    }
 
     return yield* processChunk;
   }).pipe(

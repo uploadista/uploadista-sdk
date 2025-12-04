@@ -390,48 +390,67 @@ export const captureTraceContextEffect: Effect.Effect<
 > = Effect.sync(() => captureTraceContext());
 
 /**
- * Wraps an Effect to execute within a restored parent trace context.
+ * Creates an ExternalSpan from a stored trace context.
  *
- * This utility restores a previously captured trace context as the parent
- * for new spans. Use this to link spans across HTTP requests (e.g., linking
- * upload-chunk spans to the original upload-create trace).
+ * Use this to create a parent span reference that can be passed to
+ * `Effect.withSpan`'s `parent` option for distributed tracing.
  *
- * Uses Effect's native Tracer.externalSpan to properly link spans across
- * requests, ensuring that Effect.withSpan picks up the parent context.
+ * **Important:** The parent must be passed directly to `Effect.withSpan`'s
+ * options, not provided as a service afterward.
  *
- * @param traceContext - Previously captured trace context to restore
- * @returns Function that wraps an Effect to execute within the restored context
+ * @param traceContext - Previously captured trace context
+ * @returns ExternalSpan that can be used as a parent in Effect.withSpan
  *
  * @example
  * ```typescript
- * // In uploadChunk, restore the parent context from upload creation
- * const uploadChunk = (uploadId: string, chunk: ReadableStream) =>
- *   Effect.gen(function* () {
- *     const file = yield* kvStore.get(uploadId);
+ * // Create parent span from stored trace context
+ * const parentSpan = file.traceContext
+ *   ? createExternalSpan(file.traceContext)
+ *   : undefined;
  *
- *     const chunkEffect = Effect.gen(function* () {
- *       // ... chunk upload logic
- *     }).pipe(Effect.withSpan("upload-chunk", { ... }));
+ * // Pass parent directly to withSpan
+ * const chunkEffect = Effect.gen(function* () {
+ *   // ... chunk upload logic
+ * }).pipe(
+ *   Effect.withSpan("upload-chunk", {
+ *     attributes: { ... },
+ *     parent: parentSpan,  // Link to original trace
+ *   })
+ * );
+ * ```
+ */
+export function createExternalSpan(traceContext: TraceContext) {
+  return Tracer.externalSpan({
+    traceId: traceContext.traceId,
+    spanId: traceContext.spanId,
+    sampled: traceContext.traceFlags === 1,
+  });
+}
+
+/**
+ * @deprecated Use `createExternalSpan` instead and pass the result to
+ * `Effect.withSpan`'s `parent` option directly. This function doesn't
+ * work correctly because Effect.withSpan reads the parent at construction
+ * time, not from the provided service.
  *
- *     // Link to original upload trace if context exists
- *     if (file.traceContext) {
- *       return yield* withParentContext(file.traceContext)(chunkEffect);
- *     }
- *     return yield* chunkEffect;
- *   });
+ * @example
+ * ```typescript
+ * // Instead of:
+ * withParentContext(traceContext)(effect.pipe(Effect.withSpan(...)))
+ *
+ * // Do this:
+ * const parent = createExternalSpan(traceContext);
+ * effect.pipe(Effect.withSpan("name", { parent }))
  * ```
  */
 export function withParentContext(traceContext: TraceContext) {
   return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
-    // Create an ExternalSpan that references the parent trace context
     const externalSpan = Tracer.externalSpan({
       traceId: traceContext.traceId,
       spanId: traceContext.spanId,
       sampled: traceContext.traceFlags === 1,
     });
 
-    // Provide the external span as the ParentSpan service
-    // Effect.withSpan will pick this up as the parent for new spans
     return effect.pipe(
       Effect.provideService(Tracer.ParentSpan, externalSpan),
     );
