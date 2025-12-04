@@ -15,7 +15,7 @@
  */
 
 import type { Flow, UploadServer } from "@uploadista/core";
-import type { ExtractLayerServices } from "@uploadista/core/flow/types";
+import type { ExtractLayerServices } from "@uploadista/core/flow";
 import type { Effect, Layer } from "effect";
 import type z from "zod";
 

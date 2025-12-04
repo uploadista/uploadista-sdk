@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-emitter-websocket",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "WebSocket event emitter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -23,14 +23,17 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@uploadista/core": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.15"
   }
 }

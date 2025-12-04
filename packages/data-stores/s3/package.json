@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-s3",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "AWS S3 data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,16 +24,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "3.939.0",
+    "@aws-sdk/client-s3": "3.943.0",
     "@uploadista/core": "workspace:*",
-    "@uploadista/observability": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/observability": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.15"
   }
 }

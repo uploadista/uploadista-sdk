@@ -29,10 +29,18 @@ export function createOcrNode(id: string, params: OcrNodeParams) {
       name: "OCR",
       description: "Extract text from scanned documents using AI",
       type: NodeType.process,
-      nodeTypeId: OCR_OUTPUT_TYPE_ID,
+      nodeTypeId: "ocr",
+      outputTypeId: OCR_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: ocrOutputSchema,
+      // AI service - enable circuit breaker with skip fallback
+      circuitBreaker: {
+        enabled: true,
+        failureThreshold: 5,
+        resetTimeout: 60000,
+        fallback: { type: "skip", passThrough: true },
+      },
       run: ({ data: file, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           const flow = {

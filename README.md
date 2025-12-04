@@ -4,6 +4,7 @@ The modern upload and file processing platform for TypeScript. Build powerful fi
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-enabled-blueviolet)](https://opentelemetry.io/)
 
 ## Features
 
@@ -273,8 +274,38 @@ const job = await flowServer.executeFlow(
 );
 ```
 
+## Observability
+
+The SDK includes built-in observability support via OpenTelemetry for distributed tracing, metrics, and logging.
+
+### Quick Start
+
+```bash
+# Start local observability stack
+docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -it grafana/otel-lgtm
+
+# Set environment variables
+export OTEL_SERVICE_NAME=my-upload-service
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+```typescript
+import { OtlpNodeSdkLive } from "@uploadista/observability";
+import { Effect } from "effect";
+
+// Add observability to your server
+const program = createUploadServer({ /* config */ }).pipe(
+  Effect.provide(OtlpNodeSdkLive)
+);
+```
+
+View traces at `http://localhost:3000` (Grafana) - go to Explore > Tempo.
+
+See the [Observability Guide](./docs/observability/README.md) for detailed setup instructions including Grafana Cloud, self-hosted stacks, and configuration options.
+
 ## Documentation
 
+- [Observability Guide](./docs/observability/README.md) - Distributed tracing and metrics setup
 - [Architecture Guide](./docs/ARCHITECTURE.md) - Complete system architecture and design patterns
 - [Server Setup](./docs/SERVER_SETUP.md) - Step-by-step server configuration
 - [Client Integration](./docs/CLIENT_INTEGRATION.md) - Frontend integration guide for all platforms

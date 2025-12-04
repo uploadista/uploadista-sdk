@@ -11,8 +11,39 @@ export const extractHonoRequest = <TEnv extends Env>(
     // Get request details
     const req = c.req.raw;
     const url = new URL(req.url);
+    const acceptHeader = req.headers.get("Accept");
 
-    // Check for baseUrl/api/ prefix
+    // Check for health check endpoints first (at /{baseUrl}/health, not under /api/)
+    const healthPrefix = `/${baseUrl}/`;
+    if (url.pathname.startsWith(healthPrefix) && req.method === "GET") {
+      const healthPath = url.pathname.slice(healthPrefix.length);
+
+      // /health or /healthz - Liveness probe
+      if (healthPath === "health" || healthPath === "healthz") {
+        return {
+          type: "health",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /ready or /readyz - Readiness probe
+      if (healthPath === "ready" || healthPath === "readyz") {
+        return {
+          type: "health-ready",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+
+      // /health/components - Detailed component status
+      if (healthPath === "health/components") {
+        return {
+          type: "health-components",
+          acceptHeader,
+        } as UploadistaRequest;
+      }
+    }
+
+    // Check for baseUrl/api/ prefix for other routes
     const expectedPrefix = `/${baseUrl}/api/`;
     if (!url.pathname.includes(expectedPrefix)) {
       return {
@@ -110,6 +141,93 @@ export const extractHonoRequest = <TEnv extends Env>(
             flowId: routeSegments[1],
             storageId: routeSegments[2],
             inputs: params.inputs,
+          } as UploadistaRequest;
+        }
+        default:
+          return {
+            type: "method-not-allowed",
+          } as UploadistaRequest;
+      }
+    } else if (routeSegments[0] === "dlq" || routeSegments.includes("dlq")) {
+      // DLQ Admin routes: /api/dlq, /api/dlq/:itemId, /api/dlq/:itemId/retry, etc.
+      switch (req.method) {
+        case "GET": {
+          if (routeSegments.length === 1) {
+            // GET /api/dlq - List DLQ items
+            const status = url.searchParams.get("status") as string | undefined;
+            const flowId = url.searchParams.get("flowId") as string | undefined;
+            const clientId = url.searchParams.get("clientId") as
+              | string
+              | undefined;
+            const limit = url.searchParams.get("limit")
+              ? Number.parseInt(url.searchParams.get("limit") as string, 10)
+              : undefined;
+            const offset = url.searchParams.get("offset")
+              ? Number.parseInt(url.searchParams.get("offset") as string, 10)
+              : undefined;
+            return {
+              type: "dlq-list",
+              options: { status, flowId, clientId, limit, offset },
+            } as UploadistaRequest;
+          }
+          if (routeSegments[1] === "stats") {
+            // GET /api/dlq/stats - Get DLQ statistics
+            return {
+              type: "dlq-stats",
+            } as UploadistaRequest;
+          }
+          // GET /api/dlq/:itemId - Get specific DLQ item
+          return {
+            type: "dlq-get",
+            itemId: routeSegments[1],
+          } as UploadistaRequest;
+        }
+        case "POST": {
+          if (routeSegments[1] === "cleanup") {
+            // POST /api/dlq/cleanup - Cleanup old items
+            const body = await req.json().catch(() => ({}));
+            return {
+              type: "dlq-cleanup",
+              options: body,
+            } as UploadistaRequest;
+          }
+          if (routeSegments[1] === "retry-all") {
+            // POST /api/dlq/retry-all - Retry all matching items
+            const body = await req.json().catch(() => ({}));
+            return {
+              type: "dlq-retry-all",
+              options: body,
+            } as UploadistaRequest;
+          }
+          if (routeSegments[2] === "retry") {
+            // POST /api/dlq/:itemId/retry - Retry specific item
+            return {
+              type: "dlq-retry",
+              itemId: routeSegments[1],
+            } as UploadistaRequest;
+          }
+          if (routeSegments[2] === "resolve") {
+            // POST /api/dlq/:itemId/resolve - Manually resolve item
+            return {
+              type: "dlq-resolve",
+              itemId: routeSegments[1],
+            } as UploadistaRequest;
+          }
+          return {
+            type: "method-not-allowed",
+          } as UploadistaRequest;
+        }
+        case "DELETE": {
+          // DELETE /api/dlq/:itemId - Delete a DLQ item
+          if (routeSegments.length < 2) {
+            return {
+              type: "bad-request",
+              message: "Item ID is required",
+            } as UploadistaRequest;
+          }
+          return {
+            type: "dlq-delete",
+            itemId: routeSegments[1],
           } as UploadistaRequest;
         }
         default:
@@ -217,6 +335,15 @@ export const sendHonoResponse = <TEnv extends Env>(
     const headers = new Headers(response.headers);
     if (!headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
+    }
+
+    // Handle text/plain responses (for health check endpoints)
+    const contentType = headers.get("Content-Type");
+    if (contentType === "text/plain" && typeof response.body === "string") {
+      return new Response(response.body, {
+        status: response.status,
+        headers,
+      });
     }
 
     return new Response(JSON.stringify(response.body), {

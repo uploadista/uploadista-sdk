@@ -5,6 +5,7 @@ import type {
   BaseKvStoreService,
   DataStoreConfig,
   EventBroadcasterService,
+  HealthCheckConfig,
   UploadFileDataStore,
   UploadFileKVStore,
 } from "@uploadista/core/types";
@@ -14,6 +15,7 @@ import type { Effect, Layer } from "effect";
 import type { z } from "zod";
 import type { ServerAdapter } from "../adapter";
 import type { AuthCacheConfig } from "../cache";
+import type { UsageHookConfig } from "../usage-hooks/types";
 
 /**
  * Function type for retrieving flows based on flow ID and client ID.
@@ -229,6 +231,42 @@ export interface UploadistaServerConfig<
   withTracing?: boolean;
 
   /**
+   * Optional: Custom observability layer for distributed tracing.
+   *
+   * When provided, this layer will be used instead of the default NodeSdkLive.
+   * This allows you to configure custom OTLP exporters (e.g., for Grafana Cloud,
+   * Jaeger, or other OpenTelemetry-compatible backends).
+   *
+   * Requires `withTracing: true` to be effective.
+   *
+   * @example
+   * ```typescript
+   * import { OtlpNodeSdkLive, createOtlpNodeSdkLayer } from "@uploadista/observability";
+   *
+   * // Option 1: Use default OTLP layer (reads from env vars)
+   * const server = await createUploadistaServer({
+   *   withTracing: true,
+   *   observabilityLayer: OtlpNodeSdkLive,
+   *   // ...
+   * });
+   *
+   * // Option 2: Custom configuration with tenant attributes
+   * const server = await createUploadistaServer({
+   *   withTracing: true,
+   *   observabilityLayer: createOtlpNodeSdkLayer({
+   *     serviceName: "uploadista-cloud-api",
+   *     resourceAttributes: {
+   *       "deployment.environment": "production",
+   *     },
+   *   }),
+   *   // ...
+   * });
+   * ```
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: Observability layers from @effect/opentelemetry provide different services
+  observabilityLayer?: Layer.Layer<any, never, never>;
+
+  /**
    * Optional: Metrics layer for observability.
    *
    * Used to collect metrics about upload/flow performance, errors, and usage.
@@ -295,6 +333,118 @@ export interface UploadistaServerConfig<
    * ```
    */
   authCacheConfig?: AuthCacheConfig;
+
+  /**
+   * Optional: Enable circuit breakers for flow nodes.
+   *
+   * When enabled (default), circuit breaker state is stored in the KV store,
+   * allowing circuit breaker state to be shared across multiple server instances
+   * in a cluster deployment.
+   *
+   * Set to `false` to disable circuit breakers entirely.
+   *
+   * @default true
+   *
+   * @example
+   * ```typescript
+   * // Circuit breakers enabled by default (uses the provided kvStore)
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   // circuitBreaker: true (default)
+   * });
+   *
+   * // Disable circuit breakers
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   circuitBreaker: false
+   * });
+   * ```
+   */
+  circuitBreaker?: boolean;
+
+  /**
+   * Optional: Enable dead letter queue for failed flow jobs.
+   *
+   * When enabled, failed flow jobs are captured in a DLQ with full context
+   * for debugging and retry. The DLQ state is stored in the KV store,
+   * allowing it to be shared across multiple server instances.
+   *
+   * Set to `false` to disable the DLQ entirely.
+   *
+   * @default false
+   *
+   * @example
+   * ```typescript
+   * // Enable DLQ (uses the provided kvStore)
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   deadLetterQueue: true
+   * });
+   *
+   * // DLQ is disabled by default
+   * const server = await createUploadistaServer({
+   *   kvStore: redisKvStore,
+   *   // deadLetterQueue: false (default)
+   * });
+   * ```
+   */
+  deadLetterQueue?: boolean;
+
+  /**
+   * Optional: Health check configuration.
+   *
+   * Configures the behavior of health check endpoints (`/health`, `/ready`, `/health/components`).
+   * When not provided, default values are used:
+   * - timeout: 5000ms
+   * - checkStorage: true
+   * - checkKvStore: true
+   * - checkEventBroadcaster: true
+   *
+   * @example
+   * ```typescript
+   * healthCheck: {
+   *   timeout: 3000,          // 3 second timeout for dependency checks
+   *   checkStorage: true,     // Check storage backend health
+   *   checkKvStore: true,     // Check KV store health
+   *   version: "1.2.3"        // Include version in health responses
+   * }
+   * ```
+   */
+  healthCheck?: HealthCheckConfig;
+
+  /**
+   * Optional: Usage hooks for tracking and billing integration.
+   *
+   * Usage hooks allow you to intercept upload and flow operations for:
+   * - Quota checking (e.g., verify user has subscription)
+   * - Usage tracking (e.g., count uploads, track bandwidth)
+   * - Billing integration (e.g., report usage to Stripe/Polar)
+   *
+   * Hooks follow a "fail-open" design - if a hook times out or errors,
+   * the operation proceeds (unless the hook explicitly aborts).
+   *
+   * @example
+   * ```typescript
+   * usageHooks: {
+   *   hooks: {
+   *     onUploadStart: (ctx) => Effect.gen(function* () {
+   *       // Check quota before upload starts
+   *       const quota = yield* checkUserQuota(ctx.clientId);
+   *       if (quota.exceeded) {
+   *         return { action: "abort", reason: "Storage quota exceeded" };
+   *       }
+   *       return { action: "continue" };
+   *     }),
+   *     onUploadComplete: (ctx) => Effect.gen(function* () {
+   *       // Track usage after upload completes
+   *       yield* reportUsage(ctx.clientId, ctx.metadata.fileSize);
+   *     }),
+   *   },
+   *   timeout: 5000, // 5 second timeout for hooks
+   * }
+   * ```
+   */
+  usageHooks?: UsageHookConfig;
 }
 
 /**

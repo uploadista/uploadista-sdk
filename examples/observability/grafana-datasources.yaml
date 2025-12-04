@@ -1,0 +1,32 @@
+# Grafana Data Sources Configuration
+# Pre-configures Tempo and Prometheus for Uploadista observability
+
+apiVersion: 1
+
+datasources:
+  # Tempo for distributed traces
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: true
+    jsonData:
+      httpMethod: GET
+      tracesToLogs:
+        datasourceUid: prometheus
+        tags: ["service.name"]
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
+
+  # Prometheus for metrics
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.49.1

@@ -1,5 +1,6 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import { ZipPlugin } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer } from "effect";
 import JSZip from "jszip";
 
@@ -55,7 +56,12 @@ export const zipJsPlugin = () => {
           );
 
           return zipBytes;
-        });
+        }).pipe(
+          withOperationSpan("zip", "create", {
+            "zip.file_count": inputs.length,
+            "zip.include_metadata": options.includeMetadata,
+          }),
+        );
       },
     }),
   );

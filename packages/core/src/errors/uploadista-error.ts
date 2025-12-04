@@ -48,6 +48,8 @@ export type UploadistaErrorCode =
   | "FFMPEG_NOT_INSTALLED"
   | "INVALID_NODE_TYPE"
   | "TYPE_CATEGORY_MISMATCH"
+  | "INVALID_INPUT_TYPE"
+  | "INVALID_OUTPUT_TYPE"
   | "OUTPUT_NOT_FOUND"
   | "MULTIPLE_OUTPUTS_FOUND"
   | "VIRUS_SCAN_FAILED"
@@ -60,7 +62,8 @@ export type UploadistaErrorCode =
   | "OCR_FAILED"
   | "PDF_ENCRYPTED"
   | "PDF_CORRUPTED"
-  | "PAGE_RANGE_INVALID";
+  | "PAGE_RANGE_INVALID"
+  | "CIRCUIT_BREAKER_OPEN";
 
 /**
  * Catalog of all predefined errors in the Uploadista system.
@@ -236,6 +239,14 @@ export const ERROR_CATALOG: Readonly<
     status: 500,
     body: "Node type category does not match the node configuration\n",
   },
+  INVALID_INPUT_TYPE: {
+    status: 500,
+    body: "The input type is not registered\n",
+  },
+  INVALID_OUTPUT_TYPE: {
+    status: 500,
+    body: "The output type is not registered\n",
+  },
   OUTPUT_NOT_FOUND: {
     status: 404,
     body: "No output of the specified type was found\n",
@@ -287,6 +298,10 @@ export const ERROR_CATALOG: Readonly<
   PAGE_RANGE_INVALID: {
     status: 400,
     body: "The specified page range is invalid\n",
+  },
+  CIRCUIT_BREAKER_OPEN: {
+    status: 503,
+    body: "Circuit breaker is open - service temporarily unavailable\n",
   },
 } as const;
 

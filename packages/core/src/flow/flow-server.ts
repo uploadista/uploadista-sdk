@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Runtime } from "effect";
+import { Context, Effect, Layer, Option, Runtime, Tracer } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
 import {
@@ -17,6 +17,7 @@ import type {
   UploadFile,
   WebSocketConnection,
 } from "../types";
+import type { FlowJobTraceContext } from "./types/flow-job";
 
 /**
  * WaitUntil callback type for keeping background tasks alive.
@@ -53,6 +54,7 @@ export class FlowWaitUntil extends Context.Tag("FlowWaitUntil")<
 
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadServer } from "../upload";
+import { DeadLetterQueueService } from "./dead-letter-queue";
 import type { FlowEvent } from "./event";
 import type { FlowJob } from "./types/flow-job";
 
@@ -710,6 +712,7 @@ export function createFlowServer() {
     const eventEmitter = yield* FlowEventEmitter;
     const kvStore = yield* FlowJobKVStore;
     const uploadServer = yield* UploadServer;
+    const dlqOption = yield* DeadLetterQueueService.optional;
 
     const updateJob = (jobId: string, updates: Partial<FlowJob>) =>
       Effect.gen(function* () {
@@ -766,6 +769,68 @@ export function createFlowServer() {
         });
       });
 
+    // Helper function to add failed job to Dead Letter Queue
+    const addToDeadLetterQueue = (
+      jobId: string,
+      error: UploadistaError,
+    ) =>
+      Effect.gen(function* () {
+        if (Option.isNone(dlqOption)) {
+          // DLQ not configured, skip
+          yield* Effect.logDebug(
+            `[FlowServer] DLQ not configured, skipping for job: ${jobId}`,
+          );
+          return;
+        }
+
+        const dlq = dlqOption.value;
+
+        // Get the job to add to DLQ
+        const job = yield* Effect.catchAll(kvStore.get(jobId), () =>
+          Effect.succeed(null as FlowJob | null),
+        );
+
+        if (!job) {
+          yield* Effect.logWarning(
+            `[FlowServer] Job ${jobId} not found when adding to DLQ`,
+          );
+          return;
+        }
+
+        // Add to DLQ
+        yield* Effect.catchAll(dlq.add(job, error), (dlqError) =>
+          Effect.gen(function* () {
+            yield* Effect.logError(
+              `[FlowServer] Failed to add job ${jobId} to DLQ`,
+              dlqError,
+            );
+            return Effect.succeed(undefined);
+          }),
+        );
+
+        yield* Effect.logInfo(
+          `[FlowServer] Added job ${jobId} to Dead Letter Queue`,
+        );
+      });
+
+    /**
+     * Captures the current Effect trace context for distributed tracing.
+     * Uses Effect's `currentSpan` which properly integrates with @effect/opentelemetry.
+     */
+    const captureTraceContextEffect: Effect.Effect<
+      FlowJobTraceContext | undefined
+    > = Effect.gen(function* () {
+      const spanOption = yield* Effect.currentSpan.pipe(Effect.option);
+      return Option.match(spanOption, {
+        onNone: () => undefined,
+        onSome: (span) => ({
+          traceId: span.traceId,
+          spanId: span.spanId,
+          traceFlags: span.sampled ? 1 : 0,
+        }),
+      });
+    });
+
     // Helper function to execute flow in background
     const executeFlowInBackground = ({
       jobId,
@@ -785,51 +850,84 @@ export function createFlowServer() {
           `[FlowServer] executeFlowInBackground started for job: ${jobId}`,
         );
 
-        // Update job status to running
+        // Capture the parent "flow" span's trace context FIRST
+        // This allows flow-execution-resume to be a sibling of flow-execution
+        // under the same parent "flow" span
+        const traceContext = yield* captureTraceContextEffect;
+
+        // Update job status to running and store trace context
         yield* updateJob(jobId, {
           status: "running",
+          traceContext,
         });
 
-        console.log(`[FlowServer] Creating flowWithEvents for job: ${jobId}`);
-        const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
+        // Now run the actual flow execution inside a child span
+        const result = yield* Effect.gen(function* () {
+          console.log(`[FlowServer] Creating flowWithEvents for job: ${jobId}`);
+          const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
 
-        console.log(`[FlowServer] Running flow for job: ${jobId}`);
-        // Run the flow with the consistent jobId
-        const result = yield* flowWithEvents.run({
-          inputs,
-          storageId,
-          jobId,
-          clientId,
-        });
+          console.log(`[FlowServer] Running flow for job: ${jobId}`);
+          // Run the flow with the consistent jobId
+          const flowResult = yield* flowWithEvents.run({
+            inputs,
+            storageId,
+            jobId,
+            clientId,
+          });
 
-        console.log(
-          `[FlowServer] Flow completed for job: ${jobId}, result type: ${result.type}`,
+          console.log(
+            `[FlowServer] Flow completed for job: ${jobId}, result type: ${flowResult.type}`,
+          );
+
+          // Handle result based on type
+          if (flowResult.type === "paused") {
+            // Update job as paused (node results are in tasks, not executionState)
+            yield* updateJob(jobId, {
+              status: "paused",
+              pausedAt: flowResult.nodeId,
+              executionState: flowResult.executionState,
+              updatedAt: new Date(),
+            });
+          } else {
+            // Update job as completed
+            // Note: result field is already set by FlowEnd event handler with TypedOutput[]
+            yield* updateJob(jobId, {
+              status: "completed",
+              updatedAt: new Date(),
+              endedAt: new Date(),
+            });
+
+            // Cleanup intermediate files
+            yield* cleanupIntermediateFiles(jobId, clientId);
+          }
+
+          return flowResult;
+        }).pipe(
+          // flow-execution is a CHILD span of the parent "flow" span
+          Effect.withSpan("flow-execution", {
+            attributes: {
+              "flow.id": flow.id,
+              "flow.name": flow.name,
+              "flow.job_id": jobId,
+              "flow.storage_id": storageId,
+              "flow.node_count": flow.nodes.length,
+            },
+          }),
         );
-
-        // Handle result based on type
-        if (result.type === "paused") {
-          // Update job as paused (node results are in tasks, not executionState)
-          yield* updateJob(jobId, {
-            status: "paused",
-            pausedAt: result.nodeId,
-            executionState: result.executionState,
-            updatedAt: new Date(),
-          });
-        } else {
-          // Update job as completed
-          // Note: result field is already set by FlowEnd event handler with TypedOutput[]
-          yield* updateJob(jobId, {
-            status: "completed",
-            updatedAt: new Date(),
-            endedAt: new Date(),
-          });
-
-          // Cleanup intermediate files
-          yield* cleanupIntermediateFiles(jobId, clientId);
-        }
 
         return result;
       }).pipe(
+        // Parent "flow" span wraps the entire flow lifecycle
+        // flow-execution and flow-execution-resume will be children of this span
+        Effect.withSpan("flow", {
+          attributes: {
+            "flow.id": flow.id,
+            "flow.name": flow.name,
+            "flow.job_id": jobId,
+            "flow.storage_id": storageId,
+            "flow.node_count": flow.nodes.length,
+          },
+        }),
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Effect.logError("Flow execution failed", error);
@@ -894,6 +992,18 @@ export function createFlowServer() {
                 }),
               ),
             );
+
+            // Add failed job to Dead Letter Queue for retry/debugging
+            const uploadistaError =
+              error instanceof UploadistaError
+                ? error
+                : new UploadistaError({
+                    code: "UNKNOWN_ERROR",
+                    status: 500,
+                    body: String(error),
+                    cause: error,
+                  });
+            yield* addToDeadLetterQueue(jobId, uploadistaError);
 
             throw error;
           }),
@@ -1101,6 +1211,16 @@ export function createFlowServer() {
           // Get the flow
           const flow = yield* flowProvider.getFlow(job.flowId, job.clientId);
 
+          // Create external span from stored trace context if available
+          // This links resumed flow to the original flow execution trace
+          const parentSpan = job.traceContext
+            ? Tracer.externalSpan({
+                traceId: job.traceContext.traceId,
+                spanId: job.traceContext.spanId,
+                sampled: job.traceContext.traceFlags === 1,
+              })
+            : undefined;
+
           // Helper to resume flow in background
           const resumeFlowInBackground = Effect.gen(function* () {
             const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
@@ -1151,6 +1271,21 @@ export function createFlowServer() {
 
             return result;
           }).pipe(
+            // Wrap resumed flow execution in a span for distributed tracing
+            // Pass parent directly to link to original flow execution
+            Effect.withSpan("flow-execution-resume", {
+              attributes: {
+                "flow.id": flow.id,
+                "flow.name": flow.name,
+                "flow.job_id": jobId,
+                "flow.storage_id": job.storageId,
+                "flow.resumed_from_node": nodeId,
+              },
+              parent: parentSpan,
+            }),
+          );
+
+          const resumeFlowInBackgroundWithErrorHandling = resumeFlowInBackground.pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
                 yield* Effect.logError("Flow resume failed", error);
@@ -1216,6 +1351,18 @@ export function createFlowServer() {
                   ),
                 );
 
+                // Add failed job to Dead Letter Queue for retry/debugging
+                const uploadistaError =
+                  error instanceof UploadistaError
+                    ? error
+                    : new UploadistaError({
+                        code: "UNKNOWN_ERROR",
+                        status: 500,
+                        body: String(error),
+                        cause: error,
+                      });
+                yield* addToDeadLetterQueue(jobId, uploadistaError);
+
                 throw error;
               }),
             ),
@@ -1223,12 +1370,12 @@ export function createFlowServer() {
 
           // Fork the resume execution to run in background
           // Use waitUntil if available (Cloudflare Workers), otherwise fork normally
-          const resumeEffect = resumeFlowInBackground.pipe(
+          const resumeEffect = resumeFlowInBackgroundWithErrorHandling.pipe(
             Effect.tapErrorCause((cause) =>
               Effect.logError("Flow resume failed", cause),
             ),
           ) as Effect.Effect<
-            FlowExecutionResult<Record<string, any>>,
+            FlowExecutionResult<Record<string, unknown>>,
             UploadistaError,
             never
           >;

@@ -4,6 +4,10 @@
  * This module automatically registers the standard input and output node types
  * when imported. These types enable type-safe result consumption in clients.
  *
+ * Input types are registered in `inputTypeRegistry` and describe how data enters
+ * the flow from external sources. Output types are registered in `outputTypeRegistry`
+ * and describe the data shapes produced by nodes.
+ *
  * @module flow/node-types
  *
  * @remarks
@@ -14,18 +18,22 @@
  * ```typescript
  * // Types are automatically registered on import
  * import "@uploadista/core/flow";
- * import { flowTypeRegistry } from "@uploadista/core/flow";
+ * import { inputTypeRegistry, outputTypeRegistry } from "@uploadista/core/flow";
  *
  * // Check registered types
- * const inputTypes = flowTypeRegistry.listByCategory("input");
- * console.log(inputTypes.map(t => t.id)); // ["storage-output-v1"]
+ * const inputTypes = inputTypeRegistry.list();
+ * console.log(inputTypes.map(t => t.id)); // ["streaming-input-v1"]
+ *
+ * const outputTypes = outputTypeRegistry.list();
+ * console.log(outputTypes.map(t => t.id)); // ["storage-output-v1", "ocr-output-v1", ...]
  * ```
  */
 
 import { z } from "zod";
 import { uploadFileSchema } from "../../types/upload-file";
+import { inputTypeRegistry } from "../input-type-registry";
 import { inputDataSchema } from "../nodes/input-node";
-import { flowTypeRegistry } from "../type-registry";
+import { outputTypeRegistry } from "../output-type-registry";
 
 /**
  * Type ID constants for built-in node types.
@@ -35,11 +43,12 @@ import { flowTypeRegistry } from "../type-registry";
  *
  * @example
  * ```typescript
- * import { STREAMING_INPUT_TYPE_ID } from "@uploadista/core/flow";
+ * import { STREAMING_INPUT_TYPE_ID, STORAGE_OUTPUT_TYPE_ID } from "@uploadista/core/flow";
  *
  * const inputNode = createFlowNode({
  *   // ... other config
- *   nodeTypeId: STREAMING_INPUT_TYPE_ID
+ *   inputTypeId: STREAMING_INPUT_TYPE_ID,
+ *   outputTypeId: STORAGE_OUTPUT_TYPE_ID,
  * });
  * ```
  */
@@ -88,7 +97,7 @@ export type ImageDescriptionOutput = z.infer<
 >;
 
 /**
- * Register streaming input node type.
+ * Register streaming input node type in inputTypeRegistry.
  *
  * This is the standard input type for flows that accept file uploads via
  * streaming chunks or direct URL fetches. It supports three operations:
@@ -96,9 +105,8 @@ export type ImageDescriptionOutput = z.infer<
  * - finalize: Complete the upload after all chunks are uploaded
  * - url: Fetch a file directly from a URL
  */
-flowTypeRegistry.register({
+inputTypeRegistry.register({
   id: STREAMING_INPUT_TYPE_ID,
-  category: "input",
   schema: inputDataSchema,
   version: "1.0.0",
   description:
@@ -106,14 +114,13 @@ flowTypeRegistry.register({
 });
 
 /**
- * Register storage output node type.
+ * Register storage output node type in outputTypeRegistry.
  *
  * This is the standard output type for flows that save files to storage backends
  * (S3, Azure, GCS, etc.). It produces UploadFile objects with final storage URLs.
  */
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: STORAGE_OUTPUT_TYPE_ID,
-  category: "output",
   schema: uploadFileSchema,
   version: "1.0.0",
   description:
@@ -121,14 +128,13 @@ flowTypeRegistry.register({
 });
 
 /**
- * Register OCR output node type.
+ * Register OCR output node type in outputTypeRegistry.
  *
  * This output type is for document text extraction nodes that use AI/OCR to
  * extract structured text from images or PDFs.
  */
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: OCR_OUTPUT_TYPE_ID,
-  category: "output",
   schema: ocrOutputSchema,
   version: "1.0.0",
   description:
@@ -136,19 +142,19 @@ flowTypeRegistry.register({
 });
 
 /**
- * Register image description output node type.
+ * Register image description output node type in outputTypeRegistry.
  *
  * This output type is for AI-powered image analysis nodes that generate
  * textual descriptions of image content.
  */
-flowTypeRegistry.register({
+outputTypeRegistry.register({
   id: IMAGE_DESCRIPTION_OUTPUT_TYPE_ID,
-  category: "output",
   schema: imageDescriptionOutputSchema,
   version: "1.0.0",
   description:
     "Image description output node that generates AI-powered descriptions of images",
 });
 
-// Export the registry for convenience
-export { flowTypeRegistry } from "../type-registry";
+// Export the registries for convenience
+export { inputTypeRegistry } from "../input-type-registry";
+export { outputTypeRegistry } from "../output-type-registry";

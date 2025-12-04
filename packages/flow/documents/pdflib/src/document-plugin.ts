@@ -4,6 +4,7 @@ import {
   DocumentPlugin,
   type SplitPdfResult,
 } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer } from "effect";
 import { PDFDocument } from "pdf-lib";
 
@@ -103,7 +104,11 @@ export const pdfLibDocumentPlugin = Layer.succeed(
         };
 
         return metadata;
-      });
+      }).pipe(
+        withOperationSpan("document", "get-metadata", {
+          "document.input_size": input.byteLength,
+        }),
+      );
     },
 
     splitPdf: (input, options) => {
@@ -235,7 +240,14 @@ export const pdfLibDocumentPlugin = Layer.succeed(
         };
 
         return result;
-      });
+      }).pipe(
+        withOperationSpan("document", "split-pdf", {
+          "document.mode": options.mode,
+          "document.start_page": options.startPage,
+          "document.end_page": options.endPage,
+          "document.input_size": input.byteLength,
+        }),
+      );
     },
 
     mergePdfs: (options) => {
@@ -310,7 +322,11 @@ export const pdfLibDocumentPlugin = Layer.succeed(
         });
 
         return new Uint8Array(mergedBytes);
-      });
+      }).pipe(
+        withOperationSpan("document", "merge-pdfs", {
+          "document.input_count": options.pdfs.length,
+        }),
+      );
     },
   }),
 );

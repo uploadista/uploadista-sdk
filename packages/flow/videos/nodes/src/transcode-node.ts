@@ -1,5 +1,9 @@
 import {
+  applyFileNaming,
+  buildNamingContext,
   createTransformNode,
+  type FileNamingConfig,
+  getBaseName,
   STORAGE_OUTPUT_TYPE_ID,
   type TranscodeVideoParams,
   VideoPlugin,
@@ -29,21 +33,26 @@ const formatToExtension: Record<TranscodeVideoParams["format"], string> = {
  *
  * @param id - Unique node identifier
  * @param params - Transcode parameters
- * @returns Effect that resolves to the configured node
+ * @param options - Optional configuration
+ * @param options.keepOutput - Whether to keep output in flow results
+ * @param options.naming - File naming configuration (auto suffix: `${format}`)
  *
  * @example
  * ```typescript
- * const node = yield* createTranscodeNode("transcode-1", {
+ * // With auto-naming: "video.mov" -> "video-webm.webm"
+ * const node = yield* createTranscodeVideoNode("transcode-1", {
  *   format: "webm",
  *   codec: "vp9",
  *   videoBitrate: "1000k"
+ * }, {
+ *   naming: { mode: "auto" }
  * });
  * ```
  */
 export function createTranscodeVideoNode(
   id: string,
   params: TranscodeVideoParams,
-  options?: { keepOutput?: boolean },
+  options?: { keepOutput?: boolean; naming?: FileNamingConfig },
 ) {
   return Effect.gen(function* () {
     const videoService = yield* VideoPlugin;
@@ -52,8 +61,12 @@ export function createTranscodeVideoNode(
       id,
       name: "Transcode",
       description: "Converts video to specified format and codec",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      nodeTypeId: "transcode-video",
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
+      // Note: naming is handled in transform since format changes extension
+      nodeType: "transcode",
+      namingVars: { format: params.format },
       transform: (inputBytes, file) =>
         Effect.map(
           videoService.transcode(inputBytes, params),
@@ -62,12 +75,37 @@ export function createTranscodeVideoNode(
             const newType = formatToMimeType[params.format];
             const newExtension = formatToExtension[params.format];
 
-            // Update file extension
+            // Get original fileName
             const fileName = file.metadata?.fileName;
-            const newFileName =
-              fileName && typeof fileName === "string"
-                ? fileName.replace(/\.[^.]+$/, `.${newExtension}`)
-                : undefined;
+            let newFileName: string | undefined;
+
+            if (fileName && typeof fileName === "string") {
+              // Apply naming if configured
+              if (options?.naming) {
+                const namingConfig: FileNamingConfig = {
+                  ...options.naming,
+                  autoSuffix:
+                    options.naming.autoSuffix ?? ((ctx) => ctx.format ?? params.format),
+                };
+                const namingContext = buildNamingContext(
+                  file,
+                  {
+                    flowId: file.flow?.flowId ?? "",
+                    jobId: file.flow?.jobId ?? "",
+                    nodeId: id,
+                    nodeType: "transcode",
+                  },
+                  { format: params.format },
+                );
+                // Apply naming to get base name with suffix
+                const namedFile = applyFileNaming(file, namingContext, namingConfig);
+                // Replace extension with new format extension
+                newFileName = `${getBaseName(namedFile)}.${newExtension}`;
+              } else {
+                // No naming config, just update extension
+                newFileName = fileName.replace(/\.[^.]+$/, `.${newExtension}`);
+              }
+            }
 
             return {
               bytes: transcodedBytes,

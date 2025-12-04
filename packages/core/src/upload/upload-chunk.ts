@@ -1,4 +1,4 @@
-import { Effect, Metric, MetricBoundaries } from "effect";
+import { Effect, Metric, MetricBoundaries, Tracer } from "effect";
 import { UploadistaError } from "../errors/uploadista-error";
 import {
   type DataStore,
@@ -8,10 +8,57 @@ import {
   UploadEventType,
   type UploadFile,
   type UploadFileDataStoresShape,
+  type UploadFileTraceContext,
 } from "../types";
 import { computeChecksum } from "../utils/checksum";
 import { compareMimeTypes, detectMimeType } from "./mime";
 import { writeToStore } from "./write-to-store";
+
+/**
+ * Creates an ExternalSpan from stored trace context.
+ * Used for linking chunk uploads to the original upload trace.
+ */
+function createExternalSpan(traceContext: UploadFileTraceContext) {
+  return Tracer.externalSpan({
+    traceId: traceContext.traceId,
+    spanId: traceContext.spanId,
+    sampled: traceContext.traceFlags === 1,
+  });
+}
+
+/**
+ * Creates an "upload-complete" span Effect that captures the full upload duration.
+ * This span is a sibling of upload-create and upload-chunk under the parent "upload" span.
+ *
+ * Note: The span's visual duration in tracing UIs will be short (instant), but the
+ * actual upload duration is captured in the "upload.total_duration_ms" attribute.
+ *
+ * @param file - The completed upload file
+ * @param parentSpan - The parent span to link to
+ * @returns Effect that creates and completes the span
+ */
+const createUploadCompleteSpanEffect = (
+  file: UploadFile,
+  parentSpan: Tracer.ExternalSpan,
+): Effect.Effect<void> => {
+  const creationTime = new Date(file.creationDate as string).getTime();
+  const totalDurationMs = Date.now() - creationTime;
+
+  return Effect.void.pipe(
+    Effect.withSpan("upload-complete", {
+      attributes: {
+        "upload.id": file.id,
+        "upload.size": file.size ?? 0,
+        "upload.total_duration_ms": totalDurationMs,
+        "upload.storage_id": file.storage.id,
+        "upload.file_name": file.metadata?.fileName ?? "unknown",
+        "upload.creation_date": file.creationDate as string,
+        "upload.completion_date": new Date().toISOString(),
+      },
+      parent: parentSpan,
+    }),
+  );
+};
 
 /**
  * Uploads a chunk of data for an existing upload.
@@ -77,64 +124,85 @@ export const uploadChunk = (
   },
 ) =>
   Effect.gen(function* () {
-    // Get file from KV store
+    // Get file from KV store first to check for trace context
     const file = yield* kvStore.get(uploadId);
 
-    // Get datastore
-    const dataStore = yield* dataStoreService.getDataStore(
-      file.storage.id,
-      clientId,
-    );
+    // Create external span from stored trace context if available
+    // This links chunk uploads to the original upload trace
+    const parentSpan = file.traceContext
+      ? createExternalSpan(file.traceContext)
+      : undefined;
 
-    // Note: AbortController could be used for cancellation if needed
+    // Core chunk processing logic
+    const processChunk = Effect.gen(function* () {
+      // Get datastore
+      const dataStore = yield* dataStoreService.getDataStore(
+        file.storage.id,
+        clientId,
+      );
 
-    // Write to store using writeToStore Effect
-    const controller = new AbortController();
+      // Note: AbortController could be used for cancellation if needed
 
-    const chunkSize = yield* writeToStore({
-      dataStore,
-      data: chunk,
-      upload: file,
-      maxFileSize: 100_000_000,
-      controller,
-      uploadProgressInterval: 200,
-      eventEmitter,
-    });
+      // Write to store using writeToStore Effect
+      const controller = new AbortController();
 
-    file.offset = chunkSize;
-
-    // Update KV store
-    yield* kvStore.set(uploadId, file);
-
-    // Emit progress event
-    yield* eventEmitter.emit(file.id, {
-      type: UploadEventType.UPLOAD_PROGRESS,
-      data: {
-        id: file.id,
-        progress: file.offset,
-        total: file.size ?? 0,
-      },
-      flow: file.flow,
-    });
-
-    // Check if upload is complete and run validation
-    if (file.size && file.offset === file.size) {
-      yield* validateUpload({
-        file,
+      const chunkSize = yield* writeToStore({
         dataStore,
+        data: chunk,
+        upload: file,
+        maxFileSize: 100_000_000,
+        controller,
+        uploadProgressInterval: 200,
         eventEmitter,
       });
-    }
 
-    return file;
+      file.offset = chunkSize;
+
+      // Update KV store
+      yield* kvStore.set(uploadId, file);
+
+      // Emit progress event
+      yield* eventEmitter.emit(file.id, {
+        type: UploadEventType.UPLOAD_PROGRESS,
+        data: {
+          id: file.id,
+          progress: file.offset,
+          total: file.size ?? 0,
+        },
+        flow: file.flow,
+      });
+
+      // Check if upload is complete and run validation
+      if (file.size && file.offset === file.size) {
+        yield* validateUpload({
+          file,
+          dataStore,
+          eventEmitter,
+        });
+
+        // Create "upload-complete" span that captures the full upload duration
+        // This span shows the total time from upload creation to completion
+        if (file.traceContext) {
+          const completeParentSpan = createExternalSpan(file.traceContext);
+          yield* createUploadCompleteSpanEffect(file, completeParentSpan);
+        }
+      }
+
+      return file;
+    }).pipe(
+      // Add tracing span for chunk upload with parent from stored trace context
+      Effect.withSpan("upload-chunk", {
+        attributes: {
+          "upload.id": uploadId,
+          "chunk.upload_id": uploadId,
+          "upload.has_trace_context": file.traceContext ? "true" : "false",
+        },
+        parent: parentSpan,
+      }),
+    );
+
+    return yield* processChunk;
   }).pipe(
-    // Add tracing span for chunk upload
-    Effect.withSpan("upload-chunk", {
-      attributes: {
-        "upload.id": uploadId,
-        "chunk.upload_id": uploadId,
-      },
-    }),
     // Track chunk upload metrics
     Effect.tap((file) =>
       Effect.gen(function* () {

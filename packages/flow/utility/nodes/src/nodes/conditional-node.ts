@@ -16,6 +16,7 @@ export function createConditionalNode(
     name: "Conditional Router",
     description: `Routes flow based on ${field} ${operator} ${value}`,
     type: NodeType.conditional,
+    nodeTypeId: "conditional",
     inputSchema: uploadFileSchema,
     outputSchema: uploadFileSchema,
     condition: { field, operator, value },

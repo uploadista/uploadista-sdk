@@ -328,6 +328,8 @@ export class FlowManager<TInput = FlowUploadInput> {
   private state: FlowUploadState;
   private abortController: FlowUploadAbortController | null = null;
   private inputStates: Map<string, InputExecutionState> = new Map();
+  /** Tracks the nodeId when executing a single-input flow via executeFlow() */
+  private currentSingleInputNodeId: string | null = null;
 
   /**
    * Create a new FlowManager
@@ -542,6 +544,17 @@ export class FlowManager<TInput = FlowUploadInput> {
       progress,
     });
 
+    // Also update inputStates for single-input flows executed via executeFlow()
+    if (this.currentSingleInputNodeId) {
+      const inputState = this.inputStates.get(this.currentSingleInputNodeId);
+      if (inputState) {
+        inputState.status = "uploading";
+        inputState.progress = progress;
+        inputState.bytesUploaded = bytesUploaded;
+        inputState.totalBytes = totalBytes;
+      }
+    }
+
     this.callbacks.onProgress?.(uploadId, bytesUploaded, totalBytes);
   }
 
@@ -623,6 +636,17 @@ export class FlowManager<TInput = FlowUploadInput> {
           this.updateState({
             progress: 100,
           });
+          // Update inputStates for single-input flows executed via executeFlow()
+          if (this.currentSingleInputNodeId) {
+            const inputState = this.inputStates.get(
+              this.currentSingleInputNodeId,
+            );
+            if (inputState) {
+              inputState.status = "complete";
+              inputState.progress = 100;
+            }
+            this.currentSingleInputNodeId = null;
+          }
           // Don't call callbacks.onSuccess here - wait for FlowEnd event with TOutput
         },
         onError: (error: Error) => {
@@ -630,6 +654,17 @@ export class FlowManager<TInput = FlowUploadInput> {
             status: "error",
             error,
           });
+          // Update inputStates for single-input flows executed via executeFlow()
+          if (this.currentSingleInputNodeId) {
+            const inputState = this.inputStates.get(
+              this.currentSingleInputNodeId,
+            );
+            if (inputState) {
+              inputState.status = "error";
+              inputState.error = error;
+            }
+            this.currentSingleInputNodeId = null;
+          }
           this.callbacks.onError?.(error);
           this.options?.onError?.(error);
           this.abortController = null;
@@ -638,6 +673,17 @@ export class FlowManager<TInput = FlowUploadInput> {
           this.updateState({
             status: "aborted",
           });
+          // Update inputStates for single-input flows executed via executeFlow()
+          if (this.currentSingleInputNodeId) {
+            const inputState = this.inputStates.get(
+              this.currentSingleInputNodeId,
+            );
+            if (inputState) {
+              inputState.status = "error";
+              inputState.error = new Error("Upload aborted");
+            }
+            this.currentSingleInputNodeId = null;
+          }
           this.callbacks.onAbort?.();
           this.options?.onAbort?.();
           this.abortController = null;
@@ -659,6 +705,16 @@ export class FlowManager<TInput = FlowUploadInput> {
         status: "error",
         error: uploadError,
       });
+
+      // Update inputStates for single-input flows executed via executeFlow()
+      if (this.currentSingleInputNodeId) {
+        const inputState = this.inputStates.get(this.currentSingleInputNodeId);
+        if (inputState) {
+          inputState.status = "error";
+          inputState.error = uploadError;
+        }
+        this.currentSingleInputNodeId = null;
+      }
 
       this.callbacks.onError?.(uploadError);
       this.options?.onError?.(uploadError);
@@ -701,6 +757,7 @@ export class FlowManager<TInput = FlowUploadInput> {
       }
     }
     this.inputStates.clear();
+    this.currentSingleInputNodeId = null;
 
     this.state = { ...initialState };
     this.callbacks.onStateChange(this.state);
@@ -796,7 +853,9 @@ export class FlowManager<TInput = FlowUploadInput> {
       if (!firstEntry) {
         throw new Error("No inputs provided to executeFlow");
       }
-      const [, firstData] = firstEntry;
+      const [nodeId, firstData] = firstEntry;
+      // Track nodeId so upload() callbacks can update inputStates
+      this.currentSingleInputNodeId = nodeId;
       await this.upload(firstData as TInput);
       return;
     }
@@ -933,5 +992,6 @@ export class FlowManager<TInput = FlowUploadInput> {
       }
     }
     this.inputStates.clear();
+    this.currentSingleInputNodeId = null;
   }
 }

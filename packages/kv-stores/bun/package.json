@@ -1,0 +1,39 @@
+{
+  "name": "@uploadista/kv-store-bun",
+  "type": "module",
+  "version": "0.0.18-beta.17",
+  "description": "Bun Redis KV store for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check": "biome check --write ./src",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@types/bun": "1.3.3",
+    "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
+    "tsdown": "catalog:",
+    "vitest": "4.0.15"
+  }
+}

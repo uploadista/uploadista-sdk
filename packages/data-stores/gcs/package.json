@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-gcs",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "Google Cloud Storage data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,16 +24,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/storage": "7.17.3",
+    "@google-cloud/storage": "7.18.0",
     "@uploadista/core": "workspace:*",
-    "@uploadista/observability": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/observability": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.15"
   }
 }

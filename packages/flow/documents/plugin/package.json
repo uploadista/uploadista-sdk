@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-plugin",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "Combined pdf-lib + unpdf DocumentPlugin for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -22,12 +22,15 @@
   "dependencies": {
     "@uploadista/core": "workspace:*",
     "@uploadista/flow-documents-pdflib": "workspace:*",
-    "@uploadista/flow-documents-unpdf": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/flow-documents-unpdf": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:"
   }
 }

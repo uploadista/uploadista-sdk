@@ -78,8 +78,16 @@ export function createScanVirusNode(
       id,
       name: "Scan Virus",
       description: "Scans files for viruses and malware using ClamAV",
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      nodeTypeId: "scan-virus",
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: options?.keepOutput,
+      // External service - enable circuit breaker with fail fallback (don't skip security scans)
+      circuitBreaker: {
+        enabled: true,
+        failureThreshold: 5,
+        resetTimeout: 60000,
+        fallback: { type: "fail" },
+      },
       transform: (inputBytes, file) =>
         Effect.gen(function* () {
           // Perform virus scan

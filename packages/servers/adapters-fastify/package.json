@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/adapters-fastify",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "Fastify adapter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -28,20 +28,22 @@
     "@uploadista/observability": "workspace:*",
     "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/event-emitter-websocket": "workspace:*",
-    "@uploadista/server": "workspace:*",
-    "effect": "catalog:",
-    "zod": "catalog:"
+    "@uploadista/server": "workspace:*"
+  },
+  "peerDependencies": {
+    "@fastify/websocket": "^10.0.0 || ^11.0.0",
+    "effect": "^3.0.0",
+    "fastify": "^4.0.0 || ^5.0.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.13"
-  },
-  "peerDependencies": {
-    "fastify": "^4.0.0 || ^5.0.0",
-    "@fastify/websocket": "^10.0.0 || ^11.0.0"
+    "vitest": "4.0.15",
+    "zod": "catalog:"
   }
 }

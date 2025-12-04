@@ -1,5 +1,6 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import { DocumentPlugin } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer } from "effect";
 import { extractText } from "unpdf";
 
@@ -52,7 +53,11 @@ export const unpdfDocumentPlugin = Layer.succeed(
         }
 
         return text;
-      });
+      }).pipe(
+        withOperationSpan("document", "extract-text", {
+          "document.input_size": input.byteLength,
+        }),
+      );
     },
 
     getMetadata: () => {

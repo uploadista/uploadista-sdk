@@ -1,3 +1,22 @@
+/**
+ * Hono Server Example with Observability
+ *
+ * This example demonstrates running Uploadista with full distributed tracing.
+ *
+ * Prerequisites for local tracing:
+ * 1. Start local Grafana LGTM stack:
+ *    docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -it grafana/otel-lgtm
+ *
+ * 2. Set environment variables:
+ *    export OTEL_SERVICE_NAME=uploadista-hono-example
+ *    export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+ *
+ * 3. Run the server:
+ *    pnpm dev
+ *
+ * 4. View traces at http://localhost:3000 (Grafana)
+ *    - Go to Explore > Tempo > Search for service.name="uploadista-hono-example"
+ */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
@@ -10,6 +29,7 @@ import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
 import { redisKvStore } from "@uploadista/kv-store-redis";
+import { OtlpNodeSdkLive } from "@uploadista/observability";
 import { createUploadistaServer } from "@uploadista/server";
 import dotenv from "dotenv";
 import { Hono } from "hono";
@@ -68,6 +88,23 @@ if (!process.env.REPLICATE_API_TOKEN) {
   throw new Error("REPLICATE_API_TOKEN is not set");
 }
 
+// Check if observability is enabled via environment
+const isObservabilityEnabled = Boolean(process.env.OTEL_EXPORTER_OTLP_ENDPOINT);
+if (isObservabilityEnabled) {
+  console.log(
+    "🔍 Observability enabled - traces will be exported to:",
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+  );
+  console.log(
+    "   Service name:",
+    process.env.OTEL_SERVICE_NAME ?? "uploadista",
+  );
+} else {
+  console.log(
+    "ℹ️  Observability disabled. Set OTEL_EXPORTER_OTLP_ENDPOINT to enable.",
+  );
+}
+
 const uploadistaServer = await createUploadistaServer({
   dataStore,
   flows,
@@ -75,6 +112,9 @@ const uploadistaServer = await createUploadistaServer({
   kvStore,
   eventBroadcaster,
   adapter: honoAdapter(),
+  // Enable tracing if OTLP endpoint is configured
+  withTracing: isObservabilityEnabled,
+  observabilityLayer: OtlpNodeSdkLive,
 });
 
 app.use(
@@ -132,7 +172,7 @@ export type AppType = typeof routes;
 
 const server = serve(
   {
-    port: 3000,
+    port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
     fetch: routes.fetch,
   },
   (info) => {
@@ -142,17 +182,32 @@ const server = serve(
 
 injectWebSocket(server);
 
-// graceful shutdown
-process.on("SIGINT", () => {
+// Graceful shutdown with proper observability cleanup
+async function gracefulShutdown(signal: string) {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+
+  // Close HTTP server first (stop accepting new requests)
   server.close();
+
+  // Dispose uploadista server (flushes pending traces)
+  try {
+    await uploadistaServer.dispose();
+    console.log("✅ Uploadista server disposed (traces flushed)");
+  } catch (err) {
+    console.error("Error disposing uploadista server:", err);
+  }
+
+  // Close Redis connections
+  try {
+    await redisClient.quit();
+    await redisSubscriberClient.quit();
+    console.log("✅ Redis connections closed");
+  } catch (err) {
+    console.error("Error closing Redis connections:", err);
+  }
+
   process.exit(0);
-});
-process.on("SIGTERM", () => {
-  server.close((err) => {
-    if (err) {
-      console.error(err);
-      process.exit(1);
-    }
-    process.exit(0);
-  });
-});
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

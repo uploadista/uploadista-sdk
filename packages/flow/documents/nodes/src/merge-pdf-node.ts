@@ -1,8 +1,12 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import {
+  applyFileNaming,
+  buildNamingContext,
   completeNodeExecution,
   createFlowNode,
   DocumentPlugin,
+  type FileNamingConfig,
+  getBaseName,
   NodeType,
   resolveUploadMetadata,
   STORAGE_OUTPUT_TYPE_ID,
@@ -15,6 +19,11 @@ import { z } from "zod";
 export type MergePdfNodeParams = {
   inputCount?: number;
   keepOutput?: boolean;
+  /**
+   * Optional file naming configuration.
+   * Auto suffix: `merged`
+   */
+  naming?: FileNamingConfig;
 };
 
 // Schema for multiple file inputs
@@ -33,7 +42,8 @@ export function createMergePdfNode(
       name: "Merge PDFs",
       description: "Merge multiple PDF documents into one",
       type: NodeType.process,
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      nodeTypeId: "merge-pdf",
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: multipleFilesSchema,
       outputSchema: uploadFileSchema,
@@ -109,13 +119,29 @@ export function createMergePdfNode(
             },
           });
 
+          // Generate output filename
+          let outputFileName = `merged-${files.length}-documents.pdf`;
+          if (params.naming) {
+            const namingConfig: FileNamingConfig = {
+              ...params.naming,
+              autoSuffix: params.naming.autoSuffix ?? (() => "merged"),
+            };
+            const namingContext = buildNamingContext(
+              firstFile,
+              { flowId, jobId, nodeId: id, nodeType: "merge-pdf" },
+              { mergedCount: files.length },
+            );
+            const namedFile = applyFileNaming(firstFile, namingContext, namingConfig);
+            outputFileName = `${getBaseName(namedFile)}.pdf`;
+          }
+
           // Upload the merged PDF back to the upload server
           const result = yield* uploadServer.upload(
             {
               storageId: firstFile.storage.id,
               size: mergedPdf.byteLength,
               type: "application/pdf",
-              fileName: `merged-${files.length}-documents.pdf`,
+              fileName: outputFileName,
               lastModified: 0,
               metadata: JSON.stringify({
                 ...metadata,
@@ -132,7 +158,7 @@ export function createMergePdfNode(
             ...metadata,
             pageCount: totalPages,
             mergedFrom: files.length,
-            fileName: `merged-${files.length}-documents.pdf`,
+            fileName: outputFileName,
           };
 
           yield* Effect.logInfo(

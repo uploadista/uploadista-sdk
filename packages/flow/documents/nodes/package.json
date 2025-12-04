@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-nodes",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "Document processing nodes for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -28,15 +28,19 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@uploadista/core": "workspace:*",
-    "effect": "catalog:",
-    "zod": "catalog:"
+    "@uploadista/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@types/node": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.15",
+    "zod": "catalog:"
   }
 }

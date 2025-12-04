@@ -115,6 +115,19 @@ export type FlowJobTask = {
  * }
  * ```
  */
+/**
+ * Trace context for distributed tracing.
+ * Allows flow operations to be linked under a single trace.
+ */
+export type FlowJobTraceContext = {
+  /** 128-bit trace identifier (32 hex characters) */
+  traceId: string;
+  /** 64-bit span identifier (16 hex characters) */
+  spanId: string;
+  /** Trace flags (1 = sampled) */
+  traceFlags: number;
+};
+
 export type FlowJob = {
   id: string;
   flowId: string;
@@ -137,6 +150,13 @@ export type FlowJob = {
   };
   // Intermediate files to cleanup after flow completion
   intermediateFiles?: string[]; // UploadFile IDs from non-output nodes
+  /**
+   * OpenTelemetry trace context for distributed tracing.
+   * When set, all flow operations (node executions, uploads) will be
+   * linked as children of this trace context. Enables end-to-end tracing
+   * of flow executions in observability tools like Grafana Tempo.
+   */
+  traceContext?: FlowJobTraceContext;
 };
 
 /**

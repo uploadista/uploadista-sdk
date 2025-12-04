@@ -1,4 +1,4 @@
-import { Effect, Metric, MetricBoundaries } from "effect";
+import { Effect, Metric, MetricBoundaries, Option } from "effect";
 import {
   type EventEmitter,
   type InputFile,
@@ -7,8 +7,33 @@ import {
   UploadEventType,
   type UploadFile,
   type UploadFileDataStoresShape,
+  type UploadFileTraceContext,
 } from "../types";
 import type { GenerateIdShape } from "../utils/generate-id";
+
+/**
+ * Captures the current Effect trace context for distributed tracing.
+ *
+ * Uses Effect's `currentSpan` to get the active span, which is more reliable
+ * than OpenTelemetry's `trace.getActiveSpan()` when using @effect/opentelemetry
+ * because Effect manages its own span context that may not be synchronized
+ * with OpenTelemetry's global context.
+ *
+ * @returns Effect that yields TraceContext if there's an active span, undefined otherwise
+ */
+const captureTraceContextEffect: Effect.Effect<
+  UploadFileTraceContext | undefined
+> = Effect.gen(function* () {
+  const spanOption = yield* Effect.currentSpan.pipe(Effect.option);
+  return Option.match(spanOption, {
+    onNone: () => undefined,
+    onSome: (span) => ({
+      traceId: span.traceId,
+      spanId: span.spanId,
+      traceFlags: span.sampled ? 1 : 0,
+    }),
+  });
+});
 
 /**
  * Creates a new upload and initializes it in the storage system.
@@ -84,66 +109,89 @@ export const createUpload = (
   },
 ) =>
   Effect.gen(function* () {
-    // Get datastore using Effect
-    const dataStore = yield* dataStoreService.getDataStore(
-      inputFile.storageId,
-      clientId,
-    );
+    // Capture the parent "upload" span's trace context FIRST
+    // This allows subsequent chunk uploads to be siblings of upload-create
+    // under the same parent "upload" span
+    const traceContext = yield* captureTraceContextEffect;
+    const creationDate = new Date().toISOString();
 
-    const id = yield* generateId.generateId();
-    const { size, type, fileName, lastModified, metadata, flow } = inputFile;
+    // Now run the actual upload creation inside a child span
+    const fileCreated = yield* Effect.gen(function* () {
+      // Get datastore using Effect
+      const dataStore = yield* dataStoreService.getDataStore(
+        inputFile.storageId,
+        clientId,
+      );
 
-    let parsedMetadata: Record<string, string> = {};
-    if (metadata) {
-      try {
-        parsedMetadata = JSON.parse(metadata) as Record<string, string>;
-      } catch {
-        parsedMetadata = {};
+      const id = yield* generateId.generateId();
+      const { size, type, fileName, lastModified, metadata, flow } = inputFile;
+
+      let parsedMetadata: Record<string, string> = {};
+      if (metadata) {
+        try {
+          parsedMetadata = JSON.parse(metadata) as Record<string, string>;
+        } catch {
+          parsedMetadata = {};
+        }
       }
-    }
 
-    const metadataObject: Record<string, string> = {
-      ...parsedMetadata,
-      type,
-      fileName: fileName ?? "",
-    };
-    if (lastModified) {
-      metadataObject.lastModified = lastModified.toString();
-    }
-
-    const file: UploadFile = {
-      id,
-      size,
-      metadata: metadataObject,
-      offset: 0,
-      creationDate: new Date().toISOString(),
-      storage: {
-        id: inputFile.storageId,
-
+      const metadataObject: Record<string, string> = {
+        ...parsedMetadata,
         type,
-        path: "",
-        bucket: dataStore.bucket,
-      },
-      flow,
-    };
+        fileName: fileName ?? "",
+      };
+      if (lastModified) {
+        metadataObject.lastModified = lastModified.toString();
+      }
 
-    // Create file using Effect
-    const fileCreated = yield* dataStore.create(file);
+      const file: UploadFile = {
+        id,
+        size,
+        metadata: metadataObject,
+        offset: 0,
+        creationDate,
+        storage: {
+          id: inputFile.storageId,
+          type,
+          path: "",
+          bucket: dataStore.bucket,
+        },
+        flow,
+        traceContext,
+      };
 
-    // Store in KV store
-    yield* kvStore.set(id, fileCreated);
+      // Create file using Effect
+      const created = yield* dataStore.create(file);
 
-    // Emit event
-    yield* eventEmitter.emit(id, {
-      type: UploadEventType.UPLOAD_STARTED,
-      data: fileCreated,
-      flow: fileCreated.flow,
-    });
+      // Store in KV store
+      yield* kvStore.set(id, created);
+
+      // Emit event
+      yield* eventEmitter.emit(id, {
+        type: UploadEventType.UPLOAD_STARTED,
+        data: created,
+        flow: created.flow,
+      });
+
+      return created;
+    }).pipe(
+      // upload-create is a CHILD span of the parent "upload" span
+      Effect.withSpan("upload-create", {
+        attributes: {
+          "upload.file_name": inputFile.fileName ?? "unknown",
+          "upload.file_size": inputFile.size?.toString() ?? "0",
+          "upload.storage_id": inputFile.storageId,
+          "upload.mime_type": inputFile.type,
+          "upload.has_flow": inputFile.flow ? "true" : "false",
+        },
+      }),
+    );
 
     return fileCreated;
   }).pipe(
-    // Add tracing span for the entire create operation
-    Effect.withSpan("upload-create", {
+    // Parent "upload" span wraps the entire upload lifecycle
+    // upload-create and upload-chunk will be children of this span
+    Effect.withSpan("upload", {
       attributes: {
         "upload.file_name": inputFile.fileName ?? "unknown",
         "upload.file_size": inputFile.size?.toString() ?? "0",

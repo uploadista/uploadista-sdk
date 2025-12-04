@@ -18,6 +18,7 @@ import type { UploadistaError } from "../../errors";
 import type { UploadFile } from "../../types/upload-file";
 import type { FlowEvent, FlowEventFlowEnd, FlowEventFlowStart } from "../event";
 import { NodeType } from "../node";
+import type { RetryPolicy } from "./retry-policy";
 
 /**
  * Type mapping for node input/output schemas.
@@ -33,6 +34,8 @@ export type NodeTypeMap = Record<string, { input: unknown; output: unknown }>;
  * @property name - Human-readable node name
  * @property description - Explanation of what the node does
  * @property type - Node category (input, transform, conditional, output, etc.)
+ * @property inputTypeId - Optional input type ID from inputTypeRegistry (for input nodes)
+ * @property outputTypeId - Optional output type ID from outputTypeRegistry (for result typing)
  * @property keepOutput - If true, preserves this node's output even if it has outgoing edges (default: false)
  */
 export type FlowNodeData = {
@@ -40,8 +43,17 @@ export type FlowNodeData = {
   name: string;
   description: string;
   type: NodeType;
-  nodeTypeId: string;
+  /** Input type ID from inputTypeRegistry - describes how external clients interact with this node */
+  inputTypeId?: string;
+  /** Output type ID from outputTypeRegistry - describes the data shape this node produces */
+  outputTypeId?: string;
   keepOutput?: boolean;
+  /**
+   * Stable node type identifier for circuit breaker configuration.
+   * Used to share circuit breaker state across nodes of the same type and for nodeTypeOverrides.
+   * Example: "describe-image", "remove-background", "scan-virus"
+   */
+  nodeTypeId?: string;
 };
 
 /**
@@ -179,7 +191,7 @@ export type TypedOutput<T = unknown> =
  *
  * Results now include optional type information (`nodeType` and `nodeId`) to
  * enable type-safe result consumption. These fields are automatically added
- * by the node execution wrapper when a node is created with a `nodeTypeId`.
+ * by the node execution wrapper when a node is created with an `outputTypeId`.
  *
  * @example
  * ```typescript
@@ -325,6 +337,8 @@ export type FlowNode<
     retryDelay?: number; // Base delay in ms between retries (default: 1000)
     exponentialBackoff?: boolean; // Use exponential backoff (default: true)
   };
+  /** Circuit breaker configuration for this node (overrides flow defaults) */
+  circuitBreaker?: FlowCircuitBreakerConfig;
 };
 
 /**
@@ -404,6 +418,110 @@ export type NodeConnectionValidator = {
     targetSchema: z.ZodSchema<any>,
   ) => boolean;
 };
+
+// ============================================================================
+// Circuit Breaker Types (re-exported from circuit-breaker.ts for convenience)
+// ============================================================================
+
+/**
+ * Fallback behavior when circuit is open.
+ *
+ * - `fail`: Fail immediately with CIRCUIT_BREAKER_OPEN error (default)
+ * - `skip`: Skip node, pass input through as output
+ * - `default`: Return a configured default value
+ */
+export type FlowCircuitBreakerFallback =
+  | { type: "fail" }
+  | { type: "skip"; passThrough: true }
+  | { type: "default"; value: unknown };
+
+/**
+ * Configuration for a circuit breaker on a flow or node.
+ *
+ * @property enabled - Whether circuit breaker is active (default: false for backward compatibility)
+ * @property failureThreshold - Number of failures within window to trip circuit (default: 5)
+ * @property resetTimeout - Milliseconds to wait in open state before half-open (default: 30000)
+ * @property halfOpenRequests - Number of successful requests in half-open to close (default: 3)
+ * @property windowDuration - Sliding window duration in milliseconds (default: 60000)
+ * @property fallback - Behavior when circuit is open
+ *
+ * @example
+ * ```typescript
+ * const config: FlowCircuitBreakerConfig = {
+ *   enabled: true,
+ *   failureThreshold: 5,
+ *   resetTimeout: 30000,
+ *   halfOpenRequests: 3,
+ *   windowDuration: 60000,
+ *   fallback: { type: "fail" }
+ * };
+ * ```
+ */
+export interface FlowCircuitBreakerConfig {
+  /** Whether circuit breaker is active (default: false) */
+  enabled?: boolean;
+  /** Number of failures within window to trip circuit (default: 5) */
+  failureThreshold?: number;
+  /** Milliseconds to wait in open state before half-open (default: 30000) */
+  resetTimeout?: number;
+  /** Number of successful requests in half-open to close (default: 3) */
+  halfOpenRequests?: number;
+  /** Sliding window duration in milliseconds (default: 60000) */
+  windowDuration?: number;
+  /** Behavior when circuit is open */
+  fallback?: FlowCircuitBreakerFallback;
+}
+
+// ============================================================================
+// Dead Letter Queue Types
+// ============================================================================
+
+/**
+ * Configuration for Dead Letter Queue on a flow.
+ *
+ * When enabled, failed flow jobs are captured in the DLQ for later retry,
+ * debugging, or manual intervention.
+ *
+ * @property enabled - Whether DLQ is enabled for this flow (default: true when service is provided)
+ * @property retryPolicy - Retry policy configuration for automatic retries
+ *
+ * @example
+ * ```typescript
+ * // Enable DLQ with custom retry policy
+ * const flowConfig = {
+ *   flowId: "image-pipeline",
+ *   deadLetterQueue: {
+ *     enabled: true,
+ *     retryPolicy: {
+ *       enabled: true,
+ *       maxRetries: 5,
+ *       backoff: {
+ *         type: "exponential",
+ *         initialDelayMs: 1000,
+ *         maxDelayMs: 60000,
+ *         multiplier: 2,
+ *         jitter: true
+ *       },
+ *       nonRetryableErrors: ["VALIDATION_ERROR"]
+ *     }
+ *   }
+ * };
+ *
+ * // Disable DLQ for best-effort flows
+ * const bestEffortFlow = {
+ *   flowId: "analytics-pipeline",
+ *   deadLetterQueue: {
+ *     enabled: false
+ *   }
+ * };
+ * ```
+ */
+export interface FlowDeadLetterQueueConfig {
+  /** Whether DLQ is enabled for this flow (default: true when service is provided) */
+  enabled?: boolean;
+  /** Retry policy configuration for automatic retries */
+  retryPolicy?: RetryPolicy;
+}
 
 /**
  * Configuration object for creating a new flow.
@@ -491,6 +609,58 @@ export type FlowConfig<
     enabled?: boolean;
     maxConcurrency?: number;
   };
+  /**
+   * Circuit breaker configuration for the flow.
+   *
+   * When enabled, the circuit breaker monitors node execution failures and
+   * automatically prevents requests to failing services, protecting against
+   * cascade failures.
+   *
+   * @example
+   * ```typescript
+   * circuitBreaker: {
+   *   defaults: {
+   *     enabled: true,
+   *     failureThreshold: 5,
+   *     resetTimeout: 30000
+   *   },
+   *   nodeTypeOverrides: {
+   *     "virus-scan": { failureThreshold: 3 }
+   *   }
+   * }
+   * ```
+   */
+  circuitBreaker?: {
+    /** Default circuit breaker config for all nodes */
+    defaults?: FlowCircuitBreakerConfig;
+    /** Override circuit breaker config per node type */
+    nodeTypeOverrides?: Record<string, FlowCircuitBreakerConfig>;
+  };
+  /**
+   * Dead Letter Queue configuration for the flow.
+   *
+   * When enabled, failed jobs are captured in the DLQ for later retry,
+   * debugging, or manual intervention.
+   *
+   * @example
+   * ```typescript
+   * deadLetterQueue: {
+   *   enabled: true,
+   *   retryPolicy: {
+   *     enabled: true,
+   *     maxRetries: 5,
+   *     backoff: {
+   *       type: "exponential",
+   *       initialDelayMs: 1000,
+   *       maxDelayMs: 60000,
+   *       multiplier: 2,
+   *       jitter: true
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  deadLetterQueue?: FlowDeadLetterQueueConfig;
   hooks?: {
     /**
      * Called when a sink node (terminal node with no outgoing edges) produces an output.
@@ -544,6 +714,154 @@ export type FlowConfig<
       clientId: string | null;
     }) => Effect.Effect<TOutput, UploadistaError, never> | Promise<TOutput>;
   };
+};
+
+// ============================================================================
+// File Naming Types
+// ============================================================================
+
+/**
+ * Context provided to file naming functions and templates.
+ *
+ * Contains all relevant information about the current file, node, and flow
+ * execution that can be used to generate dynamic file names.
+ *
+ * @property baseName - Filename without extension (e.g., "photo" from "photo.jpg")
+ * @property extension - File extension without dot (e.g., "jpg")
+ * @property fileName - Full original filename (e.g., "photo.jpg")
+ * @property nodeType - Type of processing node (e.g., "resize", "optimize")
+ * @property nodeId - Specific node instance ID
+ * @property flowId - Flow identifier
+ * @property jobId - Execution job ID
+ * @property timestamp - ISO 8601 timestamp of processing
+ * @property width - Output width (image/video nodes only)
+ * @property height - Output height (image/video nodes only)
+ * @property format - Output format (e.g., "webp", "mp4")
+ * @property quality - Quality setting (e.g., 80)
+ *
+ * @example
+ * ```typescript
+ * // Available in templates as {{variable}}
+ * const pattern = "{{baseName}}-{{width}}x{{height}}.{{extension}}";
+ * // Result: "photo-800x600.jpg"
+ * ```
+ */
+export type NamingContext = {
+  /** Filename without extension */
+  baseName: string;
+  /** File extension without dot */
+  extension: string;
+  /** Full original filename */
+  fileName: string;
+  /** Type of processing node */
+  nodeType: string;
+  /** Specific node instance ID */
+  nodeId: string;
+  /** Flow identifier */
+  flowId: string;
+  /** Execution job ID */
+  jobId: string;
+  /** ISO 8601 timestamp of processing */
+  timestamp: string;
+  /** Output width (image/video nodes) */
+  width?: number;
+  /** Output height (image/video nodes) */
+  height?: number;
+  /** Output format */
+  format?: string;
+  /** Quality setting */
+  quality?: number;
+  /** Page number (document nodes) */
+  pageNumber?: number;
+  /** Additional custom variables */
+  [key: string]: string | number | undefined;
+};
+
+/**
+ * Function type for custom file naming logic.
+ *
+ * @param file - The UploadFile being processed
+ * @param context - Naming context with all available variables
+ * @returns The new filename (including extension)
+ *
+ * @example
+ * ```typescript
+ * const customRename: FileNamingFunction = (file, ctx) =>
+ *   `${ctx.flowId}-${ctx.baseName}-${ctx.timestamp}.${ctx.extension}`;
+ * ```
+ */
+export type FileNamingFunction = (
+  file: UploadFile,
+  context: NamingContext,
+) => string;
+
+/**
+ * Function type for generating auto-naming suffixes.
+ *
+ * Each node type can define its own auto suffix generator that creates
+ * a descriptive suffix based on the processing parameters.
+ *
+ * @param context - Naming context with all available variables
+ * @returns The suffix to append (without leading dash)
+ *
+ * @example
+ * ```typescript
+ * // Resize node auto suffix
+ * const resizeAutoSuffix: AutoNamingSuffixGenerator = (ctx) =>
+ *   `${ctx.width}x${ctx.height}`;
+ * // Result: "photo-800x600.jpg"
+ *
+ * // Optimize node auto suffix
+ * const optimizeAutoSuffix: AutoNamingSuffixGenerator = (ctx) =>
+ *   ctx.format ?? 'optimized';
+ * // Result: "photo-webp.webp"
+ * ```
+ */
+export type AutoNamingSuffixGenerator = (context: NamingContext) => string;
+
+/**
+ * Configuration for file naming behavior on a node.
+ *
+ * Supports three modes:
+ * - `undefined` or no config: Preserve original filename (backward compatible)
+ * - `mode: 'auto'`: Generate smart suffix based on node type
+ * - `mode: 'custom'`: Use template pattern or rename function
+ *
+ * @property mode - Naming mode: 'auto' for smart suffixes, 'custom' for templates/functions
+ * @property pattern - Mustache-style template string (for custom mode)
+ * @property rename - Custom function for full control (for custom mode, SDK only)
+ * @property autoSuffix - Generator function for auto mode suffix
+ *
+ * @example
+ * ```typescript
+ * // Auto mode with smart suffix
+ * const autoNaming: FileNamingConfig = {
+ *   mode: 'auto',
+ *   autoSuffix: (ctx) => `${ctx.width}x${ctx.height}`
+ * };
+ *
+ * // Custom mode with template
+ * const templateNaming: FileNamingConfig = {
+ *   mode: 'custom',
+ *   pattern: '{{baseName}}-{{nodeType}}.{{extension}}'
+ * };
+ *
+ * // Custom mode with function
+ * const functionNaming: FileNamingConfig = {
+ *   mode: 'custom',
+ *   rename: (file, ctx) => `processed-${ctx.fileName}`
+ * };
+ * ```
+ */
+export type FileNamingConfig = {
+  /** Naming mode: 'auto' for smart suffixes, 'custom' for templates/functions */
+  mode: "auto" | "custom";
+  /** Mustache-style template string (for custom mode) */
+  pattern?: string;
+  /** Custom function for full control (for custom mode, SDK only) */
+  rename?: FileNamingFunction;
+  /** Generator function for auto mode suffix */
+  autoSuffix?: AutoNamingSuffixGenerator;
 };
 
 // Re-export existing types for compatibility

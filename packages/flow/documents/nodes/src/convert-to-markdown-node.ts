@@ -33,10 +33,18 @@ export function createConvertToMarkdownNode(
       description:
         "Convert documents to Markdown format (intelligently uses OCR if needed)",
       type: NodeType.process,
-      nodeTypeId: STORAGE_OUTPUT_TYPE_ID,
+      nodeTypeId: "convert-to-markdown",
+      outputTypeId: STORAGE_OUTPUT_TYPE_ID,
       keepOutput: params.keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
+      // AI service (OCR) - enable circuit breaker with skip fallback
+      circuitBreaker: {
+        enabled: true,
+        failureThreshold: 5,
+        resetTimeout: 60000,
+        fallback: { type: "skip", passThrough: true },
+      },
       run: ({ data: file, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {
           const flow = {

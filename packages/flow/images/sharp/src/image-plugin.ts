@@ -1,5 +1,6 @@
 import { UploadistaError } from "@uploadista/core/errors";
 import { ImagePlugin } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer } from "effect";
 import sharp from "sharp";
 
@@ -68,7 +69,13 @@ export const imagePlugin = Layer.succeed(
           },
         });
         return new Uint8Array(outputBytes);
-      });
+      }).pipe(
+        withOperationSpan("image", "optimize", {
+          "image.format": format,
+          "image.quality": quality,
+          "image.input_size": inputBytes.byteLength,
+        }),
+      );
     },
     resize: (inputBytes, { width, height, fit }) => {
       return Effect.gen(function* () {
@@ -92,7 +99,14 @@ export const imagePlugin = Layer.succeed(
         });
 
         return new Uint8Array(outputBytes);
-      });
+      }).pipe(
+        withOperationSpan("image", "resize", {
+          "image.width": width,
+          "image.height": height,
+          "image.fit": fit,
+          "image.input_size": inputBytes.byteLength,
+        }),
+      );
     },
     transform: (inputBytes, transformation) => {
       return Effect.gen(function* () {
@@ -186,7 +200,11 @@ export const imagePlugin = Layer.succeed(
                   cause: error,
                 });
               },
-            });
+            }).pipe(
+              withOperationSpan("image", "fetch-watermark", {
+                "image.watermark_url": transformation.imagePath,
+              }),
+            );
 
             // Get image metadata to calculate positioning
             const metadata = yield* Effect.tryPromise({
@@ -292,7 +310,11 @@ export const imagePlugin = Layer.succeed(
                   cause: error,
                 });
               },
-            });
+            }).pipe(
+              withOperationSpan("image", "fetch-logo", {
+                "image.logo_url": transformation.imagePath,
+              }),
+            );
 
             // Get image metadata
             const metadata = yield* Effect.tryPromise({
@@ -453,7 +475,12 @@ export const imagePlugin = Layer.succeed(
         });
 
         return new Uint8Array(outputBytes);
-      });
+      }).pipe(
+        withOperationSpan("image", "transform", {
+          "image.transformation_type": transformation.type,
+          "image.input_size": inputBytes.byteLength,
+        }),
+      );
     },
   }),
 );

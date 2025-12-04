@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-azure",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "Azure Blob Storage data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -28,13 +28,16 @@
     "@azure/storage-blob": "12.29.1",
     "@uploadista/core": "workspace:*",
     "@uploadista/kv-store-memory": "workspace:*",
-    "@uploadista/observability": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/observability": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.15"
   }
 }

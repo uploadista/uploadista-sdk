@@ -4,7 +4,12 @@ import type { UploadFile } from "../../types";
 import { uploadFileSchema } from "../../types";
 import { UploadServer } from "../../upload";
 import { createFlowNode, NodeType } from "../node";
-import { completeNodeExecution } from "../types";
+import { completeNodeExecution, type FileNamingConfig } from "../types";
+import type { FlowCircuitBreakerConfig } from "../types/flow-types";
+import {
+  applyFileNaming,
+  buildNamingContext,
+} from "../utils/file-naming";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
 /**
@@ -17,14 +22,44 @@ export interface TransformNodeConfig {
   name: string;
   /** Description of what the node does */
   description: string;
-  /** Optional node type ID for result type registration */
-  nodeTypeId?: string;
+  /** Optional output type ID from outputTypeRegistry for result type registration */
+  outputTypeId?: string;
   /**
    * Whether to keep this node's output as a flow result even if it has outgoing edges.
    * When true, the node's output will be included in the final flow outputs alongside topology sinks.
    * Defaults to false.
    */
   keepOutput?: boolean;
+  /**
+   * Optional file naming configuration.
+   * - undefined: Preserve original filename (backward compatible)
+   * - mode: 'auto': Generate smart suffix based on node type
+   * - mode: 'custom': Use template pattern or rename function
+   */
+  naming?: FileNamingConfig;
+  /**
+   * Node type identifier used for auto-naming context.
+   * Defaults to "transform" if not specified.
+   */
+  nodeType?: string;
+  /**
+   * Stable node type identifier for circuit breaker configuration.
+   * Used to share circuit breaker state across nodes of the same type
+   * and for nodeTypeOverrides in flow config.
+   * Example: "describe-image", "remove-background", "scan-virus"
+   */
+  nodeTypeId?: string;
+  /**
+   * Additional variables to include in the naming context.
+   * These are merged with the base context (flowId, jobId, etc.)
+   * and can be used in templates.
+   */
+  namingVars?: Record<string, string | number | undefined>;
+  /**
+   * Circuit breaker configuration for resilience against external service failures.
+   * Overrides flow-level circuit breaker defaults for this node.
+   */
+  circuitBreaker?: FlowCircuitBreakerConfig;
   /** Function that transforms file bytes */
   transform: (
     bytes: Uint8Array,
@@ -90,8 +125,13 @@ export function createTransformNode({
   id,
   name,
   description,
-  nodeTypeId,
+  outputTypeId,
   keepOutput,
+  naming,
+  nodeType: namingNodeType = "transform",
+  nodeTypeId,
+  namingVars,
+  circuitBreaker,
   transform,
 }: TransformNodeConfig) {
   return Effect.gen(function* () {
@@ -102,8 +142,10 @@ export function createTransformNode({
       name,
       description,
       type: NodeType.process,
-      nodeTypeId,
+      outputTypeId,
       keepOutput,
+      nodeTypeId,
+      circuitBreaker,
       inputSchema: uploadFileSchema,
       outputSchema: uploadFileSchema,
       run: ({ data: file, storageId, flowId, jobId, clientId }) => {
@@ -130,10 +172,26 @@ export function createTransformNode({
               ? undefined
               : transformResult.type;
 
-          const outputFileName =
+          // Get fileName from transform result (if provided) or apply naming config
+          let outputFileName =
             transformResult instanceof Uint8Array
               ? undefined
               : transformResult.fileName;
+
+          // Apply file naming if configured and no explicit fileName from transform
+          if (!outputFileName && naming) {
+            const namingContext = buildNamingContext(
+              file,
+              {
+                flowId,
+                jobId,
+                nodeId: id,
+                nodeType: namingNodeType,
+              },
+              namingVars,
+            );
+            outputFileName = applyFileNaming(file, namingContext, naming);
+          }
 
           // Create a stream from the output bytes
           const stream = new ReadableStream({

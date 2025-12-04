@@ -1,11 +1,17 @@
+// Circuit breaker
+export * from "./circuit-breaker";
+export * from "./circuit-breaker-store";
+export * from "./distributed-circuit-breaker";
+
 // Edge types
 export type { FlowEdge } from "./edge";
 export * from "./edge";
 
 export * from "./event";
 export type { Flow, FlowData } from "./flow";
-// Type registry
-export * from "./type-registry";
+// Type registries (separate registries for input and output types)
+export * from "./input-type-registry";
+export * from "./output-type-registry";
 // Built-in node types (auto-registers on import)
 import "./node-types";
 
@@ -38,5 +44,11 @@ export * from "./types/flow-file";
 export * from "./types/flow-job";
 export * from "./types/flow-types";
 export * from "./types/run-args";
+// Dead Letter Queue types and service
+export * from "./types/dead-letter-item";
+export * from "./types/retry-policy";
+export * from "./dead-letter-queue";
 export * from "./types/type-utils";
 export * from "./utils/resolve-upload-metadata";
+// File naming utilities
+export * from "./utils/file-naming";

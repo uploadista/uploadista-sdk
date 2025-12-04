@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-broadcaster-ioredis",
   "type": "module",
-  "version": "0.0.17",
+  "version": "0.0.18-beta.17",
   "description": "Redis event broadcaster for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -23,18 +23,19 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@uploadista/core": "workspace:*",
-    "effect": "catalog:"
+    "@uploadista/core": "workspace:*"
   },
   "peerDependencies": {
+    "effect": "^3.0.0",
     "ioredis": ">=5.0.0 <6.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
+    "effect": "catalog:",
     "ioredis": "5.8.2",
     "@uploadista/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.13"
+    "vitest": "4.0.15"
   }
 }

@@ -5,6 +5,7 @@ import * as path from "node:path";
 import { UploadistaError } from "@uploadista/core/errors";
 import type { ScanResult, VirusScanPluginShape } from "@uploadista/core/flow";
 import { VirusScanPlugin } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import NodeClam from "clamscan";
 import { Effect, Layer } from "effect";
 
@@ -76,39 +77,49 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
    * Initialize the ClamAV scanner
    * This is called lazily on first use
    */
-  private async initScanner(): Promise<NodeClam> {
-    if (this.clamscan) {
-      return this.clamscan;
-    }
+  private initScanner(): Effect.Effect<NodeClam, UploadistaError> {
+    return Effect.gen(
+      function* (this: ClamScanPluginImpl) {
+        if (this.clamscan) {
+          return this.clamscan;
+        }
 
-    try {
-      // Initialize clamscan with configuration
-      const scanner = await new NodeClam().init({
-        preference: this.config.preference ?? "clamdscan",
-        remove_infected: this.config.remove_infected ?? false,
-        debug_mode: this.config.debug_mode ?? false,
-        clamdscan: {
-          socket: this.config.clamdscan_socket,
-          host: this.config.clamdscan_host,
-          port: this.config.clamdscan_port ?? 3310,
-          timeout: 60000,
-          local_fallback: true, // Fall back to binary if daemon unavailable
-        },
-        clamscan: {
-          path: "/usr/bin/clamscan", // Standard path
-          scan_archives: true,
-          active: true,
-        },
-      });
+        const scanner = yield* Effect.tryPromise({
+          try: async () => {
+            // Initialize clamscan with configuration
+            return await new NodeClam().init({
+              preference: this.config.preference ?? "clamdscan",
+              remove_infected: this.config.remove_infected ?? false,
+              debug_mode: this.config.debug_mode ?? false,
+              clamdscan: {
+                socket: this.config.clamdscan_socket,
+                host: this.config.clamdscan_host,
+                port: this.config.clamdscan_port ?? 3310,
+                timeout: 60000,
+                local_fallback: true, // Fall back to binary if daemon unavailable
+              },
+              clamscan: {
+                path: "/usr/bin/clamscan", // Standard path
+                scan_archives: true,
+                active: true,
+              },
+            });
+          },
+          catch: (error) =>
+            UploadistaError.fromCode("CLAMAV_NOT_INSTALLED", {
+              body: `ClamAV initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+              details: { error },
+            }),
+        });
 
-      this.clamscan = scanner;
-      return scanner;
-    } catch (error) {
-      // ClamAV not installed or not available
-      throw new Error(
-        `ClamAV initialization failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+        this.clamscan = scanner;
+        return scanner;
+      }.bind(this),
+    ).pipe(
+      withOperationSpan("virus-scan", "init", {
+        "scan.preference": this.config.preference ?? "clamdscan",
+      }),
+    );
   }
 
   /**
@@ -121,17 +132,7 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
     return Effect.gen(
       function* (this: ClamScanPluginImpl) {
         // Initialize scanner (lazy initialization)
-        const scanner = yield* Effect.tryPromise({
-          try: () => this.initScanner(),
-          catch: (error) =>
-            UploadistaError.fromCode("CLAMAV_NOT_INSTALLED", {
-              body:
-                error instanceof Error
-                  ? error.message
-                  : "ClamAV is not installed or not available",
-              details: { error },
-            }),
-        });
+        const scanner = yield* this.initScanner();
 
         // Create temporary file path for scanning
         const tmpDir = os.tmpdir();
@@ -172,6 +173,10 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
 
         return result;
       }.bind(this),
+    ).pipe(
+      withOperationSpan("virus-scan", "scan", {
+        "scan.file_size": input.byteLength,
+      }),
     );
   }
 
@@ -184,17 +189,7 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
     return Effect.gen(
       function* (this: ClamScanPluginImpl) {
         // Initialize scanner (lazy initialization)
-        const scanner = yield* Effect.tryPromise({
-          try: () => this.initScanner(),
-          catch: (error) =>
-            UploadistaError.fromCode("CLAMAV_NOT_INSTALLED", {
-              body:
-                error instanceof Error
-                  ? error.message
-                  : "ClamAV is not installed or not available",
-              details: { error },
-            }),
-        });
+        const scanner = yield* this.initScanner();
 
         // Get version from ClamAV
         const versionResult = yield* Effect.tryPromise({
@@ -208,7 +203,7 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
 
         return versionResult.version || "Unknown";
       }.bind(this),
-    );
+    ).pipe(withOperationSpan("virus-scan", "get-version", {}));
   }
 }
 

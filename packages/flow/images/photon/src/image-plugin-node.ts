@@ -18,6 +18,7 @@ import {
 } from "@cf-wasm/photon/node";
 import { UploadistaError } from "@uploadista/core/errors";
 import { ImagePlugin } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer } from "effect";
 import type tinycolor from "tinycolor2";
 import { calculateImageSize } from "./common";
@@ -151,7 +152,12 @@ export const imagePluginNode = Layer.succeed(
       // call free() method to free memory
       inputImage.free();
 
-      return Effect.succeed(outputBytes);
+      return Effect.succeed(outputBytes).pipe(
+        withOperationSpan("image", "optimize", {
+          "image.quality": quality,
+          "image.input_size": inputBytes.byteLength,
+        }),
+      );
     },
     resize: (inputBytes, { width, height, fit }) => {
       if (!width && !height) {
@@ -179,7 +185,14 @@ export const imagePluginNode = Layer.succeed(
       inputImage.free();
       outputImage.free();
 
-      return Effect.succeed(outputBytes);
+      return Effect.succeed(outputBytes).pipe(
+        withOperationSpan("image", "resize", {
+          "image.width": width,
+          "image.height": height,
+          "image.fit": fit,
+          "image.input_size": inputBytes.byteLength,
+        }),
+      );
     },
     transform: (inputBytes, transformation) => {
       return Effect.gen(function* () {
@@ -290,7 +303,12 @@ export const imagePluginNode = Layer.succeed(
           // Always free the image to prevent memory leaks
           image.free();
         }
-      });
+      }).pipe(
+        withOperationSpan("image", "transform", {
+          "image.transformation_type": transformation.type,
+          "image.input_size": inputBytes.byteLength,
+        }),
+      );
     },
   }),
 );

@@ -8,6 +8,15 @@ import { z } from "zod";
  *
  * @see {@link UploadFile} for the TypeScript type
  */
+/**
+ * Zod schema for trace context used in distributed tracing.
+ */
+export const traceContextSchema = z.object({
+  traceId: z.string(),
+  spanId: z.string(),
+  traceFlags: z.number(),
+});
+
 export const uploadFileSchema = z.object({
   id: z.string(),
   size: z.number().optional(),
@@ -43,6 +52,7 @@ export const uploadFileSchema = z.object({
       jobId: z.string(),
     })
     .optional(),
+  traceContext: traceContextSchema.optional(),
 });
 
 /**
@@ -126,6 +136,19 @@ export const uploadFileSchema = z.object({
  * };
  * ```
  */
+/**
+ * Trace context for distributed tracing.
+ * Allows upload operations to be linked under a single trace.
+ */
+export type UploadFileTraceContext = {
+  /** 128-bit trace identifier (32 hex characters) */
+  traceId: string;
+  /** 64-bit span identifier (16 hex characters) */
+  spanId: string;
+  /** Trace flags (1 = sampled) */
+  traceFlags: number;
+};
+
 export type UploadFile = {
   id: string;
   offset: number;
@@ -155,4 +178,10 @@ export type UploadFile = {
   sizeIsDeferred?: boolean | undefined;
   checksum?: string | undefined;
   checksumAlgorithm?: string | undefined;
+  /**
+   * OpenTelemetry trace context for distributed tracing.
+   * When set, subsequent upload operations (chunks, validation) will be
+   * linked as children of this trace context.
+   */
+  traceContext?: UploadFileTraceContext | undefined;
 };
