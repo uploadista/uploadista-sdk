@@ -1,4 +1,8 @@
-import { trace } from "@opentelemetry/api";
+import {
+  context as otelContext,
+  trace,
+  type SpanContext,
+} from "@opentelemetry/api";
 import { Context, Effect, Layer, Option, Runtime } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
@@ -828,6 +832,28 @@ export function createFlowServer() {
       };
     };
 
+    // Helper function to restore parent trace context for resumed flows
+    // This ensures the resumed flow execution continues under the same trace
+    const withParentTraceContext = (traceContext: FlowJobTraceContext) => {
+      return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
+        const spanContext: SpanContext = {
+          traceId: traceContext.traceId,
+          spanId: traceContext.spanId,
+          traceFlags: traceContext.traceFlags,
+          isRemote: true,
+        };
+
+        const parentContext = trace.setSpanContext(
+          otelContext.active(),
+          spanContext,
+        );
+
+        return Effect.suspend(() => {
+          return otelContext.with(parentContext, () => effect);
+        });
+      };
+    };
+
     // Helper function to execute flow in background
     const executeFlowInBackground = ({
       jobId,
@@ -1190,7 +1216,7 @@ export function createFlowServer() {
           const flow = yield* flowProvider.getFlow(job.flowId, job.clientId);
 
           // Helper to resume flow in background
-          const resumeFlowInBackground = Effect.gen(function* () {
+          const resumeFlowInBackgroundCore = Effect.gen(function* () {
             const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
 
             if (!job.executionState) {
@@ -1239,6 +1265,25 @@ export function createFlowServer() {
 
             return result;
           }).pipe(
+            // Wrap resumed flow execution in a span for distributed tracing
+            Effect.withSpan("flow-execution-resume", {
+              attributes: {
+                "flow.id": flow.id,
+                "flow.name": flow.name,
+                "flow.job_id": jobId,
+                "flow.storage_id": job.storageId,
+                "flow.resumed_from_node": nodeId,
+              },
+            }),
+          );
+
+          // Restore parent trace context if available from the original flow execution
+          // This ensures the resumed flow continues under the same trace as the initial execution
+          const resumeFlowInBackground = job.traceContext
+            ? withParentTraceContext(job.traceContext)(resumeFlowInBackgroundCore)
+            : resumeFlowInBackgroundCore;
+
+          const resumeFlowInBackgroundWithErrorHandling = resumeFlowInBackground.pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
                 yield* Effect.logError("Flow resume failed", error);
@@ -1323,12 +1368,12 @@ export function createFlowServer() {
 
           // Fork the resume execution to run in background
           // Use waitUntil if available (Cloudflare Workers), otherwise fork normally
-          const resumeEffect = resumeFlowInBackground.pipe(
+          const resumeEffect = resumeFlowInBackgroundWithErrorHandling.pipe(
             Effect.tapErrorCause((cause) =>
               Effect.logError("Flow resume failed", cause),
             ),
           ) as Effect.Effect<
-            FlowExecutionResult<Record<string, any>>,
+            FlowExecutionResult<Record<string, unknown>>,
             UploadistaError,
             never
           >;
