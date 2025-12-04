@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-videos-nodes",
   "type": "module",
-  "version": "0.0.18-beta.13",
+  "version": "0.0.18-beta.14",
   "description": "Video processing nodes for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
