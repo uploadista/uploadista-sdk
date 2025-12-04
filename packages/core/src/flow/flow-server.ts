@@ -1,9 +1,5 @@
-import {
-  context as otelContext,
-  trace,
-  type SpanContext,
-} from "@opentelemetry/api";
-import { Context, Effect, Layer, Option, Runtime } from "effect";
+import { trace } from "@opentelemetry/api";
+import { Context, Effect, Layer, Option, Runtime, Tracer } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
 import {
@@ -834,23 +830,21 @@ export function createFlowServer() {
 
     // Helper function to restore parent trace context for resumed flows
     // This ensures the resumed flow execution continues under the same trace
+    // Uses Effect's native Tracer.externalSpan to properly link spans across requests
     const withParentTraceContext = (traceContext: FlowJobTraceContext) => {
       return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
-        const spanContext: SpanContext = {
+        // Create an ExternalSpan that references the parent trace context
+        const externalSpan = Tracer.externalSpan({
           traceId: traceContext.traceId,
           spanId: traceContext.spanId,
-          traceFlags: traceContext.traceFlags,
-          isRemote: true,
-        };
-
-        const parentContext = trace.setSpanContext(
-          otelContext.active(),
-          spanContext,
-        );
-
-        return Effect.suspend(() => {
-          return otelContext.with(parentContext, () => effect);
+          sampled: traceContext.traceFlags === 1,
         });
+
+        // Provide the external span as the ParentSpan service
+        // Effect.withSpan will pick this up as the parent for new spans
+        return effect.pipe(
+          Effect.provideService(Tracer.ParentSpan, externalSpan),
+        );
       };
     };
 

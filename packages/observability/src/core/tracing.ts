@@ -1,15 +1,11 @@
 import { NodeSdk, WebSdk } from "@effect/opentelemetry";
-import {
-  context as otelContext,
-  type SpanContext,
-  trace,
-} from "@opentelemetry/api";
+import { trace } from "@opentelemetry/api";
 import {
   BatchSpanProcessor,
   ConsoleSpanExporter,
   type SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Tracer } from "effect";
 import {
   createOtlpTraceExporter,
   getServiceName,
@@ -400,8 +396,8 @@ export const captureTraceContextEffect: Effect.Effect<
  * for new spans. Use this to link spans across HTTP requests (e.g., linking
  * upload-chunk spans to the original upload-create trace).
  *
- * The trace context is marked as "remote" to indicate it came from another
- * process/request.
+ * Uses Effect's native Tracer.externalSpan to properly link spans across
+ * requests, ensuring that Effect.withSpan picks up the parent context.
  *
  * @param traceContext - Previously captured trace context to restore
  * @returns Function that wraps an Effect to execute within the restored context
@@ -427,27 +423,18 @@ export const captureTraceContextEffect: Effect.Effect<
  */
 export function withParentContext(traceContext: TraceContext) {
   return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
-    const spanContext: SpanContext = {
+    // Create an ExternalSpan that references the parent trace context
+    const externalSpan = Tracer.externalSpan({
       traceId: traceContext.traceId,
       spanId: traceContext.spanId,
-      traceFlags: traceContext.traceFlags,
-      isRemote: true,
-    };
-
-    // Create a context with the parent span context set
-    const parentContext = trace.setSpanContext(
-      otelContext.active(),
-      spanContext,
-    );
-
-    // Run the effect within the parent context
-    return Effect.suspend(() => {
-      return otelContext.with(parentContext, () => {
-        // The effect needs to be run within this context
-        // We use Effect.provide with an empty layer to ensure the context is preserved
-        return effect;
-      });
+      sampled: traceContext.traceFlags === 1,
     });
+
+    // Provide the external span as the ParentSpan service
+    // Effect.withSpan will pick this up as the parent for new spans
+    return effect.pipe(
+      Effect.provideService(Tracer.ParentSpan, externalSpan),
+    );
   };
 }
 

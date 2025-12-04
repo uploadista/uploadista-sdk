@@ -1,9 +1,4 @@
-import {
-  context as otelContext,
-  trace,
-  type SpanContext,
-} from "@opentelemetry/api";
-import { Effect, Metric, MetricBoundaries } from "effect";
+import { Effect, Metric, MetricBoundaries, Tracer } from "effect";
 import { UploadistaError } from "../errors/uploadista-error";
 import {
   type DataStore,
@@ -22,21 +17,22 @@ import { writeToStore } from "./write-to-store";
 /**
  * Wraps an Effect to execute within a restored parent trace context.
  * Used for linking chunk uploads to the original upload trace.
+ * Uses Effect's native Tracer.externalSpan to properly link spans across requests.
  */
 function withParentContext(traceContext: UploadFileTraceContext) {
   return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => {
-    const spanContext: SpanContext = {
+    // Create an ExternalSpan that references the parent trace context
+    const externalSpan = Tracer.externalSpan({
       traceId: traceContext.traceId,
       spanId: traceContext.spanId,
-      traceFlags: traceContext.traceFlags,
-      isRemote: true,
-    };
-
-    const parentContext = trace.setSpanContext(otelContext.active(), spanContext);
-
-    return Effect.suspend(() => {
-      return otelContext.with(parentContext, () => effect);
+      sampled: traceContext.traceFlags === 1,
     });
+
+    // Provide the external span as the ParentSpan service
+    // Effect.withSpan will pick this up as the parent for new spans
+    return effect.pipe(
+      Effect.provideService(Tracer.ParentSpan, externalSpan),
+    );
   };
 }
 
