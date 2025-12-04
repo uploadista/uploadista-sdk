@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-azure",
   "type": "module",
-  "version": "0.0.18-beta.14",
+  "version": "0.0.18-beta.15",
   "description": "Azure Blob Storage data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",

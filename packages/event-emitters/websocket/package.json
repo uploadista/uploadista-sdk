@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-emitter-websocket",
   "type": "module",
-  "version": "0.0.18-beta.14",
+  "version": "0.0.18-beta.15",
   "description": "WebSocket event emitter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",

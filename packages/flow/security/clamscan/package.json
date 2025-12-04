@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-security-clamscan",
   "type": "module",
-  "version": "0.0.18-beta.14",
+  "version": "0.0.18-beta.15",
   "description": "ClamAV virus scanning plugin for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
