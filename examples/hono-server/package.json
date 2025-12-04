@@ -15,7 +15,7 @@
   "dependencies": {
     "@hono/node-server": "1.19.5",
     "@hono/node-ws": "1.2.0",
-    "@redis/client": "5.8.3",
+    "@redis/client": "5.10.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/data-store-filesystem": "workspace:*",
     "@uploadista/data-store-s3": "workspace:*",
@@ -30,6 +30,7 @@
     "@uploadista/flow-images-photon": "workspace:*",
     "@uploadista/flow-images-replicate": "workspace:*",
     "@uploadista/flow-images-sharp": "workspace:*",
+    "@uploadista/observability": "workspace:*",
     "dotenv": "17.2.3",
     "effect": "catalog:",
     "hono": "catalog:",

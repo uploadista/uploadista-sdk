@@ -115,16 +115,31 @@ export class AuthContextService extends Context.Tag("AuthContextService")<
 >() {}
 
 /**
+ * Options for creating an AuthContextService Layer.
+ */
+export interface AuthContextServiceOptions {
+  /**
+   * When true, bypasses all permission checks (grants all permissions).
+   * Used when no auth middleware is configured (backward compatibility).
+   * @default false
+   */
+  bypassAuth?: boolean;
+}
+
+/**
  * Creates an AuthContextService Layer from an AuthContext.
  * This is typically called by adapters after successful authentication.
  *
  * @param authContext - The authentication context from middleware
+ * @param options - Optional configuration for auth behavior
  * @returns Effect Layer providing AuthContextService
  */
 export const AuthContextServiceLive = (
   authContext: AuthContext | null,
+  options?: AuthContextServiceOptions,
 ): Layer.Layer<AuthContextService> => {
   const permissions = authContext?.permissions ?? [];
+  const bypassAuth = options?.bypassAuth ?? false;
 
   return Layer.succeed(AuthContextService, {
     getClientId: () => Effect.succeed(authContext?.clientId ?? null),
@@ -132,13 +147,24 @@ export const AuthContextServiceLive = (
     getMetadata: () => Effect.succeed(authContext?.metadata ?? {}),
 
     hasPermission: (permission: string) =>
-      Effect.succeed(matchHasPermission(permissions, permission)),
+      bypassAuth
+        ? Effect.succeed(true)
+        : Effect.succeed(matchHasPermission(permissions, permission)),
 
     hasAnyPermission: (requiredPermissions: readonly string[]) =>
-      Effect.succeed(matchHasAnyPermission(permissions, requiredPermissions)),
+      bypassAuth
+        ? Effect.succeed(true)
+        : Effect.succeed(matchHasAnyPermission(permissions, requiredPermissions)),
 
     requirePermission: (permission: string) =>
       Effect.gen(function* () {
+        // If bypass mode is enabled, grant all permissions
+        if (bypassAuth) {
+          yield* Effect.logDebug(
+            `[Auth] Bypass mode: permission '${permission}' auto-granted`,
+          );
+          return;
+        }
         if (!authContext) {
           yield* Effect.logDebug(
             `[Auth] Permission check failed: authentication required for '${permission}'`,

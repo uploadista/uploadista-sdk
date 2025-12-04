@@ -467,8 +467,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0(@hono/node-server@1.19.5(hono@4.10.7))(hono@4.10.7)
       '@redis/client':
-        specifier: 5.8.3
-        version: 5.8.3
+        specifier: 5.10.0
+        version: 5.10.0
       '@uploadista/adapters-hono':
         specifier: workspace:*
         version: link:../../packages/servers/adapters-hono
@@ -508,6 +508,9 @@ importers:
       '@uploadista/kv-store-redis':
         specifier: workspace:*
         version: link:../../packages/kv-stores/redis
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@uploadista/server':
         specifier: workspace:*
         version: link:../../packages/servers/server

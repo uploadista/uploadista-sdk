@@ -514,7 +514,10 @@ export const createUploadistaServer = async <
       }
 
       // Create auth context layer for this request
-      const authContextLayer = AuthContextServiceLive(authContext);
+      // If no auth middleware is configured, bypass permission checks (backward compatibility)
+      const authContextLayer = AuthContextServiceLive(authContext, {
+        bypassAuth: !adapter.runAuthMiddleware,
+      });
 
       // Extract waitUntil callback if available (for Cloudflare Workers)
       // This must be extracted per-request since it comes from the framework context
