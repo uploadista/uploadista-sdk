@@ -187,7 +187,8 @@ export const withCircuitBreakerContext = (context: {
     "circuit_breaker.failure_count": context.failureCount?.toString() ?? "0",
     "circuit_breaker.failure_threshold":
       context.failureThreshold?.toString() ?? "5",
-    "circuit_breaker.reset_timeout": context.resetTimeout?.toString() ?? "30000",
+    "circuit_breaker.reset_timeout":
+      context.resetTimeout?.toString() ?? "30000",
     "circuit_breaker.decision": context.decision ?? "unknown",
   });
 
@@ -207,5 +208,6 @@ export const annotateCircuitBreakerStateChange = (event: {
     "circuit_breaker.previous_state": event.previousState,
     "circuit_breaker.new_state": event.newState,
     "circuit_breaker.failure_count": event.failureCount?.toString() ?? "0",
-    "circuit_breaker.timestamp": event.timestamp?.toString() ?? Date.now().toString(),
+    "circuit_breaker.timestamp":
+      event.timestamp?.toString() ?? Date.now().toString(),
   });

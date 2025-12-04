@@ -455,9 +455,7 @@ export function withParentContext(traceContext: TraceContext) {
       sampled: traceContext.traceFlags === 1,
     });
 
-    return effect.pipe(
-      Effect.provideService(Tracer.ParentSpan, externalSpan),
-    );
+    return effect.pipe(Effect.provideService(Tracer.ParentSpan, externalSpan));
   };
 }
 
