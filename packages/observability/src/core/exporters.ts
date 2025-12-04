@@ -448,18 +448,10 @@ export function createOtlpLoggerProvider(
     exportTimeoutMillis: config.exportTimeoutMillis ?? 30000,
   });
 
-  // Create provider and add processor
-  // Note: Different OTEL SDK versions have different APIs
-  // This approach works with both older and newer versions
-  const loggerProvider = new LoggerProvider();
-  // Use type assertion to handle API variations across versions
-  (
-    loggerProvider as unknown as {
-      addLogRecordProcessor(processor: unknown): void;
-    }
-  ).addLogRecordProcessor(processor);
-
-  return loggerProvider;
+  // Create provider with processor in constructor (SDK 0.208.0+ API)
+  return new LoggerProvider({
+    processors: [processor],
+  });
 }
 
 export { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
