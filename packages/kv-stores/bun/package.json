@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-bun",
   "type": "module",
-  "version": "0.0.18-beta.15",
+  "version": "0.0.18-beta.16",
   "description": "Bun Redis KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
