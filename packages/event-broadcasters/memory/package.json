@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-broadcaster-memory",
   "type": "module",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Memory event broadcaster for Uploadista",
   "license": "MIT",
   "author": "Uploadista",

@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-cloudflare-kv",
   "type": "module",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Cloudflare KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
