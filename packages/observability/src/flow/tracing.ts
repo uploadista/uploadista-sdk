@@ -72,6 +72,76 @@ export const withExecutionContext = (context: {
   });
 
 // ============================================================================
+// Plugin Operation Tracing
+// ============================================================================
+
+/**
+ * Operation domains for plugin-level tracing
+ */
+export type OperationDomain =
+  | "image"
+  | "video"
+  | "document"
+  | "ai"
+  | "virus-scan"
+  | "zip";
+
+/**
+ * Wrap an Effect with a plugin operation span
+ *
+ * @param domain - The operation domain (e.g., "image", "video", "document")
+ * @param operation - The specific operation (e.g., "optimize", "transcode", "extract-text")
+ * @param attributes - Optional span attributes with operation-specific details
+ *
+ * @example
+ * ```typescript
+ * // Image optimization span
+ * withOperationSpan("image", "optimize", {
+ *   "image.format": "webp",
+ *   "image.quality": 80,
+ * })(imageService.optimize(inputBytes, params))
+ *
+ * // Video transcoding span
+ * withOperationSpan("video", "transcode", {
+ *   "video.format": "mp4",
+ *   "video.codec": "h264",
+ * })(videoService.transcode(inputBytes, params))
+ * ```
+ */
+export const withOperationSpan =
+  <A, E, R>(
+    domain: OperationDomain,
+    operation: string,
+    attributes?: Record<string, unknown>,
+  ) =>
+  (effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+    effect.pipe(
+      Effect.withSpan(`${domain}-${operation}`, {
+        attributes: {
+          "operation.domain": domain,
+          "operation.name": operation,
+          ...attributes,
+        },
+      }),
+    );
+
+/**
+ * Add operation context to the current span
+ */
+export const withOperationContext = (context: {
+  domain: OperationDomain;
+  operation: string;
+  inputSize?: number;
+  outputSize?: number;
+}) =>
+  Effect.annotateCurrentSpan({
+    "operation.domain": context.domain,
+    "operation.name": context.operation,
+    "operation.input_size": context.inputSize?.toString() ?? "unknown",
+    "operation.output_size": context.outputSize?.toString() ?? "unknown",
+  });
+
+// ============================================================================
 // Circuit Breaker Tracing
 // ============================================================================
 

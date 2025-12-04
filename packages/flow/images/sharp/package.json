@@ -25,6 +25,7 @@
   "dependencies": {
     "sharp": "0.34.5",
     "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
     "tinycolor2": "1.6.0"
   },
   "peerDependencies": {

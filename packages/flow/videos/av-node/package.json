@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "node-av": "5.0.2",
-    "@uploadista/core": "workspace:*"
+    "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*"
   },
   "peerDependencies": {
     "effect": "^3.0.0",

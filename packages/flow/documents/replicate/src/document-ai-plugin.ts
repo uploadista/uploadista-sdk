@@ -5,6 +5,7 @@ import {
   DocumentAiPlugin,
   type OcrResult,
 } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer, Option } from "effect";
 import Replicate from "replicate";
 
@@ -250,7 +251,14 @@ export const documentAiPlugin = (
           };
 
           return result;
-        });
+        }).pipe(
+          withOperationSpan("ai", "ocr", {
+            "ai.provider": "replicate",
+            "ai.model": ocrModelId,
+            "ai.task_type": params.taskType,
+            "ai.credential_id": context.credentialId,
+          }),
+        );
       },
     })
   );

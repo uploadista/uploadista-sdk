@@ -3,6 +3,7 @@ import type {
   DescribeVideoMetadata,
   VideoPluginShape,
 } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect } from "effect";
 import { Decoder, Demuxer, Encoder, Muxer } from "node-av/api";
 import {
@@ -73,7 +74,11 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             body: `Failed to extract video metadata: ${error instanceof Error ? error.message : String(error)}`,
             cause: error,
           }),
-      }),
+      }).pipe(
+        withOperationSpan("video", "describe", {
+          "video.input_size": input.byteLength,
+        }),
+      ),
 
     transcode: (input, options) =>
       Effect.tryPromise({
@@ -177,7 +182,16 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             body: `Transcode failed: ${error instanceof Error ? error.message : String(error)}`,
             cause: error,
           }),
-      }),
+      }).pipe(
+        withOperationSpan("video", "transcode", {
+          "video.format": options.format,
+          "video.codec": options.codec,
+          "video.video_bitrate": options.videoBitrate,
+          "video.audio_codec": options.audioCodec,
+          "video.audio_bitrate": options.audioBitrate,
+          "video.input_size": input.byteLength,
+        }),
+      ),
 
     resize: (input, options) =>
       Effect.tryPromise({
@@ -282,7 +296,13 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             body: `Resize failed: ${error instanceof Error ? error.message : String(error)}`,
             cause: error,
           }),
-      }),
+      }).pipe(
+        withOperationSpan("video", "resize", {
+          "video.width": options.width,
+          "video.height": options.height,
+          "video.input_size": input.byteLength,
+        }),
+      ),
 
     trim: (input, options) =>
       Effect.tryPromise({
@@ -401,7 +421,14 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             body: `Trim failed: ${error instanceof Error ? error.message : String(error)}`,
             cause: error,
           }),
-      }),
+      }).pipe(
+        withOperationSpan("video", "trim", {
+          "video.start_time": options.startTime,
+          "video.end_time": options.endTime,
+          "video.duration": options.duration,
+          "video.input_size": input.byteLength,
+        }),
+      ),
 
     extractFrame: (input, options) =>
       Effect.tryPromise({
@@ -464,6 +491,12 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
             body: `Frame extraction failed: ${error instanceof Error ? error.message : String(error)}`,
             cause: error,
           }),
-      }),
+      }).pipe(
+        withOperationSpan("video", "extract-frame", {
+          "video.timestamp": options.timestamp,
+          "video.format": options.format ?? "jpeg",
+          "video.input_size": input.byteLength,
+        }),
+      ),
   };
 }

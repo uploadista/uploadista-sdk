@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
     "jszip": "3.10.1"
   },
   "peerDependencies": {

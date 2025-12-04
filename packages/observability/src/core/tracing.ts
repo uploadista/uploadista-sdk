@@ -5,7 +5,7 @@ import {
   ConsoleSpanExporter,
   type SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { Context, Effect, Layer, Tracer } from "effect";
+import { Context, Effect, Layer, Option, Tracer } from "effect";
 import {
   createOtlpTraceExporter,
   getServiceName,
@@ -329,29 +329,11 @@ export function createOtlpWorkersSdkLayer(config: OtlpSdkConfig = {}) {
 // ============================================================================
 
 /**
- * Captures the current OpenTelemetry trace context.
+ * @deprecated Use `captureTraceContextEffect` instead. This synchronous function
+ * uses OpenTelemetry's `trace.getActiveSpan()` which may not be synchronized
+ * with Effect's span context when using @effect/opentelemetry.
  *
- * Use this to save the trace context (traceId, spanId, traceFlags) for later
- * use in distributed tracing. The captured context can be stored alongside
- * data (e.g., in KV store with upload metadata) and restored later using
- * `withParentContext` to link spans across HTTP requests.
- *
- * @returns TraceContext if there's an active span, undefined otherwise
- *
- * @example
- * ```typescript
- * // Capture context during upload creation
- * const createUpload = Effect.gen(function* () {
- *   const traceContext = captureTraceContext();
- *
- *   const file: UploadFile = {
- *     id: uploadId,
- *     traceContext, // Store for later
- *     // ...
- *   };
- *   yield* kvStore.set(uploadId, file);
- * }).pipe(Effect.withSpan("upload-create", { ... }));
- * ```
+ * @returns TraceContext if there's an active OpenTelemetry span, undefined otherwise
  */
 export function captureTraceContext(): TraceContext | undefined {
   const currentSpan = trace.getActiveSpan();
@@ -368,26 +350,48 @@ export function captureTraceContext(): TraceContext | undefined {
 }
 
 /**
- * Creates an Effect that captures the current trace context.
+ * Captures the current Effect trace context for distributed tracing.
  *
- * This is the Effect-based version of `captureTraceContext` for use in
- * Effect generators.
+ * Uses Effect's `currentSpan` to get the active span, which is more reliable
+ * than OpenTelemetry's `trace.getActiveSpan()` when using @effect/opentelemetry
+ * because Effect manages its own span context that may not be synchronized
+ * with OpenTelemetry's global context.
  *
- * @returns Effect yielding TraceContext or undefined
+ * Use this to save the trace context (traceId, spanId, traceFlags) for later
+ * use in distributed tracing. The captured context can be stored alongside
+ * data (e.g., in KV store with upload metadata) and restored later using
+ * `createExternalSpan` and passing it to `Effect.withSpan`'s `parent` option.
+ *
+ * @returns Effect yielding TraceContext if there's an active span, undefined otherwise
  *
  * @example
  * ```typescript
- * const program = Effect.gen(function* () {
- *   const ctx = yield* captureTraceContextEffect;
- *   if (ctx) {
- *     yield* Effect.logInfo("Captured trace: " + ctx.traceId);
- *   }
- * });
+ * // Capture context during upload creation
+ * const createUpload = Effect.gen(function* () {
+ *   const traceContext = yield* captureTraceContextEffect;
+ *
+ *   const file: UploadFile = {
+ *     id: uploadId,
+ *     traceContext, // Store for later
+ *     // ...
+ *   };
+ *   yield* kvStore.set(uploadId, file);
+ * }).pipe(Effect.withSpan("upload-create", { ... }));
  * ```
  */
 export const captureTraceContextEffect: Effect.Effect<
   TraceContext | undefined
-> = Effect.sync(() => captureTraceContext());
+> = Effect.gen(function* () {
+  const spanOption = yield* Effect.currentSpan.pipe(Effect.option);
+  return Option.match(spanOption, {
+    onNone: () => undefined,
+    onSome: (span) => ({
+      traceId: span.traceId,
+      spanId: span.spanId,
+      traceFlags: span.sampled ? 1 : 0,
+    }),
+  });
+});
 
 /**
  * Creates an ExternalSpan from a stored trace context.

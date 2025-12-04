@@ -27,6 +27,40 @@ function createExternalSpan(traceContext: UploadFileTraceContext) {
 }
 
 /**
+ * Creates an "upload-complete" span Effect that captures the full upload duration.
+ * This span is a sibling of upload-create and upload-chunk under the parent "upload" span.
+ *
+ * Note: The span's visual duration in tracing UIs will be short (instant), but the
+ * actual upload duration is captured in the "upload.total_duration_ms" attribute.
+ *
+ * @param file - The completed upload file
+ * @param parentSpan - The parent span to link to
+ * @returns Effect that creates and completes the span
+ */
+const createUploadCompleteSpanEffect = (
+  file: UploadFile,
+  parentSpan: Tracer.ExternalSpan,
+): Effect.Effect<void> => {
+  const creationTime = new Date(file.creationDate as string).getTime();
+  const totalDurationMs = Date.now() - creationTime;
+
+  return Effect.void.pipe(
+    Effect.withSpan("upload-complete", {
+      attributes: {
+        "upload.id": file.id,
+        "upload.size": file.size ?? 0,
+        "upload.total_duration_ms": totalDurationMs,
+        "upload.storage_id": file.storage.id,
+        "upload.file_name": file.metadata?.fileName ?? "unknown",
+        "upload.creation_date": file.creationDate as string,
+        "upload.completion_date": new Date().toISOString(),
+      },
+      parent: parentSpan,
+    }),
+  );
+};
+
+/**
  * Uploads a chunk of data for an existing upload.
  *
  * This function handles the core chunk upload logic including:
@@ -145,6 +179,13 @@ export const uploadChunk = (
           dataStore,
           eventEmitter,
         });
+
+        // Create "upload-complete" span that captures the full upload duration
+        // This span shows the total time from upload creation to completion
+        if (file.traceContext) {
+          const completeParentSpan = createExternalSpan(file.traceContext);
+          yield* createUploadCompleteSpanEffect(file, completeParentSpan);
+        }
       }
 
       return file;

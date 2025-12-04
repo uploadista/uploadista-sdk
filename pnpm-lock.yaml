@@ -1433,6 +1433,9 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../../observability
       tinycolor2:
         specifier: 1.6.0
         version: 1.6.0
@@ -1467,6 +1470,9 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../../observability
       replicate:
         specifier: 1.4.0
         version: 1.4.0
@@ -1498,6 +1504,9 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../../observability
       sharp:
         specifier: 0.34.5
         version: 0.34.5
@@ -1535,6 +1544,9 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../../observability
       clamscan:
         specifier: ^2.3.3
         version: 2.4.0
@@ -1622,6 +1634,9 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../../observability
       jszip:
         specifier: 3.10.1
         version: 3.10.1
@@ -1653,6 +1668,9 @@ importers:
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../../core
+      '@uploadista/observability':
+        specifier: workspace:*
+        version: link:../../../observability
       node-av:
         specifier: 5.0.2
         version: 5.0.2

@@ -66,13 +66,20 @@ export const withFlowDuration = <A, E, R>(
 
 /**
  * Helper to track node duration
+ * @param nodeId - Unique node identifier
+ * @param nodeType - Generic node type (e.g., "optimize", "resize")
+ * @param effect - The effect to track
+ * @param nodeTypeId - Optional specific node type ID (e.g., "optimize-image", "resize-video")
  */
 export const withNodeDuration = <A, E, R>(
   nodeId: string,
   nodeType: string,
   effect: Effect.Effect<A, E, R>,
+  nodeTypeId?: string,
 ): Effect.Effect<A, E, R> => {
   const metrics = createFlowMetrics();
+  // Use nodeTypeId for span name if available, fallback to nodeType
+  const spanName = nodeTypeId ?? nodeType;
   return Effect.gen(function* () {
     const startTime = Date.now();
     const result = yield* effect;
@@ -81,10 +88,11 @@ export const withNodeDuration = <A, E, R>(
     yield* Metric.update(metrics.nodeLatencySummary, duration);
     return result;
   }).pipe(
-    Effect.withSpan(`node-${nodeType}`, {
+    Effect.withSpan(`node-${spanName}`, {
       attributes: {
         "node.id": nodeId,
         "node.type": nodeType,
+        "node.type_id": nodeTypeId ?? nodeType,
       },
     }),
   );

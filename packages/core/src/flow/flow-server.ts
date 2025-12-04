@@ -1,4 +1,3 @@
-import { trace } from "@opentelemetry/api";
 import { Context, Effect, Layer, Option, Runtime, Tracer } from "effect";
 import type { z } from "zod";
 import { UploadistaError } from "../errors";
@@ -814,19 +813,23 @@ export function createFlowServer() {
         );
       });
 
-    // Helper function to capture current trace context
-    const captureTraceContext = (): FlowJobTraceContext | undefined => {
-      const currentSpan = trace.getActiveSpan();
-      if (!currentSpan) {
-        return undefined;
-      }
-      const spanContext = currentSpan.spanContext();
-      return {
-        traceId: spanContext.traceId,
-        spanId: spanContext.spanId,
-        traceFlags: spanContext.traceFlags,
-      };
-    };
+    /**
+     * Captures the current Effect trace context for distributed tracing.
+     * Uses Effect's `currentSpan` which properly integrates with @effect/opentelemetry.
+     */
+    const captureTraceContextEffect: Effect.Effect<
+      FlowJobTraceContext | undefined
+    > = Effect.gen(function* () {
+      const spanOption = yield* Effect.currentSpan.pipe(Effect.option);
+      return Option.match(spanOption, {
+        onNone: () => undefined,
+        onSome: (span) => ({
+          traceId: span.traceId,
+          spanId: span.spanId,
+          traceFlags: span.sampled ? 1 : 0,
+        }),
+      });
+    });
 
     // Helper function to execute flow in background
     const executeFlowInBackground = ({
@@ -847,8 +850,10 @@ export function createFlowServer() {
           `[FlowServer] executeFlowInBackground started for job: ${jobId}`,
         );
 
-        // Capture trace context for distributed tracing
-        const traceContext = captureTraceContext();
+        // Capture the parent "flow" span's trace context FIRST
+        // This allows flow-execution-resume to be a sibling of flow-execution
+        // under the same parent "flow" span
+        const traceContext = yield* captureTraceContextEffect;
 
         // Update job status to running and store trace context
         yield* updateJob(jobId, {
@@ -856,48 +861,65 @@ export function createFlowServer() {
           traceContext,
         });
 
-        console.log(`[FlowServer] Creating flowWithEvents for job: ${jobId}`);
-        const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
+        // Now run the actual flow execution inside a child span
+        const result = yield* Effect.gen(function* () {
+          console.log(`[FlowServer] Creating flowWithEvents for job: ${jobId}`);
+          const flowWithEvents = withFlowEvents(flow, eventEmitter, kvStore);
 
-        console.log(`[FlowServer] Running flow for job: ${jobId}`);
-        // Run the flow with the consistent jobId
-        const result = yield* flowWithEvents.run({
-          inputs,
-          storageId,
-          jobId,
-          clientId,
-        });
+          console.log(`[FlowServer] Running flow for job: ${jobId}`);
+          // Run the flow with the consistent jobId
+          const flowResult = yield* flowWithEvents.run({
+            inputs,
+            storageId,
+            jobId,
+            clientId,
+          });
 
-        console.log(
-          `[FlowServer] Flow completed for job: ${jobId}, result type: ${result.type}`,
+          console.log(
+            `[FlowServer] Flow completed for job: ${jobId}, result type: ${flowResult.type}`,
+          );
+
+          // Handle result based on type
+          if (flowResult.type === "paused") {
+            // Update job as paused (node results are in tasks, not executionState)
+            yield* updateJob(jobId, {
+              status: "paused",
+              pausedAt: flowResult.nodeId,
+              executionState: flowResult.executionState,
+              updatedAt: new Date(),
+            });
+          } else {
+            // Update job as completed
+            // Note: result field is already set by FlowEnd event handler with TypedOutput[]
+            yield* updateJob(jobId, {
+              status: "completed",
+              updatedAt: new Date(),
+              endedAt: new Date(),
+            });
+
+            // Cleanup intermediate files
+            yield* cleanupIntermediateFiles(jobId, clientId);
+          }
+
+          return flowResult;
+        }).pipe(
+          // flow-execution is a CHILD span of the parent "flow" span
+          Effect.withSpan("flow-execution", {
+            attributes: {
+              "flow.id": flow.id,
+              "flow.name": flow.name,
+              "flow.job_id": jobId,
+              "flow.storage_id": storageId,
+              "flow.node_count": flow.nodes.length,
+            },
+          }),
         );
-
-        // Handle result based on type
-        if (result.type === "paused") {
-          // Update job as paused (node results are in tasks, not executionState)
-          yield* updateJob(jobId, {
-            status: "paused",
-            pausedAt: result.nodeId,
-            executionState: result.executionState,
-            updatedAt: new Date(),
-          });
-        } else {
-          // Update job as completed
-          // Note: result field is already set by FlowEnd event handler with TypedOutput[]
-          yield* updateJob(jobId, {
-            status: "completed",
-            updatedAt: new Date(),
-            endedAt: new Date(),
-          });
-
-          // Cleanup intermediate files
-          yield* cleanupIntermediateFiles(jobId, clientId);
-        }
 
         return result;
       }).pipe(
-        // Wrap entire flow execution in a span for distributed tracing
-        Effect.withSpan("flow-execution", {
+        // Parent "flow" span wraps the entire flow lifecycle
+        // flow-execution and flow-execution-resume will be children of this span
+        Effect.withSpan("flow", {
           attributes: {
             "flow.id": flow.id,
             "flow.name": flow.name,

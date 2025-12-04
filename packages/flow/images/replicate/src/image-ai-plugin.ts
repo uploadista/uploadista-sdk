@@ -4,6 +4,7 @@ import {
   type ImageAiContext,
   ImageAiPlugin,
 } from "@uploadista/core/flow";
+import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer, Option } from "effect";
 import Replicate from "replicate";
 
@@ -166,7 +167,13 @@ export const imageAiPlugin = (
             },
           });
           return { outputUrl: output.url() };
-        });
+        }).pipe(
+          withOperationSpan("ai", "remove-background", {
+            "ai.provider": "replicate",
+            "ai.model": removeBackgroundModelId,
+            "ai.credential_id": context.credentialId,
+          }),
+        );
       },
       describeImage: (inputUrl, context) => {
         return Effect.gen(function* () {
@@ -204,7 +211,13 @@ export const imageAiPlugin = (
             },
           });
           return { description: output };
-        });
+        }).pipe(
+          withOperationSpan("ai", "describe-image", {
+            "ai.provider": "replicate",
+            "ai.model": describeImageModelId,
+            "ai.credential_id": context.credentialId,
+          }),
+        );
       },
     }),
   );

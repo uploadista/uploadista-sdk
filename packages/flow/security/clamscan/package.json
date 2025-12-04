@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "clamscan": "^2.3.3",
-    "@uploadista/core": "workspace:*"
+    "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*"
   },
   "peerDependencies": {
     "effect": "^3.0.0",

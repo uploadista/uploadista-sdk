@@ -982,12 +982,15 @@ export function createFlowWithSchema<
       }).pipe(
         // Wrap node execution in a span for distributed tracing
         // Note: We get node info from the nodeMap since we're outside the Effect.gen scope
+        // Use nodeTypeId for more descriptive span names (e.g., "optimize-image" vs "optimize")
         (() => {
           const node = nodeMap.get(nodeId);
-          return Effect.withSpan(`node-${node?.type ?? "unknown"}`, {
+          const spanName = node?.nodeTypeId ?? node?.type ?? "unknown";
+          return Effect.withSpan(`node-${spanName}`, {
             attributes: {
               "node.id": nodeId,
               "node.type": node?.type ?? "unknown",
+              "node.type_id": node?.nodeTypeId ?? "unknown",
               "node.name": node?.name ?? "unknown",
               "flow.id": flowId,
               "flow.job_id": jobId,
