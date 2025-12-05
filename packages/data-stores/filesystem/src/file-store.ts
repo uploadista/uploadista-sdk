@@ -6,10 +6,16 @@ import type {
   DataStore,
   DataStoreCapabilities,
   DataStoreWriteOptions,
+  StreamingConfig,
+  StreamWriteOptions,
+  StreamWriteResult,
   UploadFile,
   UploadStrategy,
 } from "@uploadista/core/types";
-import { UploadFileKVStore } from "@uploadista/core/types";
+import {
+  DEFAULT_STREAMING_CONFIG,
+  UploadFileKVStore,
+} from "@uploadista/core/types";
 import {
   filesystemActiveUploadsGauge as activeUploadsGauge,
   filesystemFileSizeHistogram as fileSizeHistogram,
@@ -143,9 +149,11 @@ export const fileStore = ({ directory, deliveryUrl }: FileStoreOptions) =>
       return {
         supportsParallelUploads: false, // Filesystem operations are sequential
         supportsConcatenation: false, // No native concatenation support
-        supportsDeferredLength: false,
+        supportsDeferredLength: true, // Supports deferred length via writeStream
         supportsResumableUploads: true, // Can write at specific offsets
         supportsTransactionalUploads: false,
+        supportsStreamingRead: true, // Supports streaming reads via Node.js fs streams
+        supportsStreamingWrite: true, // Supports streaming writes via writeStream
         maxConcurrentUploads: 1, // Sequential writes only
         minChunkSize: undefined,
         maxChunkSize: undefined,
@@ -365,6 +373,170 @@ export const fileStore = ({ directory, deliveryUrl }: FileStoreOptions) =>
 
           return new Uint8Array(buffer);
         }),
+      /**
+       * Reads file content as a stream of chunks for memory-efficient processing.
+       * Uses Node.js fs.createReadStream under the hood.
+       *
+       * @param id - The unique identifier of the file to read
+       * @param config - Optional streaming configuration (chunk size)
+       * @returns An Effect that resolves to a Stream of byte chunks
+       */
+      readStream: (id: string, config?: StreamingConfig) =>
+        Effect.gen(function* () {
+          const uploadFile = yield* kvStore.get(id);
+          const file_path = uploadFile.storage.path || path.join(directory, id);
+
+          // Merge config with defaults
+          const effectiveConfig = {
+            ...DEFAULT_STREAMING_CONFIG,
+            ...config,
+          };
+
+          // Verify file exists
+          yield* Effect.tryPromise({
+            try: () => fsProm.access(file_path, fs.constants.R_OK),
+            catch: () => UploadistaError.fromCode("FILE_NOT_FOUND"),
+          });
+
+          // Create a Node.js readable stream with the configured chunk size
+          const nodeStream = fs.createReadStream(file_path, {
+            highWaterMark: effectiveConfig.chunkSize,
+          });
+
+          // Convert Node.js stream to Effect Stream
+          return Stream.async<Uint8Array, UploadistaError>((emit) => {
+            nodeStream.on("data", (chunk: Buffer | string) => {
+              // Handle both Buffer and string (though readStream should return Buffer)
+              const buffer =
+                typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+              emit.single(new Uint8Array(buffer));
+            });
+
+            nodeStream.on("end", () => {
+              emit.end();
+            });
+
+            nodeStream.on("error", (error) => {
+              emit.fail(
+                new UploadistaError({
+                  code: "FILE_READ_ERROR",
+                  status: 500,
+                  body: "Failed to read file stream",
+                  details: `Stream read failed: ${String(error)}`,
+                }),
+              );
+            });
+
+            // Cleanup function when stream is interrupted
+            return Effect.sync(() => {
+              if (!nodeStream.destroyed) {
+                nodeStream.destroy();
+              }
+            });
+          });
+        }),
+      /**
+       * Writes file content from a stream without knowing the final size upfront.
+       * Creates the file and streams content directly to disk.
+       *
+       * @param fileId - The unique identifier for the file
+       * @param options - Stream write options including the Effect Stream
+       * @returns StreamWriteResult with final size after stream completes
+       */
+      writeStream: (
+        fileId: string,
+        options: StreamWriteOptions,
+      ): Effect.Effect<StreamWriteResult, UploadistaError> =>
+        withTimingMetrics(
+          uploadDurationHistogram,
+          Effect.gen(function* () {
+            const startTime = Date.now();
+
+            // Determine file path
+            const dirs = fileId.split("/").slice(0, -1);
+            const filePath = path.join(directory, fileId);
+
+            yield* uploadRequestsTotal(Effect.succeed(1));
+            yield* activeUploadsGauge(Effect.succeed(1));
+
+            // Create directory structure if needed
+            if (dirs.length > 0) {
+              yield* Effect.tryPromise({
+                try: () =>
+                  fsProm.mkdir(path.join(directory, ...dirs), {
+                    recursive: true,
+                  }),
+                catch: (error) => {
+                  Effect.runSync(
+                    trackFilesystemError("writeStream", error, {
+                      upload_id: fileId,
+                      path: filePath,
+                    }),
+                  );
+                  return new UploadistaError({
+                    code: "UNKNOWN_ERROR",
+                    status: 500,
+                    body: "Failed to create file directory",
+                    details: `Directory creation failed: ${String(error)}`,
+                  });
+                },
+              });
+            }
+
+            const bytesWritten = yield* Ref.make(0);
+
+            // Create write stream helper for streaming write
+            const createNewWriteStream = (targetPath: string) =>
+              Effect.sync(() =>
+                fs.createWriteStream(targetPath, {
+                  flags: "w", // Create new file or truncate existing
+                }),
+              );
+
+            const result = yield* Effect.acquireUseRelease(
+              createNewWriteStream(filePath),
+              (writeStream) =>
+                Effect.gen(function* () {
+                  const sink = Sink.forEach(
+                    writeChunk({
+                      writeStream,
+                      bytesReceived: bytesWritten,
+                    }),
+                  );
+
+                  yield* uploadPartsTotal(Effect.succeed(1));
+                  yield* Stream.run(options.stream, sink);
+                  yield* endWriteStream(writeStream);
+
+                  const totalBytes = yield* Ref.get(bytesWritten);
+                  yield* partSizeHistogram(Effect.succeed(totalBytes));
+
+                  return totalBytes;
+                }),
+              destroyWriteStream,
+            );
+
+            // Log completion and update metrics
+            yield* logFilesystemUploadCompletion(fileId, {
+              fileSize: result,
+              totalDurationMs: Date.now() - startTime,
+              partsCount: 1,
+              averagePartSize: result,
+              throughputBps: result / Math.max(1, Date.now() - startTime),
+              retryCount: 0,
+            });
+            yield* uploadSuccessTotal(Effect.succeed(1));
+            yield* activeUploadsGauge(Effect.succeed(-1));
+            yield* fileSizeHistogram(Effect.succeed(result));
+
+            return {
+              id: fileId,
+              size: result,
+              path: filePath,
+              bucket: directory,
+            } satisfies StreamWriteResult;
+          }),
+        ),
       getCapabilities,
       validateUploadStrategy,
     } as DataStore<UploadFile>;

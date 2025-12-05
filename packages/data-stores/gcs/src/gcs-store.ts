@@ -6,7 +6,11 @@ import {
   type DataStore,
   type DataStoreCapabilities,
   type DataStoreWriteOptions,
+  DEFAULT_STREAMING_CONFIG,
   type KvStore,
+  type StreamingConfig,
+  type StreamWriteOptions,
+  type StreamWriteResult,
   type UploadFile,
   UploadFileDataStore,
   UploadFileKVStore,
@@ -115,6 +119,8 @@ export function gcsStore({
       supportsDeferredLength: true,
       supportsResumableUploads: true, // Through patch files
       supportsTransactionalUploads: false,
+      supportsStreamingRead: true, // Supports streaming reads via file.createReadStream
+      supportsStreamingWrite: true, // Supports streaming writes via resumable uploads
       maxConcurrentUploads: 1, // Sequential operations
       minChunkSize: undefined,
       maxChunkSize: undefined,
@@ -236,6 +242,99 @@ export function gcsStore({
         },
       });
     },
+    /**
+     * Reads file content as a stream of chunks for memory-efficient processing.
+     * Uses GCS file.createReadStream under the hood.
+     *
+     * @param file_id - The unique identifier of the file to read
+     * @param config - Optional streaming configuration (chunk size)
+     * @returns An Effect that resolves to a Stream of byte chunks
+     */
+    readStream: (file_id: string, config?: StreamingConfig) =>
+      Effect.gen(function* () {
+        // Merge config with defaults
+        const effectiveConfig = {
+          ...DEFAULT_STREAMING_CONFIG,
+          ...config,
+        };
+
+        // Verify file exists
+        const file = bucket.file(file_id);
+        const [exists] = yield* Effect.tryPromise({
+          try: () => file.exists(),
+          catch: (error) => {
+            Effect.runSync(
+              trackGCSError("readStream", error, {
+                upload_id: file_id,
+                bucket: bucket.name,
+              }),
+            );
+            return UploadistaError.fromCode("FILE_READ_ERROR", {
+              cause: error,
+            });
+          },
+        });
+
+        if (!exists) {
+          return yield* Effect.fail(
+            UploadistaError.fromCode("FILE_NOT_FOUND"),
+          );
+        }
+
+        // Create a Node.js readable stream from GCS
+        const nodeStream = file.createReadStream();
+
+        // Convert Node.js stream to Effect Stream with chunking
+        return Stream.async<Uint8Array, UploadistaError>((emit) => {
+          const chunkSize = effectiveConfig.chunkSize;
+          let buffer = new Uint8Array(0);
+
+          nodeStream.on("data", (chunk: Buffer) => {
+            // Combine buffer with new data
+            const combined = new Uint8Array(buffer.length + chunk.length);
+            combined.set(buffer);
+            combined.set(new Uint8Array(chunk), buffer.length);
+            buffer = combined;
+
+            // Emit chunks of the configured size
+            while (buffer.length >= chunkSize) {
+              const outChunk = buffer.slice(0, chunkSize);
+              buffer = buffer.slice(chunkSize);
+              emit.single(outChunk);
+            }
+          });
+
+          nodeStream.on("end", () => {
+            // Emit any remaining data in buffer
+            if (buffer.length > 0) {
+              emit.single(buffer);
+            }
+            emit.end();
+          });
+
+          nodeStream.on("error", (error: Error) => {
+            Effect.runSync(
+              trackGCSError("readStream", error, {
+                upload_id: file_id,
+                bucket: bucket.name,
+              }),
+            );
+            emit.fail(
+              new UploadistaError({
+                code: "FILE_READ_ERROR",
+                status: 500,
+                body: "Failed to read GCS file stream",
+                details: `GCS stream read failed: ${String(error)}`,
+              }),
+            );
+          });
+
+          // Cleanup function when stream is interrupted
+          return Effect.sync(() => {
+            nodeStream.destroy();
+          });
+        });
+      }),
     remove: (file_id: string) => {
       return Effect.gen(function* () {
         try {
@@ -389,6 +488,157 @@ export function gcsStore({
         ),
       );
     },
+    /**
+     * Writes file content from a stream without knowing the final size upfront.
+     * Uses GCS resumable upload with streaming directly to the write stream.
+     *
+     * @param fileId - The unique identifier for the file
+     * @param options - Stream write options including the Effect Stream
+     * @returns StreamWriteResult with final size after stream completes
+     */
+    writeStream: (
+      fileId: string,
+      options: StreamWriteOptions,
+    ): Effect.Effect<StreamWriteResult, UploadistaError> =>
+      withTimingMetrics(
+        uploadDurationHistogram,
+        Effect.gen(function* () {
+          const startTime = Date.now();
+
+          yield* Effect.logInfo("Starting streaming write to GCS").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              bucket: bucket.name,
+              size_hint: options.sizeHint,
+            }),
+          );
+
+          yield* uploadRequestsTotal(Effect.succeed(1));
+          yield* activeUploadsGauge(Effect.succeed(1));
+
+          const file = bucket.file(fileId);
+
+          // Set up write stream options
+          const gcsOptions: CreateWriteStreamOptions = {
+            resumable: true, // Enable resumable uploads for better reliability
+            metadata: options.metadata
+              ? { metadata: options.metadata }
+              : undefined,
+          };
+
+          if (options.contentType) {
+            gcsOptions.contentType = options.contentType;
+          }
+
+          // Create the write stream
+          const writeStream = file.createWriteStream(gcsOptions);
+
+          // Stream the content and track bytes
+          const result = yield* Effect.tryPromise({
+            try: () =>
+              new Promise<number>((resolve, reject) => {
+                let totalBytes = 0;
+
+                // Create a pass-through stream to track bytes
+                const passThrough = new PassThrough();
+
+                passThrough.on("data", (chunk: Buffer) => {
+                  totalBytes += chunk.length;
+                });
+
+                // Pipe passThrough to GCS writeStream
+                passThrough.pipe(writeStream);
+
+                writeStream.on("error", (error: Error) => {
+                  Effect.runSync(
+                    trackGCSError("writeStream", error, {
+                      upload_id: fileId,
+                      bucket: bucket.name,
+                    }),
+                  );
+                  reject(error);
+                });
+
+                writeStream.on("finish", () => {
+                  resolve(totalBytes);
+                });
+
+                // Convert Effect Stream to readable and pipe to passThrough
+                const readableStream = Stream.toReadableStream(options.stream);
+                const nodeReadable = Readable.fromWeb(readableStream);
+
+                nodeReadable.on("error", (error: Error) => {
+                  Effect.runSync(
+                    trackGCSError("writeStream", error, {
+                      upload_id: fileId,
+                      bucket: bucket.name,
+                      phase: "read",
+                    }),
+                  );
+                  passThrough.destroy(error);
+                  reject(error);
+                });
+
+                pipeline(nodeReadable, passThrough, (error) => {
+                  if (error) {
+                    Effect.runSync(
+                      trackGCSError("writeStream", error, {
+                        upload_id: fileId,
+                        bucket: bucket.name,
+                        phase: "pipeline",
+                      }),
+                    );
+                    reject(error);
+                  }
+                });
+              }),
+            catch: (error) => {
+              Effect.runSync(uploadErrorsTotal(Effect.succeed(1)));
+              Effect.runSync(activeUploadsGauge(Effect.succeed(-1)));
+              return new UploadistaError({
+                code: "FILE_WRITE_ERROR",
+                status: 500,
+                body: "Failed to write stream to GCS",
+                details: `GCS streaming write failed: ${String(error)}`,
+              });
+            },
+          });
+
+          // Log completion metrics
+          const endTime = Date.now();
+          const totalDurationMs = endTime - startTime;
+          const throughputBps =
+            totalDurationMs > 0 ? (result * 1000) / totalDurationMs : 0;
+
+          yield* logGCSUploadCompletion(fileId, {
+            fileSize: result,
+            totalDurationMs,
+            partsCount: 1,
+            averagePartSize: result,
+            throughputBps,
+            retryCount: 0,
+          });
+
+          yield* uploadSuccessTotal(Effect.succeed(1));
+          yield* activeUploadsGauge(Effect.succeed(-1));
+          yield* fileSizeHistogram(Effect.succeed(result));
+
+          yield* Effect.logInfo("Streaming write to GCS completed").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              total_bytes: result,
+              duration_ms: totalDurationMs,
+            }),
+          );
+
+          return {
+            id: fileId,
+            size: result,
+            path: fileId,
+            bucket: bucket.name,
+          } satisfies StreamWriteResult;
+        }),
+      ),
     getCapabilities,
     validateUploadStrategy,
   };

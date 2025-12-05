@@ -11,6 +11,10 @@ import {
   type DataStore,
   type DataStoreCapabilities,
   type DataStoreWriteOptions,
+  DEFAULT_STREAMING_CONFIG,
+  type StreamingConfig,
+  type StreamWriteOptions,
+  type StreamWriteResult,
   type UploadFile,
   UploadFileKVStore,
   type UploadStrategy,
@@ -103,7 +107,8 @@ export type AzureStore = DataStore<UploadFile> & {
   getUpload: (id: string) => Effect.Effect<UploadFile, UploadistaError>;
   readStream: (
     id: string,
-  ) => Effect.Effect<ReadableStream | Blob, UploadistaError>;
+    config?: StreamingConfig,
+  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
   getChunkerConstraints: () => {
     minChunkSize: number;
     maxChunkSize: number;
@@ -725,7 +730,10 @@ export function azureStore({
       });
     };
 
-    const readStream = (
+    /**
+     * Internal helper to get raw Azure stream (for backward compatibility).
+     */
+    const getAzureStream = (
       id: string,
     ): Effect.Effect<ReadableStream | Blob, UploadistaError> => {
       return Effect.tryPromise({
@@ -747,29 +755,108 @@ export function azureStore({
       });
     };
 
+    /**
+     * Reads file content as a stream of chunks for memory-efficient processing.
+     * Uses Azure BlobClient.download and converts to an Effect Stream.
+     *
+     * @param id - The unique identifier of the file to read
+     * @param config - Optional streaming configuration (chunk size)
+     * @returns An Effect that resolves to a Stream of byte chunks
+     */
+    const readStream = (id: string, config?: StreamingConfig) =>
+      Effect.gen(function* () {
+        // Merge config with defaults
+        const effectiveConfig = {
+          ...DEFAULT_STREAMING_CONFIG,
+          ...config,
+        };
+
+        const azureStream = yield* getAzureStream(id);
+
+        // Handle Blob type (browser environment)
+        if (azureStream instanceof Blob) {
+          const arrayBuffer = yield* Effect.promise(() =>
+            azureStream.arrayBuffer(),
+          );
+          const bytes = new Uint8Array(arrayBuffer as ArrayBuffer);
+
+          // Convert to chunked stream
+          const chunkSize = effectiveConfig.chunkSize;
+          const chunks: Uint8Array[] = [];
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            chunks.push(bytes.slice(i, Math.min(i + chunkSize, bytes.length)));
+          }
+          return Stream.fromIterable(chunks);
+        }
+
+        // Handle ReadableStream type
+        return Stream.async<Uint8Array, UploadistaError>((emit) => {
+          const reader = azureStream.getReader();
+          const chunkSize = effectiveConfig.chunkSize;
+          let buffer = new Uint8Array(0);
+
+          const processChunk = async () => {
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                  // Emit any remaining data in buffer
+                  if (buffer.length > 0) {
+                    emit.single(buffer);
+                  }
+                  emit.end();
+                  return;
+                }
+
+                if (value) {
+                  // Combine buffer with new value
+                  const combined = new Uint8Array(buffer.length + value.length);
+                  combined.set(buffer);
+                  combined.set(value, buffer.length);
+                  buffer = combined;
+
+                  // Emit chunks of the configured size
+                  while (buffer.length >= chunkSize) {
+                    const chunk = buffer.slice(0, chunkSize);
+                    buffer = buffer.slice(chunkSize);
+                    emit.single(chunk);
+                  }
+                }
+              }
+            } catch (error) {
+              emit.fail(
+                new UploadistaError({
+                  code: "FILE_READ_ERROR",
+                  status: 500,
+                  body: "Failed to read Azure blob stream",
+                  details: `Azure stream read failed: ${String(error)}`,
+                }),
+              );
+            }
+          };
+
+          // Start processing
+          processChunk();
+
+          // Cleanup function
+          return Effect.sync(() => {
+            reader.releaseLock();
+          });
+        });
+      });
+
     const read = (id: string): Effect.Effect<Uint8Array, UploadistaError> => {
       return Effect.gen(function* () {
         const stream = yield* readStream(id);
 
-        // Convert stream/blob to Uint8Array
-        if (stream instanceof Blob) {
-          const arrayBuffer = yield* Effect.promise(() => stream.arrayBuffer());
-          return new Uint8Array(arrayBuffer as ArrayBuffer);
-        }
-
-        // Read from ReadableStream
-        const reader = stream.getReader();
+        // Collect all chunks from the Effect Stream
         const chunks: Uint8Array[] = [];
-
-        try {
-          while (true) {
-            const result = yield* Effect.promise(() => reader.read());
-            if (result.done) break;
-            chunks.push(result.value);
-          }
-        } finally {
-          reader.releaseLock();
-        }
+        yield* Stream.runForEach(stream, (chunk) =>
+          Effect.sync(() => {
+            chunks.push(chunk);
+          }),
+        );
 
         // Concatenate all chunks
         const totalLength = chunks.reduce(
@@ -1054,6 +1141,8 @@ export function azureStore({
         supportsDeferredLength: true,
         supportsResumableUploads: true,
         supportsTransactionalUploads: true,
+        supportsStreamingRead: true, // Supports streaming reads via BlobClient.download
+        supportsStreamingWrite: true, // Supports streaming writes via block staging
         maxConcurrentUploads: maxConcurrentBlockUploads,
         minChunkSize: minBlockSize,
         maxChunkSize: 4000 * 1024 * 1024, // 4000MB Azure limit
@@ -1093,6 +1182,218 @@ export function azureStore({
       return Effect.succeed(result);
     };
 
+    /**
+     * Writes file content from a stream without knowing the final size upfront.
+     * Uses Azure block blob staging to stream content as blocks are buffered.
+     *
+     * @param fileId - The unique identifier for the file
+     * @param options - Stream write options including the Effect Stream
+     * @returns StreamWriteResult with final size after stream completes
+     */
+    const writeStream = (
+      fileId: string,
+      options: StreamWriteOptions,
+    ): Effect.Effect<StreamWriteResult, UploadistaError> =>
+      withTimingMetrics(
+        uploadDurationHistogram,
+        Effect.gen(function* () {
+          const startTime = Date.now();
+
+          yield* Effect.logInfo("Starting streaming write to Azure").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              container: containerName,
+              size_hint: options.sizeHint,
+            }),
+          );
+
+          yield* uploadRequestsTotal(Effect.succeed(1));
+          yield* activeUploadsGauge(Effect.succeed(1));
+
+          // Calculate optimal block size based on size hint or use default
+          const uploadBlockSize = calcOptimalBlockSize(options.sizeHint);
+
+          // Track blocks and total bytes
+          const blockIdsRef = yield* Ref.make<string[]>([]);
+          const totalBytesRef = yield* Ref.make(0);
+          const blockNumberRef = yield* Ref.make(1);
+          const bufferRef = yield* Ref.make(new Uint8Array(0));
+
+          // Helper to stage a block
+          const stageBlock = (data: Uint8Array, isFinalBlock: boolean) =>
+            Effect.gen(function* () {
+              if (data.length === 0) {
+                return;
+              }
+
+              // Only stage if we have enough data or it's the final block
+              if (data.length < minBlockSize && !isFinalBlock) {
+                return;
+              }
+
+              const blockNumber = yield* Ref.getAndUpdate(
+                blockNumberRef,
+                (n) => n + 1,
+              );
+
+              // Generate block ID (base64 encoded, must be consistent length)
+              const blockId = bufferFrom(
+                `stream-block-${blockNumber.toString().padStart(6, "0")}`,
+              ).toString("base64");
+
+              yield* Effect.logDebug("Staging block from stream").pipe(
+                Effect.annotateLogs({
+                  upload_id: fileId,
+                  block_number: blockNumber,
+                  block_size: data.length,
+                  is_final_block: isFinalBlock,
+                }),
+              );
+
+              const blobClient = containerClient.getBlockBlobClient(fileId);
+              yield* Effect.tryPromise({
+                try: () => blobClient.stageBlock(blockId, data, data.length),
+                catch: (error) => {
+                  Effect.runSync(
+                    trackAzureError("writeStream", error, {
+                      upload_id: fileId,
+                      block_number: blockNumber,
+                      block_size: data.length,
+                    }),
+                  );
+                  return UploadistaError.fromCode("FILE_WRITE_ERROR", {
+                    cause: error as Error,
+                  });
+                },
+              });
+
+              yield* Ref.update(blockIdsRef, (ids) => [...ids, blockId]);
+              yield* uploadPartsTotal(Effect.succeed(1));
+              yield* partSizeHistogram(Effect.succeed(data.length));
+            });
+
+          // Process stream chunks
+          yield* options.stream.pipe(
+            Stream.runForEach((chunk) =>
+              Effect.gen(function* () {
+                // Update total bytes
+                yield* Ref.update(totalBytesRef, (total) => total + chunk.length);
+
+                // Get current buffer and append new chunk
+                const currentBuffer = yield* Ref.get(bufferRef);
+                const combined = new Uint8Array(
+                  currentBuffer.length + chunk.length,
+                );
+                combined.set(currentBuffer);
+                combined.set(chunk, currentBuffer.length);
+
+                // Extract full blocks and keep remainder in buffer
+                let offset = 0;
+                while (combined.length - offset >= uploadBlockSize) {
+                  const blockData = combined.slice(offset, offset + uploadBlockSize);
+                  yield* stageBlock(blockData, false);
+                  offset += uploadBlockSize;
+                }
+
+                // Store remaining data in buffer
+                yield* Ref.set(bufferRef, combined.slice(offset));
+              }),
+            ),
+          );
+
+          // Stage any remaining data as final block
+          const remainingBuffer = yield* Ref.get(bufferRef);
+          if (remainingBuffer.length > 0) {
+            yield* stageBlock(remainingBuffer, true);
+          }
+
+          // Get all block IDs and commit the block list
+          const blockIds = yield* Ref.get(blockIdsRef);
+          const totalBytes = yield* Ref.get(totalBytesRef);
+
+          if (blockIds.length === 0) {
+            // No blocks staged (empty stream) - fail
+            yield* activeUploadsGauge(Effect.succeed(-1));
+            return yield* Effect.fail(
+              new UploadistaError({
+                code: "FILE_WRITE_ERROR",
+                status: 400,
+                body: "Cannot complete upload with no data",
+                details: "The stream provided no data to upload",
+              }),
+            );
+          }
+
+          // Commit block list
+          const blobClient = containerClient.getBlockBlobClient(fileId);
+          yield* Effect.tryPromise({
+            try: () =>
+              blobClient.commitBlockList(blockIds, {
+                blobHTTPHeaders: {
+                  blobContentType: options.contentType,
+                },
+              }),
+            catch: (error) => {
+              Effect.runSync(
+                trackAzureError("writeStream", error, {
+                  upload_id: fileId,
+                  operation: "commit",
+                  blocks: blockIds.length,
+                }),
+              );
+              return UploadistaError.fromCode("FILE_WRITE_ERROR", {
+                cause: error as Error,
+              });
+            },
+          });
+
+          // Log completion metrics
+          const endTime = Date.now();
+          const totalDurationMs = endTime - startTime;
+          const throughputBps =
+            totalDurationMs > 0 ? (totalBytes * 1000) / totalDurationMs : 0;
+          const averageBlockSize =
+            blockIds.length > 0 ? totalBytes / blockIds.length : undefined;
+
+          yield* logAzureUploadCompletion(fileId, {
+            fileSize: totalBytes,
+            totalDurationMs,
+            partsCount: blockIds.length,
+            averagePartSize: averageBlockSize,
+            throughputBps,
+            retryCount: 0,
+          });
+
+          yield* uploadSuccessTotal(Effect.succeed(1));
+          yield* activeUploadsGauge(Effect.succeed(-1));
+          yield* fileSizeHistogram(Effect.succeed(totalBytes));
+
+          yield* Effect.logInfo("Streaming write to Azure completed").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              total_bytes: totalBytes,
+              blocks_count: blockIds.length,
+              duration_ms: totalDurationMs,
+            }),
+          );
+
+          return {
+            id: fileId,
+            size: totalBytes,
+            path: fileId,
+            bucket: containerName,
+          } satisfies StreamWriteResult;
+        }).pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* uploadErrorsTotal(Effect.succeed(1));
+              yield* activeUploadsGauge(Effect.succeed(-1));
+              return yield* Effect.fail(error);
+            }),
+          ),
+        ),
+      );
+
     return {
       bucket: containerName,
       create,
@@ -1101,6 +1402,7 @@ export function azureStore({
       getUpload,
       read,
       readStream,
+      writeStream,
       deleteExpired: deleteExpired(),
       getCapabilities,
       getChunkerConstraints,

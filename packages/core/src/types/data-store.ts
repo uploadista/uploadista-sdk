@@ -25,6 +25,98 @@ export type DataStoreWriteOptions = {
 export type UploadStrategy = "single" | "parallel";
 
 /**
+ * Configuration options for streaming file reads.
+ *
+ * Used to control streaming behavior in transform nodes and data stores.
+ *
+ * @property fileSizeThreshold - Files below this size use buffered mode (default: 1MB)
+ * @property chunkSize - Chunk size for streaming reads in bytes (default: 64KB)
+ *
+ * @example
+ * ```typescript
+ * const config: StreamingConfig = {
+ *   fileSizeThreshold: 1_048_576, // 1MB - use buffered for smaller files
+ *   chunkSize: 65_536, // 64KB chunks
+ * };
+ * ```
+ */
+export type StreamingConfig = {
+  /** Files below this size use buffered mode (default: 1MB = 1_048_576 bytes) */
+  fileSizeThreshold?: number;
+  /** Chunk size for streaming reads in bytes (default: 64KB = 65_536 bytes) */
+  chunkSize?: number;
+};
+
+/**
+ * Default streaming configuration values.
+ */
+export const DEFAULT_STREAMING_CONFIG: Required<StreamingConfig> = {
+  fileSizeThreshold: 1_048_576, // 1MB
+  chunkSize: 65_536, // 64KB
+};
+
+/**
+ * Default multipart part size for S3/R2 streaming writes.
+ * S3 requires minimum 5MB parts (except for the last part).
+ */
+export const DEFAULT_MULTIPART_PART_SIZE = 5 * 1024 * 1024; // 5MB
+
+/**
+ * Options for streaming write operations.
+ *
+ * Used when writing file content from a stream with unknown final size.
+ * The store will finalize the upload when the stream completes.
+ *
+ * @property stream - Effect Stream of byte chunks to write
+ * @property contentType - Optional MIME type for the file
+ * @property metadata - Optional metadata to store with the file
+ * @property sizeHint - Optional estimated size for optimization (e.g., multipart part sizing)
+ *
+ * @example
+ * ```typescript
+ * const options: StreamWriteOptions = {
+ *   stream: transformedStream,
+ *   contentType: "image/webp",
+ *   metadata: { originalName: "photo.jpg" },
+ *   sizeHint: 5_000_000, // ~5MB expected
+ * };
+ * ```
+ */
+export type StreamWriteOptions = {
+  stream: Stream.Stream<Uint8Array, UploadistaError>;
+  contentType?: string;
+  metadata?: Record<string, string>;
+  /** Optional size hint for optimization (not required) */
+  sizeHint?: number;
+};
+
+/**
+ * Result of a streaming write operation.
+ *
+ * Contains the final size after the stream completes, along with
+ * storage location information.
+ *
+ * @property id - Unique identifier of the written file
+ * @property size - Final size in bytes after stream completed
+ * @property path - Storage path or key where file was written
+ * @property bucket - Optional bucket/container name (for cloud storage)
+ *
+ * @example
+ * ```typescript
+ * const result = yield* dataStore.writeStream(fileId, options);
+ * console.log(`Wrote ${result.size} bytes to ${result.path}`);
+ * ```
+ */
+export type StreamWriteResult = {
+  id: string;
+  size: number;
+  path: string;
+  bucket?: string;
+  /** Public URL for accessing the uploaded file (if available) */
+  url?: string;
+};
+
+/**
  * Capabilities and constraints of a DataStore implementation.
  *
  * This type describes what features a storage backend supports and what
@@ -36,6 +128,7 @@ export type UploadStrategy = "single" | "parallel";
  * @property supportsDeferredLength - Can start upload without knowing final size
  * @property supportsResumableUploads - Can resume interrupted uploads from last offset
  * @property supportsTransactionalUploads - Guarantees atomic upload success/failure
+ * @property supportsStreamingRead - Can read file content as a stream instead of buffering
  * @property maxConcurrentUploads - Maximum parallel upload parts (if parallel supported)
  * @property minChunkSize - Minimum size in bytes for each chunk (except last)
  * @property maxChunkSize - Maximum size in bytes for each chunk
@@ -57,6 +150,12 @@ export type UploadStrategy = "single" | "parallel";
  *   // Use single upload
  *   uploadAsSingleChunk(file);
  * }
+ *
+ * // Check for streaming support
+ * if (capabilities.supportsStreamingRead) {
+ *   // Use streaming for memory-efficient processing
+ *   const stream = yield* dataStore.readStream(fileId);
+ * }
  * ```
  */
 export type DataStoreCapabilities = {
@@ -65,6 +164,10 @@ export type DataStoreCapabilities = {
   supportsDeferredLength: boolean;
   supportsResumableUploads: boolean;
   supportsTransactionalUploads: boolean;
+  /** Whether the store supports streaming reads via readStream() */
+  supportsStreamingRead?: boolean;
+  /** Whether the store supports streaming writes via writeStream() with unknown final size */
+  supportsStreamingWrite?: boolean;
   maxConcurrentUploads?: number;
   minChunkSize?: number;
   maxChunkSize?: number;
@@ -149,15 +252,69 @@ export type DataStore<TData = unknown> = {
   readonly path?: string;
   readonly create: (file: TData) => Effect.Effect<TData, UploadistaError>;
   readonly remove: (file_id: string) => Effect.Effect<void, UploadistaError>;
+  /**
+   * Reads the complete file contents as bytes (buffered mode).
+   * For large files, consider using readStream() if available.
+   */
   readonly read: (
     file_id: string,
   ) => Effect.Effect<Uint8Array, UploadistaError>;
+  /**
+   * Reads file content as a stream of chunks for memory-efficient processing.
+   * Optional - check getCapabilities().supportsStreamingRead before using.
+   *
+   * @param file_id - The unique identifier of the file to read
+   * @param config - Optional streaming configuration (chunk size)
+   * @returns An Effect that resolves to a Stream of byte chunks
+   *
+   * @example
+   * ```typescript
+   * const capabilities = dataStore.getCapabilities();
+   * if (capabilities.supportsStreamingRead && dataStore.readStream) {
+   *   const stream = yield* dataStore.readStream(fileId, { chunkSize: 65536 });
+   *   // Process stream chunk by chunk
+   * }
+   * ```
+   */
+  readonly readStream?: (
+    file_id: string,
+    config?: StreamingConfig,
+  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
   readonly write: (
     options: DataStoreWriteOptions,
     dependencies: {
       onProgress?: (chunkSize: number) => void;
     },
   ) => Effect.Effect<number, UploadistaError>;
+  /**
+   * Writes file content from a stream with unknown final size.
+   * Optional - check getCapabilities().supportsStreamingWrite before using.
+   *
+   * This method is optimized for end-to-end streaming where the output
+   * size isn't known until the stream completes. It uses store-specific
+   * mechanisms like multipart uploads (S3/R2), resumable uploads (GCS),
+   * or block staging (Azure) to efficiently handle streaming data.
+   *
+   * @param fileId - Unique identifier for the file being written
+   * @param options - Stream and optional metadata
+   * @returns StreamWriteResult containing final size after completion
+   *
+   * @example
+   * ```typescript
+   * const capabilities = dataStore.getCapabilities();
+   * if (capabilities.supportsStreamingWrite && dataStore.writeStream) {
+   *   const result = yield* dataStore.writeStream(fileId, {
+   *     stream: transformedStream,
+   *     contentType: "image/webp",
+   *   });
+   *   console.log(`Wrote ${result.size} bytes`);
+   * }
+   * ```
+   */
+  readonly writeStream?: (
+    fileId: string,
+    options: StreamWriteOptions,
+  ) => Effect.Effect<StreamWriteResult, UploadistaError>;
   readonly deleteExpired?: () => Effect.Effect<number, UploadistaError>;
   readonly getCapabilities: () => DataStoreCapabilities;
   readonly validateUploadStrategy: (

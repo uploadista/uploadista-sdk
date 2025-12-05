@@ -1,7 +1,7 @@
-import { Effect } from "effect";
+import { Effect, Stream } from "effect";
 import type { UploadistaError } from "../../errors";
-import type { UploadFile } from "../../types";
-import { uploadFileSchema } from "../../types";
+import type { StreamingConfig, UploadFile } from "../../types";
+import { DEFAULT_STREAMING_CONFIG, uploadFileSchema } from "../../types";
 import { UploadServer } from "../../upload";
 import { createFlowNode, NodeType } from "../node";
 import { completeNodeExecution, type FileNamingConfig } from "../types";
@@ -11,6 +11,38 @@ import {
   buildNamingContext,
 } from "../utils/file-naming";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
+
+/**
+ * Transform mode for controlling how file data is processed.
+ *
+ * - `buffered`: Always load entire file into memory before transforming (default, backward compatible)
+ * - `streaming`: Process file as a stream of chunks for memory efficiency
+ * - `auto`: Automatically select mode based on file size and DataStore capabilities
+ */
+export type TransformMode = "buffered" | "streaming" | "auto";
+
+/**
+ * Result type for streaming transforms.
+ * Can return just the transformed stream, or include metadata changes.
+ */
+export type StreamingTransformResult =
+  | Stream.Stream<Uint8Array, UploadistaError>
+  | {
+      stream: Stream.Stream<Uint8Array, UploadistaError>;
+      type?: string;
+      fileName?: string;
+      /** Estimated output size in bytes (for progress tracking) */
+      estimatedSize?: number;
+    };
+
+/**
+ * Function type for streaming transforms.
+ * Receives an input stream and file metadata, returns a transformed stream.
+ */
+export type StreamingTransformFn = (
+  stream: Stream.Stream<Uint8Array, UploadistaError>,
+  file: UploadFile,
+) => Effect.Effect<StreamingTransformResult, UploadistaError>;
 
 /**
  * Configuration object for creating a transform node.
@@ -60,14 +92,47 @@ export interface TransformNodeConfig {
    * Overrides flow-level circuit breaker defaults for this node.
    */
   circuitBreaker?: FlowCircuitBreakerConfig;
-  /** Function that transforms file bytes */
-  transform: (
+  /**
+   * Transform mode controlling how file data is processed.
+   * - `buffered`: Always load entire file into memory
+   * - `streaming`: Process file as a stream of chunks
+   * - `auto`: Select mode based on file size and DataStore capabilities (default)
+   *
+   * @default "auto"
+   */
+  mode?: TransformMode;
+  /**
+   * Configuration for streaming mode (file size threshold, chunk size).
+   * Only used when mode is "streaming" or "auto".
+   */
+  streamingConfig?: StreamingConfig;
+  /**
+   * Function that transforms file bytes (buffered mode).
+   * Required unless streamingTransform is provided and mode is "streaming".
+   */
+  transform?: (
     bytes: Uint8Array,
     file: UploadFile,
   ) => Effect.Effect<
     Uint8Array | { bytes: Uint8Array; type?: string; fileName?: string },
     UploadistaError
   >;
+  /**
+   * Function that transforms file as a stream (streaming mode).
+   * For memory-efficient processing of large files.
+   * Used when mode is "streaming" or when "auto" selects streaming.
+   */
+  streamingTransform?: StreamingTransformFn;
+}
+
+/**
+ * Helper to check if a StreamingTransformResult is a stream or an object with metadata.
+ */
+function isStreamResult(
+  result: StreamingTransformResult,
+): result is Stream.Stream<Uint8Array, UploadistaError> {
+  // Check if it has the 'stream' property (object form) vs is a Stream directly
+  return !("stream" in result);
 }
 
 /**
@@ -79,12 +144,17 @@ export interface TransformNodeConfig {
  * This simplifies nodes that just need to transform file bytes without
  * worrying about upload server interactions.
  *
+ * Supports both buffered and streaming modes:
+ * - **Buffered mode**: Loads entire file into memory, transforms, uploads
+ * - **Streaming mode**: Processes file as chunks for memory efficiency with large files
+ * - **Auto mode** (default): Selects mode based on file size and DataStore capabilities
+ *
  * @param config - Configuration object for the transform node
  * @returns An Effect that creates a flow node configured for file transformation
  *
  * @example
  * ```typescript
- * // Create an image resize transform node
+ * // Create a transform node with auto mode (default) - uses streaming for large files
  * const resizeNode = yield* createTransformNode({
  *   id: "resize-image",
  *   name: "Resize Image",
@@ -92,31 +162,31 @@ export interface TransformNodeConfig {
  *   transform: (bytes, file) => {
  *     // Your transformation logic here
  *     return Effect.succeed(transformedBytes);
+ *   },
+ *   streamingTransform: (stream, file) => {
+ *     const transformed = Stream.map(stream, (chunk) => processChunk(chunk));
+ *     return Effect.succeed(transformed);
  *   }
  * });
  *
- * // Create a transform node with keepOutput enabled
- * const processedNode = yield* createTransformNode({
- *   id: "process-image",
- *   name: "Process Image",
- *   description: "Processes images and preserves output",
- *   keepOutput: true, // Output will be included in flow results
- *   transform: (bytes, file) => {
- *     return Effect.succeed(transformedBytes);
- *   }
+ * // Force buffered mode for specific use cases
+ * const bufferedNode = yield* createTransformNode({
+ *   id: "optimize-small",
+ *   name: "Optimize Small Files",
+ *   description: "Optimizes small files with buffered mode",
+ *   mode: "buffered",
+ *   transform: (bytes, file) => Effect.succeed(transformBytes(bytes)),
  * });
  *
- * // Create a transform node that changes file metadata
- * const metadataTransformNode = yield* createTransformNode({
- *   id: "add-metadata",
- *   name: "Add Metadata",
- *   description: "Adds custom metadata to files",
- *   transform: (bytes, file) => {
- *     return Effect.succeed({
- *       bytes,
- *       type: "application/custom",
- *       fileName: `processed-${file.fileName}`
- *     });
+ * // Force streaming mode for memory efficiency
+ * const streamingNode = yield* createTransformNode({
+ *   id: "optimize-large",
+ *   name: "Optimize Large Files",
+ *   description: "Optimizes large files with streaming",
+ *   mode: "streaming",
+ *   streamingTransform: (stream, file) => {
+ *     const transformed = Stream.map(stream, (chunk) => processChunk(chunk));
+ *     return Effect.succeed(transformed);
  *   }
  * });
  * ```
@@ -132,8 +202,34 @@ export function createTransformNode({
   nodeTypeId,
   namingVars,
   circuitBreaker,
+  mode = "auto",
+  streamingConfig,
   transform,
+  streamingTransform,
 }: TransformNodeConfig) {
+  // Validate configuration
+  if (mode === "streaming" && !streamingTransform) {
+    throw new Error(
+      `Transform node "${id}": mode is "streaming" but no streamingTransform function provided`,
+    );
+  }
+  if (mode === "buffered" && !transform) {
+    throw new Error(
+      `Transform node "${id}": mode is "buffered" but no transform function provided`,
+    );
+  }
+  if (mode === "auto" && !transform && !streamingTransform) {
+    throw new Error(
+      `Transform node "${id}": mode is "auto" but neither transform nor streamingTransform provided`,
+    );
+  }
+
+  // Merge streaming config with defaults
+  const effectiveStreamingConfig = {
+    ...DEFAULT_STREAMING_CONFIG,
+    ...streamingConfig,
+  };
+
   return Effect.gen(function* () {
     const uploadServer = yield* UploadServer;
 
@@ -155,6 +251,205 @@ export function createTransformNode({
             nodeId: id,
             jobId,
           };
+
+          // Determine which mode to use
+          const shouldUseStreaming = yield* Effect.gen(function* () {
+            if (mode === "buffered") return false;
+            if (mode === "streaming") return true;
+
+            // Auto mode: check file size and capabilities
+            const fileSize = file.size ?? 0;
+            const threshold = effectiveStreamingConfig.fileSizeThreshold;
+
+            // If file is smaller than threshold, use buffered
+            if (fileSize > 0 && fileSize < threshold) {
+              yield* Effect.logDebug(
+                `File ${file.id} (${fileSize} bytes) below threshold (${threshold}), using buffered mode`,
+              );
+              return false;
+            }
+
+            // Check if we have the required functions
+            if (!streamingTransform) {
+              yield* Effect.logDebug(
+                `No streamingTransform function, using buffered mode`,
+              );
+              return false;
+            }
+
+            // Check DataStore capabilities via UploadServer
+            const capabilities = yield* uploadServer.getCapabilities(
+              storageId,
+              clientId,
+            );
+            if (!capabilities.supportsStreamingRead) {
+              yield* Effect.logDebug(
+                `DataStore doesn't support streaming read, using buffered mode`,
+              );
+              return false;
+            }
+
+            yield* Effect.logDebug(
+              `File ${file.id} qualifies for streaming mode`,
+            );
+            return true;
+          });
+
+          const { type, fileName, metadata, metadataJson } =
+            resolveUploadMetadata(file.metadata);
+
+          if (shouldUseStreaming && streamingTransform) {
+            // STREAMING PATH - True end-to-end streaming
+            yield* Effect.logDebug(`Using streaming transform for ${file.id}`);
+
+            // Get input stream
+            const inputStream = yield* uploadServer.readStream(
+              file.id,
+              clientId,
+              effectiveStreamingConfig,
+            );
+
+            // Transform the stream
+            const transformResult = yield* streamingTransform(
+              inputStream,
+              file,
+            );
+
+            // Extract stream and metadata from result
+            const outputStream = isStreamResult(transformResult)
+              ? transformResult
+              : transformResult.stream;
+            const outputType = isStreamResult(transformResult)
+              ? undefined
+              : transformResult.type;
+            const estimatedSize = isStreamResult(transformResult)
+              ? undefined
+              : transformResult.estimatedSize;
+
+            // Get fileName from transform result or apply naming config
+            let outputFileName = isStreamResult(transformResult)
+              ? undefined
+              : transformResult.fileName;
+
+            if (!outputFileName && naming) {
+              const namingContext = buildNamingContext(
+                file,
+                { flowId, jobId, nodeId: id, nodeType: namingNodeType },
+                namingVars,
+              );
+              outputFileName = applyFileNaming(file, namingContext, naming);
+            }
+
+            // Check if DataStore supports streaming writes
+            const capabilities = yield* uploadServer.getCapabilities(
+              storageId,
+              clientId,
+            );
+
+            let result: UploadFile;
+
+            if (capabilities.supportsStreamingWrite) {
+              // True end-to-end streaming: pipe transform output directly to storage
+              yield* Effect.logDebug(
+                `Using streaming write for ${file.id} - no intermediate buffering`,
+              );
+
+              result = yield* uploadServer.uploadStream(
+                {
+                  storageId,
+                  uploadLengthDeferred: true,
+                  sizeHint: estimatedSize,
+                  type: outputType ?? type,
+                  fileName: outputFileName ?? fileName,
+                  lastModified: 0,
+                  metadata: metadataJson,
+                  flow,
+                },
+                clientId,
+                outputStream,
+              );
+            } else {
+              // Fallback: buffer the output before uploading
+              // This path is for DataStores that don't support streaming writes
+              yield* Effect.logDebug(
+                `Falling back to buffered upload for ${file.id} (streaming write not supported)`,
+              );
+
+              const outputChunks: Uint8Array[] = [];
+              yield* Stream.runForEach(outputStream, (chunk) =>
+                Effect.sync(() => {
+                  outputChunks.push(chunk);
+                }),
+              );
+
+              // Concatenate chunks into a single Uint8Array
+              const totalLength = outputChunks.reduce(
+                (sum, chunk) => sum + chunk.byteLength,
+                0,
+              );
+              const outputBytes = new Uint8Array(totalLength);
+              let offset = 0;
+              for (const chunk of outputChunks) {
+                outputBytes.set(chunk, offset);
+                offset += chunk.byteLength;
+              }
+
+              // Create a ReadableStream for upload
+              const bufferedUploadStream = new ReadableStream({
+                start(controller) {
+                  controller.enqueue(outputBytes);
+                  controller.close();
+                },
+              });
+
+              result = yield* uploadServer.upload(
+                {
+                  storageId,
+                  size: outputBytes.byteLength,
+                  type: outputType ?? type,
+                  fileName: outputFileName ?? fileName,
+                  lastModified: 0,
+                  metadata: metadataJson,
+                  flow,
+                },
+                clientId,
+                bufferedUploadStream,
+              );
+            }
+
+            // Merge updated metadata
+            const updatedMetadata = metadata
+              ? {
+                  ...metadata,
+                  ...(outputType && {
+                    mimeType: outputType,
+                    type: outputType,
+                    "content-type": outputType,
+                  }),
+                  ...(outputFileName && {
+                    fileName: outputFileName,
+                    originalName: outputFileName,
+                    name: outputFileName,
+                    extension:
+                      outputFileName.split(".").pop() || metadata.extension,
+                  }),
+                }
+              : result.metadata;
+
+            return completeNodeExecution(
+              updatedMetadata
+                ? { ...result, metadata: updatedMetadata }
+                : result,
+            );
+          }
+
+          // BUFFERED PATH (default, backward compatible)
+          if (!transform) {
+            throw new Error(
+              `Transform node "${id}": buffered mode selected but no transform function provided`,
+            );
+          }
+
           // Read input bytes from upload server
           const inputBytes = yield* uploadServer.read(file.id, clientId);
 
@@ -200,9 +495,6 @@ export function createTransformNode({
               controller.close();
             },
           });
-
-          const { type, fileName, metadata, metadataJson } =
-            resolveUploadMetadata(file.metadata);
 
           // Upload the transformed bytes back to the upload server
           // Use output metadata if provided, otherwise fall back to original

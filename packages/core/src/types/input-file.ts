@@ -8,24 +8,41 @@ import { z } from "zod";
  *
  * @see {@link InputFile} for the TypeScript type
  */
-export const inputFileSchema = z.object({
-  uploadLengthDeferred: z.boolean().optional(),
-  storageId: z.string(),
-  size: z.number(),
-  type: z.string(),
-  fileName: z.string().optional(),
-  lastModified: z.number().optional(),
-  metadata: z.string().optional(),
-  checksum: z.string().optional(),
-  checksumAlgorithm: z.string().optional(),
-  flow: z
-    .object({
-      flowId: z.string(),
-      nodeId: z.string(),
-      jobId: z.string(),
-    })
-    .optional(),
-});
+export const inputFileSchema = z
+  .object({
+    uploadLengthDeferred: z.boolean().optional(),
+    storageId: z.string(),
+    /** File size in bytes. Optional when uploadLengthDeferred is true. */
+    size: z.number().optional(),
+    /** Optional size hint for optimization when size is unknown */
+    sizeHint: z.number().optional(),
+    type: z.string(),
+    fileName: z.string().optional(),
+    lastModified: z.number().optional(),
+    metadata: z.string().optional(),
+    checksum: z.string().optional(),
+    checksumAlgorithm: z.string().optional(),
+    flow: z
+      .object({
+        flowId: z.string(),
+        nodeId: z.string(),
+        jobId: z.string(),
+      })
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // Size is required unless uploadLengthDeferred is true
+      if (data.uploadLengthDeferred === true) {
+        return true; // Size can be omitted
+      }
+      return data.size !== undefined && data.size >= 0;
+    },
+    {
+      message: "size is required when uploadLengthDeferred is not true",
+      path: ["size"],
+    },
+  );
 
 /**
  * Represents the input data for creating a new file upload.
@@ -34,7 +51,8 @@ export const inputFileSchema = z.object({
  * It's used by clients to provide upload metadata before sending file data.
  *
  * @property storageId - Target storage backend identifier (e.g., "s3-production", "azure-blob")
- * @property size - File size in bytes
+ * @property size - File size in bytes. Optional when uploadLengthDeferred is true.
+ * @property sizeHint - Optional size hint for optimization when exact size is unknown
  * @property type - MIME type of the file (e.g., "image/jpeg", "application/pdf")
  * @property uploadLengthDeferred - If true, file size is not known upfront (streaming upload)
  * @property fileName - Original filename from the client
@@ -94,13 +112,21 @@ export const inputFileSchema = z.object({
  *   }
  * };
  *
- * // Streaming upload (size unknown)
+ * // Streaming upload (size unknown) - size can be omitted
  * const streamingInput: InputFile = {
  *   storageId: "s3-production",
- *   size: 0, // Will be updated as data arrives
  *   type: "video/mp4",
  *   uploadLengthDeferred: true,
  *   fileName: "live-stream.mp4"
+ * };
+ *
+ * // Streaming upload with size hint for optimization
+ * const streamingWithHint: InputFile = {
+ *   storageId: "s3-production",
+ *   type: "image/webp",
+ *   uploadLengthDeferred: true,
+ *   sizeHint: 5_000_000, // ~5MB expected
+ *   fileName: "optimized-image.webp"
  * };
  * ```
  */

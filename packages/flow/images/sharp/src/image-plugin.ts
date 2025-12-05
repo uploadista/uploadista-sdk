@@ -1,7 +1,13 @@
+import { PassThrough } from "node:stream";
 import { UploadistaError } from "@uploadista/core/errors";
-import { ImagePlugin } from "@uploadista/core/flow";
+import {
+  ImagePlugin,
+  type OptimizeParams,
+  type ResizeParams,
+  type Transformation,
+} from "@uploadista/core/flow";
 import { withOperationSpan } from "@uploadista/observability";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Stream } from "effect";
 import sharp from "sharp";
 
 const mapFitToSharp = (fit: "fill" | "contain" | "cover") => {
@@ -479,6 +485,328 @@ export const imagePlugin = Layer.succeed(
         withOperationSpan("image", "transform", {
           "image.transformation_type": transformation.type,
           "image.input_size": inputBytes.byteLength,
+        }),
+      );
+    },
+
+    /**
+     * Indicates that this plugin supports streaming operations.
+     */
+    supportsStreaming: true,
+
+    /**
+     * Streaming optimization using Sharp's pipeline.
+     *
+     * Collects input stream chunks, processes through Sharp, and returns
+     * the result as a stream. This avoids double-buffering when combined
+     * with streaming DataStore reads.
+     */
+    optimizeStream: (
+      inputStream: Stream.Stream<Uint8Array, UploadistaError>,
+      { quality, format }: OptimizeParams,
+    ): Effect.Effect<
+      Stream.Stream<Uint8Array, UploadistaError>,
+      UploadistaError
+    > => {
+      return Effect.gen(function* () {
+        // Collect input stream to buffer (Sharp needs full image to decode)
+        const chunks: Uint8Array[] = [];
+        yield* Stream.runForEach(inputStream, (chunk) =>
+          Effect.sync(() => {
+            chunks.push(chunk);
+          }),
+        );
+
+        // Combine chunks
+        const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+        const inputBuffer = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          inputBuffer.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
+
+        // Process through Sharp and output as stream
+        return Stream.async<Uint8Array, UploadistaError>((emit) => {
+          const sharpInstance = sharp(inputBuffer).toFormat(format, {
+            quality,
+          });
+
+          // Use Sharp's streaming output
+          const outputStream = new PassThrough();
+          const outputChunks: Buffer[] = [];
+
+          sharpInstance
+            .pipe(outputStream)
+            .on("data", (chunk: Buffer) => {
+              outputChunks.push(chunk);
+            })
+            .on("end", () => {
+              // Emit all collected chunks as a single Uint8Array
+              const outputBuffer = Buffer.concat(outputChunks);
+              emit.single(new Uint8Array(outputBuffer));
+              emit.end();
+            })
+            .on("error", (error: Error) => {
+              emit.fail(
+                UploadistaError.fromCode("UNKNOWN_ERROR", {
+                  body: `Sharp streaming optimization failed: ${error.message}`,
+                  cause: error,
+                }),
+              );
+            });
+
+          // Cleanup
+          return Effect.sync(() => {
+            outputStream.destroy();
+          });
+        });
+      }).pipe(
+        withOperationSpan("image", "optimize-stream", {
+          "image.format": format,
+          "image.quality": quality,
+        }),
+      );
+    },
+
+    /**
+     * Streaming resize using Sharp's pipeline.
+     *
+     * Collects input stream chunks, processes through Sharp's resize,
+     * and returns the result as a stream.
+     */
+    resizeStream: (
+      inputStream: Stream.Stream<Uint8Array, UploadistaError>,
+      { width, height, fit }: ResizeParams,
+    ): Effect.Effect<
+      Stream.Stream<Uint8Array, UploadistaError>,
+      UploadistaError
+    > => {
+      return Effect.gen(function* () {
+        if (!width && !height) {
+          return yield* Effect.fail(
+            UploadistaError.fromCode("VALIDATION_ERROR", {
+              body: "Either width or height must be specified for resize",
+            }),
+          );
+        }
+
+        // Collect input stream to buffer (Sharp needs full image to decode)
+        const chunks: Uint8Array[] = [];
+        yield* Stream.runForEach(inputStream, (chunk) =>
+          Effect.sync(() => {
+            chunks.push(chunk);
+          }),
+        );
+
+        // Combine chunks
+        const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+        const inputBuffer = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          inputBuffer.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
+
+        const sharpFit = mapFitToSharp(fit);
+
+        // Process through Sharp and output as stream
+        return Stream.async<Uint8Array, UploadistaError>((emit) => {
+          const sharpInstance = sharp(inputBuffer).resize(width, height, {
+            fit: sharpFit,
+          });
+
+          // Use Sharp's streaming output
+          const outputStream = new PassThrough();
+          const outputChunks: Buffer[] = [];
+
+          sharpInstance
+            .pipe(outputStream)
+            .on("data", (chunk: Buffer) => {
+              outputChunks.push(chunk);
+            })
+            .on("end", () => {
+              // Emit all collected chunks as a single Uint8Array
+              const outputBuffer = Buffer.concat(outputChunks);
+              emit.single(new Uint8Array(outputBuffer));
+              emit.end();
+            })
+            .on("error", (error: Error) => {
+              emit.fail(
+                UploadistaError.fromCode("UNKNOWN_ERROR", {
+                  body: `Sharp streaming resize failed: ${error.message}`,
+                  cause: error,
+                }),
+              );
+            });
+
+          // Cleanup
+          return Effect.sync(() => {
+            outputStream.destroy();
+          });
+        });
+      }).pipe(
+        withOperationSpan("image", "resize-stream", {
+          "image.width": width,
+          "image.height": height,
+          "image.fit": fit,
+        }),
+      );
+    },
+
+    /**
+     * Streaming transformation using Sharp's pipeline.
+     *
+     * Collects input stream chunks, applies the transformation,
+     * and returns the result as a stream.
+     */
+    transformStream: (
+      inputStream: Stream.Stream<Uint8Array, UploadistaError>,
+      transformation: Transformation,
+    ): Effect.Effect<
+      Stream.Stream<Uint8Array, UploadistaError>,
+      UploadistaError
+    > => {
+      return Effect.gen(function* () {
+        // Collect input stream to buffer (Sharp needs full image to decode)
+        const chunks: Uint8Array[] = [];
+        yield* Stream.runForEach(inputStream, (chunk) =>
+          Effect.sync(() => {
+            chunks.push(chunk);
+          }),
+        );
+
+        // Combine chunks
+        const totalLength = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+        const inputBuffer = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const chunk of chunks) {
+          inputBuffer.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
+
+        // Apply transformation (reuse buffered transform logic)
+        let pipeline = sharp(inputBuffer);
+
+        switch (transformation.type) {
+          case "resize": {
+            const sharpFit = mapFitToSharp(transformation.fit);
+            pipeline = pipeline.resize(
+              transformation.width,
+              transformation.height,
+              { fit: sharpFit },
+            );
+            break;
+          }
+
+          case "blur": {
+            pipeline = pipeline.blur(transformation.sigma);
+            break;
+          }
+
+          case "rotate": {
+            const options = transformation.background
+              ? { background: transformation.background }
+              : undefined;
+            pipeline = pipeline.rotate(transformation.angle, options);
+            break;
+          }
+
+          case "flip": {
+            if (transformation.direction === "horizontal") {
+              pipeline = pipeline.flop();
+            } else {
+              pipeline = pipeline.flip();
+            }
+            break;
+          }
+
+          case "grayscale": {
+            pipeline = pipeline.grayscale();
+            break;
+          }
+
+          case "sepia": {
+            pipeline = pipeline.tint({ r: 112, g: 66, b: 20 });
+            break;
+          }
+
+          case "brightness": {
+            const multiplier = 1 + transformation.value / 100;
+            pipeline = pipeline.modulate({ brightness: multiplier });
+            break;
+          }
+
+          case "contrast": {
+            const a = 1 + transformation.value / 100;
+            pipeline = pipeline.linear(a, 0);
+            break;
+          }
+
+          case "sharpen": {
+            if (transformation.sigma !== undefined) {
+              pipeline = pipeline.sharpen({ sigma: transformation.sigma });
+            } else {
+              pipeline = pipeline.sharpen();
+            }
+            break;
+          }
+
+          case "watermark":
+          case "logo":
+          case "text": {
+            // These transformations require async operations and metadata lookups
+            // Fall back to the buffered transform for these complex cases
+            return yield* Effect.fail(
+              UploadistaError.fromCode("UNKNOWN_ERROR", {
+                body: `Streaming not supported for ${transformation.type} transformation. Use buffered mode.`,
+              }),
+            );
+          }
+
+          default: {
+            return yield* Effect.fail(
+              UploadistaError.fromCode("UNKNOWN_ERROR", {
+                body: `Unsupported transformation type: ${(transformation as { type: string }).type}`,
+              }),
+            );
+          }
+        }
+
+        // Process through Sharp and output as stream
+        return Stream.async<Uint8Array, UploadistaError>((emit) => {
+          // Use Sharp's streaming output
+          const outputStream = new PassThrough();
+          const outputChunks: Buffer[] = [];
+
+          pipeline
+            .pipe(outputStream)
+            .on("data", (chunk: Buffer) => {
+              outputChunks.push(chunk);
+            })
+            .on("end", () => {
+              // Emit all collected chunks as a single Uint8Array
+              const outputBuffer = Buffer.concat(outputChunks);
+              emit.single(new Uint8Array(outputBuffer));
+              emit.end();
+            })
+            .on("error", (error: Error) => {
+              emit.fail(
+                UploadistaError.fromCode("UNKNOWN_ERROR", {
+                  body: `Sharp streaming transform failed: ${error.message}`,
+                  cause: error,
+                }),
+              );
+            });
+
+          // Cleanup
+          return Effect.sync(() => {
+            outputStream.destroy();
+          });
+        });
+      }).pipe(
+        withOperationSpan("image", "transform-stream", {
+          "image.transformation_type": transformation.type,
         }),
       );
     },

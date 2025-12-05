@@ -24,6 +24,16 @@ export * from "./node";
 export { createFlowNode, NodeType } from "./node";
 export * from "./node-types";
 export * from "./nodes";
+// Re-export streaming config from types for transform node usage
+export type { StreamingConfig } from "../types/data-store";
+export { DEFAULT_STREAMING_CONFIG } from "../types/data-store";
+// Re-export transform node types
+export type {
+  TransformMode,
+  StreamingTransformFn,
+  StreamingTransformResult,
+  TransformNodeConfig,
+} from "./nodes/transform-node";
 // Parallel execution
 export * from "./parallel-scheduler";
 export * from "./plugins/credential-provider";

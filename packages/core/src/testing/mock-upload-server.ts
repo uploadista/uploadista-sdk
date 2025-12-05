@@ -1,6 +1,11 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Stream } from "effect";
+import type { UploadistaError } from "../errors";
 import type { InputFile, UploadFile, WebSocketConnection } from "../types";
-import type { DataStoreCapabilities } from "../types/data-store";
+import {
+  DEFAULT_STREAMING_CONFIG,
+  type DataStoreCapabilities,
+  type StreamingConfig,
+} from "../types/data-store";
 import { UploadServer } from "../upload";
 
 /**
@@ -28,6 +33,78 @@ export const TestUploadServer = Layer.succeed(
         // Generate mock file data based on fileId
         const text = `Content of file ${fileId}`;
         return new TextEncoder().encode(text);
+      }),
+    readStream: (
+      fileId: string,
+      _clientId: string | null,
+      config?: StreamingConfig,
+    ) =>
+      Effect.sync(() => {
+        const effectiveConfig = { ...DEFAULT_STREAMING_CONFIG, ...config };
+        // Generate mock file data based on fileId
+        const text = `Content of file ${fileId}`;
+        const fullData = new TextEncoder().encode(text);
+
+        // Split data into chunks based on chunkSize
+        const chunkSize = effectiveConfig.chunkSize;
+        const chunks: Uint8Array[] = [];
+        for (let i = 0; i < fullData.length; i += chunkSize) {
+          chunks.push(fullData.slice(i, i + chunkSize));
+        }
+
+        // Return as a stream of chunks
+        return Stream.fromIterable(chunks);
+      }),
+    uploadStream: (
+      file: Omit<InputFile, "size"> & { size?: number; sizeHint?: number },
+      _clientId: string | null,
+      stream: Stream.Stream<Uint8Array, UploadistaError>,
+    ) =>
+      Effect.gen(function* () {
+        // Collect stream to calculate total size
+        const chunks: Uint8Array[] = [];
+        yield* Stream.runForEach(stream, (chunk) =>
+          Effect.sync(() => {
+            chunks.push(chunk);
+          }),
+        );
+
+        const totalSize = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+
+        // Parse existing metadata
+        const existingMetadata =
+          typeof file.metadata === "string"
+            ? JSON.parse(file.metadata)
+            : file.metadata || {};
+
+        // Extract extension from fileName
+        const extension = file.fileName
+          ? file.fileName.split(".").pop()
+          : existingMetadata.extension;
+
+        // Create new UploadFile with final size
+        const uploadId = `stream-uploaded-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        return {
+          id: uploadId,
+          offset: totalSize,
+          size: totalSize,
+          storage: {
+            id: file.storageId,
+            type: "memory",
+          },
+          metadata: {
+            ...existingMetadata,
+            mimeType: file.type,
+            type: file.type,
+            "content-type": file.type,
+            fileName: file.fileName,
+            originalName: file.fileName,
+            name: file.fileName,
+            extension,
+          },
+          url: `http://test-storage/${uploadId}`,
+          creationDate: new Date().toISOString(),
+        } satisfies UploadFile;
       }),
     upload: (file, _clientId, stream) =>
       Effect.gen(function* () {
@@ -126,6 +203,8 @@ export const TestUploadServer = Layer.succeed(
         supportsDeferredLength: true,
         supportsResumableUploads: true,
         supportsTransactionalUploads: false,
+        supportsStreamingRead: true,
+        supportsStreamingWrite: true,
         maxConcurrentUploads: 10,
         minChunkSize: 5 * 1024 * 1024, // 5MB
         maxChunkSize: 100 * 1024 * 1024, // 100MB

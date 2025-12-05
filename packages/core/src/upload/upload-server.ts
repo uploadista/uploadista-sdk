@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Stream } from "effect";
 import type { UploadistaError } from "../errors";
 import type {
   DataStore,
@@ -7,12 +7,14 @@ import type {
   InputFile,
   KvStore,
   Middleware,
+  StreamingConfig,
   UploadEvent,
   UploadFile,
   WebSocketConnection,
 } from "../types";
 import {
   UploadEventEmitter,
+  UploadEventType,
   UploadFileDataStores,
   UploadFileKVStore,
 } from "../types";
@@ -151,10 +153,70 @@ export type UploadServerShape = {
     url: string,
   ) => Effect.Effect<UploadFile, UploadistaError>;
   getUpload: (uploadId: string) => Effect.Effect<UploadFile, UploadistaError>;
+  /**
+   * Reads the complete uploaded file data as bytes (buffered mode).
+   * For large files, consider using readStream() for memory efficiency.
+   */
   read: (
     uploadId: string,
     clientId: string | null,
   ) => Effect.Effect<Uint8Array, UploadistaError>;
+  /**
+   * Reads file content as a stream of chunks for memory-efficient processing.
+   * Falls back to buffered read if the underlying DataStore doesn't support streaming.
+   *
+   * @param uploadId - The unique identifier of the upload to read
+   * @param clientId - Client identifier for multi-tenant routing
+   * @param config - Optional streaming configuration (chunk size)
+   * @returns An Effect that resolves to a Stream of byte chunks
+   *
+   * @example
+   * ```typescript
+   * const server = yield* UploadServer;
+   * const stream = yield* server.readStream(uploadId, clientId, { chunkSize: 65536 });
+   * // Process stream chunk by chunk with bounded memory
+   * yield* Stream.runForEach(stream, (chunk) => processChunk(chunk));
+   * ```
+   */
+  readStream: (
+    uploadId: string,
+    clientId: string | null,
+    config?: StreamingConfig,
+  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  /**
+   * Uploads file content from a stream with unknown final size.
+   * Creates upload with deferred length, streams content to storage,
+   * and updates the upload record with final size when complete.
+   *
+   * Falls back to buffered upload if the underlying DataStore
+   * doesn't support streaming writes.
+   *
+   * @param file - Input file configuration (size is optional)
+   * @param clientId - Client identifier for multi-tenant routing
+   * @param stream - Effect Stream of byte chunks to upload
+   * @returns The completed UploadFile with final size
+   *
+   * @example
+   * ```typescript
+   * const server = yield* UploadServer;
+   * const result = yield* server.uploadStream(
+   *   {
+   *     storageId: "s3-production",
+   *     type: "image/webp",
+   *     uploadLengthDeferred: true,
+   *     fileName: "optimized.webp",
+   *   },
+   *   clientId,
+   *   transformedStream,
+   * );
+   * console.log(`Uploaded ${result.size} bytes`);
+   * ```
+   */
+  uploadStream: (
+    file: Omit<InputFile, "size"> & { size?: number; sizeHint?: number },
+    clientId: string | null,
+    stream: Stream.Stream<Uint8Array, UploadistaError>,
+  ) => Effect.Effect<UploadFile, UploadistaError>;
   delete: (
     uploadId: string,
     clientId: string | null,
@@ -322,6 +384,177 @@ export function createUploadServer() {
             clientId,
           );
           return yield* dataStore.read(uploadId);
+        }),
+      readStream: (
+        uploadId: string,
+        clientId: string | null,
+        config?: StreamingConfig,
+      ) =>
+        Effect.gen(function* () {
+          const upload = yield* kvStore.get(uploadId);
+          const dataStore = yield* dataStoreService.getDataStore(
+            upload.storage.id,
+            clientId,
+          );
+
+          // Check if the DataStore supports streaming reads
+          const capabilities = dataStore.getCapabilities();
+          if (capabilities.supportsStreamingRead && dataStore.readStream) {
+            // Use native streaming
+            yield* Effect.logDebug(
+              `Using streaming read for file ${uploadId}`,
+            );
+            return yield* dataStore.readStream(uploadId, config);
+          }
+
+          // Fallback: read entire file and convert to stream
+          yield* Effect.logDebug(
+            `Falling back to buffered read for file ${uploadId} (streaming not supported)`,
+          );
+          const bytes = yield* dataStore.read(uploadId);
+
+          // Convert buffered bytes to a single-chunk stream
+          return Stream.succeed(bytes);
+        }),
+      uploadStream: (
+        file: Omit<InputFile, "size"> & { size?: number; sizeHint?: number },
+        clientId: string | null,
+        stream: Stream.Stream<Uint8Array, UploadistaError>,
+      ) =>
+        Effect.gen(function* () {
+          // Get the data store for this storage
+          const dataStore = yield* dataStoreService.getDataStore(
+            file.storageId,
+            clientId,
+          );
+
+          // Check if the DataStore supports streaming writes
+          const capabilities = dataStore.getCapabilities();
+
+          // Generate upload ID
+          const uploadId = yield* generateId.generateId();
+
+          if (capabilities.supportsStreamingWrite && dataStore.writeStream) {
+            // Use native streaming write - DO NOT call createUpload as it would
+            // create an S3 multipart upload that we won't use (writeStream creates its own)
+            yield* Effect.logDebug(
+              `Using streaming write for file ${uploadId}`,
+            );
+
+            // Parse metadata
+            const metadata =
+              typeof file.metadata === "string"
+                ? JSON.parse(file.metadata)
+                : file.metadata || {};
+
+            // Convert metadata to Record<string, string> if present
+            const stringMetadata = Object.fromEntries(
+              Object.entries(metadata).map(([k, v]) => [k, String(v)]),
+            );
+
+            // Create initial upload record in KV store (without creating S3 multipart upload)
+            const initialUpload: UploadFile = {
+              id: uploadId,
+              offset: 0,
+              size: file.size ?? 0,
+              storage: {
+                id: file.storageId,
+                type: dataStore.getCapabilities().supportsStreamingWrite
+                  ? "streaming"
+                  : "default",
+              },
+              metadata,
+              creationDate: new Date().toISOString(),
+            };
+            yield* kvStore.set(uploadId, initialUpload);
+
+            // Emit started event
+            yield* eventEmitter.emit(uploadId, {
+              type: UploadEventType.UPLOAD_STARTED,
+              data: initialUpload,
+            });
+
+            const result = yield* dataStore.writeStream(uploadId, {
+              stream,
+              contentType: file.type,
+              sizeHint: file.sizeHint,
+              metadata: stringMetadata,
+            });
+
+            // Update the upload record with the final size and URL
+            const completedUpload: UploadFile = {
+              ...initialUpload,
+              size: result.size,
+              offset: result.size,
+              storage: {
+                ...initialUpload.storage,
+                path: result.path,
+              },
+              ...(result.url && { url: result.url }),
+            };
+
+            yield* kvStore.set(uploadId, completedUpload);
+
+            // Emit completion event
+            yield* eventEmitter.emit(uploadId, {
+              type: UploadEventType.UPLOAD_COMPLETE,
+              data: completedUpload,
+            });
+
+            return completedUpload;
+          }
+
+          // Fallback: buffer the stream and use regular upload (which calls createUpload + uploadChunk)
+          yield* Effect.logWarning(
+            `Falling back to buffered upload for file ${uploadId} (streaming write not supported)`,
+          );
+
+          // Collect stream into a buffer
+          const chunks: Uint8Array[] = [];
+          yield* Stream.runForEach(stream, (chunk) =>
+            Effect.sync(() => {
+              chunks.push(chunk);
+            }),
+          );
+
+          // Calculate total size
+          const totalSize = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+
+          // Create a combined buffer
+          const buffer = new Uint8Array(totalSize);
+          let offset = 0;
+          for (const chunk of chunks) {
+            buffer.set(chunk, offset);
+            offset += chunk.length;
+          }
+
+          // Create a readable stream from the buffer
+          const readableStream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(buffer);
+              controller.close();
+            },
+          });
+
+          // For fallback, use the regular flow with createUpload + uploadChunk
+          const inputFile: InputFile = {
+            ...file,
+            size: totalSize,
+          };
+
+          const uploadFile = yield* createUpload(inputFile, clientId, {
+            dataStoreService,
+            kvStore,
+            eventEmitter,
+            generateId: { generateId: () => Effect.succeed(uploadId) },
+          });
+
+          // Use regular uploadChunk
+          return yield* uploadChunk(uploadId, clientId, readableStream, {
+            dataStoreService,
+            kvStore,
+            eventEmitter,
+          });
         }),
       delete: (uploadId: string, clientId: string | null) =>
         Effect.gen(function* () {
