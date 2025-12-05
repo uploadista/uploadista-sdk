@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/core",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.1",
   "description": "Core package of Uploadista",
   "license": "MIT",
   "author": "Uploadista",
