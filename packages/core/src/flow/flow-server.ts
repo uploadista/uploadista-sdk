@@ -957,7 +957,7 @@ export function createFlowServer() {
               ),
             );
 
-            // Emit FlowError event to notify client
+            // Emit FlowError event to notify client via WebSocket
             const job = yield* kvStore.get(jobId);
             if (job) {
               yield* eventEmitter
@@ -975,6 +975,28 @@ export function createFlowServer() {
                         emitError,
                       );
                       return Effect.succeed(undefined);
+                    }),
+                  ),
+                );
+            }
+
+            // Also call flow's onEvent callback to update external databases (like uploadista-cloud)
+            if (flow.onEvent) {
+              yield* flow
+                .onEvent({
+                  jobId,
+                  eventType: EventType.FlowError,
+                  flowId: flow.id,
+                  error: errorMessage,
+                })
+                .pipe(
+                  Effect.catchAll((onEventError) =>
+                    Effect.gen(function* () {
+                      yield* Effect.logError(
+                        `Failed to call flow.onEvent for FlowError event for job ${jobId}`,
+                        onEventError,
+                      );
+                      return Effect.succeed({ eventId: null });
                     }),
                   ),
                 );
