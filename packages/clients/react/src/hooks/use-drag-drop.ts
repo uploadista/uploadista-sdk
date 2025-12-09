@@ -89,6 +89,7 @@ export interface UseDragDropReturn {
     accept?: string;
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
     style: { display: "none" };
+    ref: React.RefObject<HTMLInputElement | null>;
   };
 
   /**

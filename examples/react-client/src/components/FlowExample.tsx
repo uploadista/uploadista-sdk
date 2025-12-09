@@ -302,7 +302,7 @@ function CustomFlowInputCard({
   );
 }
 
-function UseFlowContent() {
+export function FlowExample() {
   const [flowId, setFlowId] = useState<FlowId>("optimize-flow");
   const [outputs, setOutputs] = useState<TypedOutput[]>([]);
 
@@ -600,8 +600,4 @@ function UseFlowContent() {
       </Flow>
     </Card>
   );
-}
-
-export function UseFlowExample() {
-  return <UseFlowContent />;
 }

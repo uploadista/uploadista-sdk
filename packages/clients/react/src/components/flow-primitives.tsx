@@ -131,6 +131,8 @@ export interface FlowProps {
   storageId: string;
   /** Optional output node ID to wait for */
   outputNodeId?: string;
+  /** Optional metadata to include with the flow execution */
+  metadata?: Record<string, string>;
   /** Called when flow completes successfully */
   onSuccess?: (outputs: TypedOutput[]) => void;
   /** Called when flow fails */
@@ -171,6 +173,7 @@ function FlowRoot({
   flowId,
   storageId,
   outputNodeId,
+  metadata,
   onSuccess,
   onError,
   onProgress,
@@ -183,6 +186,7 @@ function FlowRoot({
       flowId,
       storageId,
       outputNodeId,
+      metadata,
     },
     onSuccess,
     onError,
