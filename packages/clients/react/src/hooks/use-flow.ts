@@ -271,8 +271,6 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
         // Find all input nodes
         const inputNodes = flow.nodes.filter((node) => node.type === "input");
 
-        console.log("inputNodes", inputNodes);
-
         const metadata: FlowInputMetadata[] = inputNodes.map((node) => ({
           nodeId: node.id,
           nodeName: node.name,

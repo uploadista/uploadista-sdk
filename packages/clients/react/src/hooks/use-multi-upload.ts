@@ -480,16 +480,9 @@ export function useMultiUpload(
         };
       });
 
-      console.log("addFiles: Adding", newItems.length, "files");
-
       // Update ref synchronously BEFORE setItems
       const updated = [...itemsRef.current, ...newItems];
       itemsRef.current = updated;
-      console.log(
-        "addFiles: Updated itemsRef.current to",
-        updated.length,
-        "items",
-      );
 
       setItems(updated);
     },
@@ -573,7 +566,6 @@ export function useMultiUpload(
 
   const startAll = useCallback(() => {
     const currentItems = itemsRef.current;
-    console.log("Starting all uploads", currentItems);
     // Start as many uploads as we can up to the concurrent limit
     const idleItems = currentItems.filter(
       (item) => item.state.status === "idle",
@@ -581,8 +573,7 @@ export function useMultiUpload(
     const slotsAvailable = maxConcurrent - activeUploadsRef.current.size;
     const itemsToStart = idleItems.slice(0, slotsAvailable);
 
-    for (const item of itemsToStart) {
-      console.log("Starting next upload", item);
+    for (const _item of itemsToStart) {
       startNextUpload();
     }
   }, [maxConcurrent, startNextUpload]);
