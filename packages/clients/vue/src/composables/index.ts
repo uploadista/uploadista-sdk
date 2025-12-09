@@ -26,6 +26,7 @@ export type {
 export { useDragDrop } from "./useDragDrop";
 
 // Flow composables
+// useFlow is the primary composable for flow operations (replaces useFlowUpload)
 export type {
   FlowInputMetadata,
   FlowUploadState,
@@ -35,7 +36,6 @@ export type {
 } from "./useFlow";
 export { useFlow } from "./useFlow";
 
-export { useFlowUpload } from "./useFlowUpload";
 export { useMultiFlowUpload } from "./useMultiFlowUpload";
 export type {
   MultiUploadOptions,

@@ -1,8 +1,5 @@
 import type { UploadFile } from "@uploadista/core/types";
-import {
-  useFlowUpload,
-  useUploadistaContext,
-} from "@uploadista/react-native-core";
+import { useFlow, useUploadistaContext } from "@uploadista/react-native-core";
 import { useState } from "react";
 import { Alert, ScrollView, StyleSheet, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,7 +29,8 @@ export default function FlowUploadScreen() {
     !!fileSystemProvider,
   );
 
-  const { upload, state, abort } = useFlowUpload({
+  // useFlow replaces useFlowUpload - provides upload() convenience method for single-file uploads
+  const flow = useFlow({
     flowId,
     storageId: "local",
     onSuccess: (result) => {
@@ -53,6 +51,9 @@ export default function FlowUploadScreen() {
       console.log("[FlowUpload] Progress:", progress);
     },
   });
+
+  // Destructure for convenience (same API as useFlowUpload)
+  const { upload, state, abort } = flow;
 
   console.log("[FlowUpload] Current state:", state);
 
@@ -98,9 +99,15 @@ export default function FlowUploadScreen() {
   };
 
   const handlePreview = () => {
-    if (state.result) {
-      setPreviewFile(state.result as UploadFile);
-      setPreviewVisible(true);
+    if (state.flowOutputs && state.flowOutputs.length > 0) {
+      // Get the first storage output from flowOutputs
+      const storageOutput = state.flowOutputs.find(
+        (output) => output.nodeType === "storage-output-v1",
+      );
+      if (storageOutput) {
+        setPreviewFile(storageOutput.data as UploadFile);
+        setPreviewVisible(true);
+      }
     }
   };
 
@@ -170,7 +177,7 @@ export default function FlowUploadScreen() {
               onRemove={
                 state.status !== "uploading" ? handleClearFile : undefined
               }
-              onPreview={state.result ? handlePreview : undefined}
+              onPreview={state.flowOutputs ? handlePreview : undefined}
             />
           </ThemedView>
         )}
@@ -199,11 +206,11 @@ export default function FlowUploadScreen() {
             <ThemedText type="successText" style={styles.successTitle}>
               ✓ Flow Completed Successfully!
             </ThemedText>
-            {typeof state.result === "string" && (
+            {state.flowOutputs && state.flowOutputs.length > 0 && (
               <ThemedView style={styles.resultContainer}>
                 <ThemedText style={styles.resultLabel}>Results:</ThemedText>
                 <ThemedText style={styles.resultText}>
-                  {JSON.stringify(state.result, null, 2)}
+                  {JSON.stringify(state.flowOutputs, null, 2)}
                 </ThemedText>
               </ThemedView>
             )}

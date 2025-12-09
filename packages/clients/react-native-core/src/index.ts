@@ -46,21 +46,26 @@ export {
   useFlowManagerContext,
 } from "./contexts/flow-manager-context";
 // Export hooks
+// useFlow is the primary hook for flow operations (replaces useFlowUpload)
 export {
   UploadistaContext,
   type UploadistaContextType,
   useCameraUpload,
   useFileUpload,
-  useFlowUpload,
+  useFlow,
   useGalleryUpload,
   useMultiUpload,
   useUploadistaContext,
   useUploadMetrics,
 } from "./hooks";
 export type {
+  FlowInputMetadata,
   FlowUploadState,
   FlowUploadStatus,
-} from "./hooks/use-flow-upload";
+  InputExecutionState,
+  UseFlowOptions,
+  UseFlowReturn,
+} from "./hooks/use-flow";
 export type {
   MultiUploadState,
   UploadItemState,
@@ -80,7 +85,6 @@ export type {
   UploadMetrics,
   UseCameraUploadOptions,
   UseFileUploadOptions,
-  UseFlowUploadOptions,
   UseGalleryUploadOptions,
   UseMultiUploadOptions,
 } from "./types";

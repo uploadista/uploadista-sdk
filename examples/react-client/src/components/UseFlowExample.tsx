@@ -1,12 +1,11 @@
 import type { UploadFile } from "@uploadista/core";
 import type { TypedOutput } from "@uploadista/core/flow";
 import {
-  FlowInput,
+  Flow,
   type FlowInputMetadata,
-  type InputExecutionState,
-  useFlow,
+  useFlowContext,
 } from "@uploadista/react";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { FilePreview } from "./FilePreview";
 import { Card } from "./ui/card";
 import { Label } from "./ui/label";
@@ -228,83 +227,101 @@ const flowsByCategory = Object.entries(flowDescriptions).reduce(
   {} as Record<FlowCategory, Array<{ flowId: FlowId } & FlowMetadata>>,
 );
 
+// Custom component demonstrating useFlowContext() hook
+function CustomFlowInputCard({
+  input,
+  accept,
+}: {
+  input: FlowInputMetadata;
+  accept: string;
+}) {
+  const flow = useFlowContext();
+
+  return (
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <h5 className="font-semibold text-gray-900">{input.nodeName}</h5>
+        <span className="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-600">
+          {input.nodeId}
+        </span>
+      </div>
+      {input.nodeDescription && (
+        <p className="text-sm text-gray-500 mb-4">{input.nodeDescription}</p>
+      )}
+
+      {/* Using Flow.Input to scope the context */}
+      <Flow.Input nodeId={input.nodeId}>
+        <Flow.Input.DropZone accept={accept}>
+          {({ isDragging, getRootProps, getInputProps, openFilePicker }) => (
+            <button
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors w-full ${
+                isDragging
+                  ? "border-indigo-500 bg-indigo-50"
+                  : "border-gray-300 hover:border-indigo-400"
+              }`}
+              onClick={() => !flow.isUploading && openFilePicker()}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !flow.isUploading) {
+                  e.preventDefault();
+                  openFilePicker();
+                }
+              }}
+            >
+              <input {...getInputProps()} />
+              <p className="text-sm text-gray-600">
+                {isDragging
+                  ? "Drop file here..."
+                  : "Click to select or drag & drop"}
+              </p>
+            </button>
+          )}
+        </Flow.Input.DropZone>
+
+        {/* Show preview of selected file */}
+        <Flow.Input.Preview>
+          {({ value }) => (
+            <>
+              {value && (
+                <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                  <p className="text-sm font-medium text-gray-900">
+                    {value instanceof File ? value.name : String(value)}
+                  </p>
+                  {value instanceof File && (
+                    <p className="text-xs text-gray-500">
+                      {(value.size / 1024).toFixed(1)} KB
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </Flow.Input.Preview>
+      </Flow.Input>
+    </div>
+  );
+}
+
 function UseFlowContent() {
   const [flowId, setFlowId] = useState<FlowId>("optimize-flow");
   const [outputs, setOutputs] = useState<TypedOutput[]>([]);
-  const [inputValues, setInputValues] = useState<Record<string, File | string>>(
-    {},
-  );
 
   const flowData = useMemo(() => flowDescriptions[flowId], [flowId]);
-
-  const flow = useFlow({
-    flowConfig: {
-      flowId,
-      storageId: "local",
-    },
-    onSuccess: (result: TypedOutput[]) => {
-      console.log("Flow complete:", result);
-      setOutputs(result);
-    },
-    onError: (error: Error) => {
-      console.error("Flow failed:", error);
-    },
-  });
-
-  useEffect(() => {
-    console.log("flow.inputMetadata", flow.inputMetadata);
-  }, [flow.inputMetadata]);
 
   const handleFlowIdChange = (value: string) => {
     setFlowId(value as FlowId);
     setOutputs([]);
-    setInputValues({});
-    flow.reset();
   };
-
-  const handleInputChange = (nodeId: string, value: File | string) => {
-    setInputValues((prev) => ({ ...prev, [nodeId]: value }));
-    flow.setInput(nodeId, value);
-  };
-
-  const handleExecute = () => {
-    if (flow.inputMetadata && flow.inputMetadata.length === 1) {
-      // Single input - use convenience upload method if it's a file
-      const firstInput = flow.inputMetadata[0];
-      if (firstInput) {
-        const value = inputValues[firstInput.nodeId];
-        if (value instanceof File) {
-          flow.upload(value);
-        } else {
-          // For URL inputs, use execute
-          flow.execute().catch((error: Error) => {
-            console.error("Execute failed:", error);
-          });
-        }
-      }
-    } else {
-      // Multiple inputs - use execute
-      flow.execute().catch((error: Error) => {
-        console.error("Execute failed:", error);
-      });
-    }
-  };
-
-  const allInputsProvided = flow.inputMetadata?.every(
-    (input: FlowInputMetadata) => input.nodeId in flow.inputs,
-  );
-
-  const canExecute = allInputsProvided && !flow.isUploading;
 
   return (
     <Card className="p-8">
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-3">
-          useFlow Hook Example
+          useFlow Hook Example with Flow.Inputs
         </h2>
         <p className="text-gray-600 leading-relaxed mb-6">
-          Demonstrates the new useFlow hook with automatic input discovery and
-          support for single or multiple input flows.
+          Demonstrates the Flow compound component with auto-discovery of inputs
+          using Flow.Inputs and custom components with useFlowContext().
         </p>
 
         <div className="space-y-2">
@@ -341,309 +358,246 @@ function UseFlowContent() {
         <p className="text-gray-600 leading-relaxed">{flowData.description}</p>
       </div>
 
-      <div className="space-y-6">
-        {/* Input Discovery Status */}
-        {flow.isDiscoveringInputs && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
-              <p className="text-sm font-medium text-gray-700">
-                Discovering flow inputs...
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Using the Flow compound component with auto-discovery */}
+      <Flow
+        flowId={flowId}
+        storageId="local"
+        onSuccess={(result: TypedOutput[]) => {
+          console.log("Flow complete:", result);
+          setOutputs(result);
+        }}
+        onError={(error: Error) => {
+          console.error("Flow failed:", error);
+        }}
+      >
+        <div className="space-y-6">
+          {/* Auto-discover and render inputs */}
+          <Flow.Inputs>
+            {({ inputs, isLoading }) => (
+              <>
+                {isLoading && (
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                    <div className="flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600" />
+                      <p className="text-sm font-medium text-gray-700">
+                        Discovering flow inputs...
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-        {/* Input Fields (auto-discovered) */}
-        {flow.inputMetadata &&
-          flow.inputMetadata.length > 0 &&
-          !flow.isUploading && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-gray-900">
-                  {flow.inputMetadata.length === 1
-                    ? "Flow Input"
-                    : "Flow Inputs"}
-                </h4>
-                <span className="text-sm text-gray-500">
-                  {flow.inputMetadata.length} input
-                  {flow.inputMetadata.length > 1 ? "s" : ""} discovered
-                </span>
-              </div>
+                {inputs && inputs.length > 0 && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        {inputs.length === 1 ? "Flow Input" : "Flow Inputs"}
+                      </h4>
+                      <span className="text-sm text-gray-500">
+                        {inputs.length} input
+                        {inputs.length > 1 ? "s" : ""} discovered
+                      </span>
+                    </div>
 
-              {flow.inputMetadata.map((input: FlowInputMetadata) => (
-                <div
-                  key={input.nodeId}
-                  className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200"
-                >
-                  <FlowInput
-                    input={input}
-                    accept={flowData.acceptedTypes}
-                    allowUrl={true}
-                    value={inputValues[input.nodeId] ?? null}
-                    onChange={(value) => handleInputChange(input.nodeId, value)}
-                    disabled={flow.isUploading}
-                  />
-                </div>
-              ))}
+                    {/* Using custom component with useFlowContext */}
+                    {inputs.map((input: FlowInputMetadata) => (
+                      <CustomFlowInputCard
+                        key={input.nodeId}
+                        input={input}
+                        accept={flowData.acceptedTypes}
+                      />
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </Flow.Inputs>
 
-              {/* Execute Button */}
-              <button
-                type="button"
-                onClick={handleExecute}
-                disabled={!canExecute}
-                className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              >
-                {!allInputsProvided
-                  ? "Select files to continue"
-                  : "Execute Flow"}
-              </button>
-            </div>
-          )}
+          {/* Submit Button */}
+          <Flow.Submit className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+            Execute Flow
+          </Flow.Submit>
 
-        {/* Upload Progress Section */}
-        {flow.isUploadingFile && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="text-sm font-semibold text-gray-500 mb-2">
-                  Status
-                </div>
-                <div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
-                    Uploading
-                  </span>
-                </div>
-              </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="text-sm font-semibold text-gray-500 mb-2">
-                  Progress
-                </div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {flow.state.progress}%
-                </div>
-              </div>
-            </div>
-
-            {/* Upload Progress Bar */}
-            <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
-              <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300 ease-out"
-                style={{ width: `${flow.state.progress}%` }}
-              />
-            </div>
-
-            {/* Abort Button */}
-            <button
-              type="button"
-              onClick={flow.abort}
-              className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
-            >
-              Abort Upload
-            </button>
-          </div>
-        )}
-
-        {/* Flow Processing Section */}
-        {flow.isProcessing && (
-          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-100">
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-              <div className="text-sm font-semibold text-gray-500 mb-2">
-                Status
-              </div>
-              <div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">
-                  Processing Flow
-                </span>
-              </div>
-            </div>
-
-            {/* Processing Animation */}
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
-              <div className="bg-purple-600 h-3 rounded-full animate-pulse w-full" />
-            </div>
-
-            {/* Current Node Info */}
-            <p className="text-sm text-gray-700 mb-4">
-              {flow.state.currentNodeName
-                ? `Processing: ${flow.state.currentNodeName}`
-                : "Processing flow..."}
-            </p>
-
-            {/* Per-Input State Tracking for Multi-Input Flows */}
-            {flow.inputStates.size > 0 && (
-              <div className="space-y-3 mb-4">
-                <h4 className="text-sm font-semibold text-gray-900">
-                  Per-Input Progress
-                </h4>
-                {Array.from(flow.inputStates.values()).map(
-                  (inputState: InputExecutionState) => (
-                    <div
-                      key={inputState.nodeId}
-                      className="bg-white rounded-lg p-3 border border-gray-200"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">
-                          {inputState.nodeId}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
-                          {inputState.status}
-                        </span>
+          {/* Progress */}
+          <Flow.Progress>
+            {({ progress, status, bytesUploaded, totalBytes }) =>
+              status === "uploading" && (
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-sm font-semibold text-gray-500 mb-2">
+                        Status
                       </div>
-                      {inputState.status === "uploading" && (
-                        <div>
-                          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 to-indigo-500 transition-all"
-                              style={{ width: `${inputState.progress}%` }}
-                            />
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">
-                            {inputState.progress}%
-                          </p>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
+                        Uploading
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                      <div className="text-sm font-semibold text-gray-500 mb-2">
+                        Progress
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {progress}%
+                      </div>
+                      {totalBytes && (
+                        <div className="text-xs text-gray-500">
+                          {(bytesUploaded / 1024).toFixed(0)} KB /{" "}
+                          {(totalBytes / 1024).toFixed(0)} KB
                         </div>
                       )}
                     </div>
-                  ),
-                )}
-              </div>
-            )}
+                  </div>
 
-            {/* Abort Button */}
-            <button
-              type="button"
-              onClick={flow.abort}
-              className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
-            >
-              Abort Flow
-            </button>
-          </div>
-        )}
+                  <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
 
-        {/* Job ID */}
-        {flow.state.jobId && (
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-            <div className="text-sm font-semibold text-blue-700 mb-1">
-              Job ID
-            </div>
-            <code className="text-sm text-blue-900 font-mono break-all">
-              {flow.state.jobId}
-            </code>
-          </div>
-        )}
+                  <Flow.Cancel className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md">
+                    Abort Upload
+                  </Flow.Cancel>
+                </div>
+              )
+            }
+          </Flow.Progress>
 
-        {/* Success Message */}
-        {flow.state.status === "success" && (
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-green-900 mb-1">
-                  Flow Complete!
-                </h3>
-                <p className="text-green-700">
-                  File processed successfully through {flowData.title}.
-                </p>
-              </div>
-            </div>
+          {/* Processing Status */}
+          <Flow.Status>
+            {({ status, currentNodeName }) =>
+              status === "processing" && (
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-100">
+                  <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+                    <div className="text-sm font-semibold text-gray-500 mb-2">
+                      Status
+                    </div>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">
+                      Processing Flow
+                    </span>
+                  </div>
 
-            {/* File Preview */}
-            {outputs.length > 0 && (
-              <div className="mb-4">
-                {outputs.map((output) => (
-                  <Fragment key={output.nodeId}>
-                    {output.nodeType === "storage-output-v1" && (
-                      <FilePreview
-                        result={output.data as UploadFile}
-                        className="mb-4"
-                      />
-                    )}
-                  </Fragment>
-                ))}
-              </div>
-            )}
+                  <div className="w-full bg-gray-200 rounded-full h-3 mb-2 overflow-hidden">
+                    <div className="bg-purple-600 h-3 rounded-full animate-pulse w-full" />
+                  </div>
 
-            {flow.state.flowOutputs && (
-              <details className="bg-white rounded-xl border border-green-200 mb-4">
-                <summary className="px-4 py-3 cursor-pointer font-semibold text-gray-700 hover:text-gray-900">
-                  View Flow Result Details
-                </summary>
-                <pre className="px-4 pb-4 text-sm text-gray-800 overflow-auto font-mono">
-                  {JSON.stringify(flow.state.flowOutputs, null, 2)}
-                </pre>
-              </details>
-            )}
+                  <p className="text-sm text-gray-700 mb-4">
+                    {currentNodeName
+                      ? `Processing: ${currentNodeName}`
+                      : "Processing flow..."}
+                  </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                flow.reset();
-                setOutputs([]);
-                setInputValues({});
-              }}
-              className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-md"
-            >
-              Upload Another File
-            </button>
-          </div>
-        )}
+                  <Flow.Cancel className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md">
+                    Abort Flow
+                  </Flow.Cancel>
+                </div>
+              )
+            }
+          </Flow.Status>
 
-        {/* Error Message */}
-        {flow.state.status === "error" && flow.state.error && (
-          <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl p-6 border border-red-200">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-red-900 mb-1">
-                  Flow Failed
-                </h3>
-                <p className="text-red-700">{flow.state.error.message}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                flow.reset();
-                setOutputs([]);
-                setInputValues({});
-              }}
-              className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-md"
-            >
-              Try Another File
-            </button>
-          </div>
-        )}
-      </div>
+          {/* Success */}
+          <Flow.Status>
+            {({ status }) =>
+              status === "success" && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-green-900 mb-1">
+                        Flow Complete!
+                      </h3>
+                      <p className="text-green-700">
+                        File processed successfully through {flowData.title}.
+                      </p>
+                    </div>
+                  </div>
+
+                  {outputs.length > 0 && (
+                    <div className="mb-4">
+                      {outputs.map((output) => (
+                        <Fragment key={output.nodeId}>
+                          {output.nodeType === "storage-output-v1" && (
+                            <FilePreview
+                              result={output.data as UploadFile}
+                              className="mb-4"
+                            />
+                          )}
+                        </Fragment>
+                      ))}
+                    </div>
+                  )}
+
+                  {outputs.length > 0 && (
+                    <details className="bg-white rounded-xl border border-green-200 mb-4">
+                      <summary className="px-4 py-3 cursor-pointer font-semibold text-gray-700 hover:text-gray-900">
+                        View Flow Result Details
+                      </summary>
+                      <pre className="px-4 pb-4 text-sm text-gray-800 overflow-auto font-mono">
+                        {JSON.stringify(outputs, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+
+                  <Flow.Reset className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-md">
+                    Upload Another File
+                  </Flow.Reset>
+                </div>
+              )
+            }
+          </Flow.Status>
+
+          {/* Error */}
+          <Flow.Error>
+            {({ error }) =>
+              error && (
+                <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-2xl p-6 border border-red-200">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-red-900 mb-1">
+                        Flow Failed
+                      </h3>
+                      <p className="text-red-700">{error.message}</p>
+                    </div>
+                  </div>
+                  <Flow.Reset className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all shadow-md">
+                    Try Another File
+                  </Flow.Reset>
+                </div>
+              )
+            }
+          </Flow.Error>
+        </div>
+      </Flow>
     </Card>
   );
 }

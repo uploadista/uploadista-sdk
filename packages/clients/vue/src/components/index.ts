@@ -6,6 +6,5 @@
  */
 
 export { default as FlowUploadList } from "./FlowUploadList.vue";
-export { default as FlowUploadZone } from "./FlowUploadZone.vue";
 export { default as UploadList } from "./UploadList.vue";
 export { default as UploadZone } from "./UploadZone.vue";
