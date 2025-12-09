@@ -453,9 +453,12 @@ function FlowInputDropZone({
 
   const dragDrop = useDragDrop({
     onFilesReceived: (files) => {
+      console.log("[FlowInputDropZone] onFilesReceived called with:", files);
       const file = files[0];
       if (file) {
+        console.log("[FlowInputDropZone] calling input.setValue with:", file);
         input.setValue(file);
+        console.log("[FlowInputDropZone] input.setValue called");
       }
     },
     accept: accept ? accept.split(",").map((t) => t.trim()) : undefined,

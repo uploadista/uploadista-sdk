@@ -216,6 +216,10 @@ export function useDragDrop(options: DragDropOptions = {}): UseDragDropReturn {
         // Check file type
         if (accept && accept.length > 0) {
           const isAccepted = accept.some((acceptType) => {
+            // Handle wildcard "*" to accept all files
+            if (acceptType === "*" || acceptType === "*/*") {
+              return true;
+            }
             if (acceptType.startsWith(".")) {
               // File extension check
               return file.name.toLowerCase().endsWith(acceptType.toLowerCase());
@@ -253,15 +257,19 @@ export function useDragDrop(options: DragDropOptions = {}): UseDragDropReturn {
 
   const processFiles = useCallback(
     (files: File[]) => {
+      console.log("[useDragDrop] processFiles called with:", files);
       const fileArray = Array.from(files);
       const errors = validateFiles(fileArray);
 
       if (errors.length > 0) {
+        console.log("[useDragDrop] validation errors:", errors);
         updateState({ errors, isValid: false });
         onValidationError?.(errors);
       } else {
+        console.log("[useDragDrop] validation passed, calling onFilesReceived");
         updateState({ errors: [], isValid: true });
         onFilesReceived?.(fileArray);
+        console.log("[useDragDrop] onFilesReceived called");
       }
     },
     [validateFiles, updateState, onFilesReceived, onValidationError],
