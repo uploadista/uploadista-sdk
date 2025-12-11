@@ -80,7 +80,8 @@ export const extractFastifyRequest = (
 
             // Only use path segment if it's not "upload"
             const finalStorageId =
-              storageId || (storageIdFromPath !== "upload" ? storageIdFromPath : null);
+              storageId ||
+              (storageIdFromPath !== "upload" ? storageIdFromPath : null);
 
             if (!finalStorageId) {
               return {

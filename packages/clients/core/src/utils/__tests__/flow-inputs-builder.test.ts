@@ -38,7 +38,7 @@ describe("buildFlowInputs", () => {
 
     it("handles File without name", () => {
       const file = new File(["content"], "", { type: "text/plain" });
-      const result = buildFlowInputs({ "node": file }, storageId);
+      const result = buildFlowInputs({ node: file }, storageId);
 
       expect(result["node"]).toMatchObject({
         metadata: {
@@ -49,7 +49,7 @@ describe("buildFlowInputs", () => {
 
     it("handles File without type", () => {
       const file = new File(["content"], "test.txt");
-      const result = buildFlowInputs({ "node": file }, storageId);
+      const result = buildFlowInputs({ node: file }, storageId);
 
       expect(result["node"]).toMatchObject({
         metadata: {
@@ -148,10 +148,7 @@ describe("buildFlowInputs", () => {
     it("handles two file inputs", () => {
       const file1 = new File(["content1"], "file1.txt");
       const file2 = new File(["content2"], "file2.txt");
-      const result = buildFlowInputs(
-        { "node1": file1, "node2": file2 },
-        storageId,
-      );
+      const result = buildFlowInputs({ node1: file1, node2: file2 }, storageId);
 
       expect(result["node1"]).toMatchObject({
         operation: "init",
@@ -207,7 +204,7 @@ describe("buildFlowInputs", () => {
 
     it("uses provided storageId for file operations", () => {
       const file = new File(["content"], "test.txt");
-      const result = buildFlowInputs({ "node": file }, "custom-storage");
+      const result = buildFlowInputs({ node: file }, "custom-storage");
 
       expect(result["node"]).toMatchObject({
         storageId: "custom-storage",
@@ -216,7 +213,7 @@ describe("buildFlowInputs", () => {
 
     it("uses provided storageId for URL operations", () => {
       const url = "https://example.com/file.jpg";
-      const result = buildFlowInputs({ "node": url }, "custom-storage");
+      const result = buildFlowInputs({ node: url }, "custom-storage");
 
       expect(result["node"]).toMatchObject({
         storageId: "custom-storage",

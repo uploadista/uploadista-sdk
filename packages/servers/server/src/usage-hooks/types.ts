@@ -5,7 +5,7 @@
  * Used for usage tracking, quota enforcement, and billing integration.
  */
 
-import { Effect } from "effect";
+import type { Effect } from "effect";
 
 // ============================================================================
 // Usage Hook Result Types
@@ -144,9 +144,7 @@ export type OnFlowStartHook = (
  * Hook called after flow completes (success, failure, or cancellation).
  * Used for recording usage. Errors are logged but don't fail the response.
  */
-export type OnFlowCompleteHook = (
-  ctx: FlowUsageContext,
-) => Effect.Effect<void>;
+export type OnFlowCompleteHook = (ctx: FlowUsageContext) => Effect.Effect<void>;
 
 // ============================================================================
 // Usage Hooks Configuration

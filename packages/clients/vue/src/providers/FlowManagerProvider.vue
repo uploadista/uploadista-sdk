@@ -12,7 +12,7 @@ import {
 import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import { UploadEventType } from "@uploadista/core/types";
 import { onMounted, onBeforeUnmount, provide } from "vue";
-import { useUploadistaContext } from "../composables/useUploadistaContext";
+import { useUploadistaClient } from "../composables/useUploadistaClient";
 
 /**
  * Type guard to check if an event is a flow event
@@ -52,7 +52,7 @@ interface FlowManagerContextValue {
   releaseManager: (flowId: string) => void;
 }
 
-const { client, subscribeToEvents } = useUploadistaContext();
+const { client, subscribeToEvents } = useUploadistaClient();
 const managers = new Map<string, ManagerEntry>();
 let unsubscribe: (() => void) | null = null;
 
@@ -118,7 +118,7 @@ const getManager = (
     flowConfig: FlowUploadOptions["flowConfig"],
     internalOptions: unknown,
   ) => {
-    return client.value.uploadWithFlow(input, flowConfig, internalOptions);
+    return client.uploadWithFlow(input, flowConfig, internalOptions);
   };
 
   const multiInputUploadFn = (
@@ -126,7 +126,7 @@ const getManager = (
     flowConfig: FlowUploadOptions["flowConfig"],
     internalOptions: unknown,
   ) => {
-    return client.value.multiInputFlowUpload(inputs, flowConfig, internalOptions);
+    return client.multiInputFlowUpload(inputs, flowConfig, internalOptions);
   };
 
   const manager = new FlowManager<unknown>(flowUploadFn, callbacks, options, multiInputUploadFn);

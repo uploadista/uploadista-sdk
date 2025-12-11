@@ -1,5 +1,5 @@
-import { inputTypeRegistry } from "@uploadista/core/flow";
 import type { Flow } from "@uploadista/core/flow";
+import { inputTypeRegistry } from "@uploadista/core/flow";
 import { beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { UploadistaError } from "../../error";

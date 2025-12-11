@@ -50,9 +50,10 @@ export type FlowSuccess<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
-> = ReturnType<TFlows> extends Effect.Effect<infer Success, unknown, unknown>
-  ? Success
-  : never;
+> =
+  ReturnType<TFlows> extends Effect.Effect<infer Success, unknown, unknown>
+    ? Success
+    : never;
 
 /**
  * @deprecated Use `ExtractFlowPluginRequirements` from `@uploadista/server/core/plugin-types` instead.
@@ -75,13 +76,14 @@ export type FlowRequirementsOf<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
-> = FlowSuccess<TFlows> extends Flow<
-  z.ZodSchema<unknown>,
-  z.ZodSchema<unknown>,
-  infer R
->
-  ? Exclude<R, UploadServer>
-  : never;
+> =
+  FlowSuccess<TFlows> extends Flow<
+    z.ZodSchema<unknown>,
+    z.ZodSchema<unknown>,
+    infer R
+  >
+    ? Exclude<R, UploadServer>
+    : never;
 
 /**
  * @deprecated Use `ExtractFlowPluginRequirements` from `@uploadista/server/core/plugin-types` instead.

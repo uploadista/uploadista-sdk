@@ -314,9 +314,7 @@ export const createUploadistaServer = async <
    * This must be included in the runtime layer (not per-request) so that the
    * BatchSpanProcessor can aggregate spans across requests and flush them properly.
    */
-  const tracingLayer = withTracing
-    ? observabilityLayer ?? NodeSdkLive
-    : null;
+  const tracingLayer = withTracing ? (observabilityLayer ?? NodeSdkLive) : null;
 
   /**
    * Type Casting Rationale for Plugin System

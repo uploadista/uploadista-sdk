@@ -4,6 +4,6 @@
  * Exports all permission-related types, constants, and utilities.
  */
 
-export * from "./types";
-export * from "./matcher";
 export * from "./errors";
+export * from "./matcher";
+export * from "./types";

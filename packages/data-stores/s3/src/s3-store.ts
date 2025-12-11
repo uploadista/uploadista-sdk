@@ -1162,7 +1162,9 @@ export function createS3Store(config: S3StoreConfig) {
 
           const uploadId = multipartInfo.uploadId;
 
-          yield* Effect.logInfo("Multipart upload created for streaming write").pipe(
+          yield* Effect.logInfo(
+            "Multipart upload created for streaming write",
+          ).pipe(
             Effect.annotateLogs({
               upload_id: fileId,
               s3_upload_id: uploadId,
@@ -1233,7 +1235,10 @@ export function createS3Store(config: S3StoreConfig) {
             Stream.runForEach((chunk) =>
               Effect.gen(function* () {
                 // Update total bytes
-                yield* Ref.update(totalBytesRef, (total) => total + chunk.length);
+                yield* Ref.update(
+                  totalBytesRef,
+                  (total) => total + chunk.length,
+                );
 
                 // Get current buffer and append new chunk
                 const currentBuffer = yield* Ref.get(bufferRef);
@@ -1246,7 +1251,10 @@ export function createS3Store(config: S3StoreConfig) {
                 // Extract full parts and keep remainder in buffer
                 let offset = 0;
                 while (combined.length - offset >= uploadPartSize) {
-                  const partData = combined.slice(offset, offset + uploadPartSize);
+                  const partData = combined.slice(
+                    offset,
+                    offset + uploadPartSize,
+                  );
                   yield* uploadBufferedPart(partData, false);
                   offset += uploadPartSize;
                 }

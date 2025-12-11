@@ -121,22 +121,13 @@ export const PERMISSION_SETS = {
   ADMIN: [ENGINE_PERMISSIONS.ALL] as const,
 
   /** Organization owner - all flow and upload permissions */
-  ORGANIZATION_OWNER: [
-    FLOW_PERMISSIONS.ALL,
-    UPLOAD_PERMISSIONS.ALL,
-  ] as const,
+  ORGANIZATION_OWNER: [FLOW_PERMISSIONS.ALL, UPLOAD_PERMISSIONS.ALL] as const,
 
   /** Organization member - same as owner for now */
-  ORGANIZATION_MEMBER: [
-    FLOW_PERMISSIONS.ALL,
-    UPLOAD_PERMISSIONS.ALL,
-  ] as const,
+  ORGANIZATION_MEMBER: [FLOW_PERMISSIONS.ALL, UPLOAD_PERMISSIONS.ALL] as const,
 
   /** API key - limited to execute flows and create uploads */
-  API_KEY: [
-    FLOW_PERMISSIONS.EXECUTE,
-    UPLOAD_PERMISSIONS.CREATE,
-  ] as const,
+  API_KEY: [FLOW_PERMISSIONS.EXECUTE, UPLOAD_PERMISSIONS.CREATE] as const,
 } as const;
 
 /**

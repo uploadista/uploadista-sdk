@@ -276,9 +276,7 @@ export function gcsStore({
         });
 
         if (!exists) {
-          return yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND"),
-          );
+          return yield* Effect.fail(UploadistaError.fromCode("FILE_NOT_FOUND"));
         }
 
         // Create a Node.js readable stream from GCS

@@ -8,6 +8,7 @@ import {
   UPLOADISTA_CLIENT_KEY,
   UPLOADISTA_EVENT_SUBSCRIBERS_KEY,
 } from "../composables/plugin";
+import FlowManagerProvider from "./FlowManagerProvider.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -58,5 +59,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <slot />
+  <FlowManagerProvider>
+    <slot />
+  </FlowManagerProvider>
 </template>

@@ -207,7 +207,11 @@ export function createMockGCSClient(
         return storage.objects.has(key);
       }),
 
-    putObject: (key: string, body: Uint8Array, context?: Partial<GCSOperationContext>) =>
+    putObject: (
+      key: string,
+      body: Uint8Array,
+      context?: Partial<GCSOperationContext>,
+    ) =>
       Effect.gen(function* () {
         yield* simulateLatency();
         yield* trackOperation("putObject");
@@ -341,7 +345,12 @@ export function createMockGCSClient(
         return uploadUrl;
       }),
 
-    uploadChunk: (uploadUrl: string, chunk: Uint8Array, start: number, total?: number) =>
+    uploadChunk: (
+      uploadUrl: string,
+      chunk: Uint8Array,
+      start: number,
+      total?: number,
+    ) =>
       Effect.gen(function* () {
         yield* simulateLatency();
         yield* trackOperation("uploadChunk");
@@ -350,9 +359,7 @@ export function createMockGCSClient(
 
         const upload = storage.resumableUploads.get(uploadUrl);
         if (!upload) {
-          return yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND"),
-          );
+          return yield* Effect.fail(UploadistaError.fromCode("FILE_NOT_FOUND"));
         }
 
         upload.data.push(chunk);
@@ -399,9 +406,7 @@ export function createMockGCSClient(
 
         const upload = storage.resumableUploads.get(uploadUrl);
         if (!upload) {
-          return yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND"),
-          );
+          return yield* Effect.fail(UploadistaError.fromCode("FILE_NOT_FOUND"));
         }
 
         const bytesUploaded = upload.data.reduce(
@@ -421,7 +426,11 @@ export function createMockGCSClient(
       }),
 
     // Compose operations
-    composeObjects: (sourceKeys: string[], destinationKey: string, context?: Partial<GCSOperationContext>) =>
+    composeObjects: (
+      sourceKeys: string[],
+      destinationKey: string,
+      context?: Partial<GCSOperationContext>,
+    ) =>
       Effect.gen(function* () {
         yield* simulateLatency();
         yield* trackOperation("composeObjects");
@@ -432,9 +441,7 @@ export function createMockGCSClient(
         const sourceObjects = sourceKeys.map((key) => storage.objects.get(key));
 
         if (sourceObjects.some((obj) => !obj)) {
-          return yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND"),
-          );
+          return yield* Effect.fail(UploadistaError.fromCode("FILE_NOT_FOUND"));
         }
 
         // Calculate total size
@@ -469,7 +476,11 @@ export function createMockGCSClient(
       }),
 
     // Temporary file operations
-    putTemporaryObject: (key: string, body: Uint8Array, context?: Partial<GCSOperationContext>) =>
+    putTemporaryObject: (
+      key: string,
+      body: Uint8Array,
+      context?: Partial<GCSOperationContext>,
+    ) =>
       Effect.gen(function* () {
         yield* simulateLatency();
         yield* trackOperation("putTemporaryObject");

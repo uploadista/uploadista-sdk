@@ -24,8 +24,6 @@ import type {
 import { SmartChunker, type SmartChunkerConfig } from "../smart-chunker";
 import type { ClientStorage } from "../storage/client-storage";
 import type { FlowUploadConfig } from "../types/flow-upload-config";
-import { detectInputType } from "../utils/input-detection";
-
 import { performFlowUpload, startFlowUpload } from "../upload/flow-upload";
 import {
   finalizeFlowInput,
@@ -54,6 +52,7 @@ import {
   validateConfiguration,
 } from "../upload/upload-strategy";
 import { calculateFileSize } from "../upload/upload-utils";
+import { detectInputType } from "../utils/input-detection";
 import { createUploadistaApi } from "./uploadista-api";
 import {
   type UploadistaWebSocketEventHandler,
@@ -830,7 +829,10 @@ export function createUploadistaClient<UploadInput>({
     // Open flow WebSocket for flow events
     await wsManager.openFlowWebSocket(jobId);
 
-    const abortControllers: Map<string, ReturnType<typeof abortControllerFactory.create>> = new Map();
+    const abortControllers: Map<
+      string,
+      ReturnType<typeof abortControllerFactory.create>
+    > = new Map();
     const uploadIds: Map<string, string> = new Map();
     const timeoutIds: Timeout[] = [];
 
@@ -864,7 +866,12 @@ export function createUploadistaClient<UploadInput>({
             },
           });
 
-          return { nodeId, uploadFile: initResult.uploadFile, source, inputType };
+          return {
+            nodeId,
+            uploadFile: initResult.uploadFile,
+            source,
+            inputType,
+          };
         } else if (inputType === "url") {
           // URL input - send to server immediately
           await uploadistaApi.resumeFlow(
@@ -881,12 +888,9 @@ export function createUploadistaClient<UploadInput>({
           return { nodeId, uploadFile: null, source: null, inputType };
         } else {
           // Structured data input
-          await uploadistaApi.resumeFlow(
-            jobId,
-            nodeId,
-            data,
-            { contentType: "application/json" },
-          );
+          await uploadistaApi.resumeFlow(jobId, nodeId, data, {
+            contentType: "application/json",
+          });
 
           return { nodeId, uploadFile: null, source: null, inputType };
         }
@@ -897,7 +901,10 @@ export function createUploadistaClient<UploadInput>({
       // Upload all file inputs in parallel
       const initializedSmartChunker = await initializeSmartChunker();
       const uploadPromises = initializedInputs
-        .filter((input) => input.inputType === "file" && input.uploadFile && input.source)
+        .filter(
+          (input) =>
+            input.inputType === "file" && input.uploadFile && input.source,
+        )
         .map(async ({ nodeId, uploadFile, source }) => {
           const abortController = abortControllerFactory.create();
           abortControllers.set(nodeId, abortController);
@@ -934,8 +941,15 @@ export function createUploadistaClient<UploadInput>({
                   onProgress?.(uploadId, bytesUploaded, totalBytes);
 
                   // Calculate progress percentage
-                  const progress = totalBytes ? Math.round((bytesUploaded / totalBytes) * 100) : 0;
-                  onInputProgress?.(nodeId, progress, bytesUploaded, totalBytes);
+                  const progress = totalBytes
+                    ? Math.round((bytesUploaded / totalBytes) * 100)
+                    : 0;
+                  onInputProgress?.(
+                    nodeId,
+                    progress,
+                    bytesUploaded,
+                    totalBytes,
+                  );
                 },
                 onChunkComplete,
                 onShouldRetry,
