@@ -17,3 +17,35 @@ export {
 } from "./GalleryUploadButton";
 export { UploadList, type UploadListProps } from "./UploadList";
 export { UploadProgress, type UploadProgressProps } from "./UploadProgress";
+
+// Flow compound components
+export {
+  Flow,
+  useFlowContext,
+  useFlowInputContext,
+  type FlowProps,
+  type FlowRenderProps,
+  type FlowContextValue,
+  type FlowInputContextValue,
+  type FlowInputsProps,
+  type FlowInputsRenderProps,
+  type FlowInputProps,
+  type FlowInputFilePickerProps,
+  type FlowInputFilePickerRenderProps,
+  type FlowInputPreviewProps,
+  type FlowInputPreviewRenderProps,
+  type FlowProgressProps,
+  type FlowProgressRenderProps,
+  type FlowStatusProps,
+  type FlowStatusRenderProps,
+  type FlowErrorProps,
+  type FlowErrorRenderProps,
+  type FlowSubmitProps,
+  type FlowSubmitRenderProps,
+  type FlowCancelProps,
+  type FlowCancelRenderProps,
+  type FlowResetProps,
+  type FlowResetRenderProps,
+  type FlowQuickUploadProps,
+  type FlowQuickUploadRenderProps,
+} from "./flow-primitives";
