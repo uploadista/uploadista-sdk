@@ -7,7 +7,7 @@ import { Metric, MetricBoundaries } from "effect";
 /**
  * Upload server metrics for tracking upload operations
  */
-export const createUploadServerMetrics = () => ({
+export const createUploadEngineMetrics = () => ({
   // Counter metrics
   uploadCreatedTotal: Metric.counter("upload_created_total", {
     description: "Total number of uploads created",
@@ -110,9 +110,9 @@ export const createUploadServerMetrics = () => ({
 /**
  * Type for upload server metrics
  */
-export type UploadServerMetrics = ReturnType<typeof createUploadServerMetrics>;
+export type UploadEngineMetrics = ReturnType<typeof createUploadEngineMetrics>;
 
 /**
  * Default upload server metrics instance
  */
-export const uploadServerMetrics = createUploadServerMetrics();
+export const uploadEngineMetrics = createUploadEngineMetrics();

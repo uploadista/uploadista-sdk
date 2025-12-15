@@ -1,5 +1,5 @@
 import type { IncomingMessage } from "node:http";
-import { FlowServer, UploadServer } from "@uploadista/core";
+import { FlowEngine, UploadEngine } from "@uploadista/core";
 import type { AuthResult } from "@uploadista/server";
 import {
   handleWebSocketClose,
@@ -170,11 +170,11 @@ const authenticateWebSocket = async (
 export const expressWebSocketHandler = (
   baseUrl: string,
   authMiddleware?: (ctx: ExpressContext) => Promise<AuthResult>,
-): Effect.Effect<ExpressWebSocketHandler, never, UploadServer | FlowServer> => {
+): Effect.Effect<ExpressWebSocketHandler, never, UploadEngine | FlowEngine> => {
   return Effect.gen(function* () {
     // Get the server instances from the Effect context
-    const uploadServer = yield* UploadServer;
-    const flowServer = yield* FlowServer;
+    const uploadEngine = yield* UploadEngine;
+    const flowEngine = yield* FlowEngine;
 
     return (ws: WebSocket, req: IncomingMessage) => {
       // Extract request details (adapter's responsibility)
@@ -259,8 +259,8 @@ export const expressWebSocketHandler = (
         // Delegate to core handler for business logic
         const openEffect = handleWebSocketOpen(
           request,
-          uploadServer,
-          flowServer,
+          uploadEngine,
+          flowEngine,
         );
         Effect.runFork(openEffect);
       })();
@@ -287,8 +287,8 @@ export const expressWebSocketHandler = (
         // Delegate to core handler for cleanup
         const closeEffect = handleWebSocketClose(
           request,
-          uploadServer,
-          flowServer,
+          uploadEngine,
+          flowEngine,
         );
         Effect.runFork(closeEffect);
       });

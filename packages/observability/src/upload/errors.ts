@@ -1,5 +1,5 @@
 import { Effect, Metric } from "effect";
-import type { UploadServerMetrics } from "./metrics.js";
+import type { UploadEngineMetrics } from "./metrics.js";
 
 // ============================================================================
 // Upload Error Classification and Tracking
@@ -109,7 +109,7 @@ export const classifyUploadError = (error: unknown): UploadErrorCategory => {
  * Track upload errors with metrics and structured logging
  */
 export const trackUploadError = (
-  metrics: UploadServerMetrics,
+  metrics: UploadEngineMetrics,
   operation: string,
   error: unknown,
   context: Record<string, unknown> = {},

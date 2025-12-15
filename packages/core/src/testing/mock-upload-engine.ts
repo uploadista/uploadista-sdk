@@ -2,32 +2,32 @@ import { Effect, Layer, Stream } from "effect";
 import type { UploadistaError } from "../errors";
 import type { InputFile, UploadFile, WebSocketConnection } from "../types";
 import {
-  DEFAULT_STREAMING_CONFIG,
   type DataStoreCapabilities,
+  DEFAULT_STREAMING_CONFIG,
   type StreamingConfig,
 } from "../types/data-store";
-import { UploadServer } from "../upload";
+import { UploadEngine } from "../upload";
 
 /**
- * Mock UploadServer implementation for testing.
+ * Mock UploadEngine implementation for testing.
  *
- * Provides a complete in-memory implementation of all UploadServer methods
+ * Provides a complete in-memory implementation of all UploadEngine methods
  * suitable for unit and integration tests.
  *
  * @example
  * ```typescript
- * import { TestUploadServer } from "@uploadista/core/testing";
+ * import { TestUploadEngine } from "@uploadista/core/testing";
  *
  * const program = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *   const upload = yield* server.createUpload(inputFile, "client-123");
  *   return upload;
- * }).pipe(Effect.provide(TestUploadServer));
+ * }).pipe(Effect.provide(TestUploadEngine));
  * ```
  */
-export const TestUploadServer = Layer.succeed(
-  UploadServer,
-  UploadServer.of({
+export const TestUploadEngine = Layer.succeed(
+  UploadEngine,
+  UploadEngine.of({
     read: (fileId: string, _clientId: string | null) =>
       Effect.sync(() => {
         // Generate mock file data based on fileId

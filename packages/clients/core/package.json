@@ -32,7 +32,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"

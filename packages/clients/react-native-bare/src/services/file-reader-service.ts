@@ -3,7 +3,7 @@ import type {
   FileSource,
   SliceResult,
 } from "@uploadista/client-core";
-import type { ReactNativeUploadInput } from "@/types/upload-input";
+import type { ReactNativeUploadInput } from "@uploadista/react-native-core";
 
 /**
  * React Native-specific implementation of FileReaderService

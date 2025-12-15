@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import type { UploadistaEvent } from "@uploadista/client-browser";
+import type { BrowserUploadInput, UploadistaEvent } from "@uploadista/client-browser";
 import {
   FlowManager,
   type FlowManagerCallbacks,
@@ -73,15 +73,11 @@ onMounted(() => {
       event.type === UploadEventType.UPLOAD_PROGRESS &&
       "data" in event
     ) {
-      const uploadEvent = event as {
-        type: UploadEventType;
-        uploadId: string;
-        data: { progress: number; total: number | null };
-      };
+      const uploadEvent = event;
 
       for (const entry of managers.values()) {
         entry.manager.handleUploadProgress(
-          uploadEvent.uploadId,
+          uploadEvent.data.id,
           uploadEvent.data.progress,
           uploadEvent.data.total,
         );
@@ -113,23 +109,12 @@ const getManager = (
   }
 
   // Create new manager
-  const flowUploadFn = (
-    input: unknown,
-    flowConfig: FlowUploadOptions["flowConfig"],
-    internalOptions: unknown,
-  ) => {
-    return client.uploadWithFlow(input, flowConfig, internalOptions);
-  };
-
-  const multiInputUploadFn = (
-    inputs: Record<string, unknown>,
-    flowConfig: FlowUploadOptions["flowConfig"],
-    internalOptions: unknown,
-  ) => {
-    return client.multiInputFlowUpload(inputs, flowConfig, internalOptions);
-  };
-
-  const manager = new FlowManager<unknown>(flowUploadFn, callbacks, options, multiInputUploadFn);
+  const manager = new FlowManager<BrowserUploadInput>(
+    client.uploadWithFlow,
+    callbacks,
+    options,
+    client.multiInputFlowUpload,
+  );
 
   managers.set(flowId, {
     manager,

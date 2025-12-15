@@ -170,12 +170,16 @@ export function useMultiUpload(options: UseMultiUploadOptions = {}) {
         const blob = await response.blob();
 
         // Override blob type if we have mimeType from picker
-        const uploadInput = item.file.data.mimeType
-          ? new Blob([blob], {
-              type: item.file.data.mimeType,
-              lastModified: Date.now(),
-            })
-          : blob;
+        // Use type assertion to handle differences between Expo's BlobOptions and standard BlobPropertyBag
+        let uploadInput: Blob = blob;
+        if (item.file.data.mimeType) {
+          const blobOptions = {
+            type: item.file.data.mimeType,
+            lastModified: Date.now(),
+          };
+          // biome-ignore lint/suspicious/noExplicitAny: Expo and bare RN have incompatible Blob types
+          uploadInput = new Blob([blob], blobOptions as any);
+        }
 
         // Start upload using the client
         console.log("Uploading input:", uploadInput);

@@ -1,6 +1,6 @@
 // Import WebSocket type from @fastify/websocket
 import type * as fastifyWebsocket from "@fastify/websocket";
-import { FlowServer, UploadServer } from "@uploadista/core";
+import { FlowEngine, UploadEngine } from "@uploadista/core";
 import type { AuthResult } from "@uploadista/server";
 import {
   handleWebSocketClose,
@@ -169,10 +169,10 @@ const authenticateWebSocket = async (
 export const fastifyWebSocketHandler = (
   baseUrl: string,
   authMiddleware?: (ctx: FastifyContext) => Promise<AuthResult>,
-): Effect.Effect<FastifyWebSocketHandler, never, UploadServer | FlowServer> => {
+): Effect.Effect<FastifyWebSocketHandler, never, UploadEngine | FlowEngine> => {
   return Effect.gen(function* () {
-    const uploadServer = yield* UploadServer;
-    const flowServer = yield* FlowServer;
+    const uploadEngine = yield* UploadEngine;
+    const flowEngine = yield* FlowEngine;
 
     return (ws: WebSocket, req: FastifyRequest) => {
       // Extract WebSocket request details
@@ -211,8 +211,8 @@ export const fastifyWebSocketHandler = (
               ws,
               validWsRequest,
               connectionId,
-              uploadServer,
-              flowServer,
+              uploadEngine,
+              flowEngine,
             );
           })
           .catch((error) => {
@@ -226,8 +226,8 @@ export const fastifyWebSocketHandler = (
           ws,
           validWsRequest,
           connectionId,
-          uploadServer,
-          flowServer,
+          uploadEngine,
+          flowEngine,
         );
       }
     };
@@ -241,8 +241,8 @@ function setupWebSocketHandlers(
   ws: WebSocket,
   wsRequest: WebSocketConnectionRequest,
   connectionId: string,
-  uploadServer: ReturnType<typeof UploadServer.of>,
-  flowServer: ReturnType<typeof FlowServer.of>,
+  uploadEngine: ReturnType<typeof UploadEngine.of>,
+  flowEngine: ReturnType<typeof FlowEngine.of>,
 ) {
   // Create WebSocket connection object
   const connection: WebSocketConnection = {
@@ -260,7 +260,7 @@ function setupWebSocketHandlers(
   wsRequest.connection = connection;
 
   // Handle WebSocket open
-  const openProgram = handleWebSocketOpen(wsRequest, uploadServer, flowServer);
+  const openProgram = handleWebSocketOpen(wsRequest, uploadEngine, flowEngine);
   Effect.runPromise(openProgram).catch((error) => {
     console.error("WebSocket open handler error:", error);
     ws.close(1011, "Internal server error");
@@ -283,8 +283,8 @@ function setupWebSocketHandlers(
 
     const closeProgram = handleWebSocketClose(
       wsRequest,
-      uploadServer,
-      flowServer,
+      uploadEngine,
+      flowEngine,
     );
     Effect.runPromise(closeProgram).catch((error) => {
       console.error("WebSocket close handler error:", error);

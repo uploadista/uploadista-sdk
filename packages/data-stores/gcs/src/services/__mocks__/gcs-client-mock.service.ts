@@ -234,7 +234,7 @@ export function createMockGCSClient(
 
     putObjectFromStreamWithPatching: (
       key: string,
-      offset: number,
+      _offset: number,
       readableStream: ReadableStream,
       context?: Partial<GCSOperationContext>,
       onProgress?: (chunkSize: number) => void,

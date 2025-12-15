@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "check": "biome check --write ./src",
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo",
     "format": "biome format --write ./src",

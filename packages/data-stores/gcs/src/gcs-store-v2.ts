@@ -5,11 +5,10 @@ import {
   type DataStoreWriteOptions,
   type KvStore,
   type UploadFile,
-  UploadFileDataStore,
   UploadFileKVStore,
   type UploadStrategy,
 } from "@uploadista/core/types";
-import { Effect, Layer, Stream } from "effect";
+import { Effect, Stream } from "effect";
 import type {
   GCSClient,
   GCSClientConfig,

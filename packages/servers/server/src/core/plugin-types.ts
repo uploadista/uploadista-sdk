@@ -166,7 +166,7 @@ export type TypeSafePluginConfig<
  * Extracts plugin requirements from a flow function type.
  *
  * This navigates through the flow function signature to extract the requirements
- * from the Flow type it returns, excluding UploadServer (provided by runtime).
+ * from the Flow type it returns, excluding UploadEngine (provided by runtime).
  *
  * @template TFlowFn - The flow function type to extract requirements from
  *
@@ -191,7 +191,7 @@ export type ExtractFlowPluginRequirements<
   ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, any, any>
     ? // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for input and output schema parameters
       TFlow extends Flow<any, any, infer TRequirements>
-      ? Exclude<TRequirements, never> // Exclude UploadServer is handled by FlowPluginRequirements in core
+      ? Exclude<TRequirements, never> // Exclude UploadEngine is handled by FlowPluginRequirements in core
       : never
     : never;
 

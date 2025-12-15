@@ -3,12 +3,15 @@ import {
   createInMemoryStorageService,
   type ServiceContainer,
 } from "@uploadista/client-core";
-import type { ReactNativeUploadInput } from "@/types/upload-input";
+import type { ReactNativeUploadInput } from "@uploadista/react-native-core";
 import { createReactNativeAbortControllerFactory } from "./abort-controller-factory";
 import { createReactNativeBase64Service } from "./base64-service";
+import { createReactNativeChecksumService } from "./checksum-service";
 import { createReactNativeFileReaderService } from "./file-reader-service";
+import { createReactNativeFingerprintService } from "./fingerprint-service";
 import { createReactNativeHttpClient } from "./http-client";
 import { createReactNativeIdGenerationService } from "./id-generation-service";
+import { createReactNativePlatformService } from "./platform-service";
 import { createAsyncStorageService } from "./storage-service";
 import { createReactNativeWebSocketFactory } from "./websocket-factory";
 
@@ -63,6 +66,9 @@ export function createReactNativeServices(
   const base64 = createReactNativeBase64Service();
   const websocket = createReactNativeWebSocketFactory();
   const abortController = createReactNativeAbortControllerFactory();
+  const platform = createReactNativePlatformService();
+  const checksumService = createReactNativeChecksumService();
+  const fingerprintService = createReactNativeFingerprintService();
 
   return {
     storage,
@@ -70,6 +76,9 @@ export function createReactNativeServices(
     httpClient,
     fileReader,
     base64,
+    platform,
+    checksumService,
+    fingerprintService,
     websocket,
     abortController,
   };

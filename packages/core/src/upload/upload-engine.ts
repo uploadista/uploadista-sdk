@@ -24,7 +24,7 @@ import { uploadChunk } from "./upload-chunk";
 import { arrayBuffer, fetchFile } from "./upload-url";
 
 /**
- * Legacy configuration options for UploadServer.
+ * Legacy configuration options for UploadEngine.
  *
  * @deprecated Use Effect Layers instead of this configuration object.
  * This type is kept for backward compatibility.
@@ -36,7 +36,7 @@ import { arrayBuffer, fetchFile } from "./upload-url";
  * @property middlewares - Optional request middlewares
  * @property withTracing - Enable Effect tracing for debugging
  */
-export type UploadServerOptions = {
+export type UploadEngineOptions = {
   dataStore:
     | ((storageId: string) => Promise<DataStore<UploadFile>>)
     | DataStore<UploadFile>;
@@ -48,7 +48,7 @@ export type UploadServerOptions = {
 };
 
 /**
- * UploadServer service interface.
+ * UploadEngine service interface.
  *
  * This is the core upload handling service that provides all file upload operations.
  * It manages upload lifecycle, resumable uploads, progress tracking, and storage integration.
@@ -70,7 +70,7 @@ export type UploadServerOptions = {
  * ```typescript
  * // Basic upload flow
  * const program = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *
  *   // 1. Create upload
  *   const inputFile: InputFile = {
@@ -93,7 +93,7 @@ export type UploadServerOptions = {
  *
  * // Upload with WebSocket progress tracking
  * const uploadWithProgress = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *
  *   // Subscribe to progress events
  *   yield* server.subscribeToUploadEvents(uploadId, websocket);
@@ -109,7 +109,7 @@ export type UploadServerOptions = {
  *
  * // Upload from URL
  * const urlUpload = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *
  *   const inputFile: InputFile = {
  *     storageId: "s3-production",
@@ -128,7 +128,7 @@ export type UploadServerOptions = {
  * });
  * ```
  */
-export type UploadServerShape = {
+export type UploadEngineShape = {
   createUpload: (
     inputFile: InputFile,
     clientId: string | null,
@@ -172,7 +172,7 @@ export type UploadServerShape = {
    *
    * @example
    * ```typescript
-   * const server = yield* UploadServer;
+   * const server = yield* UploadEngine;
    * const stream = yield* server.readStream(uploadId, clientId, { chunkSize: 65536 });
    * // Process stream chunk by chunk with bounded memory
    * yield* Stream.runForEach(stream, (chunk) => processChunk(chunk));
@@ -182,7 +182,10 @@ export type UploadServerShape = {
     uploadId: string,
     clientId: string | null,
     config?: StreamingConfig,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
   /**
    * Uploads file content from a stream with unknown final size.
    * Creates upload with deferred length, streams content to storage,
@@ -198,7 +201,7 @@ export type UploadServerShape = {
    *
    * @example
    * ```typescript
-   * const server = yield* UploadServer;
+   * const server = yield* UploadEngine;
    * const result = yield* server.uploadStream(
    *   {
    *     storageId: "s3-production",
@@ -231,40 +234,40 @@ export type UploadServerShape = {
 };
 
 /**
- * Effect-TS context tag for the UploadServer service.
+ * Effect-TS context tag for the UploadEngine service.
  *
- * Use this tag to access the UploadServer in an Effect context.
+ * Use this tag to access the UploadEngine in an Effect context.
  * The server must be provided via a Layer or dependency injection.
  *
  * @example
  * ```typescript
- * // Access UploadServer in an Effect
+ * // Access UploadEngine in an Effect
  * const uploadEffect = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *   const upload = yield* server.createUpload(inputFile, clientId);
  *   return upload;
  * });
  *
- * // Provide UploadServer layer
+ * // Provide UploadEngine layer
  * const program = uploadEffect.pipe(
- *   Effect.provide(uploadServer),
+ *   Effect.provide(uploadEngine),
  *   Effect.provide(uploadFileKvStore),
  *   Effect.provide(dataStoreLayer),
  *   Effect.provide(eventEmitterLayer)
  * );
  * ```
  */
-export class UploadServer extends Context.Tag("UploadServer")<
-  UploadServer,
-  UploadServerShape
+export class UploadEngine extends Context.Tag("UploadEngine")<
+  UploadEngine,
+  UploadEngineShape
 >() {}
 
 /**
- * Creates the UploadServer implementation.
+ * Creates the UploadEngine implementation.
  *
- * This function constructs the UploadServer service by composing all required
+ * This function constructs the UploadEngine service by composing all required
  * dependencies (KV store, data stores, event emitter, ID generator). It implements
- * all upload operations defined in UploadServerShape.
+ * all upload operations defined in UploadEngineShape.
  *
  * The server automatically handles:
  * - Upload lifecycle management (create, resume, complete)
@@ -272,24 +275,24 @@ export class UploadServer extends Context.Tag("UploadServer")<
  * - Storage backend routing based on storageId
  * - Error handling with proper UploadistaError types
  *
- * @returns An Effect that yields the UploadServerShape implementation
+ * @returns An Effect that yields the UploadEngineShape implementation
  *
  * @example
  * ```typescript
- * // Create a custom UploadServer layer
- * const myUploadServer = Layer.effect(
- *   UploadServer,
- *   createUploadServer()
+ * // Create a custom UploadEngine layer
+ * const myUploadEngine = Layer.effect(
+ *   UploadEngine,
+ *   createUploadEngine()
  * );
  *
  * // Use in a program
  * const program = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *   // Use server operations...
- * }).pipe(Effect.provide(myUploadServer));
+ * }).pipe(Effect.provide(myUploadEngine));
  * ```
  */
-export function createUploadServer() {
+export function createUploadEngine() {
   return Effect.gen(function* () {
     const kvStore = yield* UploadFileKVStore;
     const eventEmitter = yield* UploadEventEmitter;
@@ -401,9 +404,7 @@ export function createUploadServer() {
           const capabilities = dataStore.getCapabilities();
           if (capabilities.supportsStreamingRead && dataStore.readStream) {
             // Use native streaming
-            yield* Effect.logDebug(
-              `Using streaming read for file ${uploadId}`,
-            );
+            yield* Effect.logDebug(`Using streaming read for file ${uploadId}`);
             return yield* dataStore.readStream(uploadId, config);
           }
 
@@ -518,7 +519,10 @@ export function createUploadServer() {
           );
 
           // Calculate total size
-          const totalSize = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+          const totalSize = chunks.reduce(
+            (acc, chunk) => acc + chunk.length,
+            0,
+          );
 
           // Create a combined buffer
           const buffer = new Uint8Array(totalSize);
@@ -586,14 +590,14 @@ export function createUploadServer() {
         Effect.gen(function* () {
           yield* eventEmitter.unsubscribe(uploadId);
         }),
-    } satisfies UploadServerShape;
+    } satisfies UploadEngineShape;
   });
 }
 
 /**
- * Pre-built UploadServer Effect Layer.
+ * Pre-built UploadEngine Effect Layer.
  *
- * This layer provides a ready-to-use UploadServer implementation that can be
+ * This layer provides a ready-to-use UploadEngine implementation that can be
  * composed with other layers to build a complete upload system.
  *
  * Required dependencies:
@@ -606,7 +610,7 @@ export function createUploadServer() {
  * ```typescript
  * // Compose a complete upload system
  * const fullUploadSystem = Layer.mergeAll(
- *   uploadServer,
+ *   uploadEngine,
  *   uploadFileKvStore,
  *   dataStoreLayer,
  *   uploadEventEmitter,
@@ -615,9 +619,9 @@ export function createUploadServer() {
  *
  * // Use in application
  * const app = Effect.gen(function* () {
- *   const server = yield* UploadServer;
+ *   const server = yield* UploadEngine;
  *   // Perform uploads...
  * }).pipe(Effect.provide(fullUploadSystem));
  * ```
  */
-export const uploadServer = Layer.effect(UploadServer, createUploadServer());
+export const uploadEngine = Layer.effect(UploadEngine, createUploadEngine());

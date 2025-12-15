@@ -77,13 +77,13 @@ if (response.isValid) {
 ### 3. Create Upload Server Layer
 
 ```typescript
-import { createUploadServerLayer } from "@uploadista/server";
+import { createUploadEngineLayer } from "@uploadista/server";
 import { redisKvStore } from "@uploadista/kv-store-redis";
 import { s3DataStore } from "@uploadista/data-store-s3";
 import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
 import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 
-const uploadServerLayer = createUploadServerLayer({
+const uploadEngineLayer = createUploadEngineLayer({
   kvStore: redisKvStore,
   eventEmitter: webSocketEventEmitter,
   dataStore: s3DataStore,
@@ -239,12 +239,12 @@ const cacheLayer = AuthCacheServiceLive({
 
 ### Layer Composition
 
-#### `UploadServerLayerConfig`
+#### `UploadEngineLayerConfig`
 
 Configuration for creating upload server layer.
 
 ```typescript
-interface UploadServerLayerConfig {
+interface UploadEngineLayerConfig {
   kvStore: Layer.Layer<BaseKvStoreService>;
   eventEmitter: Layer.Layer<BaseEventEmitterService>;
   dataStore: Layer.Layer<UploadFileDataStores, never, UploadFileKVStore>;
@@ -255,43 +255,43 @@ interface UploadServerLayerConfig {
 
 #### `createUploadServerLayer(config)`
 
-Compose upload server with all dependencies.
+  Compose upload engine with all dependencies.
 
 ```typescript
-import { createUploadServerLayer } from "@uploadista/server";
+import { createUploadEngineLayer } from "@uploadista/server";
 
-const uploadLayer = createUploadServerLayer({
+const uploadEngineLayer = createUploadEngineLayer({
   kvStore: redisKvStore,
   eventEmitter: webSocketEventEmitter,
   dataStore: s3DataStore,
 });
 ```
 
-#### `FlowServerLayerConfig`
+#### `FlowEngineLayerConfig`
 
-Configuration for creating flow server layer.
+Configuration for creating flow engine layer.
 
 ```typescript
-interface FlowServerLayerConfig {
+interface FlowEngineLayerConfig {
   kvStore: Layer.Layer<BaseKvStoreService>;
   eventEmitter: Layer.Layer<BaseEventEmitterService>;
   flowProvider: Layer.Layer<FlowProvider>;
-  uploadServer: Layer.Layer<UploadServer>;
+  uploadEngine: Layer.Layer<UploadEngine>;
 }
 ```
 
-#### `createFlowServerLayer(config)`
+#### `createFlowEngineLayer(config)`
 
-Compose flow server with all dependencies.
+Compose flow engine with all dependencies.
 
 ```typescript
-import { createFlowServerLayer } from "@uploadista/server";
+import { createFlowEngineLayer } from "@uploadista/server";
 
-const flowLayer = createFlowServerLayer({
+const flowLayer = createFlowEngineLayer({
   kvStore: redisKvStore,
   eventEmitter: webSocketEventEmitter,
   flowProvider: createFlowsEffect,
-  uploadServer: uploadLayer,
+  uploadEngine: uploadEngineLayer,
 });
 ```
 

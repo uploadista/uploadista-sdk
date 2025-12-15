@@ -12,7 +12,6 @@ import {
   type StreamWriteOptions,
   type StreamWriteResult,
   type UploadFile,
-  UploadFileDataStore,
   UploadFileKVStore,
   type UploadStrategy,
 } from "@uploadista/core/types";
@@ -28,7 +27,7 @@ import {
   withGCSTimingMetrics as withTimingMetrics,
   withGCSUploadMetrics as withUploadMetrics,
 } from "@uploadista/observability";
-import { Effect, Layer, Stream } from "effect";
+import { Effect, Stream } from "effect";
 
 export type GCSStoreOptions = {
   keyFilename?: string;

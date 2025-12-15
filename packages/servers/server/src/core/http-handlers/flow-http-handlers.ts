@@ -1,4 +1,4 @@
-import { FlowServer } from "@uploadista/core/flow";
+import { FlowEngine } from "@uploadista/core/flow";
 import { Effect } from "effect";
 import { AuthCacheService } from "../../cache";
 import { QuotaExceededError } from "../../permissions/errors";
@@ -22,7 +22,7 @@ import type {
 
 export const handleGetFlow = ({ flowId }: GetFlowRequest) => {
   return Effect.gen(function* () {
-    const flowServer = yield* FlowServer;
+    const flowEngine = yield* FlowEngine;
     const authService = yield* AuthContextService;
     const clientId = yield* authService.getClientId();
 
@@ -35,7 +35,7 @@ export const handleGetFlow = ({ flowId }: GetFlowRequest) => {
       );
     }
 
-    const flowData = yield* flowServer.getFlowData(flowId, clientId);
+    const flowData = yield* flowEngine.getFlowData(flowId, clientId);
 
     return {
       status: 200,
@@ -50,7 +50,7 @@ export const handleRunFlow = <TRequirements>({
   inputs,
 }: RunFlowRequest) => {
   return Effect.gen(function* () {
-    const flowServer = yield* FlowServer;
+    const flowEngine = yield* FlowEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
     const usageHookService = yield* UsageHookService;
@@ -96,7 +96,7 @@ export const handleRunFlow = <TRequirements>({
     // Run flow returns immediately with jobId
     const startTime = Date.now();
     yield* Effect.logInfo(`[Flow] Calling flowServer.runFlow...`);
-    const result = yield* flowServer
+    const result = yield* flowEngine
       .runFlow<TRequirements>({
         flowId,
         storageId,
@@ -133,7 +133,7 @@ export const handleRunFlow = <TRequirements>({
 
 export const handleJobStatus = ({ jobId }: GetJobStatusRequest) => {
   return Effect.gen(function* () {
-    const flowServer = yield* FlowServer;
+    const flowEngine = yield* FlowEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
     const clientId = yield* authService.getClientId();
@@ -151,7 +151,7 @@ export const handleJobStatus = ({ jobId }: GetJobStatusRequest) => {
       );
     }
 
-    const result = yield* flowServer.getJobStatus(jobId);
+    const result = yield* flowEngine.getJobStatus(jobId);
 
     // Clear cache if flow is completed or failed
     if (result.status === "completed" || result.status === "failed") {
@@ -176,7 +176,7 @@ export const handleResumeFlow = <TRequirements>({
   newData,
 }: ResumeFlowRequest) => {
   return Effect.gen(function* () {
-    const flowServer = yield* FlowServer;
+    const flowEngine = yield* FlowEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
 
@@ -200,7 +200,7 @@ export const handleResumeFlow = <TRequirements>({
       throw new Error("Missing newData");
     }
 
-    const result = yield* flowServer.resumeFlow<TRequirements>({
+    const result = yield* flowEngine.resumeFlow<TRequirements>({
       jobId,
       nodeId,
       newData,
@@ -226,7 +226,7 @@ export const handleResumeFlow = <TRequirements>({
 
 export const handlePauseFlow = ({ jobId }: PauseFlowRequest) => {
   return Effect.gen(function* () {
-    const flowServer = yield* FlowServer;
+    const flowEngine = yield* FlowEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
 
@@ -246,7 +246,7 @@ export const handlePauseFlow = ({ jobId }: PauseFlowRequest) => {
       );
     }
 
-    const result = yield* flowServer.pauseFlow(jobId, clientId);
+    const result = yield* flowEngine.pauseFlow(jobId, clientId);
 
     if (clientId) {
       yield* Effect.logInfo(
@@ -263,7 +263,7 @@ export const handlePauseFlow = ({ jobId }: PauseFlowRequest) => {
 
 export const handleCancelFlow = ({ jobId }: CancelFlowRequest) => {
   return Effect.gen(function* () {
-    const flowServer = yield* FlowServer;
+    const flowEngine = yield* FlowEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
     const usageHookService = yield* UsageHookService;
@@ -288,7 +288,7 @@ export const handleCancelFlow = ({ jobId }: CancelFlowRequest) => {
       );
     }
 
-    const result = yield* flowServer.cancelFlow(jobId, clientId);
+    const result = yield* flowEngine.cancelFlow(jobId, clientId);
 
     // Clear cache since flow is cancelled
     yield* authCache.delete(jobId);

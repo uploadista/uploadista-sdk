@@ -7,7 +7,7 @@ import {
   resolveUploadMetadata,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 
 export type DescribeDocumentNodeParams = {
@@ -20,7 +20,7 @@ export function createDescribeDocumentNode(
 ) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode({
       id,
@@ -39,12 +39,10 @@ export function createDescribeDocumentNode(
             jobId,
           };
 
-          yield* Effect.logInfo(
-            `Extracting metadata from PDF file ${file.id}`,
-          );
+          yield* Effect.logInfo(`Extracting metadata from PDF file ${file.id}`);
 
           // Read file bytes from upload server
-          const fileBytes = yield* uploadServer.read(file.id, clientId);
+          const fileBytes = yield* uploadEngine.read(file.id, clientId);
 
           // Get metadata with error handling
           const documentMetadata = yield* documentService
@@ -73,10 +71,18 @@ export function createDescribeDocumentNode(
             format: documentMetadata.format,
             ...(documentMetadata.author && { author: documentMetadata.author }),
             ...(documentMetadata.title && { title: documentMetadata.title }),
-            ...(documentMetadata.subject && { subject: documentMetadata.subject }),
-            ...(documentMetadata.creator && { creator: documentMetadata.creator }),
-            ...(documentMetadata.creationDate && { creationDate: documentMetadata.creationDate }),
-            ...(documentMetadata.modifiedDate && { modifiedDate: documentMetadata.modifiedDate }),
+            ...(documentMetadata.subject && {
+              subject: documentMetadata.subject,
+            }),
+            ...(documentMetadata.creator && {
+              creator: documentMetadata.creator,
+            }),
+            ...(documentMetadata.creationDate && {
+              creationDate: documentMetadata.creationDate,
+            }),
+            ...(documentMetadata.modifiedDate && {
+              modifiedDate: documentMetadata.modifiedDate,
+            }),
             fileSize: documentMetadata.fileSize,
           };
 

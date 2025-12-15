@@ -6,7 +6,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { type UploadFile, uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import { z } from "zod";
 import type { MergeParams } from "@/types/merge-node";
@@ -19,7 +19,7 @@ export function createMergeNode(
   { strategy, separator: _separator }: MergeParams,
 ) {
   return Effect.gen(function* () {
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode<Record<string, UploadFile>, UploadFile>({
       id,
@@ -58,7 +58,7 @@ export function createMergeNode(
               let totalSize = 0;
 
               for (const file of inputFiles) {
-                const bytes = yield* uploadServer.read(file.id, clientId);
+                const bytes = yield* uploadEngine.read(file.id, clientId);
                 inputBytesArray.push(bytes);
                 totalSize += bytes.byteLength;
               }
@@ -80,7 +80,7 @@ export function createMergeNode(
               });
 
               // Upload the merged file
-              const result = yield* uploadServer.upload(
+              const result = yield* uploadEngine.upload(
                 {
                   storageId,
                   size: mergedBytes.byteLength,

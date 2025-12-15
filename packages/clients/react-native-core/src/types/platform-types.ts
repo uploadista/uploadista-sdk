@@ -62,13 +62,16 @@ export function isBufferSource(value: unknown): value is BufferSource {
 
 /**
  * Type guard to check if we're in React Native environment
- * (checks for global.navigator.product === 'ReactNative')
+ * (checks for navigator.product === 'ReactNative')
  */
 export function isReactNativeEnvironment(): boolean {
+  const g = globalThis as typeof globalThis & {
+    navigator?: { product?: string };
+  };
   return (
-    typeof global !== "undefined" &&
-    typeof global.navigator !== "undefined" &&
-    global.navigator.product === "ReactNative"
+    typeof g !== "undefined" &&
+    typeof g.navigator !== "undefined" &&
+    g.navigator.product === "ReactNative"
   );
 }
 

@@ -9,7 +9,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect, Either } from "effect";
 
 export type ConvertToMarkdownNodeParams = {
@@ -25,7 +25,7 @@ export function createConvertToMarkdownNode(
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
     const documentAiService = yield* DocumentAiPlugin;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode({
       id,
@@ -56,7 +56,7 @@ export function createConvertToMarkdownNode(
           yield* Effect.logInfo(`Converting file ${file.id} to Markdown`);
 
           // Read file bytes from upload server
-          const fileBytes = yield* uploadServer.read(file.id, clientId);
+          const fileBytes = yield* uploadEngine.read(file.id, clientId);
 
           // Try to extract text first (for searchable PDFs)
           const extractResult = yield* documentService

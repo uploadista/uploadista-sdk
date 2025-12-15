@@ -1,5 +1,5 @@
 import type { FlowProvider } from "@uploadista/core/flow";
-import { flowServer } from "@uploadista/core/flow";
+import { flowEngine } from "@uploadista/core/flow";
 import {
   type BaseEventEmitterService,
   type BaseKvStoreService,
@@ -11,13 +11,13 @@ import {
   uploadEventEmitter,
   uploadFileKvStore,
 } from "@uploadista/core/types";
-import { type UploadServer, uploadServer } from "@uploadista/core/upload";
+import { type UploadEngine, uploadEngine } from "@uploadista/core/upload";
 import type { GenerateId } from "@uploadista/core/utils";
 import { Layer } from "effect";
 
 /**
- * Configuration for creating upload server layers.
- * Specifies all dependencies needed by the upload server Effect Layer.
+ * Configuration for creating upload engine layers.
+ * Specifies all dependencies needed by the upload engine Effect Layer.
  *
  * @property kvStore - Key-value store for upload metadata
  * @property eventEmitter - Event emitter for upload progress events
@@ -27,16 +27,16 @@ import { Layer } from "effect";
  *
  * @example
  * ```typescript
- * import { createUploadServerLayer } from "@uploadista/server";
+ * import { createUploadEngineLayer } from "@uploadista/server";
  *
- * const uploadLayerConfig: UploadServerLayerConfig = {
+ * const uploadLayerConfig: UploadEngineLayerConfig = {
  *   kvStore: redisKvStore,
  *   eventEmitter: webSocketEventEmitter,
  *   dataStore: s3DataStore,
  * };
  * ```
  */
-export interface UploadServerLayerConfig {
+export interface UploadEngineLayerConfig {
   kvStore: Layer.Layer<BaseKvStoreService>;
   eventEmitter: Layer.Layer<BaseEventEmitterService>;
   dataStore: Layer.Layer<UploadFileDataStores, never, UploadFileKVStore>;
@@ -55,7 +55,7 @@ export interface UploadServerLayerConfig {
  * @property kvStore - Key-value store for flow job metadata
  * @property eventEmitter - Event emitter for flow progress events
  * @property flowProvider - Factory function for creating flows
- * @property uploadServer - Upload server layer (used by flows for uploads)
+ * @property uploadEngine - Upload engine layer (used by flows for uploads)
  *
  * @example
  * ```typescript
@@ -65,7 +65,7 @@ export interface UploadServerLayerConfig {
  *   kvStore: redisKvStore,
  *   eventEmitter: webSocketEventEmitter,
  *   flowProvider: createFlowsEffect,
- *   uploadServer: uploadServerLayer,
+ *   uploadEngine: uploadEngineLayer,
  * };
  * ```
  */
@@ -73,7 +73,7 @@ export interface FlowServerLayerConfig {
   kvStore: Layer.Layer<BaseKvStoreService>;
   eventEmitter: Layer.Layer<BaseEventEmitterService>;
   flowProvider: Layer.Layer<FlowProvider>;
-  uploadServer: Layer.Layer<UploadServer>;
+  uploadEngine: Layer.Layer<UploadEngine>;
 }
 
 /**
@@ -88,30 +88,30 @@ export interface FlowServerLayerConfig {
  * - Optional custom ID generator
  *
  * @param config - Upload server layer configuration
- * @returns Effect Layer providing UploadServer
+ * @returns Effect Layer providing UploadEngine
  *
  * @example
  * ```typescript
- * import { createUploadServerLayer } from "@uploadista/server";
+ * import { createUploadEngineLayer } from "@uploadista/server";
  * import { Layer } from "effect";
  *
- * const uploadServerLayer = createUploadServerLayer({
+ * const uploadEngineLayer = createUploadEngineLayer({
  *   kvStore: redisKvStore,
  *   eventEmitter: webSocketEventEmitter,
  *   dataStore: s3DataStore,
  * });
  *
  * // Use in application
- * const app = Layer.provide(appLogic, uploadServerLayer);
+ * const app = Layer.provide(appLogic, uploadEngineLayer);
  * ```
  */
-export const createUploadServerLayer = ({
+export const createUploadEngineLayer = ({
   kvStore,
   eventEmitter,
   dataStore,
   bufferedDataStore,
   generateId,
-}: UploadServerLayerConfig) => {
+}: UploadEngineLayerConfig) => {
   // Set up upload server dependencies
   const uploadFileKVStoreLayer = Layer.provide(uploadFileKvStore, kvStore);
   const uploadDataStoreLayer = Layer.provide(dataStore, uploadFileKVStoreLayer);
@@ -123,7 +123,7 @@ export const createUploadServerLayer = ({
     eventEmitter,
   );
 
-  const uploadServerLayers = Layer.mergeAll(
+  const uploadEngineLayers = Layer.mergeAll(
     uploadDataStoreLayer,
     uploadFileKVStoreLayer,
     uploadEventEmitterLayer,
@@ -131,7 +131,7 @@ export const createUploadServerLayer = ({
     uploadBufferedDataStoreLayer,
   );
 
-  return Layer.provide(uploadServer, uploadServerLayers);
+  return Layer.provide(uploadEngine, uploadEngineLayers);
 };
 
 /**
@@ -156,29 +156,29 @@ export const createUploadServerLayer = ({
  *   kvStore: redisKvStore,
  *   eventEmitter: webSocketEventEmitter,
  *   flowProvider: createFlowsEffect,
- *   uploadServer: uploadServerLayer,
+ *   uploadEngine: uploadEngineLayer,
  * });
  *
  * // Use in application
  * const app = Layer.provide(appLogic, flowServerLayer);
  * ```
  */
-export const createFlowServerLayer = ({
+export const createFlowEngineLayer = ({
   kvStore,
   eventEmitter,
   flowProvider,
-  uploadServer,
+  uploadEngine,
 }: FlowServerLayerConfig) => {
   // Set up flow server dependencies
   const flowJobKVStoreLayer = Layer.provide(flowJobKvStore, kvStore);
   const flowEventEmitterLayer = Layer.provide(flowEventEmitter, eventEmitter);
 
-  const flowServerLayers = Layer.mergeAll(
+  const flowEngineLayers = Layer.mergeAll(
     flowProvider,
     flowEventEmitterLayer,
     flowJobKVStoreLayer,
-    uploadServer,
+    uploadEngine,
   );
 
-  return Layer.provide(flowServer, flowServerLayers);
+  return Layer.provide(flowEngine, flowEngineLayers);
 };

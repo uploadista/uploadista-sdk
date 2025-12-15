@@ -62,7 +62,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "dev": "tsc -b",
     "release": "tsdown && bumpp && pnpm publish --access restricted --no-git-checks",
     "format": "biome format --write ./src",

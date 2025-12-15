@@ -3,6 +3,9 @@ import { computed, ref } from "vue";
 import { useDragDrop, type DragDropState } from "../../composables/useDragDrop";
 import { useFlowInputContext } from "./useFlowContext";
 
+// Helper function to check if value is a File (for template use)
+const isFile = (value: unknown): value is File => value instanceof File;
+
 /**
  * Props for FlowInputDropZone component.
  */
@@ -112,8 +115,8 @@ const slotProps = computed<FlowInputDropZoneSlotProps>(() => ({
       }"
     >
       <p v-if="slotProps.isDragging">Drop file here...</p>
-      <p v-else-if="slotProps.value instanceof File">
-        Selected: {{ (slotProps.value as File).name }}
+      <p v-else-if="isFile(slotProps.value)">
+        Selected: {{ slotProps.value.name }}
       </p>
       <p v-else>Drag and drop a file here, or click to select</p>
     </div>

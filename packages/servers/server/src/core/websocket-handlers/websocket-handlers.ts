@@ -1,6 +1,6 @@
 import { UploadistaError } from "@uploadista/core/errors";
-import type { FlowServerShape } from "@uploadista/core/flow";
-import type { UploadServerShape } from "@uploadista/core/upload";
+import type { FlowEngineShape } from "@uploadista/core/flow";
+import type { UploadEngineShape } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import type {
   WebSocketConnection,
@@ -26,8 +26,8 @@ export type {
  */
 export const handleWebSocketOpen = (
   request: WebSocketConnectionRequest,
-  uploadServer: UploadServerShape,
-  flowServer: FlowServerShape,
+  uploadEngine: UploadEngineShape,
+  flowEngine: FlowEngineShape,
 ) => {
   const { connection, isFlowRoute, isUploadRoute, jobId, uploadId, eventId } =
     request;
@@ -35,12 +35,12 @@ export const handleWebSocketOpen = (
   return Effect.gen(function* () {
     // Subscribe to flow events if this is a flow route
     if (isFlowRoute) {
-      yield* handleSubscribeToFlowEvents(flowServer, jobId, connection);
+      yield* handleSubscribeToFlowEvents(flowEngine, jobId, connection);
     }
 
     // Subscribe to upload events if this is an upload route
     if (isUploadRoute) {
-      yield* handleSubscribeToUploadEvents(uploadServer, uploadId, connection);
+      yield* handleSubscribeToUploadEvents(uploadEngine, uploadId, connection);
     }
 
     // Send connection confirmation
@@ -114,20 +114,20 @@ export const handleWebSocketMessage = (
  */
 export const handleWebSocketClose = (
   request: WebSocketConnectionRequest,
-  uploadServer: UploadServerShape,
-  flowServer: FlowServerShape,
+  uploadEngine: UploadEngineShape,
+  flowEngine: FlowEngineShape,
 ) => {
   const { isFlowRoute, isUploadRoute, jobId, uploadId } = request;
 
   return Effect.gen(function* () {
     // Unsubscribe from flow events if this was a flow route
     if (isFlowRoute) {
-      yield* handleUnsubscribeFromFlowEvents(flowServer, jobId);
+      yield* handleUnsubscribeFromFlowEvents(flowEngine, jobId);
     }
 
     // Unsubscribe from upload events if this was an upload route
     if (isUploadRoute) {
-      yield* handleUnsubscribeFromUploadEvents(uploadServer, uploadId);
+      yield* handleUnsubscribeFromUploadEvents(uploadEngine, uploadId);
     }
   }).pipe(
     Effect.catchAll((error) =>

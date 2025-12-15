@@ -114,7 +114,7 @@ export const createErrorResponseBody = (error: AdapterError) => ({
  * import { createUploadistaErrorResponseBody } from "@uploadista/server";
  *
  * try {
- *   const result = yield* uploadServer.handleUpload(input);
+ *   const result = yield* uploadEngine.handleUpload(input);
  * } catch (err) {
  *   if (err instanceof UploadistaError) {
  *     const errorResponse = createUploadistaErrorResponseBody(err);

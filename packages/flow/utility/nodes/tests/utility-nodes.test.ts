@@ -1,9 +1,6 @@
 import { describe, expect, it } from "@effect/vitest";
 import { UploadistaError } from "@uploadista/core/errors";
-import {
-  TestUploadServer,
-  TestZipPlugin,
-} from "@uploadista/core/testing";
+import { TestUploadEngine, TestZipPlugin } from "@uploadista/core/testing";
 import type { UploadFile } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
 import {
@@ -54,7 +51,7 @@ const createTestImageFile = (
 /**
  * Test layer combining all mocks
  */
-const TestLayer = Layer.mergeAll(TestUploadServer, TestZipPlugin);
+const TestLayer = Layer.mergeAll(TestUploadEngine, TestZipPlugin);
 
 describe("Utility Nodes", () => {
   describe("ConditionalNode", () => {

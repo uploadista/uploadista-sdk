@@ -108,7 +108,10 @@ export type AzureStore = DataStore<UploadFile> & {
   readStream: (
     id: string,
     config?: StreamingConfig,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
   getChunkerConstraints: () => {
     minChunkSize: number;
     maxChunkSize: number;
@@ -1277,7 +1280,10 @@ export function azureStore({
             Stream.runForEach((chunk) =>
               Effect.gen(function* () {
                 // Update total bytes
-                yield* Ref.update(totalBytesRef, (total) => total + chunk.length);
+                yield* Ref.update(
+                  totalBytesRef,
+                  (total) => total + chunk.length,
+                );
 
                 // Get current buffer and append new chunk
                 const currentBuffer = yield* Ref.get(bufferRef);
@@ -1290,7 +1296,10 @@ export function azureStore({
                 // Extract full blocks and keep remainder in buffer
                 let offset = 0;
                 while (combined.length - offset >= uploadBlockSize) {
-                  const blockData = combined.slice(offset, offset + uploadBlockSize);
+                  const blockData = combined.slice(
+                    offset,
+                    offset + uploadBlockSize,
+                  );
                   yield* stageBlock(blockData, false);
                   offset += uploadBlockSize;
                 }
@@ -1403,7 +1412,7 @@ export function azureStore({
       read,
       readStream,
       writeStream,
-      deleteExpired: deleteExpired(),
+      deleteExpired,
       getCapabilities,
       getChunkerConstraints,
       validateUploadStrategy,

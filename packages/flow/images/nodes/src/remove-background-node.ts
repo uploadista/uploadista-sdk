@@ -11,7 +11,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import { waitForUrlAvailability } from "./wait-for-url";
 
@@ -34,11 +34,19 @@ import { waitForUrlAvailability } from "./wait-for-url";
  */
 export function createRemoveBackgroundNode(
   id: string,
-  { credentialId, keepOutput, naming }: { credentialId?: string; keepOutput?: boolean; naming?: FileNamingConfig } = {},
+  {
+    credentialId,
+    keepOutput,
+    naming,
+  }: {
+    credentialId?: string;
+    keepOutput?: boolean;
+    naming?: FileNamingConfig;
+  } = {},
 ) {
   return Effect.gen(function* () {
     const imageAiService = yield* ImageAiPlugin;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode({
       id,
@@ -115,22 +123,19 @@ export function createRemoveBackgroundNode(
               ...naming,
               autoSuffix: naming.autoSuffix ?? (() => "nobg"),
             };
-            const namingContext = buildNamingContext(
-              file,
-              {
-                flowId,
-                jobId,
-                nodeId: id,
-                nodeType: "remove-background",
-              },
-            );
+            const namingContext = buildNamingContext(file, {
+              flowId,
+              jobId,
+              nodeId: id,
+              nodeType: "remove-background",
+            });
             outputFileName = applyFileNaming(file, namingContext, namingConfig);
           }
 
           yield* Effect.logInfo(`Uploading processed file to storage`);
 
           // Upload the transformed bytes back to the upload server with error handling
-          const result = yield* uploadServer
+          const result = yield* uploadEngine
             .uploadFromUrl(
               {
                 storageId,
@@ -173,7 +178,8 @@ export function createRemoveBackgroundNode(
                   fileName: outputFileName,
                   originalName: outputFileName,
                   name: outputFileName,
-                  extension: outputFileName.split(".").pop() || metadata.extension,
+                  extension:
+                    outputFileName.split(".").pop() || metadata.extension,
                 }),
               }
             : result.metadata;

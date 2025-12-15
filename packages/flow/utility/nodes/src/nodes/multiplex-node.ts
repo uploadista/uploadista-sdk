@@ -7,7 +7,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { type UploadFile, uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import type { MultiplexParams } from "@/types/multiplex-node";
 
@@ -16,7 +16,7 @@ export function createMultiplexNode(
   { outputCount: _outputCount, strategy }: MultiplexParams,
 ) {
   return Effect.gen(function* () {
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode<UploadFile, UploadFile>({
       id,
@@ -36,7 +36,7 @@ export function createMultiplexNode(
 
           if (strategy === "copy") {
             // For copy strategy, read and re-upload the file
-            const inputBytes = yield* uploadServer.read(
+            const inputBytes = yield* uploadEngine.read(
               normalizedFile.id,
               clientId,
             );
@@ -48,7 +48,7 @@ export function createMultiplexNode(
               },
             });
 
-            const result = yield* uploadServer.upload(
+            const result = yield* uploadEngine.upload(
               {
                 storageId,
                 size: inputBytes.byteLength,

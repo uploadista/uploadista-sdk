@@ -30,6 +30,7 @@ onlyBuiltDependencies:
   - nx
   - oxc-resolver
   - protobufjs
+  - react-native-nitro-modules
   - sharp
   - unrs-resolver
   - workerd

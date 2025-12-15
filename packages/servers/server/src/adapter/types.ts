@@ -1,4 +1,4 @@
-import type { FlowServer, UploadServer } from "@uploadista/core";
+import type { FlowEngine, UploadEngine } from "@uploadista/core";
 import type { Effect } from "effect";
 import type { UploadistaRequest, UploadistaResponse } from "../core/routes";
 import type { AuthResult } from "../types";
@@ -200,12 +200,12 @@ export interface ServerAdapter<
    *
    * @param ws - Framework-specific WebSocket object
    * @param ctx - Framework-specific context object (for initial handshake)
-   * @param context - Server context with baseUrl, uploadServer, and flowServer
+   * @param context - Server context with baseUrl, uploadEngine, and flowServer
    * @returns WebSocketHandler with callbacks for message, close, and error events
    */
   webSocketHandler(context: {
     baseUrl: string;
-  }): Effect.Effect<TWebSocketHandler, never, UploadServer | FlowServer>;
+  }): Effect.Effect<TWebSocketHandler, never, UploadEngine | FlowEngine>;
 
   /**
    * Optional: Extract waitUntil callback from the framework context.

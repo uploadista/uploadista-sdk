@@ -2,14 +2,11 @@ import { Effect, Stream } from "effect";
 import type { UploadistaError } from "../../errors";
 import type { StreamingConfig, UploadFile } from "../../types";
 import { DEFAULT_STREAMING_CONFIG, uploadFileSchema } from "../../types";
-import { UploadServer } from "../../upload";
+import { UploadEngine } from "../../upload";
 import { createFlowNode, NodeType } from "../node";
 import { completeNodeExecution, type FileNamingConfig } from "../types";
 import type { FlowCircuitBreakerConfig } from "../types/flow-types";
-import {
-  applyFileNaming,
-  buildNamingContext,
-} from "../utils/file-naming";
+import { applyFileNaming, buildNamingContext } from "../utils/file-naming";
 import { resolveUploadMetadata } from "../utils/resolve-upload-metadata";
 
 /**
@@ -231,7 +228,7 @@ export function createTransformNode({
   };
 
   return Effect.gen(function* () {
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode<UploadFile, UploadFile>({
       id,
@@ -277,8 +274,8 @@ export function createTransformNode({
               return false;
             }
 
-            // Check DataStore capabilities via UploadServer
-            const capabilities = yield* uploadServer.getCapabilities(
+            // Check DataStore capabilities via UploadEngine
+            const capabilities = yield* uploadEngine.getCapabilities(
               storageId,
               clientId,
             );
@@ -303,7 +300,7 @@ export function createTransformNode({
             yield* Effect.logDebug(`Using streaming transform for ${file.id}`);
 
             // Get input stream
-            const inputStream = yield* uploadServer.readStream(
+            const inputStream = yield* uploadEngine.readStream(
               file.id,
               clientId,
               effectiveStreamingConfig,
@@ -341,7 +338,7 @@ export function createTransformNode({
             }
 
             // Check if DataStore supports streaming writes
-            const capabilities = yield* uploadServer.getCapabilities(
+            const capabilities = yield* uploadEngine.getCapabilities(
               storageId,
               clientId,
             );
@@ -354,7 +351,7 @@ export function createTransformNode({
                 `Using streaming write for ${file.id} - no intermediate buffering`,
               );
 
-              result = yield* uploadServer.uploadStream(
+              result = yield* uploadEngine.uploadStream(
                 {
                   storageId,
                   uploadLengthDeferred: true,
@@ -402,7 +399,7 @@ export function createTransformNode({
                 },
               });
 
-              result = yield* uploadServer.upload(
+              result = yield* uploadEngine.upload(
                 {
                   storageId,
                   size: outputBytes.byteLength,
@@ -451,7 +448,7 @@ export function createTransformNode({
           }
 
           // Read input bytes from upload server
-          const inputBytes = yield* uploadServer.read(file.id, clientId);
+          const inputBytes = yield* uploadEngine.read(file.id, clientId);
 
           // Transform the bytes using the provided function
           const transformResult = yield* transform(inputBytes, file);
@@ -498,7 +495,7 @@ export function createTransformNode({
 
           // Upload the transformed bytes back to the upload server
           // Use output metadata if provided, otherwise fall back to original
-          const result = yield* uploadServer.upload(
+          const result = yield* uploadEngine.upload(
             {
               storageId,
               size: outputBytes.byteLength,

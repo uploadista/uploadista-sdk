@@ -46,22 +46,22 @@ export interface DragDropState {
   /**
    * Whether files are currently being dragged over the drop zone
    */
-  isDragging: boolean;
+  readonly isDragging: boolean;
 
   /**
    * Whether the drag is currently over the drop zone
    */
-  isOver: boolean;
+  readonly isOver: boolean;
 
   /**
    * Whether the dragged items are valid files
    */
-  isValid: boolean;
+  readonly isValid: boolean;
 
   /**
    * Current validation errors
    */
-  errors: string[];
+  readonly errors: readonly string[];
 }
 
 const initialState: DragDropState = {

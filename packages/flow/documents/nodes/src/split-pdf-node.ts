@@ -12,7 +12,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 
 export type SplitPdfNodeParams = {
@@ -30,7 +30,7 @@ export type SplitPdfNodeParams = {
 export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode({
       id,
@@ -55,7 +55,7 @@ export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
           );
 
           // Read file bytes from upload server
-          const fileBytes = yield* uploadServer.read(file.id, clientId);
+          const fileBytes = yield* uploadEngine.read(file.id, clientId);
 
           // Split PDF with error handling
           const result = yield* documentService
@@ -100,23 +100,29 @@ export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
             });
 
             // Generate output filename
-            let outputFileName = `${getBaseName(metadata?.fileName as string || "document")}-page-1.pdf`;
+            let outputFileName = `${getBaseName((metadata?.fileName as string) || "document")}-page-1.pdf`;
             if (params.naming) {
               const namingConfig: FileNamingConfig = {
                 ...params.naming,
-                autoSuffix: params.naming.autoSuffix ?? ((ctx) => `page-${ctx.pageNumber ?? 1}`),
+                autoSuffix:
+                  params.naming.autoSuffix ??
+                  ((ctx) => `page-${ctx.pageNumber ?? 1}`),
               };
               const namingContext = buildNamingContext(
                 file,
                 { flowId, jobId, nodeId: id, nodeType: "split-pdf" },
                 { pageNumber: 1 },
               );
-              const namedFile = applyFileNaming(file, namingContext, namingConfig);
+              const namedFile = applyFileNaming(
+                file,
+                namingContext,
+                namingConfig,
+              );
               outputFileName = `${getBaseName(namedFile)}.pdf`;
             }
 
             // Upload the split PDF back to the upload server
-            const uploadResult = yield* uploadServer.upload(
+            const uploadResult = yield* uploadEngine.upload(
               {
                 storageId: file.storage.id,
                 size: pdfBytes.byteLength,
@@ -163,23 +169,29 @@ export function createSplitPdfNode(id: string, params: SplitPdfNodeParams) {
           });
 
           // Generate output filename for range mode
-          let rangeOutputFileName = `${getBaseName(metadata?.fileName as string || "document")}-pages-${params.startPage}-${params.endPage}.pdf`;
+          let rangeOutputFileName = `${getBaseName((metadata?.fileName as string) || "document")}-pages-${params.startPage}-${params.endPage}.pdf`;
           if (params.naming) {
             const namingConfig: FileNamingConfig = {
               ...params.naming,
-              autoSuffix: params.naming.autoSuffix ?? ((ctx) => `pages-${params.startPage}-${params.endPage}`),
+              autoSuffix:
+                params.naming.autoSuffix ??
+                (() => `pages-${params.startPage}-${params.endPage}`),
             };
             const namingContext = buildNamingContext(
               file,
               { flowId, jobId, nodeId: id, nodeType: "split-pdf" },
               { startPage: params.startPage, endPage: params.endPage },
             );
-            const namedFile = applyFileNaming(file, namingContext, namingConfig);
+            const namedFile = applyFileNaming(
+              file,
+              namingContext,
+              namingConfig,
+            );
             rangeOutputFileName = `${getBaseName(namedFile)}.pdf`;
           }
 
           // Upload the split PDF back to the upload server
-          const uploadResult = yield* uploadServer.upload(
+          const uploadResult = yield* uploadEngine.upload(
             {
               storageId: file.storage.id,
               size: pdfBytes.byteLength,
