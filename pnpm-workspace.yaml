@@ -14,7 +14,7 @@ catalog:
   react-router-dom: 7.10.1
   tsdown: 0.17.4
   typescript: 5.9.3
-  zod: 4.1.13
+  zod: 4.2.0
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
