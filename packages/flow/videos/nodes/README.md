@@ -1,129 +1,163 @@
 # @uploadista/flow-videos-nodes
 
-Video processing nodes for Uploadista Flow. Transform, optimize, and extract metadata from video files in your flows.
+Video processing nodes for Uploadista flows. Transcode, resize, trim, and extract metadata from video files.
 
 ## Installation
 
 ```bash
 npm install @uploadista/flow-videos-nodes @uploadista/flow-videos-ffmpeg
+# or
+pnpm add @uploadista/flow-videos-nodes @uploadista/flow-videos-ffmpeg
 ```
 
 ## Quick Start
 
 ```typescript
-import { createFlow } from "@uploadista/core/flow";
-import { FFmpegVideoPluginLive } from "@uploadista/flow-videos-ffmpeg";
 import {
-  createTranscodeNode,
-  createResizeNode,
-  createThumbnailNode,
+  createTranscodeVideoNode,
+  createVideoResizeNode,
+  createVideoThumbnailNode,
+  createTrimVideoNode,
+  createDescribeVideoNode,
 } from "@uploadista/flow-videos-nodes";
-import { Effect } from "effect";
-
-// Create a video processing flow
-const flow = yield* createFlow({
-  nodes: [
-    // Transcode to WebM with VP9 codec
-    yield* createTranscodeNode("transcode-1", {
-      format: "webm",
-      codec: "vp9",
-      videoBitrate: "1000k",
-    }),
-
-    // Resize to 720p
-    yield* createResizeNode("resize-1", {
-      width: 1280,
-      height: 720,
-      aspectRatio: "keep",
-    }),
-
-    // Generate thumbnail at 5 seconds
-    yield* createThumbnailNode("thumbnail-1", {
-      timestamp: 5,
-      format: "jpeg",
-      quality: 85,
-    }),
-  ],
-  edges: [
-    { from: "input", to: "transcode-1" },
-    { from: "transcode-1", to: "resize-1" },
-    { from: "resize-1", to: "thumbnail-1" },
-    { from: "thumbnail-1", to: "output" },
-  ],
-});
-
-// Provide FFmpeg plugin layer to run the flow
-const result = await Effect.runPromise(
-  flowProgram.pipe(Effect.provide(FFmpegVideoPluginLive))
-);
 ```
 
-## Available Nodes
+## Node Types
 
 ### Transcode Node
 
-Convert between video formats and codecs.
+Convert video to different formats and codecs.
 
 ```typescript
-import { createTranscodeNode } from "@uploadista/flow-videos-nodes";
+import { createTranscodeVideoNode } from "@uploadista/flow-videos-nodes";
 
-const node = yield* createTranscodeNode("transcode-1", {
-  format: "mp4", // mp4 | webm | mov | avi
-  codec: "h264", // h264 | h265 | vp9 | av1
-  videoBitrate: "2M", // Optional
-  audioBitrate: "128k", // Optional
-  audioCodec: "aac", // Optional: aac | mp3 | opus | vorbis
+// Convert to WebM with VP9 codec
+const transcodeNode = yield* createTranscodeVideoNode("transcode-1", {
+  format: "webm",
+  codec: "vp9",
+  videoBitrate: "1000k",
+});
+
+// Convert to MP4 with H.264 for compatibility
+const mp4Node = yield* createTranscodeVideoNode("transcode-2", {
+  format: "mp4",
+  codec: "h264",
+  videoBitrate: "2M",
+  audioBitrate: "128k",
+  audioCodec: "aac",
+});
+
+// With streaming mode for large files
+const streamingNode = yield* createTranscodeVideoNode("transcode-3", {
+  format: "mp4",
+  codec: "h264",
+}, {
+  mode: "streaming",
+  naming: { mode: "auto" },
 });
 ```
 
-### Resize Node
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | `"mp4" \| "webm" \| "mov" \| "avi"` | Yes | Output container format |
+| `codec` | `"h264" \| "h265" \| "vp9" \| "av1"` | No | Video codec |
+| `videoBitrate` | `string` | No | Video bitrate (e.g., "1000k", "2M") |
+| `audioBitrate` | `string` | No | Audio bitrate (e.g., "128k", "192k") |
+| `audioCodec` | `"aac" \| "mp3" \| "opus" \| "vorbis"` | No | Audio codec |
+
+### Resize Video Node
 
 Change video resolution.
 
 ```typescript
-import { createResizeNode } from "@uploadista/flow-videos-nodes";
+import { createVideoResizeNode } from "@uploadista/flow-videos-nodes";
 
-const node = yield* createResizeNode("resize-1", {
-  width: 1920, // Target width (optional if height specified)
-  height: 1080, // Target height (optional if width specified)
-  aspectRatio: "keep", // "keep" | "ignore"
-  scaling: "bicubic", // "bicubic" | "bilinear" | "lanczos"
+// Resize to 720p
+const resizeNode = yield* createVideoResizeNode("resize-1", {
+  width: 1280,
+  height: 720,
+  aspectRatio: "keep",
+  scaling: "bicubic",
+});
+
+// Resize to 1080p width, auto height
+const widthOnlyNode = yield* createVideoResizeNode("resize-2", {
+  width: 1920,
+  aspectRatio: "keep",
 });
 ```
 
-### Trim Node
+#### Parameters
 
-Extract a segment from the video.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `width` | `number` | No* | Target width in pixels |
+| `height` | `number` | No* | Target height in pixels |
+| `aspectRatio` | `"keep" \| "ignore"` | No | Aspect ratio handling mode |
+| `scaling` | `"bicubic" \| "bilinear" \| "lanczos"` | No | Scaling algorithm quality |
+
+*At least one of `width` or `height` must be specified.
+
+### Trim Video Node
+
+Extract a segment from a video.
 
 ```typescript
-import { createTrimNode } from "@uploadista/flow-videos-nodes";
+import { createTrimVideoNode } from "@uploadista/flow-videos-nodes";
 
-// Using endTime
-const node1 = yield* createTrimNode("trim-1", {
-  startTime: 10, // Start at 10 seconds
-  endTime: 30, // End at 30 seconds
+// Extract segment using endTime
+const trimNode = yield* createTrimVideoNode("trim-1", {
+  startTime: 10,
+  endTime: 30,
 });
 
-// Using duration
-const node2 = yield* createTrimNode("trim-2", {
+// Extract segment using duration
+const durationNode = yield* createTrimVideoNode("trim-2", {
   startTime: 10,
-  duration: 20, // 20 seconds duration
+  duration: 20,
 });
 ```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `startTime` | `number` | Yes | Start time in seconds |
+| `endTime` | `number` | No | End time in seconds |
+| `duration` | `number` | No | Duration in seconds (alternative to endTime) |
+
+**Note:** Cannot specify both `endTime` and `duration`.
 
 ### Thumbnail Node
 
 Generate a preview image from the video.
 
 ```typescript
-import { createThumbnailNode } from "@uploadista/flow-videos-nodes";
+import { createVideoThumbnailNode } from "@uploadista/flow-videos-nodes";
 
-const node = yield* createThumbnailNode("thumbnail-1", {
-  timestamp: 15, // Extract frame at 15 seconds
-  format: "jpeg", // "jpeg" | "png"
-  quality: 85, // 1-100 (JPEG only)
+// Extract frame at 15 seconds as JPEG
+const thumbnailNode = yield* createVideoThumbnailNode("thumbnail-1", {
+  timestamp: 15,
+  format: "jpeg",
+  quality: 85,
+});
+
+// Extract frame as PNG
+const pngThumbNode = yield* createVideoThumbnailNode("thumbnail-2", {
+  timestamp: 5,
+  format: "png",
 });
 ```
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `timestamp` | `number` | Yes | - | Time position in seconds |
+| `format` | `"jpeg" \| "png"` | No | `"jpeg"` | Output image format |
+| `quality` | `number` (1-100) | No | - | JPEG quality (only for jpeg format) |
 
 ### Describe Video Node
 
@@ -132,71 +166,45 @@ Extract comprehensive video metadata.
 ```typescript
 import { createDescribeVideoNode } from "@uploadista/flow-videos-nodes";
 
-const node = yield* createDescribeVideoNode("describe-1");
+// Extract video metadata
+const describeNode = yield* createDescribeVideoNode("describe-1");
 
-// Metadata stored in file.metadata.videoInfo:
-// {
-//   duration: 120.5,
-//   width: 1920,
-//   height: 1080,
-//   codec: "h264",
-//   format: "mp4",
-//   bitrate: 2500000,
-//   frameRate: 30,
-//   aspectRatio: "16:9",
-//   hasAudio: true,
-//   audioCodec: "aac",
-//   audioBitrate: 128000,
-//   size: 37500000
-// }
+// Metadata stored in file.metadata.videoInfo
 ```
 
-## Common Patterns
+#### Parameters
 
-### Social Media Optimization
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `keepOutput` | `boolean` | No | `false` | Keep output in flow results |
 
-```typescript
-const flow = yield* createFlow({
-  nodes: [
-    yield* createResizeNode("resize", {
-      width: 1280,
-      height: 720,
-    }),
-    yield* createTranscodeNode("transcode", {
-      format: "mp4",
-      codec: "h264",
-      videoBitrate: "1500k",
-      audioBitrate: "128k",
-    }),
-  ],
-  edges: [
-    { from: "input", to: "resize" },
-    { from: "resize", to: "transcode" },
-    { from: "transcode", to: "output" },
-  ],
-});
+**Output Metadata:**
+```json
+{
+  "duration": 120.5,
+  "width": 1920,
+  "height": 1080,
+  "codec": "h264",
+  "format": "mp4",
+  "bitrate": 2500000,
+  "frameRate": 30,
+  "aspectRatio": "16:9",
+  "hasAudio": true,
+  "audioCodec": "aac",
+  "audioBitrate": 128000,
+  "size": 37500000
+}
 ```
 
-### Multi-Format Delivery
+## Streaming Modes
 
-Use conditional nodes to generate multiple formats:
+All video transform nodes support three processing modes:
 
-```typescript
-const flow = yield* createFlow({
-  nodes: [
-    yield* createMultiplexNode("multiplex", { outputs: 2 }),
-    yield* createTranscodeNode("mp4", { format: "mp4", codec: "h264" }),
-    yield* createTranscodeNode("webm", { format: "webm", codec: "vp9" }),
-  ],
-  edges: [
-    { from: "input", to: "multiplex" },
-    { from: "multiplex:0", to: "mp4" },
-    { from: "multiplex:1", to: "webm" },
-    { from: "mp4", to: "output-mp4" },
-    { from: "webm", to: "output-webm" },
-  ],
-});
-```
+| Mode | Description | When to Use |
+|------|-------------|-------------|
+| `auto` | Selects streaming for files > 10MB | Default, recommended |
+| `buffered` | Loads entire file into memory | Small files |
+| `streaming` | Processes file as chunks | Large files, memory-constrained |
 
 ## Requirements
 

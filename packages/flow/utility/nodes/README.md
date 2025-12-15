@@ -11,8 +11,6 @@ Utility nodes enable complex flow logic without custom code:
 - **Multiplex Node**: Split single input across multiple outputs
 - **Zip Node**: Archive multiple files together
 
-Perfect for building sophisticated upload workflows.
-
 ## Installation
 
 ```bash
@@ -24,266 +22,164 @@ pnpm add @uploadista/flow-utility-nodes
 ## Quick Start
 
 ```typescript
-import { conditionalNode, mergeNode, multiplexNode, zipNode } from "@uploadista/flow-utility-nodes";
-import { Effect } from "effect";
-
-// Route based on file properties
-const flow = {
-  nodes: [
-    { id: "input", type: "input" },
-    {
-      id: "router",
-      type: "conditional",
-      params: {
-        field: "mimeType",
-        operator: "contains",
-        value: "image",
-      },
-    },
-    { id: "output", type: "output" },
-  ],
-  edges: [
-    { from: "input", to: "router" },
-    { from: "router", to: "output" },
-  ],
-};
+import {
+  createConditionalNode,
+  createMergeNode,
+  createMultiplexNode,
+  createZipNode,
+} from "@uploadista/flow-utility-nodes";
 ```
-
-## Features
-
-- ✅ **Conditional Routing**: Route based on file properties
-- ✅ **Data Merging**: Combine multiple streams
-- ✅ **Multiplexing**: Split to multiple outputs
-- ✅ **Type Safe**: Full TypeScript support
-- ✅ **No Custom Code**: Visual flow building
 
 ## Node Types
 
 ### Conditional Node
 
-Route inputs based on file properties.
+Routes inputs based on file properties.
 
-**Parameters**:
 ```typescript
-{
-  field: "mimeType" | "size" | "width" | "height" | "extension",
-  operator: "equals" | "notEquals" | "greaterThan" | "lessThan" | "contains" | "startsWith",
-  value: string | number
-}
+import { createConditionalNode } from "@uploadista/flow-utility-nodes";
+
+// Route images > 1MB to compression
+const sizeRouter = createConditionalNode("size-router", {
+  field: "size",
+  operator: "greaterThan",
+  value: 1024 * 1024, // 1MB
+});
+
+// Route by MIME type
+const mimeRouter = createConditionalNode("mime-router", {
+  field: "mimeType",
+  operator: "contains",
+  value: "image",
+});
 ```
 
-**Example**: Route images to resize, documents to compress
-```typescript
-{
-  type: "conditional",
-  params: {
-    field: "mimeType",
-    operator: "contains",
-    value: "image",
-  },
-}
-```
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `field` | `"mimeType" \| "size" \| "width" \| "height" \| "extension"` | Yes | File property to evaluate |
+| `operator` | `"equals" \| "notEquals" \| "greaterThan" \| "lessThan" \| "contains" \| "startsWith"` | Yes | Comparison operator |
+| `value` | `string \| number` | Yes | Value to compare against |
 
 ### Merge Node
 
 Combine multiple inputs into batch.
 
-**Parameters**:
 ```typescript
-{
-  strategy: "concat" | "batch",
-  separator?: string,
-  inputCount: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
-}
+import { createMergeNode } from "@uploadista/flow-utility-nodes";
+
+// Concatenate 3 files into one
+const mergeNode = createMergeNode("file-merger", {
+  strategy: "concat",
+  inputCount: 3,
+});
+
+// Batch 5 uploads before processing
+const batchNode = createMergeNode("batch-collector", {
+  strategy: "batch",
+  inputCount: 5,
+  separator: "\n",
+});
 ```
 
-**Example**: Batch 5 uploads before processing
-```typescript
-{
-  type: "merge",
-  params: {
-    strategy: "batch",
-    inputCount: 5,
-  },
-}
-```
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `strategy` | `"concat" \| "batch"` | No | `"batch"` | Merge strategy |
+| `inputCount` | `number` (2-10) | No | `2` | Number of inputs to wait for |
+| `separator` | `string` | No | `"\n"` | Separator for concat strategy |
 
 ### Multiplex Node
 
 Split input to multiple independent paths.
 
-**Parameters**:
 ```typescript
-{
-  outputCount: 2 | 3 | 4 | 5
-}
+import { createMultiplexNode } from "@uploadista/flow-utility-nodes";
+
+// Send to 3 different destinations
+const multiplexNode = createMultiplexNode("multi-output", {
+  outputCount: 3,
+  strategy: "copy",
+});
+
+// Duplicate to 2 storage backends
+const backupNode = createMultiplexNode("backup-splitter", {
+  outputCount: 2,
+  strategy: "copy",
+});
 ```
 
-**Example**: Send to S3 and archive simultaneously
-```typescript
-{
-  type: "multiplex",
-  params: {
-    outputCount: 2,
-  },
-}
-```
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `outputCount` | `number` (1-10) | Yes | - | Number of output copies |
+| `strategy` | `"copy" \| "split"` | No | `"copy"` | `copy` duplicates the file, `split` divides it |
 
 ### Zip Node
 
-Archive multiple files (see `@uploadista/flow-utility-zipjs`).
+Archive multiple files into a ZIP.
+
+```typescript
+import { createZipNode } from "@uploadista/flow-utility-nodes";
+
+// Archive multiple files with metadata
+const zipNode = createZipNode("archiver", {
+  zipName: "backup.zip",
+  includeMetadata: true,
+  inputCount: 5,
+});
+
+// Simple archive
+const simpleZip = createZipNode("simple-archive", {
+  zipName: "files.zip",
+});
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `zipName` | `string` | No | `"archive.zip"` | Output ZIP filename |
+| `includeMetadata` | `boolean` | No | `false` | Include file metadata in archive |
+| `inputCount` | `number` (2-10) | No | `2` | Number of files to archive |
 
 ## Use Cases
 
 ### Case 1: Smart Routing
 
 ```
-Input → Conditional
-        ├─ Image → Resize
-        ├─ PDF → Compress
-        └─ Document → Archive
-        → Output
+Input -> Conditional
+         |-- Image -> Resize
+         |-- PDF -> Compress
+         +-- Document -> Archive
+         -> Output
 ```
 
 ### Case 2: Batch Processing
 
 ```
-Input 1 ┐
-Input 2 ├─ Merge (batch 3) → Process → Output
-Input 3 ┘
+Input 1 -+
+Input 2 -+-- Merge (batch 3) -> Process -> Output
+Input 3 -+
 ```
 
 ### Case 3: Multi-Destination
 
 ```
-Input → Multiplex ├─ Store to S3
-                  ├─ Archive to GCS
-                  └─ Notify Webhook
-```
-
-## API Reference
-
-All nodes exported from main entry point.
-
-```typescript
-import {
-  conditionalNode,
-  mergeNode,
-  multiplexNode,
-  zipNode,
-} from "@uploadista/flow-utility-nodes";
-```
-
-## Examples
-
-### Example 1: Image/Document Routing
-
-```typescript
-const flow = {
-  nodes: [
-    { id: "input", type: "input" },
-    {
-      id: "router",
-      type: "conditional",
-      params: {
-        field: "mimeType",
-        operator: "contains",
-        value: "image",
-      },
-    },
-    { id: "resize", type: "resize", params: { width: 800 } },
-    { id: "s3", type: "s3", params: { bucket: "images" } },
-    { id: "pdf-store", type: "s3", params: { bucket: "documents" } },
-    { id: "output", type: "output" },
-  ],
-  edges: [
-    { from: "input", to: "router" },
-    { from: "router", true: "resize", false: "pdf-store" },
-    { from: "resize", to: "s3" },
-    { from: "s3", to: "output" },
-    { from: "pdf-store", to: "output" },
-  ],
-};
-```
-
-### Example 2: Batch Processing
-
-```typescript
-const batchFlow = {
-  nodes: [
-    { id: "input1", type: "input" },
-    { id: "input2", type: "input" },
-    { id: "input3", type: "input" },
-    {
-      id: "merge",
-      type: "merge",
-      params: { strategy: "batch", inputCount: 3 },
-    },
-    { id: "process", type: "custom", params: {} },
-    { id: "output", type: "output" },
-  ],
-  edges: [
-    { from: "input1", to: "merge" },
-    { from: "input2", to: "merge" },
-    { from: "input3", to: "merge" },
-    { from: "merge", to: "process" },
-    { from: "process", to: "output" },
-  ],
-};
-```
-
-### Example 3: Multi-Path Distribution
-
-```typescript
-const multiPath = {
-  nodes: [
-    { id: "input", type: "input" },
-    { id: "split", type: "multiplex", params: { outputCount: 3 } },
-    { id: "s3", type: "s3", params: { bucket: "primary" } },
-    { id: "gcs", type: "gcs", params: { bucket: "backup" } },
-    { id: "archive", type: "zip", params: {} },
-    { id: "output", type: "output" },
-  ],
-  edges: [
-    { from: "input", to: "split" },
-    { from: "split", index: 0, to: "s3" },
-    { from: "split", index: 1, to: "gcs" },
-    { from: "split", index: 2, to: "archive" },
-    { from: "s3", to: "output" },
-    { from: "gcs", to: "output" },
-    { from: "archive", to: "output" },
-  ],
-};
-```
-
-## Configuration
-
-Nodes configured via `params` object in flow definition:
-
-```typescript
-{
-  id: "node-id",
-  type: "conditional",
-  params: {
-    field: "mimeType",
-    operator: "contains",
-    value: "image",
-  },
-}
+Input -> Multiplex -+-- Store to S3
+                    +-- Archive to GCS
+                    +-- Notify Webhook
 ```
 
 ## Related Packages
 
 - [@uploadista/core](../../core) - Core flow types
-- [@uploadista/flow-utility-zipjs](../zipjs) - Archive node
-- [@uploadista/flow-images-nodes](../images/nodes) - Image utilities
+- [@uploadista/flow-image-nodes](../images/nodes) - Image utilities
 - [@uploadista/server](../../servers/server) - Upload server
 
 ## License
 
 See [LICENSE](../../../LICENSE) in the main repository.
-
-## See Also
-
-- [FLOW_NODES.md](../FLOW_NODES.md) - Complete node gallery
-- [Server Setup Guide](../../../SERVER_SETUP.md) - Flow integration

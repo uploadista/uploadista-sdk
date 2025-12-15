@@ -8,6 +8,7 @@
     "dev": "turbo watch build --filter=\"./packages/**/*\"",
     "test": "turbo test --filter=\"./packages/**/*\"",
     "release": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm --filter \"./packages/**/*\" --filter !@uploadista/typescript-config publish --access restricted --no-git-checks",
+    "release:npm_only": "pnpm --filter \"./packages/**/*\" --filter !@uploadista/typescript-config publish --access restricted --no-git-checks",
     "release:no-build": "bumpp && pnpm -r publish --access restricted --no-git-checks --tag next",
     "release:canary": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access restricted --tag canary --no-git-checks",
     "pub": "pnpm --filter @uploadista/core publish --access restricted --no-git-checks",

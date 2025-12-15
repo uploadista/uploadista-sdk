@@ -1,6 +1,6 @@
 # @uploadista/flow-security-nodes
 
-Security processing nodes for Uploadista Flow, including virus scanning and malware detection.
+Security processing nodes for Uploadista flows. Includes virus scanning and malware detection.
 
 ## Installation
 
@@ -8,74 +8,94 @@ Security processing nodes for Uploadista Flow, including virus scanning and malw
 npm install @uploadista/flow-security-nodes
 # or
 pnpm add @uploadista/flow-security-nodes
-# or
-yarn add @uploadista/flow-security-nodes
 ```
 
-## Features
-
-- **Virus Scanning**: Scan files for viruses and malware using pluggable antivirus engines
-- **Configurable Actions**: Choose to fail flow or continue with metadata on virus detection
-- **Effect-based**: Built on Effect-TS for type-safe, composable error handling
-- **Plugin Architecture**: Support for multiple antivirus engines (ClamAV, cloud services, etc.)
-
-## Available Nodes
-
-### Scan Virus Node
-
-Scans files for viruses and malware. Requires a `VirusScanPlugin` implementation (e.g., `@uploadista/flow-security-clamscan`).
-
-#### Usage
+## Quick Start
 
 ```typescript
 import { createScanVirusNode } from "@uploadista/flow-security-nodes";
-import { Effect } from "effect";
+```
 
-const program = Effect.gen(function* () {
-  // Create a scan virus node that fails on detection
-  const scanNode = yield* createScanVirusNode("virus-scan-1", {
-    action: "fail", // Stop flow if virus detected
-    timeout: 60000, // 60 second timeout
-  });
+## Node Types
 
-  // Or create a node that passes with metadata
-  const auditNode = yield* createScanVirusNode("virus-scan-2", {
-    action: "pass", // Continue flow even if virus detected
-    timeout: 120000, // 2 minute timeout for large files
-  });
+### Scan Virus Node
+
+Scan files for viruses and malware using ClamAV.
+
+```typescript
+import { createScanVirusNode } from "@uploadista/flow-security-nodes";
+
+// Fail flow if virus detected (recommended for production)
+const scanNode = yield* createScanVirusNode("scan-1", {
+  action: "fail",
+  timeout: 60000,
+});
+
+// Continue with metadata (useful for logging/auditing)
+const auditNode = yield* createScanVirusNode("scan-2", {
+  action: "pass",
+  timeout: 120000,
+});
+
+// With keepOutput option
+const keepOutputNode = yield* createScanVirusNode("scan-3", {
+  action: "fail",
+}, {
+  keepOutput: true,
 });
 ```
 
 #### Parameters
 
-- `id` (required): Unique node identifier
-- `params` (optional): Configuration object
-  - `action`: `"fail"` | `"pass"` (default: `"fail"`)
-    - `"fail"`: Mark flow task as FAILED and stop processing when virus detected
-    - `"pass"`: Continue processing but add virus metadata to file
-  - `timeout`: Maximum scan time in milliseconds (default: 60000, max: 300000)
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `action` | `"fail" \| "pass"` | No | `"fail"` | Action when virus detected |
+| `timeout` | `number` (1000-300000) | No | `60000` | Max scan time in milliseconds |
 
-#### Scan Metadata
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `keepOutput` | `boolean` | `false` | Keep output in flow results |
+
+#### Actions
+
+| Action | Description |
+|--------|-------------|
+| `fail` | Stop flow execution when virus detected (recommended for production) |
+| `pass` | Continue processing with detection metadata (useful for logging/auditing) |
+
+#### Scan Results Metadata
 
 All scan results are stored in `file.metadata.virusScan`:
 
 ```typescript
 type VirusScanMetadata = {
-  scanned: boolean; // Whether file was scanned
-  isClean: boolean; // Whether file is clean (no viruses)
+  scanned: boolean;        // Whether file was scanned
+  isClean: boolean;        // Whether file is clean (no viruses)
   detectedViruses: string[]; // Array of detected virus names
-  scanDate: string; // ISO 8601 timestamp
-  engineVersion: string; // Antivirus engine version
+  scanDate: string;        // ISO 8601 timestamp
+  engineVersion: string;   // Antivirus engine version
   definitionsDate: string; // Virus definitions date
 };
 ```
 
-#### Example Flow
+#### Error Codes
+
+| Error Code | Description |
+|------------|-------------|
+| `VIRUS_DETECTED` | Malware found in file (when action=fail) |
+| `CLAMAV_NOT_INSTALLED` | ClamAV not available on system |
+| `VIRUS_SCAN_FAILED` | Generic scanning operation failure |
+| `SCAN_TIMEOUT` | Scanning exceeded timeout limit |
+
+## Example Flow
 
 ```typescript
 import { createFlow } from "@uploadista/core/flow";
 import { createScanVirusNode } from "@uploadista/flow-security-nodes";
 import { ClamScanPluginLayer } from "@uploadista/flow-security-clamscan";
+import { Effect } from "effect";
 
 const secureUploadFlow = createFlow({
   nodes: [
@@ -83,13 +103,13 @@ const secureUploadFlow = createFlow({
     createInputNode("input-1"),
 
     // 2. Scan for viruses - fail if infected
-    createScanVirusNode("scan-1", {
+    yield* createScanVirusNode("scan-1", {
       action: "fail",
       timeout: 60000,
     }),
 
     // 3. Process clean files
-    createImageResizeNode("resize-1", {
+    yield* createResizeNode("resize-1", {
       width: 1920,
       height: 1080,
     }),
@@ -107,22 +127,12 @@ const secureUploadFlow = createFlow({
 }).pipe(Effect.provide(ClamScanPluginLayer()));
 ```
 
-## Error Codes
-
-The scan virus node may return the following error codes:
-
-- `VIRUS_DETECTED`: Virus or malware detected in file (when `action: "fail"`)
-- `VIRUS_SCAN_FAILED`: Generic scanning operation failure
-- `CLAMAV_NOT_INSTALLED`: ClamAV or configured antivirus not available
-- `SCAN_TIMEOUT`: Scanning exceeded timeout limit
-
 ## Requirements
 
-This package requires a `VirusScanPlugin` implementation. See [@uploadista/flow-security-clamscan](../clamscan) for ClamAV support.
+- **VirusScanPlugin**: Required for scanning (e.g., `@uploadista/flow-security-clamscan`)
+- ClamAV installed on the system (daemon or binary)
 
-## TypeScript
-
-This package is written in TypeScript and includes full type definitions.
+See [@uploadista/flow-security-clamscan](../clamscan) for ClamAV plugin setup.
 
 ## License
 
