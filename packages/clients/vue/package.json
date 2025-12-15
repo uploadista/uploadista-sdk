@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/vue",
   "type": "module",
-  "version": "0.0.20-beta.7",
+  "version": "0.0.20-beta.8",
   "description": "Vue client for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
