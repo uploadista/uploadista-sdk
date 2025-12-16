@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/client-browser",
   "type": "module",
-  "version": "0.0.20-beta.8",
+  "version": "0.0.20-beta.9",
   "description": "Browser client for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
