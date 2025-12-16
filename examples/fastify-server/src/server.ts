@@ -5,8 +5,13 @@ import staticPlugin from "@fastify/static";
 import websocket from "@fastify/websocket";
 import { fastifyAdapter } from "@uploadista/adapters-fastify";
 import { fileStore } from "@uploadista/data-store-filesystem";
+import { documentPlugin } from "@uploadista/flow-documents-plugin";
+import { documentAiPlugin } from "@uploadista/flow-documents-replicate";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
+import { virusScanPlugin } from "@uploadista/flow-security-clamscan";
+import { zipPlugin } from "@uploadista/flow-utility-zipjs";
+import { videoPlugin } from "@uploadista/flow-videos-av-node";
 import { fileKvStore } from "@uploadista/kv-store-filesystem";
 import { createUploadistaServer } from "@uploadista/server";
 import dotenv from "dotenv";
@@ -81,7 +86,15 @@ async function startServer() {
     kvStore,
     dataStore,
     flows,
-    plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
+    plugins: [
+      imagePlugin(),
+      imageAiPlugin(process.env.REPLICATE_API_TOKEN),
+      zipPlugin(),
+      videoPlugin(),
+      virusScanPlugin(),
+      documentPlugin(),
+      documentAiPlugin(process.env.REPLICATE_API_TOKEN),
+    ],
     adapter: fastifyAdapter({}),
   });
 

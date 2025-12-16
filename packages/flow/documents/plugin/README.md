@@ -1,4 +1,4 @@
-# @uploadista/flow-documents-combined
+# @uploadista/flow-documents-plugin
 
 Combined DocumentPlugin implementation using both pdf-lib and unpdf.
 
@@ -11,19 +11,19 @@ Combined DocumentPlugin implementation using both pdf-lib and unpdf.
 ## Installation
 
 ```bash
-pnpm add @uploadista/flow-documents-combined
+pnpm add @uploadista/flow-documents-plugin
 ```
 
 ## Usage
 
 ```typescript
-import { CombinedDocumentPluginLive } from "@uploadista/flow-documents-combined";
+import { documentPlugin } from "@uploadista/flow-documents-plugin";
 import { Effect } from "effect";
 
 // Provide the combined plugin to your flow execution
 const program = Effect.gen(function* () {
   // Your flow logic here - all DocumentPlugin operations work
-}).pipe(Effect.provide(CombinedDocumentPluginLive));
+}).pipe(Effect.provide(documentPlugin));
 ```
 
 ## Why Use This?

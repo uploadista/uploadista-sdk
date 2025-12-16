@@ -26,8 +26,13 @@ import { createClient } from "@redis/client";
 import { honoAdapter } from "@uploadista/adapters-hono";
 import { s3Store } from "@uploadista/data-store-s3";
 import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
+import { documentPlugin } from "@uploadista/flow-documents-plugin";
+import { documentAiPlugin } from "@uploadista/flow-documents-replicate";
 import { imageAiPlugin } from "@uploadista/flow-images-replicate";
 import { imagePlugin } from "@uploadista/flow-images-sharp";
+import { virusScanPlugin } from "@uploadista/flow-security-clamscan";
+import { zipPlugin } from "@uploadista/flow-utility-zipjs";
+import { videoPlugin } from "@uploadista/flow-videos-av-node";
 import { redisKvStore } from "@uploadista/kv-store-redis";
 import { OtlpNodeSdkLive } from "@uploadista/observability";
 import { createUploadistaServer } from "@uploadista/server";
@@ -108,7 +113,15 @@ if (isObservabilityEnabled) {
 const uploadistaServer = await createUploadistaServer({
   dataStore,
   flows,
-  plugins: [imagePlugin, imageAiPlugin(process.env.REPLICATE_API_TOKEN)],
+  plugins: [
+    imagePlugin(),
+    imageAiPlugin(process.env.REPLICATE_API_TOKEN),
+    zipPlugin(),
+    videoPlugin(),
+    virusScanPlugin(),
+    documentPlugin(),
+    documentAiPlugin(process.env.REPLICATE_API_TOKEN),
+  ],
   kvStore,
   eventBroadcaster,
   adapter: honoAdapter(),

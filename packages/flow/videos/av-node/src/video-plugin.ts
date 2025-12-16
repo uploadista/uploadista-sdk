@@ -38,7 +38,7 @@ function isInputStream(
 /**
  * Creates a node-av based video processing plugin
  */
-export function createAVNodeVideoPlugin(): VideoPluginShape {
+export function createVideoPlugin(): VideoPluginShape {
   return {
     describe: (input) =>
       Effect.tryPromise({

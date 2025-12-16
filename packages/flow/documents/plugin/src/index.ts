@@ -1,1 +1,1 @@
-export { DocumentPluginLive, documentPlugin } from "./document-plugin";
+export { documentPlugin } from "./document-plugin";

@@ -79,7 +79,7 @@ app.use("*", async (c, next) => {
   const dataStore = r2Store({
     deliveryUrl: c.env.R2_DELIVERY_URL,
     bucket: c.env.R2_BUCKET,
-    r2Bucket: bucket as any,
+    r2Bucket: bucket,
   });
 
   // Create the uploadista server with Durable Objects adapter

@@ -4,7 +4,7 @@ import { withOperationSpan } from "@uploadista/observability";
 import { Effect, Layer } from "effect";
 import JSZip from "jszip";
 
-export const zipJsPlugin = () => {
+export const zipPlugin = () => {
   return Layer.succeed(
     ZipPlugin,
     ZipPlugin.of({

@@ -222,6 +222,12 @@ importers:
       '@uploadista/example-flows':
         specifier: workspace:*
         version: link:../flows
+      '@uploadista/flow-documents-plugin':
+        specifier: workspace:*
+        version: link:../../packages/flow/documents/plugin
+      '@uploadista/flow-documents-replicate':
+        specifier: workspace:*
+        version: link:../../packages/flow/documents/replicate
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -234,6 +240,15 @@ importers:
       '@uploadista/flow-images-sharp':
         specifier: workspace:*
         version: link:../../packages/flow/images/sharp
+      '@uploadista/flow-security-clamscan':
+        specifier: workspace:*
+        version: link:../../packages/flow/security/clamscan
+      '@uploadista/flow-utility-zipjs':
+        specifier: workspace:*
+        version: link:../../packages/flow/utility/zipjs
+      '@uploadista/flow-videos-av-node':
+        specifier: workspace:*
+        version: link:../../packages/flow/videos/av-node
       '@uploadista/kv-store-filesystem':
         specifier: workspace:*
         version: link:../../packages/kv-stores/filesystem
@@ -319,6 +334,12 @@ importers:
       '@uploadista/example-flows':
         specifier: workspace:*
         version: link:../flows
+      '@uploadista/flow-documents-plugin':
+        specifier: workspace:*
+        version: link:../../packages/flow/documents/plugin
+      '@uploadista/flow-documents-replicate':
+        specifier: workspace:*
+        version: link:../../packages/flow/documents/replicate
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -331,6 +352,15 @@ importers:
       '@uploadista/flow-images-sharp':
         specifier: workspace:*
         version: link:../../packages/flow/images/sharp
+      '@uploadista/flow-security-clamscan':
+        specifier: workspace:*
+        version: link:../../packages/flow/security/clamscan
+      '@uploadista/flow-utility-zipjs':
+        specifier: workspace:*
+        version: link:../../packages/flow/utility/zipjs
+      '@uploadista/flow-videos-av-node':
+        specifier: workspace:*
+        version: link:../../packages/flow/videos/av-node
       '@uploadista/kv-store-filesystem':
         specifier: workspace:*
         version: link:../../packages/kv-stores/filesystem
@@ -487,6 +517,12 @@ importers:
       '@uploadista/example-flows':
         specifier: workspace:*
         version: link:../flows
+      '@uploadista/flow-documents-plugin':
+        specifier: workspace:*
+        version: link:../../packages/flow/documents/plugin
+      '@uploadista/flow-documents-replicate':
+        specifier: workspace:*
+        version: link:../../packages/flow/documents/replicate
       '@uploadista/flow-images-nodes':
         specifier: workspace:*
         version: link:../../packages/flow/images/nodes
@@ -499,6 +535,15 @@ importers:
       '@uploadista/flow-images-sharp':
         specifier: workspace:*
         version: link:../../packages/flow/images/sharp
+      '@uploadista/flow-security-clamscan':
+        specifier: workspace:*
+        version: link:../../packages/flow/security/clamscan
+      '@uploadista/flow-utility-zipjs':
+        specifier: workspace:*
+        version: link:../../packages/flow/utility/zipjs
+      '@uploadista/flow-videos-av-node':
+        specifier: workspace:*
+        version: link:../../packages/flow/videos/av-node
       '@uploadista/kv-store-filesystem':
         specifier: workspace:*
         version: link:../../packages/kv-stores/filesystem
@@ -843,6 +888,9 @@ importers:
 
   packages/clients/react-native-bare:
     dependencies:
+      '@react-native-async-storage/async-storage':
+        specifier: '>=1.19.0'
+        version: 2.2.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.1.0))
       '@react-native-documents/picker':
         specifier: '>=10.0.0'
         version: 11.0.0(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.1.0))(react@19.1.0)
@@ -865,7 +913,7 @@ importers:
         specifier: '>=7.0.0'
         version: 8.2.1(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.1.0))(react@19.1.0)
       react-native-quick-crypto:
-        specifier: '>=1.0.0'
+        specifier: '>=0.7.0'
         version: 1.0.6(expo@54.0.25)(react-native-nitro-modules@0.31.10(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.7)(react@19.1.0))(react@19.1.0)
       rn-fetch-blob:
         specifier: '>=0.12.0'
