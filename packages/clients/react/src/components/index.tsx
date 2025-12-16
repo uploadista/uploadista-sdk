@@ -57,6 +57,38 @@ export type {
 } from "./upload-zone";
 export { SimpleUploadZone, UploadZone } from "./upload-zone";
 
+// Upload Primitives (NEW compound component)
+export {
+  Upload,
+  useUploadContext,
+  useUploadItemContext,
+} from "./upload-primitives";
+export type {
+  MultiUploadState,
+  UploadCancelProps,
+  UploadClearCompletedProps,
+  UploadContextValue,
+  UploadDropZoneProps,
+  UploadDropZoneRenderProps,
+  UploadErrorProps,
+  UploadErrorRenderProps,
+  UploadItem,
+  UploadItemContextValue,
+  UploadItemProps,
+  UploadItemsProps,
+  UploadItemsRenderProps,
+  UploadProgressProps,
+  UploadProgressRenderProps,
+  UploadProps,
+  UploadResetProps,
+  UploadRetryProps,
+  UploadStartAllProps,
+  UploadState,
+  UploadStatus,
+  UploadStatusProps,
+  UploadStatusRenderProps,
+} from "./upload-primitives";
+
 // Context Components
 export {
   UploadistaProvider,
