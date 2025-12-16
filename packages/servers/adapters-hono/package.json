@@ -46,7 +46,7 @@
     "hono": "^4.0.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.15",
+    "vitest": "4.0.16",
     "zod": "catalog:"
   }
 }

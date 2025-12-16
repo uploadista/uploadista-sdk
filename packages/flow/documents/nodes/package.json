@@ -40,7 +40,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.15",
+    "vitest": "4.0.16",
     "zod": "catalog:"
   }
 }
