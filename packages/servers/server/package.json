@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/server",
   "type": "module",
-  "version": "0.0.20-beta.9",
+  "version": "0.0.20",
   "description": "Core Server package for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
