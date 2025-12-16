@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { UploadFile } from "@uploadista/core";
 import { useMultiUpload } from "@uploadista/vue";
 import { computed } from "vue";
 import FilePreview from "./FilePreview.vue";
@@ -213,7 +214,7 @@ const handleFileChange = (event: Event) => {
           <FilePreview
             v-if="item.state.result && isBrowserFile(item.file)"
             :file="item.file"
-            :result="item.state.result ?? undefined"
+            :result="(item.state.result as UploadFile) ?? undefined"
           />
         </article>
       </div>

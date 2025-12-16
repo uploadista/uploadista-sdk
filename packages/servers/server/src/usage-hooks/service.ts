@@ -6,12 +6,12 @@
 
 import { Context, Effect, Layer } from "effect";
 import type {
+  FlowUsageContext,
+  UploadUsageContext,
   UsageHookConfig,
   UsageHookResult,
-  UploadUsageContext,
-  FlowUsageContext,
 } from "./types";
-import { DEFAULT_USAGE_HOOK_TIMEOUT, continueResult } from "./types";
+import { continueResult, DEFAULT_USAGE_HOOK_TIMEOUT } from "./types";
 
 /**
  * Usage Hook Service
@@ -70,22 +70,20 @@ export const UsageHookServiceLive = (
         return Effect.succeed(continueResult());
       }
 
-      return hooks
-        .onUploadStart(ctx)
-        .pipe(
-          // Add timeout - proceed on timeout (fail-open)
-          Effect.timeout(timeout),
-          Effect.map((result) => result ?? continueResult()),
-          // On any error, log and continue (fail-open for availability)
-          Effect.catchAll((error) =>
-            Effect.gen(function* () {
-              yield* Effect.logWarning(
-                `onUploadStart hook failed: ${error}. Proceeding with upload.`,
-              );
-              return continueResult();
-            }),
-          ),
-        );
+      return hooks.onUploadStart(ctx).pipe(
+        // Add timeout - proceed on timeout (fail-open)
+        Effect.timeout(timeout),
+        Effect.map((result) => result ?? continueResult()),
+        // On any error, log and continue (fail-open for availability)
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Effect.logWarning(
+              `onUploadStart hook failed: ${error}. Proceeding with upload.`,
+            );
+            return continueResult();
+          }),
+        ),
+      );
     },
 
     onUploadComplete: (ctx: UploadUsageContext) => {
@@ -93,19 +91,17 @@ export const UsageHookServiceLive = (
         return Effect.void;
       }
 
-      return hooks
-        .onUploadComplete(ctx)
-        .pipe(
-          // Add timeout
-          Effect.timeout(timeout),
-          Effect.asVoid,
-          // On any error, just log (fire-and-forget)
-          Effect.catchAll((error) =>
-            Effect.logWarning(
-              `onUploadComplete hook failed: ${error}. Upload already completed.`,
-            ),
+      return hooks.onUploadComplete(ctx).pipe(
+        // Add timeout
+        Effect.timeout(timeout),
+        Effect.asVoid,
+        // On any error, just log (fire-and-forget)
+        Effect.catchAll((error) =>
+          Effect.logWarning(
+            `onUploadComplete hook failed: ${error}. Upload already completed.`,
           ),
-        );
+        ),
+      );
     },
 
     onFlowStart: (ctx: FlowUsageContext) => {
@@ -113,22 +109,20 @@ export const UsageHookServiceLive = (
         return Effect.succeed(continueResult());
       }
 
-      return hooks
-        .onFlowStart(ctx)
-        .pipe(
-          // Add timeout - proceed on timeout (fail-open)
-          Effect.timeout(timeout),
-          Effect.map((result) => result ?? continueResult()),
-          // On any error, log and continue (fail-open for availability)
-          Effect.catchAll((error) =>
-            Effect.gen(function* () {
-              yield* Effect.logWarning(
-                `onFlowStart hook failed: ${error}. Proceeding with flow.`,
-              );
-              return continueResult();
-            }),
-          ),
-        );
+      return hooks.onFlowStart(ctx).pipe(
+        // Add timeout - proceed on timeout (fail-open)
+        Effect.timeout(timeout),
+        Effect.map((result) => result ?? continueResult()),
+        // On any error, log and continue (fail-open for availability)
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Effect.logWarning(
+              `onFlowStart hook failed: ${error}. Proceeding with flow.`,
+            );
+            return continueResult();
+          }),
+        ),
+      );
     },
 
     onFlowComplete: (ctx: FlowUsageContext) => {
@@ -136,19 +130,17 @@ export const UsageHookServiceLive = (
         return Effect.void;
       }
 
-      return hooks
-        .onFlowComplete(ctx)
-        .pipe(
-          // Add timeout
-          Effect.timeout(timeout),
-          Effect.asVoid,
-          // On any error, just log (fire-and-forget)
-          Effect.catchAll((error) =>
-            Effect.logWarning(
-              `onFlowComplete hook failed: ${error}. Flow already completed.`,
-            ),
+      return hooks.onFlowComplete(ctx).pipe(
+        // Add timeout
+        Effect.timeout(timeout),
+        Effect.asVoid,
+        // On any error, just log (fire-and-forget)
+        Effect.catchAll((error) =>
+          Effect.logWarning(
+            `onFlowComplete hook failed: ${error}. Flow already completed.`,
           ),
-        );
+        ),
+      );
     },
   });
 };

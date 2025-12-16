@@ -4,10 +4,16 @@ import type {
   DataStore,
   DataStoreCapabilities,
   DataStoreWriteOptions,
+  StreamingConfig,
+  StreamWriteOptions,
+  StreamWriteResult,
   UploadFile,
   UploadStrategy,
 } from "@uploadista/core/types";
-import { UploadFileKVStore } from "@uploadista/core/types";
+import {
+  DEFAULT_STREAMING_CONFIG,
+  UploadFileKVStore,
+} from "@uploadista/core/types";
 import {
   s3ActiveUploadsGauge as activeUploadsGauge,
   s3FileSizeHistogram as fileSizeHistogram,
@@ -863,6 +869,8 @@ export function createR2Store(config: R2StoreConfig) {
       supportsDeferredLength: true,
       supportsResumableUploads: true,
       supportsTransactionalUploads: true,
+      supportsStreamingRead: true, // Supports streaming reads via R2 getObject
+      supportsStreamingWrite: true, // Supports streaming writes via R2 multipart upload
       maxConcurrentUploads: maxConcurrentPartUploads,
       minChunkSize: minPartSize,
       maxChunkSize: 5_368_709_120, // 5GiB S3 limit
@@ -937,6 +945,322 @@ export function createR2Store(config: R2StoreConfig) {
         return yield* Effect.promise(() => streamToArray(stream));
       });
 
+    /**
+     * Reads file content as a stream of chunks for memory-efficient processing.
+     * Uses R2 getObject and converts the response body to an Effect Stream.
+     *
+     * @param id - The unique identifier of the file to read
+     * @param config - Optional streaming configuration (chunk size)
+     * @returns An Effect that resolves to a Stream of byte chunks
+     */
+    const readStream = (id: string, config?: StreamingConfig) =>
+      Effect.gen(function* () {
+        const upload = yield* kvStore.get(id);
+        if (!upload.id) {
+          return yield* Effect.fail(
+            UploadistaError.fromCode(
+              "FILE_READ_ERROR",
+              new Error("Upload Key is undefined"),
+            ),
+          );
+        }
+
+        // Merge config with defaults
+        const effectiveConfig = {
+          ...DEFAULT_STREAMING_CONFIG,
+          ...config,
+        };
+
+        const s3Key = getS3Key(upload);
+        const webStream = yield* r2Client.getObject(s3Key);
+
+        // Convert Web ReadableStream to Effect Stream with configured chunk size
+        return Stream.async<Uint8Array, UploadistaError>((emit) => {
+          const reader = webStream.getReader();
+          const chunkSize = effectiveConfig.chunkSize;
+          let buffer = new Uint8Array(0);
+
+          const processChunk = async () => {
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                  // Emit any remaining data in buffer
+                  if (buffer.length > 0) {
+                    emit.single(buffer);
+                  }
+                  emit.end();
+                  return;
+                }
+
+                if (value) {
+                  // Combine buffer with new value
+                  const combined = new Uint8Array(buffer.length + value.length);
+                  combined.set(buffer);
+                  combined.set(value, buffer.length);
+                  buffer = combined;
+
+                  // Emit chunks of the configured size
+                  while (buffer.length >= chunkSize) {
+                    const chunk = buffer.slice(0, chunkSize);
+                    buffer = buffer.slice(chunkSize);
+                    emit.single(chunk);
+                  }
+                }
+              }
+            } catch (error) {
+              emit.fail(
+                new UploadistaError({
+                  code: "FILE_READ_ERROR",
+                  status: 500,
+                  body: "Failed to read R2 object stream",
+                  details: `R2 stream read failed: ${String(error)}`,
+                }),
+              );
+            }
+          };
+
+          // Start processing
+          processChunk();
+
+          // Cleanup function
+          return Effect.sync(() => {
+            reader.releaseLock();
+          });
+        });
+      });
+
+    /**
+     * Writes file content from a stream without knowing the final size upfront.
+     * Uses R2 multipart upload (S3-compatible) to stream content as parts are buffered.
+     *
+     * @param fileId - The unique identifier for the file
+     * @param options - Stream write options including the Effect Stream
+     * @returns StreamWriteResult with final size after stream completes
+     */
+    const writeStream = (
+      fileId: string,
+      options: StreamWriteOptions,
+    ): Effect.Effect<StreamWriteResult, UploadistaError> =>
+      withTimingMetrics(
+        uploadDurationHistogram,
+        Effect.gen(function* () {
+          const startTime = Date.now();
+          const r2Key = fileId;
+
+          yield* Effect.logInfo("Starting streaming write to R2").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              r2_key: r2Key,
+              size_hint: options.sizeHint,
+            }),
+          );
+
+          yield* uploadRequestsTotal(Effect.succeed(1));
+          yield* activeUploadsGauge(Effect.succeed(1));
+
+          // Calculate optimal part size based on size hint or use default
+          const uploadPartSize = options.sizeHint
+            ? calcOptimalPartSize(
+                options.sizeHint,
+                preferredPartSize,
+                minPartSize,
+                maxMultipartParts,
+              )
+            : preferredPartSize;
+
+          // Create multipart upload
+          const multipartInfo = yield* r2Client.createMultipartUpload({
+            bucket: r2Client.bucket,
+            key: r2Key,
+            uploadId: "", // Not needed for create
+            contentType: options.contentType,
+          });
+
+          const uploadId = multipartInfo.uploadId;
+
+          yield* Effect.logInfo("Multipart upload created for streaming write").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              r2_upload_id: uploadId,
+              r2_key: r2Key,
+              part_size: uploadPartSize,
+            }),
+          );
+
+          // Track parts and total bytes
+          const partsRef = yield* Ref.make<R2UploadedPart[]>([]);
+          const totalBytesRef = yield* Ref.make(0);
+          const partNumberRef = yield* Ref.make(1);
+          const bufferRef = yield* Ref.make(new Uint8Array(0));
+
+          // Helper to upload a part
+          const uploadBufferedPart = (data: Uint8Array, isFinalPart: boolean) =>
+            Effect.gen(function* () {
+              if (data.length === 0) {
+                return;
+              }
+
+              // Only upload if we have enough data or it's the final part
+              if (data.length < minPartSize && !isFinalPart) {
+                return;
+              }
+
+              const partNumber = yield* Ref.getAndUpdate(
+                partNumberRef,
+                (n) => n + 1,
+              );
+
+              yield* Effect.logDebug("Uploading part from stream").pipe(
+                Effect.annotateLogs({
+                  upload_id: fileId,
+                  part_number: partNumber,
+                  part_size: data.length,
+                  is_final_part: isFinalPart,
+                }),
+              );
+
+              const etag = yield* r2Client
+                .uploadPart({
+                  bucket: r2Client.bucket,
+                  key: r2Key,
+                  uploadId,
+                  partNumber,
+                  data,
+                })
+                .pipe(
+                  Effect.retry(
+                    Schedule.exponential("1 second", 2.0).pipe(
+                      Schedule.intersect(Schedule.recurs(3)),
+                    ),
+                  ),
+                );
+
+              yield* Ref.update(partsRef, (parts) => [
+                ...parts,
+                { partNumber, etag, size: data.length },
+              ]);
+              yield* uploadPartsTotal(Effect.succeed(1));
+              yield* partSizeHistogram(Effect.succeed(data.length));
+            });
+
+          // Process stream chunks
+          yield* options.stream.pipe(
+            Stream.runForEach((chunk) =>
+              Effect.gen(function* () {
+                // Update total bytes
+                yield* Ref.update(totalBytesRef, (total) => total + chunk.length);
+
+                // Get current buffer and append new chunk
+                const currentBuffer = yield* Ref.get(bufferRef);
+                const combined = new Uint8Array(
+                  currentBuffer.length + chunk.length,
+                );
+                combined.set(currentBuffer);
+                combined.set(chunk, currentBuffer.length);
+
+                // Extract full parts and keep remainder in buffer
+                let offset = 0;
+                while (combined.length - offset >= uploadPartSize) {
+                  const partData = combined.slice(offset, offset + uploadPartSize);
+                  yield* uploadBufferedPart(partData, false);
+                  offset += uploadPartSize;
+                }
+
+                // Store remaining data in buffer
+                yield* Ref.set(bufferRef, combined.slice(offset));
+              }),
+            ),
+          );
+
+          // Upload any remaining data as final part
+          const remainingBuffer = yield* Ref.get(bufferRef);
+          if (remainingBuffer.length > 0) {
+            yield* uploadBufferedPart(remainingBuffer, true);
+          }
+
+          // Get all parts and complete the upload
+          const parts = yield* Ref.get(partsRef);
+          const totalBytes = yield* Ref.get(totalBytesRef);
+
+          if (parts.length === 0) {
+            // No parts uploaded (empty stream) - abort and fail
+            yield* r2Client.abortMultipartUpload({
+              bucket: r2Client.bucket,
+              key: r2Key,
+              uploadId,
+            });
+            yield* activeUploadsGauge(Effect.succeed(-1));
+            return yield* Effect.fail(
+              new UploadistaError({
+                code: "FILE_WRITE_ERROR",
+                status: 400,
+                body: "Cannot complete upload with no data",
+                details: "The stream provided no data to upload",
+              }),
+            );
+          }
+
+          // Sort parts by part number for completion
+          parts.sort((a, b) => (a.partNumber ?? 0) - (b.partNumber ?? 0));
+
+          yield* r2Client.completeMultipartUpload(
+            {
+              bucket: r2Client.bucket,
+              key: r2Key,
+              uploadId,
+            },
+            parts,
+          );
+
+          // Log completion metrics
+          const endTime = Date.now();
+          const totalDurationMs = endTime - startTime;
+          const throughputBps =
+            totalDurationMs > 0 ? (totalBytes * 1000) / totalDurationMs : 0;
+          const averagePartSize =
+            parts.length > 0 ? totalBytes / parts.length : undefined;
+
+          yield* logS3UploadCompletion(fileId, {
+            fileSize: totalBytes,
+            totalDurationMs,
+            partsCount: parts.length,
+            averagePartSize,
+            throughputBps,
+          });
+
+          yield* uploadSuccessTotal(Effect.succeed(1));
+          yield* activeUploadsGauge(Effect.succeed(-1));
+          yield* fileSizeHistogram(Effect.succeed(totalBytes));
+
+          yield* Effect.logInfo("Streaming write to R2 completed").pipe(
+            Effect.annotateLogs({
+              upload_id: fileId,
+              total_bytes: totalBytes,
+              parts_count: parts.length,
+              duration_ms: totalDurationMs,
+            }),
+          );
+
+          return {
+            id: r2Key,
+            size: totalBytes,
+            path: r2Key,
+            bucket: r2Client.bucket,
+            url: `${deliveryUrl}/${r2Key}`,
+          } satisfies StreamWriteResult;
+        }).pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* uploadErrorsTotal(Effect.succeed(1));
+              yield* activeUploadsGauge(Effect.succeed(-1));
+              return yield* Effect.fail(error);
+            }),
+          ),
+        ),
+      );
+
     return {
       bucket,
       create,
@@ -944,6 +1268,8 @@ export function createR2Store(config: R2StoreConfig) {
       write,
       getUpload,
       read,
+      readStream,
+      writeStream,
       deleteExpired,
       getCapabilities,
       getChunkerConstraints,

@@ -190,7 +190,10 @@ export type DlqListResponse = UploadistaStandardResponse<
 export type DlqGetRequest = UploadistaRoute<"dlq-get"> & {
   itemId: string;
 };
-export type DlqGetResponse = UploadistaStandardResponse<"dlq-get", DeadLetterItem>;
+export type DlqGetResponse = UploadistaStandardResponse<
+  "dlq-get",
+  DeadLetterItem
+>;
 
 export type DlqRetryRequest = UploadistaRoute<"dlq-retry"> & {
   itemId: string;

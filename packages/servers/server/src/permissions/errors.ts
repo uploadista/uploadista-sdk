@@ -64,7 +64,9 @@ export class AuthenticationRequiredError extends AdapterError {
  * ```
  */
 export class OrganizationMismatchError extends AdapterError {
-  constructor(message = "Access denied: resource belongs to another organization") {
+  constructor(
+    message = "Access denied: resource belongs to another organization",
+  ) {
     super(message, 403, "ORGANIZATION_MISMATCH");
     this.name = "OrganizationMismatchError";
   }

@@ -1,4 +1,4 @@
-import { FlowServer, UploadServer } from "@uploadista/core";
+import { FlowEngine, UploadEngine } from "@uploadista/core";
 import type { AuthResult } from "@uploadista/server";
 import {
   handleWebSocketClose,
@@ -176,8 +176,8 @@ export const honoWebSocketHandler = <TEnv extends Env = Env>(
 ) => {
   return Effect.gen(function* () {
     // Get the server instances from the Effect context
-    const uploadServer = yield* UploadServer;
-    const flowServer = yield* FlowServer;
+    const uploadEngine = yield* UploadEngine;
+    const flowEngine = yield* FlowEngine;
 
     return (c: Context<TEnv>): WSEvents => {
       // Extract request details (adapter's responsibility)
@@ -257,8 +257,8 @@ export const honoWebSocketHandler = <TEnv extends Env = Env>(
           // Delegate to core handler for business logic
           const openEffect = handleWebSocketOpen(
             request,
-            uploadServer,
-            flowServer,
+            uploadEngine,
+            flowEngine,
           );
           Effect.runFork(openEffect);
         },
@@ -295,8 +295,8 @@ export const honoWebSocketHandler = <TEnv extends Env = Env>(
           // Delegate to core handler for cleanup
           const closeEffect = handleWebSocketClose(
             request,
-            uploadServer,
-            flowServer,
+            uploadEngine,
+            flowEngine,
           );
           Effect.runFork(closeEffect);
         },

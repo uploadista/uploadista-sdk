@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-unpdf",
   "type": "module",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "description": "unpdf plugin for Uploadista document text extraction",
   "license": "MIT",
   "author": "Uploadista",
@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
     "unpdf": "^1.4.0"
   },
   "peerDependencies": {

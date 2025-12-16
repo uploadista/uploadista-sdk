@@ -62,7 +62,8 @@ export function buildFlowInputs(
               "type" in file && typeof file.type === "string"
                 ? file.type
                 : "application/octet-stream",
-            size: "size" in file && typeof file.size === "number" ? file.size : 0,
+            size:
+              "size" in file && typeof file.size === "number" ? file.size : 0,
           };
 
           flowInputs[nodeId] = {

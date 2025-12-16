@@ -166,7 +166,7 @@ export type TypeSafePluginConfig<
  * Extracts plugin requirements from a flow function type.
  *
  * This navigates through the flow function signature to extract the requirements
- * from the Flow type it returns, excluding UploadServer (provided by runtime).
+ * from the Flow type it returns, excluding UploadEngine (provided by runtime).
  *
  * @template TFlowFn - The flow function type to extract requirements from
  *
@@ -187,12 +187,13 @@ export type ExtractFlowPluginRequirements<
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
   // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for error and requirements parameters
-> = ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, any, any>
-  ? // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for input and output schema parameters
-    TFlow extends Flow<any, any, infer TRequirements>
-    ? Exclude<TRequirements, never> // Exclude UploadServer is handled by FlowPluginRequirements in core
-    : never
-  : never;
+> =
+  ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, any, any>
+    ? // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for input and output schema parameters
+      TFlow extends Flow<any, any, infer TRequirements>
+      ? Exclude<TRequirements, never> // Exclude UploadEngine is handled by FlowPluginRequirements in core
+      : never
+    : never;
 
 /**
  * Helper type to infer plugin requirements from a flow function.
@@ -204,9 +205,8 @@ export type ExtractFlowPluginRequirements<
  * // Requirements = ImagePlugin | ZipPlugin
  * ```
  */
-export type InferFlowRequirements<T> = T extends TypeSafeFlowFunction<infer R>
-  ? R
-  : never;
+export type InferFlowRequirements<T> =
+  T extends TypeSafeFlowFunction<infer R> ? R : never;
 
 /**
  * Converts PluginLayer types to Layer.Layer<any, never, any> for runtime use.

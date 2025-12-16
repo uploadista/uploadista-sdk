@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/core",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "description": "Core package of Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -62,7 +62,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "dev": "tsc -b",
     "release": "tsdown && bumpp && pnpm publish --access restricted --no-git-checks",
     "format": "biome format --write ./src",

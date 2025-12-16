@@ -89,6 +89,7 @@ export interface UseDragDropReturn {
     accept?: string;
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
     style: { display: "none" };
+    ref: React.RefObject<HTMLInputElement | null>;
   };
 
   /**
@@ -215,6 +216,10 @@ export function useDragDrop(options: DragDropOptions = {}): UseDragDropReturn {
         // Check file type
         if (accept && accept.length > 0) {
           const isAccepted = accept.some((acceptType) => {
+            // Handle wildcard "*" to accept all files
+            if (acceptType === "*" || acceptType === "*/*") {
+              return true;
+            }
             if (acceptType.startsWith(".")) {
               // File extension check
               return file.name.toLowerCase().endsWith(acceptType.toLowerCase());

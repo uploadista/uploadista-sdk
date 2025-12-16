@@ -1,1 +1,4 @@
-export { unpdfDocumentPlugin, UnpdfDocumentPluginLive } from "./document-plugin";
+export {
+  UnpdfDocumentPluginLive,
+  unpdfDocumentPlugin,
+} from "./document-plugin";

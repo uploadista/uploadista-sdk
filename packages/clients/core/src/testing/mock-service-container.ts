@@ -20,10 +20,7 @@ import type {
   HttpResponse,
 } from "../services/http-client";
 import type { IdGenerationService } from "../services/id-generation-service";
-import type {
-  PlatformService,
-  Timeout,
-} from "../services/platform-service";
+import type { PlatformService, Timeout } from "../services/platform-service";
 import type { ServiceContainer } from "../services/service-container";
 import type { StorageService } from "../services/storage-service";
 import type {
@@ -121,7 +118,9 @@ export class MockHttpClient implements HttpClient {
 
     // Simulate network delay if configured
     if (config.delay) {
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), config.delay ?? 0));
+      await new Promise<void>((resolve) =>
+        setTimeout(() => resolve(), config.delay ?? 0),
+      );
     }
 
     // Create mock headers

@@ -254,8 +254,20 @@ Scale images to dimensions.
     height?: number,
     fit: "cover" | "contain" | "fill",
   },
+  options: {
+    mode?: "auto" | "buffered" | "streaming", // default: "auto"
+    streamingConfig?: {
+      fileSizeThreshold?: number, // default: 1MB
+      chunkSize?: number,         // default: 64KB
+    },
+  },
 }
 ```
+
+**Streaming Modes**:
+- `auto` (default): Automatically selects streaming for files larger than threshold
+- `buffered`: Always loads entire file into memory
+- `streaming`: Always processes as stream for memory efficiency
 
 **Use Cases**:
 - Create thumbnails
@@ -384,20 +396,176 @@ Load image from external URL.
 - Third-party image sources
 - API-provided content
 
+### Video Processing Nodes
+
+Video transcoding, resizing, and trimming.
+
+#### Transcode Node
+**Package**: `@uploadista/flow-videos-nodes`
+
+Convert video to different formats and codecs.
+
+```typescript
+{
+  type: "transcode",
+  params: {
+    format: "mp4" | "webm" | "mov" | "avi",
+    codec?: "h264" | "h265" | "vp8" | "vp9" | "av1",
+    videoBitrate?: string,  // e.g., "1000k"
+    audioBitrate?: string,  // e.g., "128k"
+  },
+  options: {
+    mode?: "auto" | "buffered" | "streaming", // default: "auto"
+    streamingConfig?: {
+      fileSizeThreshold?: number, // default: 10MB
+      chunkSize?: number,         // default: 1MB
+    },
+  },
+}
+```
+
+**Streaming Modes**:
+- `auto` (default): Automatically selects streaming for files larger than 10MB
+- `buffered`: Always loads entire file into memory
+- `streaming`: Always processes as stream for memory efficiency
+
+**Use Cases**:
+- Convert MOV to MP4 for web compatibility
+- Create WebM for modern browsers
+- Adjust video/audio quality and bitrates
+
+**Time**: Depends on video length and resolution
+
+#### Resize Video Node
+**Package**: `@uploadista/flow-videos-nodes`
+
+Change video resolution.
+
+```typescript
+{
+  type: "resize-video",
+  params: {
+    width: number,
+    height: number,
+    aspectRatio?: "keep" | "stretch" | "crop",
+    scaling?: "bilinear" | "bicubic" | "lanczos",
+  },
+  options: {
+    mode?: "auto" | "buffered" | "streaming", // default: "auto"
+    streamingConfig?: {
+      fileSizeThreshold?: number, // default: 10MB
+      chunkSize?: number,         // default: 1MB
+    },
+  },
+}
+```
+
+**Use Cases**:
+- Create mobile-optimized versions
+- Reduce file size by lowering resolution
+- Standardize video dimensions
+
+#### Trim Video Node
+**Package**: `@uploadista/flow-videos-nodes`
+
+Extract a segment from a video.
+
+```typescript
+{
+  type: "trim-video",
+  params: {
+    startTime: number,      // in seconds
+    endTime?: number,       // in seconds
+    duration?: number,      // alternative to endTime
+  },
+  options: {
+    mode?: "auto" | "buffered" | "streaming", // default: "auto"
+    streamingConfig?: {
+      fileSizeThreshold?: number, // default: 10MB
+      chunkSize?: number,         // default: 1MB
+    },
+  },
+}
+```
+
+**Use Cases**:
+- Extract clips from longer videos
+- Remove intro/outro
+- Create preview snippets
+
+#### Describe Video Node
+**Package**: `@uploadista/flow-videos-nodes`
+
+Extract video metadata.
+
+```typescript
+{
+  type: "describe-video",
+  params: {},
+}
+```
+
+**Output**:
+```json
+{
+  "width": 1920,
+  "height": 1080,
+  "duration": 120.5,
+  "frameRate": 30,
+  "codec": "h264",
+  "bitrate": 5000000,
+  "audioCodec": "aac",
+  "audioChannels": 2
+}
+```
+
+**Use Cases**:
+- Index video properties
+- Validate video before processing
+- Extract duration for progress tracking
+
+## Streaming Mode Overview
+
+All transform nodes support three processing modes:
+
+| Mode | Description | When to Use |
+|------|-------------|-------------|
+| `auto` | Automatically selects streaming for large files | Default, recommended for most cases |
+| `buffered` | Loads entire file into memory | Small files, predictable memory usage |
+| `streaming` | Processes file as chunks | Large files, memory-constrained environments |
+
+**Default Thresholds**:
+- Images: 1MB (streaming for files > 1MB)
+- Videos: 10MB (streaming for files > 10MB)
+
+**Auto Mode Behavior**:
+1. Checks file size against threshold
+2. Verifies DataStore supports streaming
+3. Verifies plugin supports streaming transforms
+4. Falls back to buffered if streaming unavailable
+
 ## Node Comparison
 
-| Node | Speed | Cost | Backend |
-|------|-------|------|---------|
-| Resize (Sharp) | 50-100ms | Free | Node.js |
-| Resize (Photon) | 5-10ms | Free | Edge |
-| Optimize | 100-200ms | Free | Sharp/Photon |
-| Remove BG | 5-15s | $0.001 | AI/Replicate |
-| Upscale | 10-20s | $0.01 | AI/Replicate |
-| Describe | 10-20ms | Free | Sharp |
-| Merge | Instant | Free | Memory |
-| Conditional | Instant | Free | Memory |
-| Multiplex | Instant | Free | Memory |
-| Zip | ~100-200ms | Free | CPU |
+| Node | Speed | Cost | Backend | Streaming |
+|------|-------|------|---------|-----------|
+| Resize (Sharp) | 50-100ms | Free | Node.js | Yes |
+| Resize (Photon) | 5-10ms | Free | Edge | No |
+| Optimize | 100-200ms | Free | Sharp/Photon | Yes |
+| Transform Image | 100-300ms | Free | Sharp | Yes* |
+| Remove BG | 5-15s | $0.001 | AI/Replicate | No |
+| Upscale | 10-20s | $0.01 | AI/Replicate | No |
+| Describe Image | 10-20ms | Free | Sharp | No |
+| Transcode Video | 1-60s | Free | node-av | Yes |
+| Resize Video | 1-60s | Free | node-av | Yes |
+| Trim Video | 1-30s | Free | node-av | Yes |
+| Describe Video | 100-500ms | Free | node-av | No |
+| Merge | Instant | Free | Memory | No |
+| Conditional | Instant | Free | Memory | No |
+| Multiplex | Instant | Free | Memory | No |
+| Zip | ~100-200ms | Free | CPU | No |
+| Scan Virus | 1-30s | Free | ClamAV | No |
+
+*Transform Image streaming not supported for watermark, logo, and text transformations
 
 ## Architecture Patterns
 

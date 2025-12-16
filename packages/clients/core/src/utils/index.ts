@@ -4,6 +4,6 @@
  * @module utils
  */
 
-export * from "./input-detection";
 export * from "./flow-inputs-builder";
+export * from "./input-detection";
 export * from "./input-validation";

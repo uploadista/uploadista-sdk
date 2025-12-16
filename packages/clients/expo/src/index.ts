@@ -99,3 +99,84 @@ export {
   type ExpoServiceOptions,
 } from "./services";
 export { ExpoFileSystemProvider } from "./services/expo-file-system-provider";
+
+// Re-export Flow compound components from react-native-core
+export {
+  // Flow compound component
+  Flow,
+  useFlowContext,
+  useFlowInputContext,
+  // FlowManagerProvider
+  FlowManagerProvider,
+  useFlowManagerContext,
+  // useFlow hook
+  useFlow,
+  // Upload compound component
+  Upload,
+  useUploadContext,
+  useUploadItemContext,
+} from "@uploadista/react-native-core";
+
+// Re-export Flow component types
+export type {
+  FlowProps,
+  FlowRenderProps,
+  FlowContextValue,
+  FlowInputContextValue,
+  FlowInputsProps,
+  FlowInputsRenderProps,
+  FlowInputProps,
+  FlowInputFilePickerProps,
+  FlowInputFilePickerRenderProps,
+  FlowInputPreviewProps,
+  FlowInputPreviewRenderProps,
+  FlowProgressProps,
+  FlowProgressRenderProps,
+  FlowStatusProps,
+  FlowStatusRenderProps,
+  FlowErrorProps,
+  FlowErrorRenderProps,
+  FlowSubmitProps,
+  FlowSubmitRenderProps,
+  FlowCancelProps,
+  FlowCancelRenderProps,
+  FlowResetProps,
+  FlowResetRenderProps,
+  FlowQuickUploadProps,
+  FlowQuickUploadRenderProps,
+  // useFlow types
+  FlowInputMetadata,
+  FlowUploadState,
+  FlowUploadStatus,
+  InputExecutionState,
+  UseFlowOptions,
+  UseFlowReturn,
+  // Upload component types
+  UploadProps,
+  UploadRenderProps,
+  UploadContextValue,
+  UploadItemContextValue,
+  UploadFilePickerProps,
+  UploadFilePickerRenderProps,
+  UploadGalleryPickerProps,
+  UploadGalleryPickerRenderProps,
+  UploadCameraPickerProps,
+  UploadCameraPickerRenderProps,
+  UploadItemsProps,
+  UploadItemsRenderProps,
+  UploadItemProps,
+  UploadCompoundProgressProps,
+  UploadCompoundProgressRenderProps,
+  UploadStatusProps,
+  UploadStatusRenderProps,
+  UploadErrorProps,
+  UploadErrorRenderProps,
+  UploadCancelProps,
+  UploadCancelRenderProps,
+  UploadRetryProps,
+  UploadRetryRenderProps,
+  UploadResetProps,
+  UploadResetRenderProps,
+  UploadStartAllProps,
+  UploadStartAllRenderProps,
+} from "@uploadista/react-native-core";

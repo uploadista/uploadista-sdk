@@ -1,25 +1,38 @@
 # @uploadista/server
 
-Core server utilities and authentication for Uploadista file upload and flow processing.
+Core server for Uploadista file upload and flow processing.
 
-This package provides framework-agnostic server components including authentication context management, caching utilities, and layer composition helpers. Use this with adapter packages (`@uploadista/adapters-hono`, `@uploadista/adapters-express`, `@uploadista/adapters-fastify`) to set up complete upload servers.
+This package provides the unified `createUploadistaServer` function that combines upload handling, flow execution, and authentication into a single server instance. Use it with adapter packages (`@uploadista/adapters-hono`, `@uploadista/adapters-express`, `@uploadista/adapters-fastify`) to set up complete upload servers.
 
 ## Features
 
-- **Authentication Context** - User identity and metadata management
-- **Auth Caching** - LRU cache for auth contexts with TTL support
+- **Unified Server** - Single `createUploadistaServer` function for all frameworks
+- **Plugin System** - Extend with image processing, AI, and custom plugins
+- **Authentication** - Built-in auth middleware support via adapters
 - **Health Checks** - Kubernetes-compatible liveness/readiness probes
-- **Effect Layers** - Dependency injection for upload and flow servers
-- **Error Handling** - Standardized error responses with HTTP status codes
-- **HTTP Utilities** - Route parsing and error mapping helpers
+- **Observability** - OpenTelemetry tracing support
+- **Circuit Breakers** - Built-in resilience patterns
 - **TypeScript** - Full type safety with comprehensive JSDoc
 
 ## Installation
 
 ```bash
-npm install @uploadista/server @uploadista/core
+npm install @uploadista/server
 # or
-pnpm add @uploadista/server @uploadista/core
+pnpm add @uploadista/server
+```
+
+Also install an adapter for your framework:
+
+```bash
+# Hono (recommended for Cloudflare Workers)
+pnpm add @uploadista/adapters-hono hono
+
+# Express
+pnpm add @uploadista/adapters-express express
+
+# Fastify
+pnpm add @uploadista/adapters-fastify fastify
 ```
 
 ## Requirements
@@ -29,295 +42,185 @@ pnpm add @uploadista/server @uploadista/core
 
 ## Quick Start
 
-### 1. Set Up Authentication
+### Hono Example
 
 ```typescript
-import { AuthContextServiceLive } from "@uploadista/server";
-import { Effect } from "effect";
-
-// Create auth context for a request
-const authContext = {
-  clientId: "user-123",
-  metadata: {
-    permissions: ["upload:create", "flow:execute"],
-    quota: { storage: 1000000000 }, // 1GB
-  },
-};
-
-// Provide auth context to your effects
-const effect = Effect.service(AuthContextService).pipe(
-  Effect.andThen((authService) => authService.getClientId()),
-);
-
-const result = await Effect.runPromise(
-  effect.pipe(Effect.provide(AuthContextServiceLive(authContext))),
-);
-console.log(result); // "user-123"
-```
-
-### 2. Get JWT Credentials
-
-```typescript
-import { getAuthCredentials } from "@uploadista/server";
-
-// Exchange credentials for JWT token
-const response = await getAuthCredentials({
-  uploadistaClientId: process.env.UPLOADISTA_CLIENT_ID,
-  uploadistaApiKey: process.env.UPLOADISTA_API_KEY,
-});
-
-if (response.isValid) {
-  console.log(`Token: ${response.data.token}`);
-  console.log(`Expires in: ${response.data.expiresIn}s`);
-} else {
-  console.error(`Auth failed: ${response.error}`);
-}
-```
-
-### 3. Create Upload Server Layer
-
-```typescript
-import { createUploadServerLayer } from "@uploadista/server";
+import { Hono } from "hono";
+import { createUploadistaServer } from "@uploadista/server";
+import { honoAdapter } from "@uploadista/adapters-hono";
+import { s3Store } from "@uploadista/data-store-s3";
 import { redisKvStore } from "@uploadista/kv-store-redis";
-import { s3DataStore } from "@uploadista/data-store-s3";
-import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
-import { memoryEventBroadcaster } from "@uploadista/event-broadcaster-memory";
 
-const uploadServerLayer = createUploadServerLayer({
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  dataStore: s3DataStore,
+const app = new Hono();
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore: s3Store({
+    deliveryUrl: process.env.CDN_URL!,
+    s3ClientConfig: {
+      bucket: process.env.S3_BUCKET!,
+      region: process.env.AWS_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    },
+  }),
+  kvStore: redisKvStore({ redis: redisClient }),
+  flows: (flowId, clientId) => createFlowEffect(flowId, clientId),
+  adapter: honoAdapter(),
 });
 
-// Use in your framework adapter...
+app.all("/uploadista/api/*", (c) => uploadistaServer.handler(c));
+
+export default app;
 ```
 
-### 4. Create Flow Server Layer
+### Express Example
 
 ```typescript
-import { createFlowServerLayer } from "@uploadista/server";
+import express from "express";
+import { createUploadistaServer } from "@uploadista/server";
+import { expressAdapter } from "@uploadista/adapters-express";
+import { fileStore } from "@uploadista/data-store-filesystem";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
 
-const flowServerLayer = createFlowServerLayer({
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  flowProvider: createFlowsEffect,
-  uploadServer: uploadServerLayer,
+const app = express();
+app.use(express.json({ limit: "50mb" }));
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore: fileStore({ directory: "./uploads" }),
+  kvStore: fileKvStore({ directory: "./uploads" }),
+  flows: (flowId, clientId) => createFlowEffect(flowId, clientId),
+  adapter: expressAdapter(),
 });
 
-// Use in your framework adapter...
+app.all("/uploadista/api/*splat", (request, response, next) => {
+  uploadistaServer.handler({ request, response, next });
+});
+
+app.listen(3000);
+```
+
+### Fastify Example
+
+```typescript
+import Fastify from "fastify";
+import { createUploadistaServer } from "@uploadista/server";
+import { fastifyAdapter } from "@uploadista/adapters-fastify";
+import { fileStore } from "@uploadista/data-store-filesystem";
+import { fileKvStore } from "@uploadista/kv-store-filesystem";
+
+const fastify = Fastify({ logger: true });
+
+const uploadistaServer = await createUploadistaServer({
+  dataStore: fileStore({ directory: "./uploads" }),
+  kvStore: fileKvStore({ directory: "./uploads" }),
+  flows: (flowId, clientId) => createFlowEffect(flowId, clientId),
+  adapter: fastifyAdapter(),
+});
+
+fastify.all("/uploadista/api/*", async (request, reply) => {
+  return uploadistaServer.handler({ request, reply });
+});
+
+await fastify.listen({ port: 3000 });
 ```
 
 ## API Reference
 
+### `createUploadistaServer(config)`
+
+The main function to create an Uploadista server instance.
+
+```typescript
+const uploadistaServer = await createUploadistaServer({
+  // Required
+  dataStore: s3Store({ /* config */ }),
+  kvStore: redisKvStore({ /* config */ }),
+  flows: (flowId, clientId) => createFlowEffect(flowId, clientId),
+  adapter: honoAdapter(),
+
+  // Optional
+  plugins: [imagePlugin],
+  eventBroadcaster: redisEventBroadcaster({ /* config */ }),
+  withTracing: true,
+  baseUrl: "uploadista",
+  circuitBreaker: true,
+  healthCheck: { version: "1.0.0" },
+  authCacheConfig: { maxSize: 10000, ttl: 3600000 },
+});
+```
+
+### Configuration Options
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `dataStore` | `DataStoreConfig` | Yes | - | File storage backend (S3, Azure, GCS, filesystem) |
+| `kvStore` | `Layer<BaseKvStoreService>` | Yes | - | Metadata storage (Redis, memory, filesystem) |
+| `flows` | `(flowId, clientId) => Effect<Flow>` | Yes | - | Flow provider function |
+| `adapter` | `ServerAdapter` | Yes | - | Framework adapter (Hono, Express, Fastify) |
+| `plugins` | `PluginLayer[]` | No | `[]` | Processing plugins |
+| `eventBroadcaster` | `Layer<EventBroadcasterService>` | No | Memory | Cross-instance event broadcasting |
+| `withTracing` | `boolean` | No | `false` | Enable OpenTelemetry tracing |
+| `observabilityLayer` | `Layer` | No | - | Custom observability layer |
+| `baseUrl` | `string` | No | `"uploadista"` | API base path |
+| `circuitBreaker` | `boolean` | No | `true` | Enable circuit breakers |
+| `deadLetterQueue` | `boolean` | No | `false` | Enable DLQ for failed jobs |
+| `healthCheck` | `HealthCheckConfig` | No | - | Health endpoint configuration |
+| `authCacheConfig` | `AuthCacheConfig` | No | - | Auth caching configuration |
+
+### Return Type
+
+```typescript
+interface UploadistaServer<TContext, TResponse, TWebSocketHandler> {
+  handler: (req: TContext) => Promise<TResponse>;
+  websocketHandler: TWebSocketHandler;
+  baseUrl: string;
+  dispose: () => Promise<void>;
+}
+```
+
 ### Authentication
 
-#### `AuthContext`
+Authentication is handled via the adapter's `authMiddleware`:
 
-User identity and authorization metadata.
+```typescript
+adapter: honoAdapter({
+  authMiddleware: async (c) => {
+    const token = c.req.header("Authorization")?.split(" ")[1];
+    if (!token) return null;
+
+    const payload = await verifyJWT(token);
+    return {
+      clientId: payload.sub,
+      permissions: payload.permissions || [],
+    };
+  },
+})
+```
+
+#### `AuthContext`
 
 ```typescript
 type AuthContext = {
   clientId: string;
-  metadata?: Record<string, unknown>;
   permissions?: string[];
+  metadata?: Record<string, unknown>;
 };
 ```
-
-**Properties**:
-- `clientId` - Unique user identifier
-- `metadata` - Custom authorization metadata (permissions, quotas, etc.)
-- `permissions` - Array of permission strings for authorization
-
-#### `AuthContextService`
-
-Effect service for accessing auth context throughout request processing.
-
-```typescript
-export class AuthContextService extends Context.Tag("AuthContextService")<
-  AuthContextService,
-  {
-    readonly getClientId: () => Effect.Effect<string | null>;
-    readonly getMetadata: () => Effect.Effect<Record<string, unknown>>;
-    readonly hasPermission: (permission: string) => Effect.Effect<boolean>;
-    readonly getAuthContext: () => Effect.Effect<AuthContext | null>;
-  }
->() {}
-```
-
-**Methods**:
-- `getClientId()` - Get current client ID
-- `getMetadata()` - Get auth metadata object
-- `hasPermission(permission)` - Check if user has permission
-- `getAuthContext()` - Get full auth context
-
-#### `AuthContextServiceLive(authContext)`
-
-Factory for creating AuthContextService layer.
-
-```typescript
-import { AuthContextServiceLive } from "@uploadista/server";
-
-const authLayer = AuthContextServiceLive({
-  clientId: "user-123",
-  permissions: ["upload:create"],
-});
-```
-
-#### `getAuthCredentials(params)`
-
-Exchange client credentials for JWT token.
-
-```typescript
-import { getAuthCredentials } from "@uploadista/server";
-
-const response = await getAuthCredentials({
-  uploadistaClientId: "my-client",
-  uploadistaApiKey: "sk_...",
-  baseUrl: "https://api.uploadista.com", // optional
-});
-
-if (response.isValid) {
-  // response.data.token - JWT token
-  // response.data.expiresIn - Seconds until expiration
-} else {
-  // response.error - Error message
-}
-```
-
-### Caching
 
 #### `AuthCacheConfig`
 
-Configuration for auth context caching.
-
 ```typescript
 type AuthCacheConfig = {
-  maxSize?: number;     // Default: 10000
-  ttl?: number;        // Default: 3600000 (1 hour)
+  maxSize?: number;  // Default: 10000
+  ttl?: number;      // Default: 3600000 (1 hour)
 };
-```
-
-#### `AuthCacheService`
-
-Effect service for storing and retrieving cached auth contexts.
-
-```typescript
-export class AuthCacheService extends Context.Tag("AuthCacheService")<
-  AuthCacheService,
-  {
-    readonly set: (
-      jobId: string,
-      authContext: AuthContext,
-    ) => Effect.Effect<void>;
-    readonly get: (jobId: string) => Effect.Effect<AuthContext | null>;
-    readonly delete: (jobId: string) => Effect.Effect<void>;
-    readonly clear: () => Effect.Effect<void>;
-    readonly size: () => Effect.Effect<number>;
-  }
->() {}
-```
-
-**Methods**:
-- `set(jobId, authContext)` - Cache auth for a job
-- `get(jobId)` - Retrieve cached auth
-- `delete(jobId)` - Remove specific cache entry
-- `clear()` - Clear all cached entries
-- `size()` - Get number of cached entries
-
-#### `AuthCacheServiceLive(config?)`
-
-Create in-memory auth cache layer.
-
-```typescript
-import { AuthCacheServiceLive } from "@uploadista/server";
-
-const cacheLayer = AuthCacheServiceLive({
-  maxSize: 5000,
-  ttl: 1800000, // 30 minutes
-});
-```
-
-### Layer Composition
-
-#### `UploadServerLayerConfig`
-
-Configuration for creating upload server layer.
-
-```typescript
-interface UploadServerLayerConfig {
-  kvStore: Layer.Layer<BaseKvStoreService>;
-  eventEmitter: Layer.Layer<BaseEventEmitterService>;
-  dataStore: Layer.Layer<UploadFileDataStores, never, UploadFileKVStore>;
-  bufferedDataStore?: Layer.Layer<UploadFileDataStore>;
-  generateId?: Layer.Layer<GenerateId>;
-}
-```
-
-#### `createUploadServerLayer(config)`
-
-Compose upload server with all dependencies.
-
-```typescript
-import { createUploadServerLayer } from "@uploadista/server";
-
-const uploadLayer = createUploadServerLayer({
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  dataStore: s3DataStore,
-});
-```
-
-#### `FlowServerLayerConfig`
-
-Configuration for creating flow server layer.
-
-```typescript
-interface FlowServerLayerConfig {
-  kvStore: Layer.Layer<BaseKvStoreService>;
-  eventEmitter: Layer.Layer<BaseEventEmitterService>;
-  flowProvider: Layer.Layer<FlowProvider>;
-  uploadServer: Layer.Layer<UploadServer>;
-}
-```
-
-#### `createFlowServerLayer(config)`
-
-Compose flow server with all dependencies.
-
-```typescript
-import { createFlowServerLayer } from "@uploadista/server";
-
-const flowLayer = createFlowServerLayer({
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  flowProvider: createFlowsEffect,
-  uploadServer: uploadLayer,
-});
 ```
 
 ### Error Handling
 
-#### `AdapterError`
-
-Base error class for adapter errors.
-
-```typescript
-class AdapterError extends Error {
-  constructor(
-    message: string,
-    statusCode?: number,
-    errorCode?: string,
-  ) {}
-}
-```
-
-**Properties**:
-- `statusCode` - HTTP status code (default: 500)
-- `errorCode` - Machine-readable error code
-
-#### `ValidationError`, `NotFoundError`, `BadRequestError`
-
-Pre-configured error classes:
+The server automatically handles errors and returns appropriate HTTP responses:
 
 ```typescript
 import {
@@ -334,62 +237,6 @@ throw new NotFoundError("Upload");
 
 // Bad request (400)
 throw new BadRequestError("Invalid JSON body");
-```
-
-#### Error Response Factories
-
-```typescript
-import {
-  createErrorResponseBody,
-  createUploadistaErrorResponseBody,
-  createGenericErrorResponseBody,
-} from "@uploadista/server";
-
-// For adapter errors
-const errorResponse = createErrorResponseBody(
-  new ValidationError("Invalid data"),
-);
-// => { error: "Invalid data", code: "VALIDATION_ERROR", timestamp: "..." }
-
-// For core library errors
-const uploadistaErrorResponse = createUploadistaErrorResponseBody(error);
-
-// For unknown errors
-const genericErrorResponse = createGenericErrorResponseBody("Something went wrong");
-```
-
-### HTTP Utilities
-
-```typescript
-import {
-  parseUrlSegments,
-  getLastSegment,
-  hasBasePath,
-  getRouteSegments,
-  handleFlowError,
-  extractJobIdFromStatus,
-  extractJobAndNodeId,
-  extractFlowAndStorageId,
-} from "@uploadista/server";
-
-// Parse route
-const segments = parseUrlSegments("/uploadista/api/upload/abc");
-// => ["uploadista", "api", "upload", "abc"]
-
-// Check if request is for uploadista
-const isUploadistaRequest = hasBasePath("/uploadista/api/upload", "uploadista");
-// => true
-
-// Extract parameters from URL
-const jobId = extractJobIdFromStatus(["jobs", "job-123", "status"]);
-// => "job-123"
-
-// Handle errors consistently
-const errorInfo = handleFlowError({
-  code: "FILE_NOT_FOUND",
-  message: "File not found",
-});
-// => { status: 404, code: "FILE_NOT_FOUND", message: "File not found" }
 ```
 
 ## Health Check Endpoints
@@ -474,60 +321,93 @@ readinessProbe:
 
 For complete documentation, see [docs/HEALTH_CHECKS.md](./docs/HEALTH_CHECKS.md).
 
-## Framework Integration
+## Framework Adapters
 
-This package is used by framework adapters:
+Three official adapters are available:
 
-- **[@uploadista/adapters-hono](../adapters-hono/)** - For Cloudflare Workers
-- **[@uploadista/adapters-express](../adapters-express/)** - For Node.js Express
-- **[@uploadista/adapters-fastify](../adapters-fastify/)** - For Node.js Fastify
+- **[@uploadista/adapters-hono](../adapters-hono/)** - For Hono and Cloudflare Workers
+- **[@uploadista/adapters-express](../adapters-express/)** - For Express.js
+- **[@uploadista/adapters-fastify](../adapters-fastify/)** - For Fastify
 
-## Complete Server Example
+## Complete Example with Plugins
 
 ```typescript
-import { Effect, Layer } from "effect";
-import {
-  createUploadServerLayer,
-  createFlowServerLayer,
-  AuthContextServiceLive,
-} from "@uploadista/server";
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import { createNodeWebSocket } from "@hono/node-ws";
+import { createClient } from "@redis/client";
+import { createUploadistaServer } from "@uploadista/server";
+import { honoAdapter } from "@uploadista/adapters-hono";
+import { s3Store } from "@uploadista/data-store-s3";
 import { redisKvStore } from "@uploadista/kv-store-redis";
-import { s3DataStore } from "@uploadista/data-store-s3";
-import { webSocketEventEmitter } from "@uploadista/event-emitter-websocket";
+import { redisEventBroadcaster } from "@uploadista/event-broadcaster-redis";
+import { imagePlugin } from "@uploadista/flow-images-sharp";
 
-// Configure servers
-const uploadLayer = createUploadServerLayer({
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  dataStore: s3DataStore,
+const app = new Hono();
+const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+
+// Initialize Redis
+const redisClient = createClient({ url: process.env.REDIS_URL });
+await redisClient.connect();
+
+const redisSubscriberClient = createClient({ url: process.env.REDIS_URL });
+await redisSubscriberClient.connect();
+
+// Create server with all features
+const uploadistaServer = await createUploadistaServer({
+  dataStore: s3Store({
+    deliveryUrl: process.env.CDN_URL!,
+    s3ClientConfig: {
+      bucket: process.env.S3_BUCKET!,
+      region: process.env.AWS_REGION!,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    },
+  }),
+  kvStore: redisKvStore({ redis: redisClient }),
+  eventBroadcaster: redisEventBroadcaster({
+    redis: redisClient,
+    subscriberRedis: redisSubscriberClient,
+  }),
+  flows: (flowId, clientId) => createFlowEffect(flowId, clientId),
+  plugins: [imagePlugin],
+  adapter: honoAdapter({
+    authMiddleware: async (c) => {
+      const token = c.req.header("Authorization")?.split(" ")[1];
+      if (!token) return null;
+      const payload = await verifyJWT(token);
+      return { clientId: payload.sub };
+    },
+  }),
+  withTracing: Boolean(process.env.OTEL_EXPORTER_OTLP_ENDPOINT),
 });
 
-const flowLayer = createFlowServerLayer({
-  kvStore: redisKvStore,
-  eventEmitter: webSocketEventEmitter,
-  flowProvider: createFlowsEffect,
-  uploadServer: uploadLayer,
-});
+// HTTP routes
+app.all("/uploadista/api/*", (c) => uploadistaServer.handler(c));
 
-// Set up authentication for a request
-const authContext = {
-  clientId: "user-123",
-  permissions: ["upload:create", "flow:execute"],
-};
-
-// Compose all layers
-const appLayer = Layer.provide(flowLayer, uploadLayer).pipe(
-  Layer.provide(AuthContextServiceLive(authContext)),
+// WebSocket routes for real-time progress
+app.get(
+  "/uploadista/ws/upload/:uploadId",
+  upgradeWebSocket(uploadistaServer.websocketHandler)
+);
+app.get(
+  "/uploadista/ws/flow/:jobId",
+  upgradeWebSocket(uploadistaServer.websocketHandler)
 );
 
-// Run effects
-const myEffect = Effect.gen(function* () {
-  const uploadServer = yield* UploadServer;
-  const flowServer = yield* FlowServer;
-  // ... use uploadServer and flowServer
-});
+const server = serve({ port: 3000, fetch: app.fetch });
+injectWebSocket(server);
 
-Effect.runPromise(myEffect.pipe(Effect.provide(appLayer)));
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  server.close();
+  await uploadistaServer.dispose();
+  await redisClient.quit();
+  await redisSubscriberClient.quit();
+  process.exit(0);
+});
 ```
 
 ## TypeScript Support
@@ -537,40 +417,11 @@ Full TypeScript support with comprehensive types:
 ```typescript
 import type {
   AuthContext,
-  AuthResult,
   AuthCacheConfig,
-  UploadServerLayerConfig,
-  FlowServerLayerConfig,
+  UploadistaServerConfig,
+  UploadistaServer,
 } from "@uploadista/server";
-import type { UploadServer, FlowServer } from "@uploadista/core";
 ```
-
-## Architecture Notes
-
-### Authentication Flow
-
-1. Client authenticates with credentials (ID + API key)
-2. Server validates and issues JWT token
-3. Token includes user identity and permissions
-4. Subsequent requests include token in Authorization header
-5. Auth context created from token claims
-6. Auth context passed through Effect layers to handlers
-7. Handlers check permissions before processing
-
-### Effect Layer Pattern
-
-- Use `Layer.provide()` to compose dependencies
-- Each layer provides one service (UploadServer, FlowServer, etc.)
-- Auth context automatically available via AuthContextService
-- Cache automatically handles auth context persistence across requests
-
-### Error Handling Strategy
-
-1. Catch domain errors in handlers
-2. Map to AdapterError with appropriate HTTP status
-3. Format using createErrorResponseBody
-4. Return JSON error response with timestamp
-5. Log errors for monitoring
 
 ## Related Packages
 

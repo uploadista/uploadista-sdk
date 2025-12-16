@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-r2",
   "type": "module",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "description": "Cloudflare R2 data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "4.20251202.0",
+    "@cloudflare/workers-types": "4.20251213.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*"
   },

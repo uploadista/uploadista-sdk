@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/server",
   "type": "module",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "description": "Core Server package for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -20,7 +20,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
@@ -36,7 +36,7 @@
     "@uploadista/event-broadcaster-memory": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20251202.0",
+    "@cloudflare/workers-types": "4.20251213.0",
     "@effect/vitest": "catalog:",
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",

@@ -15,15 +15,26 @@ export * from "./output-type-registry";
 // Built-in node types (auto-registers on import)
 import "./node-types";
 
+// Re-export streaming config from types for transform node usage
+export type { StreamingConfig } from "../types/data-store";
+export { DEFAULT_STREAMING_CONFIG } from "../types/data-store";
+export * from "./dead-letter-queue";
 export * from "./flow";
 // Core flow engine
 export { createFlowWithSchema } from "./flow";
-export * from "./flow-server";
+export * from "./flow-engine";
 export * from "./node";
 // Node types and interfaces
 export { createFlowNode, NodeType } from "./node";
 export * from "./node-types";
 export * from "./nodes";
+// Re-export transform node types
+export type {
+  StreamingTransformFn,
+  StreamingTransformResult,
+  TransformMode,
+  TransformNodeConfig,
+} from "./nodes/transform-node";
 // Parallel execution
 export * from "./parallel-scheduler";
 export * from "./plugins/credential-provider";
@@ -40,15 +51,14 @@ export * from "./plugins/zip-plugin";
 export * from "./type-guards";
 export * from "./typed-flow";
 export { createFlow } from "./typed-flow";
+// Dead Letter Queue types and service
+export * from "./types/dead-letter-item";
 export * from "./types/flow-file";
 export * from "./types/flow-job";
 export * from "./types/flow-types";
-export * from "./types/run-args";
-// Dead Letter Queue types and service
-export * from "./types/dead-letter-item";
 export * from "./types/retry-policy";
-export * from "./dead-letter-queue";
+export * from "./types/run-args";
 export * from "./types/type-utils";
-export * from "./utils/resolve-upload-metadata";
 // File naming utilities
 export * from "./utils/file-naming";
+export * from "./utils/resolve-upload-metadata";

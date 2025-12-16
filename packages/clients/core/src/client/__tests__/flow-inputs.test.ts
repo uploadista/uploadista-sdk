@@ -9,7 +9,12 @@ describe("Flow Input Node Discovery", () => {
         name: "Test Flow",
         nodes: [
           { id: "input-1", name: "File Input", description: "", type: "input" },
-          { id: "process-1", name: "Process", description: "", type: "transform" },
+          {
+            id: "process-1",
+            name: "Process",
+            description: "",
+            type: "transform",
+          },
           { id: "output-1", name: "Output", description: "", type: "output" },
         ],
         edges: [],
@@ -45,7 +50,12 @@ describe("Flow Input Node Discovery", () => {
         nodes: [
           { id: "input-1", name: "File Input", description: "", type: "input" },
           { id: "input-2", name: "Data Input", description: "", type: "input" },
-          { id: "process-1", name: "Process", description: "", type: "transform" },
+          {
+            id: "process-1",
+            name: "Process",
+            description: "",
+            type: "transform",
+          },
         ],
         edges: [],
       };
@@ -74,7 +84,12 @@ describe("Flow Input Node Discovery", () => {
         id: "no-input-flow",
         name: "No Input Flow",
         nodes: [
-          { id: "process-1", name: "Process", description: "", type: "transform" },
+          {
+            id: "process-1",
+            name: "Process",
+            description: "",
+            type: "transform",
+          },
           { id: "output-1", name: "Output", description: "", type: "output" },
         ],
         edges: [],
@@ -101,9 +116,7 @@ describe("Flow Input Node Discovery", () => {
       const mockFlow: FlowData = {
         id: "test-flow",
         name: "Test Flow",
-        nodes: [
-          { id: "input-1", name: "", description: "", type: "input" },
-        ],
+        nodes: [{ id: "input-1", name: "", description: "", type: "input" }],
         edges: [],
       };
 
@@ -125,10 +138,25 @@ describe("Flow Input Node Discovery", () => {
         name: "Complex Flow",
         nodes: [
           { id: "input-1", name: "Input", description: "", type: "input" },
-          { id: "transform-1", name: "Transform", description: "", type: "transform" },
-          { id: "conditional-1", name: "Conditional", description: "", type: "conditional" },
+          {
+            id: "transform-1",
+            name: "Transform",
+            description: "",
+            type: "transform",
+          },
+          {
+            id: "conditional-1",
+            name: "Conditional",
+            description: "",
+            type: "conditional",
+          },
           { id: "output-1", name: "Output", description: "", type: "output" },
-          { id: "utility-1", name: "Utility", description: "", type: "utility" },
+          {
+            id: "utility-1",
+            name: "Utility",
+            description: "",
+            type: "utility",
+          },
         ],
         edges: [],
       };
@@ -158,7 +186,9 @@ describe("Flow Input Node Discovery", () => {
       };
 
       expect(flowInputs["input-node-1"].operation).toBe("url");
-      expect(flowInputs["input-node-1"].url).toBe("https://example.com/file.jpg");
+      expect(flowInputs["input-node-1"].url).toBe(
+        "https://example.com/file.jpg",
+      );
       expect(flowInputs["input-node-1"].storageId).toBe("s3-production");
     });
 
@@ -219,7 +249,9 @@ describe("Flow Input Node Discovery", () => {
       };
 
       expect(flowInputsWithMetadata["input-node-1"].metadata).toBeDefined();
-      expect(flowInputsWithoutMetadata["input-node-1"].metadata).toBeUndefined();
+      expect(
+        flowInputsWithoutMetadata["input-node-1"].metadata,
+      ).toBeUndefined();
     });
   });
 });

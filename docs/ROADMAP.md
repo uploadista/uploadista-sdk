@@ -14,169 +14,189 @@
 - Auto-capability detection for intelligent storage backend optimization
 - Advanced upload metrics and performance analytics
 - Real-time network monitoring and adaptive strategies
-- OpenTelemetry observability with metrics, tracing, and logging
-- Authentication system with middleware and caching (LRU + TTL)
+- Full OpenTelemetry observability with OTLP export
+- Fine-grained permissions (RBAC) with hierarchical access control
 - Event broadcasting system (Redis, IORedis, Memory)
+- Memory-efficient streaming for video processing
 
-**Major Achievements (November 2024):**
-- **Parallel Execution INTEGRATED**: ParallelScheduler fully wired into main flow.ts execution path
-- **Magic Byte Verification**: Comprehensive file signature detection (50+ formats)
-- **Virus Scanning**: Full ClamAV integration with fail/pass actions
-- **Document Nodes**: OCR, text extraction, PDF merge/split, describe, convert to markdown
-- **Video Nodes**: Transcode, resize, thumbnail, trim, describe
-- **Test Coverage**: 67 test files (~14% coverage, up from 4.6%)
-- **Code Growth**: 70,556 source LOC (26% increase)
-- **React Hooks Library**: 10+ hooks including useUpload, useFlowUpload, useMultiUpload
-- **Multi-Client Support**: Browser, React, Vue, React Native (Expo + Bare)
-- **Multi-Framework Adapters**: Hono (Cloudflare), Express, Fastify
-- **Security Nodes**: Virus scanning with comprehensive documentation
+**Major Achievements (December 2024):**
+- **Permissions System IMPLEMENTED**: Full RBAC with hierarchical permissions and predefined roles
+- **OpenTelemetry OTLP Export IMPLEMENTED**: Traces, metrics, and logs to Grafana, Jaeger, etc.
+- **Media Streaming IMPLEMENTED**: Memory-efficient video processing with Effect streams
+- **Distributed Tracing IMPLEMENTED**: Cross-service trace context propagation
+- **Code Growth**: 84,215 source LOC (19% increase from 70,556)
+- **File Growth**: 650 TypeScript files (39% increase from 468)
 
-## 1. Production Hardening (CRITICAL)
+## 1. Production Hardening (COMPLETE)
 
 ### Circuit Breaker Pattern
-**Status**: IMPLEMENTED
+**Status**: COMPLETE
 - Failure rate tracking for each node type with configurable thresholds
 - State machine: closed -> open -> half-open -> closed
 - Distributed state via KV store for cluster deployments
 - Integration with existing OpenTelemetry metrics
 - Configurable failure thresholds and recovery strategies
 
-**Configuration:**
-```typescript
-interface CircuitBreakerConfig {
-  failureThreshold: number; // e.g., 5 failures
-  resetTimeout: number; // e.g., 30000ms
-  halfOpenRequests: number; // e.g., 3 test requests
-}
-
-type CircuitState = "closed" | "open" | "half-open";
-```
-
 ### Dead Letter Queue
-**Status**: IMPLEMENTED
+**Status**: COMPLETE
 - Failed flow jobs captured with full context for debugging
 - Exponential backoff with jitter for retries
 - Admin API endpoints: list, get, retry, retry-all, delete, resolve, cleanup, stats
-- Configurable retry limits and status tracking (pending, exhausted, resolved)
+- Configurable retry limits and status tracking
 - Integration with existing job state management
 
 ### Health Check Endpoints
-**Status**: IMPLEMENTED
-- `/health` endpoint for basic liveness (no dependency checks)
-- `/ready` endpoint for readiness (checks storage, KV, event broadcaster)
+**Status**: COMPLETE
+- `/health` endpoint for basic liveness
+- `/ready` endpoint for readiness checks
 - `/health/components` endpoint for detailed component status
-- Circuit breaker and DLQ integration in health responses
-- Support for JSON and plain text response formats
 - Kubernetes probe aliases: `/healthz`, `/readyz`
+- Component checks: storage, KV store, event broadcaster, circuit breaker, DLQ
 
-## 2. Performance & Scalability
+## 2. Security & Access Control (COMPLETE)
+
+### Permissions System (RBAC)
+**Status**: COMPLETE (December 2024)
+
+**Implementation Files:**
+- `packages/servers/server/src/permissions/types.ts` - Permission definitions
+- `packages/servers/server/src/permissions/matcher.ts` - Permission matching logic
+- `packages/servers/server/src/permissions/errors.ts` - Authorization error classes
+
+**Key Components:**
+- Hierarchical permission model: `resource:action` format
+- Engine permissions: `engine:health`, `engine:readiness`, `engine:metrics`, `engine:dlq`
+- Flow permissions: `flow:execute`, `flow:cancel`, `flow:status`
+- Upload permissions: `upload:create`, `upload:read`, `upload:cancel`
+- Wildcard support: `engine:*`, `flow:*`, `upload:*`
+
+**Predefined Permission Sets:**
+- `ADMIN` - Full engine access
+- `ORGANIZATION_OWNER` - All flow and upload permissions
+- `ORGANIZATION_MEMBER` - Same as owner
+- `API_KEY` - Limited to execute flows and create uploads
+
+**Permission Utilities:**
+- `matchesPermission()` - Single permission check with wildcards and hierarchies
+- `hasPermission()` - Check if user has a permission
+- `hasAnyPermission()` / `hasAllPermissions()` - Multiple permission checks
+- `expandPermission()` - Expand permission to all implied permissions
+
+**Authorization Errors:**
+- `AuthorizationError` - HTTP 403, permission denial
+- `AuthenticationRequiredError` - HTTP 401, missing auth
+- `OrganizationMismatchError` - HTTP 403, cross-org access
+- `QuotaExceededError` - HTTP 402, quota limits
+
+**Effect Integration:**
+- `AuthContextService` provides Effect-based API for permission checks
+- Methods: `hasPermission()`, `requirePermission()`, `getClientId()`, `getPermissions()`
+- Backward-compatible "bypass mode" when no auth middleware configured
+
+## 3. Observability (COMPLETE)
+
+### OpenTelemetry OTLP Export
+**Status**: COMPLETE (December 2024)
+
+**Implementation Files:**
+- `packages/observability/src/core/tracing.ts` - OTLP trace export
+- `packages/observability/src/core/metrics-sdk.ts` - OTLP metrics export
+- `packages/observability/src/core/logs-sdk.ts` - OTLP logs export
+- `packages/observability/src/core/full-observability.ts` - Combined SDK layers
+- `packages/observability/src/core/exporters.ts` - Exporter configuration
+
+**SDK Layers:**
+- `OtlpNodeSdkLive` - Node.js OTLP SDK
+- `OtlpWebSdkLive` - Browser OTLP SDK (fetch-based)
+- `OtlpWorkersSdkLive` - Cloudflare Workers OTLP SDK
+- `OtlpFullObservabilityNodeSdkLive` - Combined traces + metrics + logs
+- `OtlpAutoSdkLive` - Auto-detecting layer based on runtime
+
+**Environment Configuration:**
+```
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer xxx
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=...  (signal-specific)
+OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=... (signal-specific)
+OTEL_SERVICE_NAME=uploadista
+OTEL_RESOURCE_ATTRIBUTES=environment=production
+UPLOADISTA_OBSERVABILITY_ENABLED=true
+```
+
+**Distributed Tracing:**
+- `captureTraceContextEffect` - Capture current trace context for storage
+- `createExternalSpan()` - Create parent span for linking distributed traces
+- Works correctly with Effect's span context management
+- Trace context can be stored in KV alongside upload metadata
+
+**Metrics:**
+- Storage: `uploadRequestsTotal`, `uploadSuccessTotal`, `uploadErrorsTotal`
+- Flow: `flowStartedTotal`, `flowCompletedTotal`, `flowFailedTotal`
+- Node: `nodeExecutedTotal`, `nodeSuccessTotal`, `nodeFailedTotal`
+- Circuit breaker: `circuitBreakerOpenTotal`, `circuitBreakerStateGauge`
+- Histograms for duration tracking
+
+**Configuration Options:**
+```typescript
+interface OtlpSdkConfig {
+  serviceName?: string;
+  resourceAttributes?: Record<string, string>;
+  maxQueueSize?: number;       // default: 512
+  maxExportBatchSize?: number; // default: 512
+  scheduledDelayMillis?: number; // default: 5000
+  exportTimeoutMillis?: number;  // default: 30000 (for cloud endpoints)
+}
+```
+
+## 4. Streaming Media Processing (COMPLETE)
+
+### Video Streaming
+**Status**: COMPLETE (December 2024)
+
+**Implementation Files:**
+- `packages/flow/videos/av-node/src/utils/streaming-io.ts` - Streaming utilities
+- `packages/flow/videos/av-node/src/video-plugin.ts` - Video processing
+
+**Key Components:**
+- `createStreamingOutput()` - Memory-efficient streaming for video processing
+  - Queue-based chunk emission (not buffered)
+  - Returns Effect Stream for pipeline composition
+  - `finalize()` function to signal completion
+  - Seek position tracking for container formats
+
+- `collectStreamToBuffer()` - For formats that don't support streaming
+
+- Format detection:
+  - `isMpegTS()` - Detect MPEG-TS by sync byte (0x47)
+  - `isMpegTSMimeType()` - MIME type-based detection
+
+**Core Stream Utilities** (`packages/core/src/streams/`):
+- `streamLimiter()` - TransformStream-based size limiting
+- `StreamLimiterEffect` - Effect-based stream limiter with Ref state
+- `convertToStream()` - ReadableStream to Effect Stream conversion
+
+## 5. Performance & Scalability
 
 ### Flow Definition Caching
-**Status**: Auth caching complete, flow caching needed
+**Status**: NOT STARTED (reference: auth caching exists)
 - Cache compiled and validated flow definitions with LRU eviction
 - Implement smart cache invalidation based on flow dependencies
 - Add cache warming strategies for frequently used flows
-- Reference implementation: auth cache with LRU + TTL
-
-### Upload Compression
-**Status**: DEPRIORITIZED
-**Reason**: Most uploaded files (images, videos, documents) are already compressed formats (JPEG, PNG, MP4, PDF, DOCX). Additional compression would add CPU overhead on both client and server with minimal bandwidth savings (~0-5%). HTTP response compression is handled automatically by web servers; request compression requires explicit implementation.
-
-**When it would be useful**: Log ingestion, CSV/JSON data pipelines, RAW photography, uncompressed video workflows.
-
-**Alternative**: Leverage storage backend compression (S3, GCS support server-side compression) rather than implementing at application level.
-
-If revisited:
-- Smart detection: Only compress uncompressed MIME types
-- Content-encoding negotiation with storage backends
-- Transparent decompression on read
-- Configurable compression levels per flow
-
-### Streaming Media Processing
-**Status**: Partial - full file loading used
-- Replace full file loading with streaming transformations
-- Implement chunked processing for large images/videos
-- Memory-efficient pipeline for media nodes
-- Back-pressure handling for slow consumers
 
 ### KV Store Memory Management
-**Status**: Auth cache has TTL, other stores unbounded
+**Status**: NOT STARTED (auth cache has TTL, others unbounded)
 - Add TTL support to all KV store implementations
 - Implement size-based eviction policies
 - Memory usage monitoring and alerts
-- Configurable limits per store instance
 
-## 3. Advanced Flow Features
+## 6. Enterprise Features
 
-### Enhanced Node Types
-
-#### Queue Node
-**Status**: NOT IMPLEMENTED
-- Integration with message queues (Redis, SQS, Kafka)
-- Dead letter queue support for failed messages
-- Configurable retry policies and acknowledgments
-- Batch message processing
-
-#### External API Node
-**Status**: NOT IMPLEMENTED
-- Call external services with retry logic
-- Rate limiting and circuit breaker integration
-- Request/response transformation
-- OAuth and API key authentication
-
-#### Database Node
-**Status**: NOT IMPLEMENTED
-- Direct database operations (read/write)
-- Connection pooling and query optimization
-- Support for PostgreSQL, MySQL, MongoDB
-- Transaction support within flows
-
-### Flow Orchestration
-
-#### Sub-flows
-**Status**: NOT IMPLEMENTED
-- Reusable flow components with versioning
-- Dependency management between sub-flows
-- Isolated execution contexts
-- Parameter passing and output mapping
-
-#### Flow Templates
-**Status**: NOT IMPLEMENTED
-- Predefined flow patterns for common use cases:
-  - Social media image pipeline
-  - E-commerce product processing
-  - Document archival workflow
-  - Video transcoding pipeline
-
-#### Flow Scheduling
-**Status**: NOT IMPLEMENTED
-- Cron-based flow execution
-- Event-triggered flows (webhook, queue message)
-- Timezone-aware scheduling
-- Execution history and audit trail
-
-## 4. Security Enhancements
-
-### Node-level Permissions
-**Status**: NOT IMPLEMENTED (auth middleware exists)
-- Fine-grained access control with role-based permissions
-- Per-node authorization checks
-- Resource quotas per user/tenant
-- Audit logging for permission changes
-
-### Audit Trail
+### Audit Trail System
 **Status**: NOT IMPLEMENTED
 - Complete audit logging for compliance (GDPR, SOX, HIPAA)
 - Immutable audit log storage
 - Query interface for compliance reporting
 - Data retention policies
-
-### Enhanced Path Sanitization
-**Status**: Basic validation present
-- Strengthen path traversal prevention
-- Configurable filename policies
-- Directory isolation enforcement
-- Symbolic link protection
 
 ### End-to-End Encryption
 **Status**: NOT IMPLEMENTED
@@ -185,14 +205,21 @@ If revisited:
 - Encrypted storage at rest
 - Zero-knowledge architecture option
 
-## 5. Developer Experience
+### Enhanced Path Sanitization
+**Status**: Basic validation present
+- Strengthen path traversal prevention
+- Configurable filename policies
+- Directory isolation enforcement
+- Symbolic link protection
 
-### React UI Components
-**Status**: Hooks implemented, components needed
-- Pre-built upload components (dropzone, progress, gallery)
-- Flow builder React components
-- Theme customization with CSS variables
-- Accessibility (WCAG 2.1 AA)
+## 7. Developer Experience
+
+### Pre-built Dashboards
+**Status**: NOT IMPLEMENTED
+- Grafana dashboard templates for upload metrics
+- DataDog dashboard templates
+- Alert configurations for common issues
+- Flow execution visualization
 
 ### CLI Tools
 **Status**: NOT IMPLEMENTED
@@ -202,13 +229,6 @@ If revisited:
 - `uploadista flow test` - Test flow execution locally
 - `uploadista storage test` - Verify storage connectivity
 
-### IDE Extensions
-**Status**: NOT IMPLEMENTED
-- VSCode extension for flow development
-- Flow visualization and debugging
-- Autocomplete for node configuration
-- Real-time validation feedback
-
 ### Visual Flow Builder
 **Status**: NOT IMPLEMENTED
 - Drag-and-drop interface with real-time validation
@@ -216,265 +236,143 @@ If revisited:
 - Flow execution simulation
 - Export to code/JSON
 
-## 6. AI/ML Integration
-
-### Intelligent Content Processing
-**Status**: Partial (Replicate nodes exist)
-- Smart content analysis: Auto-categorization, sentiment analysis
-- Image recognition: Object detection, OCR (implemented), NSFW detection
-- Audio/Video processing: Transcription, closed captions
-- Document intelligence: Form extraction, document classification
-
-### Smart Routing
+### IDE Extensions
 **Status**: NOT IMPLEMENTED
-- ML-based flow routing based on content analysis
-- Dynamic resource allocation based on workload
-- Anomaly detection for unusual upload patterns
-- Quality assessment automation
+- VSCode extension for flow development
+- Flow visualization and debugging
+- Autocomplete for node configuration
+- Real-time validation feedback
 
-## Implementation Priority (Updated November 2024)
+## 8. Advanced Flow Features
 
-### Phase 1: Production Hardening (Q4 2024)
-**Status**: COMPLETE - All critical features implemented
+### Queue Node
+**Status**: NOT IMPLEMENTED
+- Integration with message queues (Redis, SQS, Kafka)
+- Dead letter queue support for failed messages
+- Configurable retry policies and acknowledgments
+- Batch message processing
+
+### External API Node
+**Status**: NOT IMPLEMENTED
+- Call external services with retry logic
+- Rate limiting and circuit breaker integration
+- Request/response transformation
+- OAuth and API key authentication
+
+### Database Node
+**Status**: NOT IMPLEMENTED
+- Direct database operations (read/write)
+- Connection pooling and query optimization
+- Support for PostgreSQL, MySQL, MongoDB
+- Transaction support within flows
+
+### Sub-flows
+**Status**: NOT IMPLEMENTED
+- Reusable flow components with versioning
+- Dependency management between sub-flows
+- Isolated execution contexts
+- Parameter passing and output mapping
+
+### Flow Templates
+**Status**: NOT IMPLEMENTED
+- Predefined flow patterns for common use cases:
+  - Social media image pipeline
+  - E-commerce product processing
+  - Document archival workflow
+  - Video transcoding pipeline
+
+## Implementation Priority (December 2024)
+
+### Phase 1: Production Hardening (COMPLETE)
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Circuit Breaker Pattern | CRITICAL | **COMPLETE** |
+| Dead Letter Queue | CRITICAL | **COMPLETE** |
+| Health Check Endpoints | CRITICAL | **COMPLETE** |
+
+### Phase 2: Security & Observability (COMPLETE)
+
+| Task | Priority | Status |
+|------|----------|--------|
+| Permissions System (RBAC) | CRITICAL | **COMPLETE** |
+| OpenTelemetry OTLP Export | CRITICAL | **COMPLETE** |
+| Distributed Tracing | HIGH | **COMPLETE** |
+| Media Streaming | HIGH | **COMPLETE** |
+
+### Phase 3: Performance Optimization (Q1 2025)
 
 | Task | Priority | Effort | Status |
 |------|----------|--------|--------|
-| Circuit Breaker Pattern | CRITICAL | Medium | **COMPLETE** |
-| Dead Letter Queue | CRITICAL | Medium | **COMPLETE** |
-| Health Check Endpoints | CRITICAL | Low | **COMPLETE** |
 | Flow Definition Caching | High | Low | Not Started |
-
-### Phase 2: Performance Optimization (Q1 2025)
-
-| Task | Priority | Effort | Status |
-|------|----------|--------|--------|
 | KV Store Memory Management | High | Low | Not Started |
-| Streaming Media Processing | Medium | High | Not Started |
 | Enhanced Path Sanitization | Medium | Low | Not Started |
 
-### Phase 3: Enterprise Features (Q1-Q2 2025)
+### Phase 4: Enterprise Features (Q1-Q2 2025)
 
 | Task | Priority | Effort | Status |
 |------|----------|--------|--------|
-| Node-level Permissions | High | Medium | Not Started |
 | Audit Trail System | High | Medium | Not Started |
-| Sub-flows and Templates | Medium | High | Not Started |
-| Flow Scheduling | Medium | Medium | Not Started |
+| End-to-End Encryption | Medium | High | Not Started |
+| Pre-built Dashboards | Medium | Low | Not Started |
 
-### Phase 4: Developer Experience (Q2 2025)
+### Phase 5: Developer Experience (Q2 2025)
 
 | Task | Priority | Effort | Status |
 |------|----------|--------|--------|
-| React UI Components | Medium | High | Hooks Done |
 | CLI Tools | Medium | Medium | Not Started |
 | Visual Flow Builder | Low | High | Not Started |
 | IDE Extensions | Low | Medium | Not Started |
 
-### Phase 5: Advanced Capabilities (Q3 2025+)
+### Phase 6: Advanced Features (Q3 2025+)
 
 | Task | Priority | Effort | Status |
 |------|----------|--------|--------|
 | Queue Node | Medium | Medium | Not Started |
 | External API Node | Medium | Medium | Not Started |
+| Sub-flows | Medium | High | Not Started |
 | Database Node | Low | High | Not Started |
-| End-to-End Encryption | Low | High | Not Started |
-| Smart Routing (ML) | Low | High | Not Started |
-| Upload Compression | Low | Medium | Deprioritized |
+| Flow Templates | Low | Medium | Not Started |
 
-## Key Implementation Notes
+## Recent Progress Summary (December 2024)
 
-### Circuit Breaker Pattern - IMPLEMENTED ✓
-**Status**: Complete (November 2024)
+The uploadista engine has achieved major enterprise milestones:
 
-**Implementation Files:**
-- `packages/core/src/flow/circuit-breaker.ts` - Core types and configuration
-- `packages/core/src/flow/circuit-breaker-store.ts` - KV and Memory store implementations
-- `packages/core/src/flow/distributed-circuit-breaker.ts` - Distributed breaker with registry
-- `packages/core/docs/CIRCUIT_BREAKER.md` - Comprehensive documentation
-
-**Key Components:**
-- `DistributedCircuitBreaker` class with state machine (closed → open → half-open → closed)
-- `DistributedCircuitBreakerRegistry` for managing multiple breakers
-- `CircuitBreakerStoreService` with KV store backing for cluster deployments
-- Memory store option for single-instance deployments
-
-**Configuration Options:**
-```typescript
-interface CircuitBreakerConfig {
-  enabled?: boolean;           // default: false
-  failureThreshold?: number;   // default: 5
-  resetTimeout?: number;       // default: 30000ms
-  halfOpenRequests?: number;   // default: 3
-  windowDuration?: number;     // default: 60000ms
-  fallback?: CircuitBreakerFallback;
-}
-```
-
-**Fallback Strategies:**
-1. `{ type: "fail" }` - Fail immediately with CIRCUIT_BREAKER_OPEN error
-2. `{ type: "skip", passThrough: true }` - Skip node, pass input through
-3. `{ type: "default", value: unknown }` - Return configured default value
-
-**Built-in Node Defaults:**
-- AI nodes (Describe Image, Remove Background, OCR, etc.): 5 failures, 60s timeout, skip fallback
-- Virus Scan: 5 failures, 60s timeout, **fail fallback** (security critical)
-
-**Benefits realized**: Prevents cascade failures, enables graceful degradation, distributed state for clusters
-
-### Dead Letter Queue - IMPLEMENTED ✓
-**Status**: Complete (November 2024)
-
-**Implementation Files:**
-- `packages/core/src/flow/dead-letter-queue.ts` - Core service (573 lines)
-- `packages/servers/server/src/core/http-handlers/dlq-http-handlers.ts` - Admin API handlers
-- `packages/core/src/flow/types/dead-letter-item.ts` - Type definitions
-- `packages/core/docs/DEAD-LETTER-QUEUE.md` - Comprehensive documentation
-- `packages/core/tests/flow/dead-letter-queue.test.ts` - Test coverage
-
-**Key Components:**
-- `DeadLetterQueueService` with full lifecycle management
-- Failed jobs captured with full error context, flow data, and timestamps
-- Retry scheduling with exponential backoff and jitter
-
-**Admin API Endpoints (8 total):**
-- `GET /api/dlq` - List items with filtering (status, flow, limit, offset)
-- `GET /api/dlq/:id` - Get item details
-- `POST /api/dlq/:id/retry` - Retry single item
-- `POST /api/dlq/retry-all` - Batch retry with filters
-- `DELETE /api/dlq/:id` - Delete item
-- `POST /api/dlq/:id/resolve` - Mark as resolved (manual resolution)
-- `POST /api/dlq/cleanup` - Remove old/expired items
-- `GET /api/dlq/stats` - Queue statistics (counts by status, by flow)
-
-**Retry Policies:**
-```typescript
-// Immediate retry
-{ type: "immediate" }
-
-// Fixed delay
-{ type: "fixed", delayMs: 5000 }
-
-// Exponential backoff with jitter
-{
-  type: "exponential",
-  initialDelayMs: 1000,
-  maxDelayMs: 300000,
-  multiplier: 2,
-  jitter: true
-}
-```
-
-**Error Filtering:**
-- `retryableErrors?: string[]` - Only retry these error codes
-- `nonRetryableErrors?: string[]` - Never retry these (takes precedence)
-- Examples: VALIDATION_ERROR, AUTH_ERROR, PERMISSION_DENIED are non-retryable
-
-**Item Status Lifecycle:**
-- `pending` → Awaiting retry or manual action
-- `retrying` → Currently being retried
-- `exhausted` → Max retries reached
-- `resolved` → Manually resolved
-
-### Health Check Endpoints - IMPLEMENTED ✓
-**Status**: Complete (November 2024)
-
-**Implementation Files:**
-- `packages/servers/server/src/core/health-check-service.ts` - Core service (368 lines)
-- `packages/servers/server/src/core/http-handlers/health-http-handlers.ts` - HTTP handlers
-- `packages/core/src/types/health-check.ts` - Type definitions
-- `packages/servers/server/docs/HEALTH_CHECKS.md` - Comprehensive documentation
-- `packages/servers/server/tests/core/health-check-service.test.ts` - Test coverage
-
-**Endpoints:**
-| Endpoint | Aliases | Purpose | HTTP Status |
-|----------|---------|---------|-------------|
-| `/health` | `/healthz` | Liveness probe (is server alive?) | Always 200 |
-| `/ready` | `/readyz` | Readiness probe (can accept traffic?) | 200 or 503 |
-| `/health/components` | - | Detailed component status | Always 200 |
-
-**Component Health Checks:**
-- Storage health (connectivity check)
-- KV store health (read/write test)
-- Event broadcaster health (publish test)
-- Circuit breaker summary (open circuits count)
-- Dead letter queue summary (pending/exhausted items)
-
-**Health Status Aggregation:**
-- `"healthy"` - All components operational
-- `"degraded"` - Optional component issues or open circuits
-- `"unhealthy"` - Critical component failure
-
-**Configuration:**
-```typescript
-interface HealthCheckConfig {
-  timeout?: number;              // default: 5000ms
-  checkStorage?: boolean;        // default: true
-  checkKvStore?: boolean;        // default: true
-  checkEventBroadcaster?: boolean; // default: true
-  version?: string;              // e.g., "1.2.3"
-}
-```
-
-**Response Formats:**
-- `application/json` - Full response with component details
-- `text/plain` - Simple "OK" or "Service Unavailable"
-
-**Kubernetes Integration Example:**
-```yaml
-livenessProbe:
-  httpGet:
-    path: /uploadista/health
-    port: 8080
-  initialDelaySeconds: 5
-  periodSeconds: 10
-
-readinessProbe:
-  httpGet:
-    path: /uploadista/ready
-    port: 8080
-  initialDelaySeconds: 10
-  periodSeconds: 5
-```
-
-## Recent Progress Summary (November 2024)
-
-The uploadista engine has achieved significant milestones:
-
-**Production Hardening COMPLETE ✓ (November 2024):**
-All three critical production hardening features are fully implemented and tested:
+**Security & Observability COMPLETE (December 2024):**
 
 | Feature | Key Capabilities | Status |
 |---------|------------------|--------|
-| **Circuit Breakers** | Distributed state, 3 fallback strategies, configurable thresholds | ✓ Complete |
-| **Dead Letter Queue** | 8 admin endpoints, 3 retry policies, error filtering | ✓ Complete |
-| **Health Checks** | Kubernetes probes, component aggregation, JSON/text | ✓ Complete |
+| **Permissions (RBAC)** | Hierarchical permissions, wildcards, predefined roles | COMPLETE |
+| **OTLP Export** | Traces, metrics, logs to Grafana/Jaeger | COMPLETE |
+| **Distributed Tracing** | Cross-service trace linking, context propagation | COMPLETE |
+| **Media Streaming** | Memory-efficient video processing | COMPLETE |
 
-**Completed Since October 2024:**
-- Parallel flow execution FULLY INTEGRATED
-- Magic byte file verification (50+ formats)
-- Virus scanning with ClamAV (fail/pass actions)
-- Document processing nodes (OCR, text extraction, PDF operations)
-- Video processing nodes (transcode, resize, thumbnail, trim)
-- Test coverage tripled (67 files, ~14% coverage)
-- Comprehensive FLOW_NODES.md documentation (812 lines)
+**Production Hardening (Previously Completed):**
+
+| Feature | Key Capabilities | Status |
+|---------|------------------|--------|
+| **Circuit Breakers** | Distributed state, 3 fallback strategies | COMPLETE |
+| **Dead Letter Queue** | 8 admin endpoints, 3 retry policies | COMPLETE |
+| **Health Checks** | Kubernetes probes, component aggregation | COMPLETE |
 
 **Code Quality:**
-- 70,556 lines of source TypeScript (26% growth)
-- 468 TypeScript files across 36+ packages
+- 84,215 lines of source TypeScript (19% growth)
+- 650 TypeScript files across 40+ packages (39% growth)
 - Effect-ts patterns throughout for error handling
 - Strict type safety with Zod schemas
-- 67 test files covering critical paths
+- 74 test files covering critical paths
 
 **Platform & Deployment:**
 - Multi-platform clients (Browser, React, Vue, React Native)
 - Multi-framework servers (Hono, Express, Fastify)
 - Cloudflare Workers edge deployment
 - Traditional Node.js deployment
+- Full OpenTelemetry observability
 
-**Next Focus: Performance Optimization**
+**Next Focus: Performance & Convenience**
 1. Flow definition caching
 2. KV store memory management
-3. Streaming media processing
+3. Pre-built Grafana dashboards
 
 ## Ideas for Future Consideration
 

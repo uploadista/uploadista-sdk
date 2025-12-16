@@ -10,35 +10,34 @@ import { Effect, Layer } from "effect";
  *
  * This provides a complete DocumentPlugin implementation.
  */
-export const documentPlugin = Layer.unwrapEffect(
-  Effect.gen(function* () {
-    // Get the pdf-lib plugin for manipulation operations
-    const pdfLibPlugin = yield* Effect.provide(
-      DocumentPlugin,
-      pdfLibDocumentPlugin,
-    );
+export const documentPlugin = () =>
+  Layer.unwrapEffect(
+    Effect.gen(function* () {
+      // Get the pdf-lib plugin for manipulation operations
+      const pdfLibPlugin = yield* Effect.provide(
+        DocumentPlugin,
+        pdfLibDocumentPlugin,
+      );
 
-    // Get the unpdf plugin for text extraction
-    const unpdfPlugin = yield* Effect.provide(
-      DocumentPlugin,
-      unpdfDocumentPlugin,
-    );
+      // Get the unpdf plugin for text extraction
+      const unpdfPlugin = yield* Effect.provide(
+        DocumentPlugin,
+        unpdfDocumentPlugin,
+      );
 
-    // Create a combined plugin
-    return Layer.succeed(
-      DocumentPlugin,
-      DocumentPlugin.of({
-        // Use unpdf for text extraction
-        extractText: unpdfPlugin.extractText,
-        // Use pdf-lib for metadata
-        getMetadata: pdfLibPlugin.getMetadata,
-        // Use pdf-lib for splitting
-        splitPdf: pdfLibPlugin.splitPdf,
-        // Use pdf-lib for merging
-        mergePdfs: pdfLibPlugin.mergePdfs,
-      }),
-    );
-  }),
-);
-
-export const DocumentPluginLive = documentPlugin;
+      // Create a combined plugin
+      return Layer.succeed(
+        DocumentPlugin,
+        DocumentPlugin.of({
+          // Use unpdf for text extraction
+          extractText: unpdfPlugin.extractText,
+          // Use pdf-lib for metadata
+          getMetadata: pdfLibPlugin.getMetadata,
+          // Use pdf-lib for splitting
+          splitPdf: pdfLibPlugin.splitPdf,
+          // Use pdf-lib for merging
+          mergePdfs: pdfLibPlugin.mergePdfs,
+        }),
+      );
+    }),
+  );

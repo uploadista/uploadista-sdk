@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest";
 import {
   TestDocumentAiPlugin,
   TestDocumentPlugin,
-  TestUploadServer,
+  TestUploadEngine,
 } from "@uploadista/core/testing";
 import type { UploadFile } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
@@ -43,7 +43,7 @@ const createTestUploadFile = (overrides?: Partial<UploadFile>): UploadFile => ({
 const TestLayer = Layer.mergeAll(
   TestDocumentPlugin,
   TestDocumentAiPlugin,
-  TestUploadServer,
+  TestUploadEngine,
 );
 
 // Mock fetch for URL availability tests
@@ -82,7 +82,9 @@ describe("Document Nodes", () => {
         expect(result.type).toBe("complete");
         if (result.type === "complete") {
           expect(result.data.metadata?.extractedText).toBeDefined();
-          expect(result.data.metadata?.extractedText).toContain("extracted text");
+          expect(result.data.metadata?.extractedText).toContain(
+            "extracted text",
+          );
         }
       }).pipe(Effect.provide(TestLayer)),
     );
@@ -188,14 +190,16 @@ describe("Document Nodes", () => {
   });
 
   describe("DescribeDocumentNode", () => {
-    it.effect("should create describe document node with correct properties", () =>
-      Effect.gen(function* () {
-        const node = yield* createDescribeDocumentNode("describe-1", {});
+    it.effect(
+      "should create describe document node with correct properties",
+      () =>
+        Effect.gen(function* () {
+          const node = yield* createDescribeDocumentNode("describe-1", {});
 
-        expect(node.id).toBe("describe-1");
-        expect(node.name).toBe("Describe Document");
-        expect(node.description).toContain("metadata");
-      }).pipe(Effect.provide(TestLayer)),
+          expect(node.id).toBe("describe-1");
+          expect(node.name).toBe("Describe Document");
+          expect(node.description).toContain("metadata");
+        }).pipe(Effect.provide(TestLayer)),
     );
 
     it.effect("should extract document metadata", () =>
@@ -285,14 +289,16 @@ describe("Document Nodes", () => {
   });
 
   describe("ConvertToMarkdownNode", () => {
-    it.effect("should create convert to markdown node with correct properties", () =>
-      Effect.gen(function* () {
-        const node = yield* createConvertToMarkdownNode("convert-1", {});
+    it.effect(
+      "should create convert to markdown node with correct properties",
+      () =>
+        Effect.gen(function* () {
+          const node = yield* createConvertToMarkdownNode("convert-1", {});
 
-        expect(node.id).toBe("convert-1");
-        expect(node.name).toBe("Convert to Markdown");
-        expect(node.description).toContain("Markdown");
-      }).pipe(Effect.provide(TestLayer)),
+          expect(node.id).toBe("convert-1");
+          expect(node.name).toBe("Convert to Markdown");
+          expect(node.description).toContain("Markdown");
+        }).pipe(Effect.provide(TestLayer)),
     );
 
     it.effect("should convert document to markdown", () =>

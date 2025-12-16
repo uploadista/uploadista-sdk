@@ -171,7 +171,7 @@ export const imageAiPlugin = (
           withOperationSpan("ai", "remove-background", {
             "ai.provider": "replicate",
             "ai.model": removeBackgroundModelId,
-            "ai.credential_id": context.credentialId,
+            "ai.client_id": context.clientId,
           }),
         );
       },
@@ -215,7 +215,7 @@ export const imageAiPlugin = (
           withOperationSpan("ai", "describe-image", {
             "ai.provider": "replicate",
             "ai.model": describeImageModelId,
-            "ai.credential_id": context.credentialId,
+            "ai.client_id": context.clientId,
           }),
         );
       },

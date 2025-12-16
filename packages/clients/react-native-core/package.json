@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/react-native-core",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "type": "module",
   "description": "Core React Native client for Uploadista",
   "license": "MIT",
@@ -13,7 +13,7 @@
     "./services": "./src/services/index.ts"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"

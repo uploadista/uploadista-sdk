@@ -32,9 +32,6 @@ export default function RootLayout() {
           console.error("[UploadistaProvider] ERROR:", error);
           console.error("[UploadistaProvider] Error stack:", error instanceof Error ? error.stack : "No stack");
         }}
-        onEvent={(event) => {
-          console.log("[UploadistaProvider] Event:", event);
-        }}
       >
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

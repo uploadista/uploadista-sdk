@@ -6,6 +6,7 @@ export {
 export { useCameraUpload } from "./use-camera-upload";
 export { useFileUpload } from "./use-file-upload";
 // Flow hooks
+// useFlow is the primary hook for flow operations (replaces useFlowUpload)
 export type {
   FlowInputMetadata,
   FlowUploadState,
@@ -15,7 +16,6 @@ export type {
   UseFlowReturn,
 } from "./use-flow";
 export { useFlow } from "./use-flow";
-export { useFlowUpload } from "./use-flow-upload";
 export { useGalleryUpload } from "./use-gallery-upload";
 // Multi-upload hooks
 export type {

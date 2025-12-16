@@ -3,7 +3,7 @@ import { UploadistaError } from "@uploadista/core/errors";
 import {
   TestImageAiPlugin,
   TestImagePlugin,
-  TestUploadServer,
+  TestUploadEngine,
 } from "@uploadista/core/testing";
 import type { UploadFile } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
@@ -45,7 +45,7 @@ const createTestUploadFile = (overrides?: Partial<UploadFile>): UploadFile => ({
 const TestLayer = Layer.mergeAll(
   TestImagePlugin,
   TestImageAiPlugin,
-  TestUploadServer,
+  TestUploadEngine,
 );
 
 // Mock fetch for URL availability tests

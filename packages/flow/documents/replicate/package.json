@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-replicate",
   "type": "module",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "description": "Replicate OCR plugin for Uploadista document processing",
   "license": "MIT",
   "author": "Uploadista",
@@ -14,13 +14,14 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
+    "@uploadista/observability": "workspace:*",
     "replicate": "1.4.0"
   },
   "peerDependencies": {

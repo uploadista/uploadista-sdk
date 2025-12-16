@@ -54,10 +54,18 @@ export const optimizeFlow = createFlow({
   name: "Optimize Flow",
   nodes: {
     input: createInputNode("input"),
-    optimize: createOptimizeNode("optimize", {
-      quality: 80,
-      format: "webp",
-    }),
+    optimize: createOptimizeNode(
+      "optimize",
+      {
+        quality: 80,
+        format: "webp",
+      },
+      {
+        mode: "auto",
+        streamingConfig: { fileSizeThreshold: 1_048_576 },
+        naming: { mode: "auto" },
+      },
+    ),
   },
   edges: [{ source: "input", target: "optimize" }],
 });

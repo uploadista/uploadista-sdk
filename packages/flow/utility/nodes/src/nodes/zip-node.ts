@@ -7,7 +7,7 @@ import {
   ZipPlugin,
 } from "@uploadista/core/flow";
 import { type UploadFile, uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import { z } from "zod";
 import type { ZipParams } from "@/types/zip-node";
@@ -20,7 +20,7 @@ export function createZipNode(
   { zipName, includeMetadata }: ZipParams,
 ) {
   return Effect.gen(function* () {
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     const zipPlugin = yield* ZipPlugin;
     return yield* createFlowNode<Record<string, UploadFile>, UploadFile>({
       id,
@@ -46,7 +46,7 @@ export function createZipNode(
             Object.values(inputs),
             (input) =>
               Effect.gen(function* () {
-                const data = yield* uploadServer.read(input.id, clientId);
+                const data = yield* uploadEngine.read(input.id, clientId);
                 return {
                   id: input.id,
                   data,
@@ -70,7 +70,7 @@ export function createZipNode(
           });
 
           // Upload the zip file
-          const result = yield* uploadServer.upload(
+          const result = yield* uploadEngine.upload(
             {
               storageId,
               size: zipBytes.byteLength,

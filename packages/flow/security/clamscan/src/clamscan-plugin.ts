@@ -10,9 +10,9 @@ import NodeClam from "clamscan";
 import { Effect, Layer } from "effect";
 
 /**
- * Configuration options for the ClamAV plugin
+ * Configuration options for the ClamAV Virus Scan plugin
  */
-export interface ClamScanConfig {
+export interface VirusScanPluginConfig {
   /**
    * Preference for scanning method
    * - "clamdscan": Use clamd daemon (faster, recommended)
@@ -71,7 +71,7 @@ export interface ClamScanConfig {
 class ClamScanPluginImpl implements VirusScanPluginShape {
   private clamscan: NodeClam | null = null;
 
-  constructor(private config: ClamScanConfig = {}) {}
+  constructor(private config: VirusScanPluginConfig = {}) {}
 
   /**
    * Initialize the ClamAV scanner
@@ -208,7 +208,7 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
 }
 
 /**
- * Creates a VirusScanPlugin layer using ClamAV
+ * Creates a Virus Scan Plugin layer using ClamAV
  *
  * @param config - Optional ClamAV configuration
  * @returns Layer providing VirusScanPlugin
@@ -225,8 +225,8 @@ class ClamScanPluginImpl implements VirusScanPluginShape {
  * });
  * ```
  */
-export function ClamScanPluginLayer(
-  config: ClamScanConfig = {},
+export function virusScanPlugin(
+  config: VirusScanPluginConfig = {},
 ): Layer.Layer<VirusScanPlugin, never, never> {
   return Layer.succeed(VirusScanPlugin, new ClamScanPluginImpl(config));
 }

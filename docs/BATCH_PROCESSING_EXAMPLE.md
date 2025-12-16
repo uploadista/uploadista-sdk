@@ -417,7 +417,7 @@ function generateBatchId(): string {
 ```typescript
 // server.ts - Batch processing endpoints
 import express from "express";
-import { createUploadServer } from "@uploadista/adapters-express";
+import { createUploadistaServer } from "@uploadista/server";
 import { S3DataStore } from "@uploadista/data-store-s3";
 import { RedisKVStore } from "@uploadista/kv-store-redis";
 import { RedisBroadcaster } from "@uploadista/event-broadcaster-redis";

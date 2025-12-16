@@ -1,10 +1,13 @@
 import { Context, Effect, Layer } from "effect";
-import type { AuthContext } from "./types";
 import {
-  hasPermission as matchHasPermission,
+  AuthenticationRequiredError,
+  AuthorizationError,
+} from "./permissions/errors";
+import {
   hasAnyPermission as matchHasAnyPermission,
+  hasPermission as matchHasPermission,
 } from "./permissions/matcher";
-import { AuthorizationError, AuthenticationRequiredError } from "./permissions/errors";
+import type { AuthContext } from "./types";
 
 /**
  * Authentication Context Service
@@ -154,7 +157,9 @@ export const AuthContextServiceLive = (
     hasAnyPermission: (requiredPermissions: readonly string[]) =>
       bypassAuth
         ? Effect.succeed(true)
-        : Effect.succeed(matchHasAnyPermission(permissions, requiredPermissions)),
+        : Effect.succeed(
+            matchHasAnyPermission(permissions, requiredPermissions),
+          ),
 
     requirePermission: (permission: string) =>
       Effect.gen(function* () {

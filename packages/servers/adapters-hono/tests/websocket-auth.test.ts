@@ -1,25 +1,25 @@
-import { FlowServer, type FlowServerShape } from "@uploadista/core/flow";
-import { UploadServer, type UploadServerShape } from "@uploadista/core/upload";
+import { FlowEngine, type FlowEngineShape } from "@uploadista/core/flow";
+import { UploadEngine, type UploadEngineShape } from "@uploadista/core/upload";
 import type { AuthResult } from "@uploadista/server";
 import { Effect, Layer } from "effect";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { honoWebSocketHandler } from "../src/hono-websocket-handler";
 
-// Mock upload and flow servers
-const mockUploadServer = {
+// Mock upload and flow engines
+const mockUploadEngine = {
   subscribeToUploadEvents: vi.fn(() => Effect.succeed(undefined)),
   unsubscribeFromUploadEvents: vi.fn(() => Effect.succeed(undefined)),
-} as unknown as UploadServerShape;
+} as unknown as UploadEngineShape;
 
-const mockFlowServer = {
+const mockFlowEngine = {
   subscribeToFlowEvents: vi.fn(() => Effect.succeed(undefined)),
   unsubscribeFromFlowEvents: vi.fn(() => Effect.succeed(undefined)),
-} as unknown as FlowServerShape;
+} as unknown as FlowEngineShape;
 
 const serverLayer = Layer.mergeAll(
-  Layer.succeed(UploadServer, mockUploadServer),
-  Layer.succeed(FlowServer, mockFlowServer),
+  Layer.succeed(UploadEngine, mockUploadEngine),
+  Layer.succeed(FlowEngine, mockFlowEngine),
 );
 
 describe("WebSocket Authentication", () => {

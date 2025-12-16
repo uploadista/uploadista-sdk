@@ -2,14 +2,14 @@
   "name": "@uploadista/react-native-bare",
   "type": "module",
   "description": "Bare React Native Client for Uploadista",
-  "version": "0.0.19",
+  "version": "0.0.20-beta.9",
   "license": "MIT",
   "author": "Uploadista",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsc --noEmit && tsdown",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src"
@@ -19,11 +19,26 @@
     "@uploadista/react-native-core": "workspace:*"
   },
   "peerDependencies": {
+    "js-base64": ">=3.7.0",
+    "uuid": ">=13.0.0",
     "react": ">=16.8.0",
     "react-native": ">=0.71.0",
     "@react-native-documents/picker": ">=10.0.0",
     "react-native-image-picker": ">=7.0.0",
-    "rn-fetch-blob": ">=0.12.0"
+    "react-native-quick-crypto": ">=0.7.0",
+    "rn-fetch-blob": ">=0.12.0",
+    "@react-native-async-storage/async-storage": ">=1.19.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-documents/picker": {
+      "optional": true
+    },
+    "react-native-image-picker": {
+      "optional": true
+    },
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",

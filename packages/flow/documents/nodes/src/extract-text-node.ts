@@ -8,7 +8,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 
 export type ExtractTextNodeParams = {
@@ -21,7 +21,7 @@ export function createExtractTextNode(
 ) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode({
       id,
@@ -44,7 +44,7 @@ export function createExtractTextNode(
           yield* Effect.logInfo(`Extracting text from PDF file ${file.id}`);
 
           // Read file bytes from upload server
-          const fileBytes = yield* uploadServer.read(file.id, clientId);
+          const fileBytes = yield* uploadEngine.read(file.id, clientId);
 
           // Extract text with error handling
           const extractedText = yield* documentService

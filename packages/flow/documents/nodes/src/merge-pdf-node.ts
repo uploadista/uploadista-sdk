@@ -12,7 +12,7 @@ import {
   STORAGE_OUTPUT_TYPE_ID,
 } from "@uploadista/core/flow";
 import { uploadFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import { z } from "zod";
 
@@ -35,7 +35,7 @@ export function createMergePdfNode(
 ) {
   return Effect.gen(function* () {
     const documentService = yield* DocumentPlugin;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
 
     return yield* createFlowNode({
       id,
@@ -75,7 +75,7 @@ export function createMergePdfNode(
 
           for (const file of files) {
             // Read file bytes from upload server
-            const fileBytes = yield* uploadServer.read(file.id, clientId);
+            const fileBytes = yield* uploadEngine.read(file.id, clientId);
             pdfBuffers.push(fileBytes);
 
             // Sum up page counts if available
@@ -131,12 +131,16 @@ export function createMergePdfNode(
               { flowId, jobId, nodeId: id, nodeType: "merge-pdf" },
               { mergedCount: files.length },
             );
-            const namedFile = applyFileNaming(firstFile, namingContext, namingConfig);
+            const namedFile = applyFileNaming(
+              firstFile,
+              namingContext,
+              namingConfig,
+            );
             outputFileName = `${getBaseName(namedFile)}.pdf`;
           }
 
           // Upload the merged PDF back to the upload server
-          const result = yield* uploadServer.upload(
+          const result = yield* uploadEngine.upload(
             {
               storageId: firstFile.storage.id,
               size: mergedPdf.byteLength,

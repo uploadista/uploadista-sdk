@@ -1,17 +1,35 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { StorageService } from "@uploadista/client-core";
+
 /**
- * Expo-specific implementation of StorageService using AsyncStorage
+ * Get AsyncStorage module dynamically
+ * This allows the service to work even if AsyncStorage is not installed
+ */
+function getAsyncStorage() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require("@react-native-async-storage/async-storage").default;
+  } catch (_error) {
+    throw new Error(
+      "@react-native-async-storage/async-storage is required for persistent storage. " +
+        "Please install it with: npm install @react-native-async-storage/async-storage",
+    );
+  }
+}
+
+/**
+ * React Native-specific implementation of StorageService using AsyncStorage
  * AsyncStorage is provided as an optional peer dependency and must be installed separately
  */
 export function createAsyncStorageService(): StorageService {
+  const AsyncStorage = getAsyncStorage();
+
   const findEntries = async (
     prefix: string,
   ): Promise<Record<string, string>> => {
     const results: Record<string, string> = {};
 
     const keys = await AsyncStorage.getAllKeys();
-    for (const key in keys) {
+    for (const key of keys) {
       if (key.startsWith(prefix)) {
         const item = await AsyncStorage.getItem(key);
         if (item) {

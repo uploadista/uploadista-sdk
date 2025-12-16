@@ -14,7 +14,7 @@
  * @module plugins-typing
  */
 
-import type { Flow, UploadServer } from "@uploadista/core";
+import type { Flow, UploadEngine } from "@uploadista/core";
 import type { ExtractLayerServices } from "@uploadista/core/flow";
 import type { Effect, Layer } from "effect";
 import type z from "zod";
@@ -50,14 +50,15 @@ export type FlowSuccess<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
-> = ReturnType<TFlows> extends Effect.Effect<infer Success, unknown, unknown>
-  ? Success
-  : never;
+> =
+  ReturnType<TFlows> extends Effect.Effect<infer Success, unknown, unknown>
+    ? Success
+    : never;
 
 /**
  * @deprecated Use `ExtractFlowPluginRequirements` from `@uploadista/server/core/plugin-types` instead.
  *
- * Extracts plugin requirements from a flow function, excluding UploadServer.
+ * Extracts plugin requirements from a flow function, excluding UploadEngine.
  *
  * @example Migration
  * ```typescript
@@ -75,13 +76,14 @@ export type FlowRequirementsOf<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
-> = FlowSuccess<TFlows> extends Flow<
-  z.ZodSchema<unknown>,
-  z.ZodSchema<unknown>,
-  infer R
->
-  ? Exclude<R, UploadServer>
-  : never;
+> =
+  FlowSuccess<TFlows> extends Flow<
+    z.ZodSchema<unknown>,
+    z.ZodSchema<unknown>,
+    infer R
+  >
+    ? Exclude<R, UploadEngine>
+    : never;
 
 /**
  * @deprecated Use `ExtractFlowPluginRequirements` from `@uploadista/server/core/plugin-types` instead.
@@ -104,7 +106,7 @@ export type RequiredPluginsOf<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
-> = Exclude<FlowRequirementsOf<TFlows>, UploadServer>;
+> = Exclude<FlowRequirementsOf<TFlows>, UploadEngine>;
 
 /**
  * @deprecated Use `ValidatePlugins` from `@uploadista/server/core/plugin-types` instead.

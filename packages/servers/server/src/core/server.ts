@@ -21,7 +21,7 @@ import type { z } from "zod";
 import type { StandardResponse } from "../adapter";
 import { AuthCacheServiceLive } from "../cache";
 import { handleFlowError } from "../http-utils";
-import { createFlowServerLayer, createUploadServerLayer } from "../layer-utils";
+import { createFlowEngineLayer, createUploadEngineLayer } from "../layer-utils";
 import { AuthContextServiceLive } from "../service";
 import type { AuthContext } from "../types";
 import { UsageHookServiceLive } from "../usage-hooks/service";
@@ -252,7 +252,7 @@ export const createUploadistaServer = async <
   > = await createDataStoreLayer(dataStore);
 
   // Create upload server layer
-  const uploadServerLayer = createUploadServerLayer({
+  const uploadEngineLayer = createUploadEngineLayer({
     kvStore,
     eventEmitter: finalEventEmitter,
     dataStore: dataStoreLayer,
@@ -261,11 +261,11 @@ export const createUploadistaServer = async <
   });
 
   // Create flow server layer
-  const flowServerLayer = createFlowServerLayer({
+  const flowEngineLayer = createFlowEngineLayer({
     kvStore,
     eventEmitter: finalEventEmitter,
     flowProvider: flowProviderLayer,
-    uploadServer: uploadServerLayer,
+    uploadEngine: uploadEngineLayer,
   });
 
   // Create auth cache layer (always present, even if auth is not enabled)
@@ -299,8 +299,8 @@ export const createUploadistaServer = async <
    * with user-provided plugin layers.
    */
   const serverLayerRaw = Layer.mergeAll(
-    uploadServerLayer,
-    flowServerLayer,
+    uploadEngineLayer,
+    flowEngineLayer,
     effectiveMetricsLayer,
     authCacheLayer,
     usageHookLayer,
@@ -314,9 +314,7 @@ export const createUploadistaServer = async <
    * This must be included in the runtime layer (not per-request) so that the
    * BatchSpanProcessor can aggregate spans across requests and flush them properly.
    */
-  const tracingLayer = withTracing
-    ? observabilityLayer ?? NodeSdkLive
-    : null;
+  const tracingLayer = withTracing ? (observabilityLayer ?? NodeSdkLive) : null;
 
   /**
    * Type Casting Rationale for Plugin System

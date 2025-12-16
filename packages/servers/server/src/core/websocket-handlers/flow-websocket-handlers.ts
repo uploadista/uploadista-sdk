@@ -1,4 +1,4 @@
-import type { FlowServerShape } from "@uploadista/core/flow";
+import type { FlowEngineShape } from "@uploadista/core/flow";
 import { Effect } from "effect";
 import type { WebSocketConnection } from "../websocket-routes";
 
@@ -7,7 +7,7 @@ import type { WebSocketConnection } from "../websocket-routes";
  * Subscribes the WebSocket connection to receive real-time flow execution events
  */
 export const handleSubscribeToFlowEvents = (
-  flowServer: FlowServerShape,
+  flowEngine: FlowEngineShape,
   jobId: string | undefined,
   connection: WebSocketConnection,
 ) => {
@@ -25,7 +25,7 @@ export const handleSubscribeToFlowEvents = (
       return;
     }
 
-    yield* flowServer.subscribeToFlowEvents(jobId, connection);
+    yield* flowEngine.subscribeToFlowEvents(jobId, connection);
   });
 };
 
@@ -34,7 +34,7 @@ export const handleSubscribeToFlowEvents = (
  * Removes the WebSocket connection from receiving flow events
  */
 export const handleUnsubscribeFromFlowEvents = (
-  flowServer: FlowServerShape,
+  flowEngine: FlowEngineShape,
   jobId: string | undefined,
 ) => {
   return Effect.gen(function* () {
@@ -42,6 +42,6 @@ export const handleUnsubscribeFromFlowEvents = (
       return;
     }
 
-    yield* flowServer.unsubscribeFromFlowEvents(jobId);
+    yield* flowEngine.unsubscribeFromFlowEvents(jobId);
   });
 };

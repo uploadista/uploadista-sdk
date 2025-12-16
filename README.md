@@ -53,14 +53,14 @@ npm install @uploadista/kv-store-cloudflare-kv  # Cloudflare KV
 ### Basic Server Setup
 
 ```typescript
-import { createUploadServer } from "@uploadista/server";
-import { createS3DataStore } from "@uploadista/data-store-s3";
-import { createRedisKVStore } from "@uploadista/kv-store-redis";
-import { createHonoAdapter } from "@uploadista/adapters-hono";
+import { createUploadistaServer } from "@uploadista/server";
+import { s3Store } from "@uploadista/data-store-s3";
+import { redisKvStore } from "@uploadista/kv-store-redis";
+import { honoAdapter } from "@uploadista/adapters-hono";
 import { Effect, Layer } from "effect";
 
 // Configure data store
-const dataStore = createS3DataStore({
+const dataStore = s3Store({
   bucket: "my-uploads",
   region: "us-east-1",
   credentials: {
@@ -70,21 +70,22 @@ const dataStore = createS3DataStore({
 });
 
 // Configure KV store
-const kvStore = createRedisKVStore({
+const kvStore = redisKvStore({
   url: process.env.REDIS_URL!,
 });
 
 // Create upload server
-const uploadServer = createUploadServer({
-  dataStores: { default: dataStore },
-  kvStore,
+const uploadistaServer = createUploadistaServer({
+    dataStore,
+    kvStore,
+    adapter: honoAdapter(),
 });
 
-// Create HTTP adapter
-const app = createHonoAdapter(uploadServer);
+app.on(["HEAD", "POST", "GET", "PATCH"], "/uploadista/api/**", (c) => uploadistaServer.handler(c));
+app.get("/uploadista/ws/**", upgradeWebSocket(uploadistaServer.websocketHandler));
 
 // Start server
-export default app;
+export default serve({ port: 3000, fetch: app.fetch });
 ```
 
 ### React Client Example
@@ -294,7 +295,7 @@ import { OtlpNodeSdkLive } from "@uploadista/observability";
 import { Effect } from "effect";
 
 // Add observability to your server
-const program = createUploadServer({ /* config */ }).pipe(
+const program = createUploadistaServer({ /* config */ }).pipe(
   Effect.provide(OtlpNodeSdkLive)
 );
 ```

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { UploadistaError } from "../../errors";
 import type { InputFile } from "../../types";
 import { uploadFileSchema } from "../../types";
-import { UploadServer } from "../../upload";
+import { UploadEngine } from "../../upload";
 import { arrayBuffer, fetchFile } from "../../upload/upload-url";
 import { createFlowNode, NodeType } from "../node";
 import { STORAGE_OUTPUT_TYPE_ID, STREAMING_INPUT_TYPE_ID } from "../node-types";
@@ -174,7 +174,7 @@ export function createInputNode(
 ) {
   const keepOutput = options?.keepOutput ?? false;
   return Effect.gen(function* () {
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     return yield* createFlowNode({
       id,
       name: "Input",
@@ -208,7 +208,7 @@ export function createInputNode(
                 },
               };
 
-              const uploadFile = yield* uploadServer.createUpload(
+              const uploadFile = yield* uploadEngine.createUpload(
                 inputFile,
                 clientId,
               );
@@ -220,7 +220,7 @@ export function createInputNode(
 
             case "finalize": {
               // Get final upload file from upload server's KV store
-              const finalUploadFile = yield* uploadServer.getUpload(
+              const finalUploadFile = yield* uploadEngine.getUpload(
                 data.uploadId,
               );
 
@@ -277,7 +277,7 @@ export function createInputNode(
                   : undefined,
               };
 
-              const uploadFile = yield* uploadServer.upload(
+              const uploadFile = yield* uploadEngine.upload(
                 inputFile,
                 clientId,
                 stream,

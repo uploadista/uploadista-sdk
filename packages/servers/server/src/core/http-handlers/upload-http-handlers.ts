@@ -1,5 +1,5 @@
 import { inputFileSchema } from "@uploadista/core/types";
-import { UploadServer } from "@uploadista/core/upload";
+import { UploadEngine } from "@uploadista/core/upload";
 import { isSupportedAlgorithm } from "@uploadista/core/utils";
 import { MetricsService } from "@uploadista/observability";
 import { Effect } from "effect";
@@ -22,7 +22,7 @@ import type {
 
 export const handleCreateUpload = (req: CreateUploadRequest) =>
   Effect.gen(function* () {
-    const server = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
     const usageHookService = yield* UsageHookService;
@@ -79,7 +79,7 @@ export const handleCreateUpload = (req: CreateUploadRequest) =>
       }
     }
 
-    const fileCreated = yield* server.createUpload(
+    const fileCreated = yield* uploadEngine.createUpload(
       parsedInputFile.data,
       clientId,
     );
@@ -104,14 +104,17 @@ export const handleCreateUpload = (req: CreateUploadRequest) =>
 
 export const handleGetCapabilities = ({ storageId }: GetCapabilitiesRequest) =>
   Effect.gen(function* () {
-    const server = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     const authService = yield* AuthContextService;
     const clientId = yield* authService.getClientId();
 
     // Check permission for reading upload capabilities
     yield* authService.requirePermission(PERMISSIONS.UPLOAD.READ);
 
-    const capabilities = yield* server.getCapabilities(storageId, clientId);
+    const capabilities = yield* uploadEngine.getCapabilities(
+      storageId,
+      clientId,
+    );
 
     return {
       status: 200,
@@ -125,13 +128,13 @@ export const handleGetCapabilities = ({ storageId }: GetCapabilitiesRequest) =>
 
 export const handleGetUpload = ({ uploadId }: GetUploadRequest) =>
   Effect.gen(function* () {
-    const server = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     const authService = yield* AuthContextService;
 
     // Check permission for reading upload status
     yield* authService.requirePermission(PERMISSIONS.UPLOAD.READ);
 
-    const fileResult = yield* server.getUpload(uploadId);
+    const fileResult = yield* uploadEngine.getUpload(uploadId);
 
     return {
       status: 200,
@@ -141,7 +144,7 @@ export const handleGetUpload = ({ uploadId }: GetUploadRequest) =>
 
 export const handleUploadChunk = (req: UploadChunkRequest) =>
   Effect.gen(function* () {
-    const server = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     const authService = yield* AuthContextService;
     const authCache = yield* AuthCacheService;
     const metricsService = yield* MetricsService;
@@ -168,7 +171,11 @@ export const handleUploadChunk = (req: UploadChunkRequest) =>
     }
 
     const startTime = Date.now();
-    const fileResult = yield* server.uploadChunk(uploadId, clientId, data);
+    const fileResult = yield* uploadEngine.uploadChunk(
+      uploadId,
+      clientId,
+      data,
+    );
 
     // Clear cache and record metrics if upload is complete
     if (fileResult.size && fileResult.offset >= fileResult.size) {

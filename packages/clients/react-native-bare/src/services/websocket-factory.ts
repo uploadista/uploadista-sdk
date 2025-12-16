@@ -10,35 +10,42 @@ class ReactNativeWebSocket implements WebSocketLike {
   readonly CLOSING = 2;
   readonly CLOSED = 3;
 
-  readonly readyState: number;
-  onopen: ((event: unknown) => void) | null = null;
-  onclose: ((event: unknown) => void) | null = null;
-  onerror: ((event: unknown) => void) | null = null;
-  onmessage: ((event: unknown) => void) | null = null;
+  onopen: (() => void) | null = null;
+  onclose: ((event: { code: number; reason: string }) => void) | null = null;
+  onerror: ((event: { message: string }) => void) | null = null;
+  onmessage: ((event: { data: string }) => void) | null = null;
 
   private native: WebSocket;
 
+  get readyState(): number {
+    return this.native.readyState;
+  }
+
   constructor(url: string) {
     this.native = new WebSocket(url);
-    this.readyState = this.native.readyState;
 
     // Proxy event handlers
-    this.native.onopen = (event) => {
-      this.readyState = this.native.readyState;
-      this.onopen?.(event);
+    this.native.onopen = () => {
+      this.onopen?.();
     };
 
     this.native.onclose = (event) => {
-      this.readyState = this.native.readyState;
-      this.onclose?.(event);
+      this.onclose?.({
+        code: (event as CloseEvent).code ?? 1000,
+        reason: (event as CloseEvent).reason ?? "",
+      });
     };
 
     this.native.onerror = (event) => {
-      this.onerror?.(event);
+      this.onerror?.({
+        message: (event as ErrorEvent).message ?? "WebSocket error",
+      });
     };
 
     this.native.onmessage = (event) => {
-      this.onmessage?.(event);
+      this.onmessage?.({
+        data: (event as MessageEvent).data as string,
+      });
     };
   }
 

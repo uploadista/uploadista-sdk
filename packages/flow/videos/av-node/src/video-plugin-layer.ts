@@ -1,7 +1,7 @@
 import { VideoPlugin } from "@uploadista/core/flow";
 import { Effect, Layer } from "effect";
 import { checkAVAvailable } from "./utils/av-check";
-import { createAVNodeVideoPlugin } from "./video-plugin";
+import { createVideoPlugin } from "./video-plugin";
 
 /**
  * Effect Layer for the node-av video plugin
@@ -26,10 +26,8 @@ import { createAVNodeVideoPlugin } from "./video-plugin";
  * );
  * ```
  */
-export const AVNodeVideoPlugin = Layer.succeed(
-  VideoPlugin,
-  createAVNodeVideoPlugin(),
-);
+export const videoPlugin = () =>
+  Layer.succeed(VideoPlugin, createVideoPlugin());
 
 /**
  * Effect Layer for the node-av video plugin with availability check
@@ -54,18 +52,19 @@ export const AVNodeVideoPlugin = Layer.succeed(
  * );
  * ```
  */
-export const AVNodeVideoPluginWithCheck = Layer.effectDiscard(
-  Effect.gen(function* () {
-    const result = yield* Effect.promise(() => checkAVAvailable());
+export const videoPluginWithCheck = () =>
+  Layer.effectDiscard(
+    Effect.gen(function* () {
+      const result = yield* Effect.promise(() => checkAVAvailable());
 
-    if (!result.available) {
-      console.warn(
-        "⚠️  node-av is not installed or not available.",
-        "\nVideo processing operations will fail.",
-        "\nInstall node-av: npm install node-av",
-      );
-    } else {
-      console.log(`✓ node-av ${result.version} detected`);
-    }
-  }),
-).pipe(Layer.provideMerge(AVNodeVideoPlugin));
+      if (!result.available) {
+        console.warn(
+          "⚠️  node-av is not installed or not available.",
+          "\nVideo processing operations will fail.",
+          "\nInstall node-av: npm install node-av",
+        );
+      } else {
+        console.log(`✓ node-av ${result.version} detected`);
+      }
+    }),
+  ).pipe(Layer.provideMerge(videoPlugin()));

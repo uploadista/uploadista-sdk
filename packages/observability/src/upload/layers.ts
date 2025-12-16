@@ -3,7 +3,7 @@ import {
   makeUploadObservabilityLayer,
   UploadObservability,
 } from "../core/layers.js";
-import { createUploadServerMetrics } from "./metrics.js";
+import { createUploadEngineMetrics } from "./metrics.js";
 
 // ============================================================================
 // Upload Observability Layer Implementation
@@ -15,7 +15,7 @@ import { createUploadServerMetrics } from "./metrics.js";
 export const makeUploadObservabilityLive = (
   serviceName = "uploadista-upload-server",
 ): Layer.Layer<UploadObservability> => {
-  const metrics = createUploadServerMetrics();
+  const metrics = createUploadEngineMetrics();
 
   return Layer.succeed(UploadObservability, {
     serviceName,
@@ -61,7 +61,7 @@ export const getUploadMetrics = Effect.gen(function* () {
 export const withUploadDuration = <A, E, R>(
   effect: Effect.Effect<A, E, R>,
 ): Effect.Effect<A, E, R | UploadObservability> => {
-  const metrics = createUploadServerMetrics();
+  const metrics = createUploadEngineMetrics();
   return Effect.gen(function* () {
     const startTime = Date.now();
     const result = yield* effect;
@@ -77,7 +77,7 @@ export const withUploadDuration = <A, E, R>(
 export const withChunkDuration = <A, E, R>(
   effect: Effect.Effect<A, E, R>,
 ): Effect.Effect<A, E, R> => {
-  const metrics = createUploadServerMetrics();
+  const metrics = createUploadEngineMetrics();
   return Effect.gen(function* () {
     const startTime = Date.now();
     const result = yield* effect;

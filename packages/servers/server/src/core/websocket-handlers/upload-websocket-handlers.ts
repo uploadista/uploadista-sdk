@@ -1,4 +1,4 @@
-import type { UploadServerShape } from "@uploadista/core/upload";
+import type { UploadEngineShape } from "@uploadista/core/upload";
 import { Effect } from "effect";
 import type { WebSocketConnection } from "../websocket-routes";
 
@@ -7,7 +7,7 @@ import type { WebSocketConnection } from "../websocket-routes";
  * Subscribes the WebSocket connection to receive real-time upload progress events
  */
 export const handleSubscribeToUploadEvents = (
-  uploadServer: UploadServerShape,
+  uploadEngine: UploadEngineShape,
   uploadId: string | undefined,
   connection: WebSocketConnection,
 ) => {
@@ -25,7 +25,7 @@ export const handleSubscribeToUploadEvents = (
       return;
     }
 
-    yield* uploadServer.subscribeToUploadEvents(uploadId, connection);
+    yield* uploadEngine.subscribeToUploadEvents(uploadId, connection);
   });
 };
 
@@ -34,7 +34,7 @@ export const handleSubscribeToUploadEvents = (
  * Removes the WebSocket connection from receiving upload events
  */
 export const handleUnsubscribeFromUploadEvents = (
-  uploadServer: UploadServerShape,
+  uploadEngine: UploadEngineShape,
   uploadId: string | undefined,
 ) => {
   return Effect.gen(function* () {
@@ -42,6 +42,6 @@ export const handleUnsubscribeFromUploadEvents = (
       return;
     }
 
-    yield* uploadServer.unsubscribeFromUploadEvents(uploadId);
+    yield* uploadEngine.unsubscribeFromUploadEvents(uploadId);
   });
 };

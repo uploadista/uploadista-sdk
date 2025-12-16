@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { z } from "zod";
 import type { UploadistaError as CoreUploadistaError } from "../errors";
 import { UploadistaError } from "../errors";
-import type { UploadServer } from "../upload";
+import type { UploadEngine } from "../upload";
 import type { FlowEvent } from "./event";
 import type { Flow, FlowExecutionResult } from "./flow";
 import { createFlowWithSchema } from "./flow";
@@ -59,13 +59,14 @@ export type NodeDefinitionsRecord = Record<string, NodeDefinition<any, any>>;
  * If the node is an Effect, extracts its error type.
  * If the node is a plain FlowNode, returns never (no errors).
  */
-type NodeDefinitionError<T> = T extends Effect.Effect<
-  FlowNode<any, any, CoreUploadistaError>,
-  infer TError,
-  any
->
-  ? TError
-  : never;
+type NodeDefinitionError<T> =
+  T extends Effect.Effect<
+    FlowNode<any, any, CoreUploadistaError>,
+    infer TError,
+    any
+  >
+    ? TError
+    : never;
 
 /**
  * Extracts the requirements (dependencies) from a NodeDefinition.
@@ -111,7 +112,7 @@ type NodesRequirementsUnion<TNodes extends NodeDefinitionsRecord> = {
  * Extracts all service requirements from a flow's nodes.
  *
  * This includes all services required by any node in the flow,
- * including UploadServer (which is provided by the runtime).
+ * including UploadEngine (which is provided by the runtime).
  *
  * @template TNodes - The record of node definitions
  *
@@ -125,17 +126,17 @@ type NodesRequirementsUnion<TNodes extends NodeDefinitionsRecord> = {
  *   edges: [...]
  * });
  * type AllRequirements = FlowRequirements<typeof myFlow.nodes>;
- * // AllRequirements = ImagePlugin | UploadServer
+ * // AllRequirements = ImagePlugin | UploadEngine
  * ```
  */
 export type FlowRequirements<TNodes extends NodeDefinitionsRecord> =
   NodesRequirementsUnion<TNodes>;
 
 /**
- * Extracts plugin service requirements from a flow, excluding UploadServer.
+ * Extracts plugin service requirements from a flow, excluding UploadEngine.
  *
  * This type is useful for determining which plugin layers need to be
- * provided when creating a server, as UploadServer is automatically
+ * provided when creating a server, as UploadEngine is automatically
  * provided by the runtime.
  *
  * @template TNodes - The record of node definitions
@@ -145,16 +146,16 @@ export type FlowRequirements<TNodes extends NodeDefinitionsRecord> =
  * const myFlow = createFlow({
  *   nodes: {
  *     resize: imageResizeNode, // requires ImagePlugin
- *     upload: s3OutputNode,   // requires UploadServer
+ *     upload: s3OutputNode,   // requires UploadEngine
  *   },
  *   edges: [...]
  * });
  * type PluginRequirements = FlowPluginRequirements<typeof myFlow.nodes>;
- * // PluginRequirements = ImagePlugin (UploadServer excluded)
+ * // PluginRequirements = ImagePlugin (UploadEngine excluded)
  * ```
  */
 export type FlowPluginRequirements<TNodes extends NodeDefinitionsRecord> =
-  Exclude<FlowRequirements<TNodes>, UploadServer>;
+  Exclude<FlowRequirements<TNodes>, UploadEngine>;
 
 /**
  * Infers the concrete FlowNode type from a NodeDefinition.
@@ -164,11 +165,12 @@ export type FlowPluginRequirements<TNodes extends NodeDefinitionsRecord> =
  *
  * Uses the shared ResolveEffect utility for consistency.
  */
-type InferNode<T> = T extends FlowNode<any, any, CoreUploadistaError>
-  ? T
-  : ResolveEffect<T> extends FlowNode<any, any, CoreUploadistaError>
-    ? ResolveEffect<T>
-    : never;
+type InferNode<T> =
+  T extends FlowNode<any, any, CoreUploadistaError>
+    ? T
+    : ResolveEffect<T> extends FlowNode<any, any, CoreUploadistaError>
+      ? ResolveEffect<T>
+      : never;
 
 type ResolvedNodesRecord<TNodes extends NodeDefinitionsRecord> = {
   [K in keyof TNodes]: InferNode<TNodes[K]>;

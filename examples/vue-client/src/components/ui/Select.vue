@@ -7,7 +7,7 @@ interface SelectOption {
   value: string;
 }
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     modelValue?: string;
     options?: SelectOption[];

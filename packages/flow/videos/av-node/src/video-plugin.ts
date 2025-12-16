@@ -2,9 +2,11 @@ import { UploadistaError } from "@uploadista/core/errors";
 import type {
   DescribeVideoMetadata,
   VideoPluginShape,
+  VideoStreamInput,
+  VideoStreamOptions,
 } from "@uploadista/core/flow";
 import { withOperationSpan } from "@uploadista/observability";
-import { Effect } from "effect";
+import { Effect, type Stream } from "effect";
 import { Decoder, Demuxer, Encoder, Muxer } from "node-av/api";
 import {
   audioCodecToAVName,
@@ -12,11 +14,31 @@ import {
   imageFormatToEncoder,
 } from "./utils/format-mappings";
 import { createMemoryOutput } from "./utils/memory-io";
+import {
+  collectStreamToBuffer,
+  createStreamingOutput,
+  isMpegTSMimeType,
+} from "./utils/streaming-io";
+
+/**
+ * Helper to check if a VideoStreamInput is a Stream vs a Uint8Array.
+ * Streams have a pipe property that is a function.
+ */
+function isInputStream(
+  input: VideoStreamInput,
+): input is Stream.Stream<Uint8Array, UploadistaError> {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    "pipe" in input &&
+    typeof (input as { pipe: unknown }).pipe === "function"
+  );
+}
 
 /**
  * Creates a node-av based video processing plugin
  */
-export function createAVNodeVideoPlugin(): VideoPluginShape {
+export function createVideoPlugin(): VideoPluginShape {
   return {
     describe: (input) =>
       Effect.tryPromise({
@@ -496,6 +518,378 @@ export function createAVNodeVideoPlugin(): VideoPluginShape {
           "video.timestamp": options.timestamp,
           "video.format": options.format ?? "jpeg",
           "video.input_size": input.byteLength,
+        }),
+      ),
+
+    // Streaming support flag
+    supportsStreaming: true,
+
+    // Streaming transcode implementation
+    transcodeStream: (
+      input: VideoStreamInput,
+      options,
+      streamOptions?: VideoStreamOptions,
+    ) =>
+      Effect.gen(function* () {
+        // Convert stream input to buffer if needed
+        // Currently MPEG-TS input streaming is not yet implemented
+        const inputBuffer: Uint8Array = isInputStream(input)
+          ? yield* collectStreamToBuffer(input)
+          : input;
+
+        // Create streaming output
+        const { callbacks, stream, finalize } = createStreamingOutput();
+
+        // Start processing in background and return stream immediately
+        const processVideo = Effect.tryPromise({
+          try: async () => {
+            const buffer = Buffer.from(inputBuffer);
+
+            await using mediaInput = await Demuxer.open(buffer);
+            await using mediaOutput = await Muxer.open(callbacks, {
+              format: options.format,
+            });
+
+            const videoStream = mediaInput.video();
+            if (!videoStream) {
+              throw new Error("No video stream found");
+            }
+
+            using videoDecoder = await Decoder.create(videoStream);
+
+            const encoderCodec = options.codec
+              ? codecToAVName[options.codec]
+              : codecToAVName.h264;
+
+            using videoEncoder = await Encoder.create(encoderCodec, {
+              ...(options.videoBitrate && { bitrate: options.videoBitrate }),
+            });
+
+            const videoOutputIndex = mediaOutput.addStream(videoEncoder);
+
+            // Process video frames
+            for await (using frame of videoDecoder.frames(
+              mediaInput.packets(videoStream.index),
+            )) {
+              if (!frame) continue;
+              await videoEncoder.encode(frame);
+              let packet = await videoEncoder.receive();
+              while (packet) {
+                await mediaOutput.writePacket(packet, videoOutputIndex);
+                packet.free();
+                packet = await videoEncoder.receive();
+              }
+            }
+
+            // Flush remaining packets
+            await videoEncoder.flush();
+            let vPacket = await videoEncoder.receive();
+            while (vPacket) {
+              await mediaOutput.writePacket(vPacket, videoOutputIndex);
+              vPacket.free();
+              vPacket = await videoEncoder.receive();
+            }
+
+            // Handle audio stream if present
+            const audioStream = mediaInput.audio();
+            if (audioStream) {
+              using audioDecoder = await Decoder.create(audioStream);
+
+              const audioEncoderCodec = options.audioCodec
+                ? audioCodecToAVName[options.audioCodec]
+                : audioCodecToAVName.aac;
+
+              using audioEncoder = await Encoder.create(audioEncoderCodec, {
+                ...(options.audioBitrate && { bitrate: options.audioBitrate }),
+              });
+
+              const audioOutputIndex = mediaOutput.addStream(audioEncoder);
+
+              for await (using frame of audioDecoder.frames(
+                mediaInput.packets(audioStream.index),
+              )) {
+                if (!frame) continue;
+                await audioEncoder.encode(frame);
+                let packet = await audioEncoder.receive();
+                while (packet) {
+                  await mediaOutput.writePacket(packet, audioOutputIndex);
+                  packet.free();
+                  packet = await audioEncoder.receive();
+                }
+              }
+
+              await audioEncoder.flush();
+              let aPacket = await audioEncoder.receive();
+              while (aPacket) {
+                await mediaOutput.writePacket(aPacket, audioOutputIndex);
+                aPacket.free();
+                aPacket = await audioEncoder.receive();
+              }
+            }
+          },
+          catch: (error) =>
+            UploadistaError.fromCode("VIDEO_PROCESSING_FAILED", {
+              body: `Streaming transcode failed: ${error instanceof Error ? error.message : String(error)}`,
+              cause: error,
+            }),
+        });
+
+        // Fork processing and finalize when done
+        yield* Effect.fork(
+          Effect.tap(processVideo, () => Effect.sync(finalize)),
+        );
+
+        return stream;
+      }).pipe(
+        withOperationSpan("video", "transcode-stream", {
+          "video.format": options.format,
+          "video.codec": options.codec,
+          "video.streaming_input": isMpegTSMimeType(streamOptions?.inputFormat),
+        }),
+      ),
+
+    // Streaming resize implementation
+    resizeStream: (
+      input: VideoStreamInput,
+      options,
+      streamOptions?: VideoStreamOptions,
+    ) =>
+      Effect.gen(function* () {
+        // Convert stream input to buffer if needed
+        const inputBuffer: Uint8Array = isInputStream(input)
+          ? yield* collectStreamToBuffer(input)
+          : input;
+
+        // Create streaming output
+        const { callbacks, stream, finalize } = createStreamingOutput();
+
+        const processVideo = Effect.tryPromise({
+          try: async () => {
+            const buffer = Buffer.from(inputBuffer);
+
+            await using mediaInput = await Demuxer.open(buffer);
+            await using mediaOutput = await Muxer.open(callbacks, {
+              format: "mp4",
+            });
+
+            const videoStream = mediaInput.video();
+            if (!videoStream) {
+              throw new Error("No video stream found");
+            }
+
+            if (!options.width && !options.height) {
+              throw new Error("Either width or height must be specified");
+            }
+
+            using videoDecoder = await Decoder.create(videoStream);
+            using videoEncoder = await Encoder.create(codecToAVName.h264);
+
+            const videoOutputIndex = mediaOutput.addStream(videoEncoder);
+
+            for await (using frame of videoDecoder.frames(
+              mediaInput.packets(videoStream.index),
+            )) {
+              if (!frame) continue;
+              await videoEncoder.encode(frame);
+              let packet = await videoEncoder.receive();
+              while (packet) {
+                await mediaOutput.writePacket(packet, videoOutputIndex);
+                packet.free();
+                packet = await videoEncoder.receive();
+              }
+            }
+
+            await videoEncoder.flush();
+            let vPacket = await videoEncoder.receive();
+            while (vPacket) {
+              await mediaOutput.writePacket(vPacket, videoOutputIndex);
+              vPacket.free();
+              vPacket = await videoEncoder.receive();
+            }
+
+            // Copy audio stream if present
+            const audioStream = mediaInput.audio();
+            if (audioStream) {
+              using audioDecoder = await Decoder.create(audioStream);
+              using audioEncoder = await Encoder.create(audioCodecToAVName.aac);
+
+              const audioOutputIndex = mediaOutput.addStream(audioEncoder);
+
+              for await (using frame of audioDecoder.frames(
+                mediaInput.packets(audioStream.index),
+              )) {
+                if (!frame) continue;
+                await audioEncoder.encode(frame);
+                let packet = await audioEncoder.receive();
+                while (packet) {
+                  await mediaOutput.writePacket(packet, audioOutputIndex);
+                  packet.free();
+                  packet = await audioEncoder.receive();
+                }
+              }
+
+              await audioEncoder.flush();
+              let aPacket = await audioEncoder.receive();
+              while (aPacket) {
+                await mediaOutput.writePacket(aPacket, audioOutputIndex);
+                aPacket.free();
+                aPacket = await audioEncoder.receive();
+              }
+            }
+          },
+          catch: (error) =>
+            UploadistaError.fromCode("VIDEO_PROCESSING_FAILED", {
+              body: `Streaming resize failed: ${error instanceof Error ? error.message : String(error)}`,
+              cause: error,
+            }),
+        });
+
+        yield* Effect.fork(
+          Effect.tap(processVideo, () => Effect.sync(finalize)),
+        );
+
+        return stream;
+      }).pipe(
+        withOperationSpan("video", "resize-stream", {
+          "video.width": options.width,
+          "video.height": options.height,
+          "video.streaming_input": isMpegTSMimeType(streamOptions?.inputFormat),
+        }),
+      ),
+
+    // Streaming trim implementation
+    trimStream: (
+      input: VideoStreamInput,
+      options,
+      streamOptions?: VideoStreamOptions,
+    ) =>
+      Effect.gen(function* () {
+        // Convert stream input to buffer if needed
+        const inputBuffer: Uint8Array = isInputStream(input)
+          ? yield* collectStreamToBuffer(input)
+          : input;
+
+        // Create streaming output
+        const { callbacks, stream, finalize } = createStreamingOutput();
+
+        const processVideo = Effect.tryPromise({
+          try: async () => {
+            const buffer = Buffer.from(inputBuffer);
+
+            await using mediaInput = await Demuxer.open(buffer);
+            await using mediaOutput = await Muxer.open(callbacks, {
+              format: "mp4",
+            });
+
+            const videoStream = mediaInput.video();
+            if (!videoStream) {
+              throw new Error("No video stream found");
+            }
+
+            // Calculate end time
+            let endTime: number;
+            if (options.duration !== undefined) {
+              endTime = options.startTime + options.duration;
+            } else if (options.endTime !== undefined) {
+              endTime = options.endTime;
+            } else {
+              endTime = mediaInput.duration || Number.POSITIVE_INFINITY;
+            }
+
+            using videoDecoder = await Decoder.create(videoStream);
+            using videoEncoder = await Encoder.create(codecToAVName.h264);
+
+            const videoOutputIndex = mediaOutput.addStream(videoEncoder);
+
+            for await (using frame of videoDecoder.frames(
+              mediaInput.packets(videoStream.index),
+            )) {
+              if (!frame) continue;
+              const pts = frame.pts || 0n;
+              const timeBase = videoStream.timeBase
+                ? videoStream.timeBase.num / videoStream.timeBase.den
+                : 1;
+              const timestamp = Number(pts) * timeBase;
+
+              if (timestamp >= options.startTime && timestamp < endTime) {
+                await videoEncoder.encode(frame);
+                let packet = await videoEncoder.receive();
+                while (packet) {
+                  await mediaOutput.writePacket(packet, videoOutputIndex);
+                  packet.free();
+                  packet = await videoEncoder.receive();
+                }
+              }
+
+              if (timestamp >= endTime) break;
+            }
+
+            await videoEncoder.flush();
+            let vPacket = await videoEncoder.receive();
+            while (vPacket) {
+              await mediaOutput.writePacket(vPacket, videoOutputIndex);
+              vPacket.free();
+              vPacket = await videoEncoder.receive();
+            }
+
+            // Handle audio stream if present
+            const audioStream = mediaInput.audio();
+            if (audioStream) {
+              using audioDecoder = await Decoder.create(audioStream);
+              using audioEncoder = await Encoder.create(audioCodecToAVName.aac);
+
+              const audioOutputIndex = mediaOutput.addStream(audioEncoder);
+
+              for await (using frame of audioDecoder.frames(
+                mediaInput.packets(audioStream.index),
+              )) {
+                if (!frame) continue;
+                const pts = frame.pts || 0n;
+                const timeBase = audioStream.timeBase
+                  ? audioStream.timeBase.num / audioStream.timeBase.den
+                  : 1;
+                const timestamp = Number(pts) * timeBase;
+
+                if (timestamp >= options.startTime && timestamp < endTime) {
+                  await audioEncoder.encode(frame);
+                  let packet = await audioEncoder.receive();
+                  while (packet) {
+                    await mediaOutput.writePacket(packet, audioOutputIndex);
+                    packet.free();
+                    packet = await audioEncoder.receive();
+                  }
+                }
+
+                if (timestamp >= endTime) break;
+              }
+
+              await audioEncoder.flush();
+              let aPacket = await audioEncoder.receive();
+              while (aPacket) {
+                await mediaOutput.writePacket(aPacket, audioOutputIndex);
+                aPacket.free();
+                aPacket = await audioEncoder.receive();
+              }
+            }
+          },
+          catch: (error) =>
+            UploadistaError.fromCode("VIDEO_PROCESSING_FAILED", {
+              body: `Streaming trim failed: ${error instanceof Error ? error.message : String(error)}`,
+              cause: error,
+            }),
+        });
+
+        yield* Effect.fork(
+          Effect.tap(processVideo, () => Effect.sync(finalize)),
+        );
+
+        return stream;
+      }).pipe(
+        withOperationSpan("video", "trim-stream", {
+          "video.start_time": options.startTime,
+          "video.end_time": options.endTime,
+          "video.duration": options.duration,
+          "video.streaming_input": isMpegTSMimeType(streamOptions?.inputFormat),
         }),
       ),
   };

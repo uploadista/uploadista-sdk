@@ -53,7 +53,7 @@ export class FlowWaitUntil extends Context.Tag("FlowWaitUntil")<
 }
 
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
-import { UploadServer } from "../upload";
+import { UploadEngine } from "../upload";
 import { DeadLetterQueueService } from "./dead-letter-queue";
 import type { FlowEvent } from "./event";
 import type { FlowJob } from "./types/flow-job";
@@ -61,7 +61,7 @@ import type { FlowJob } from "./types/flow-job";
 /**
  * Flow provider interface that applications must implement.
  *
- * This interface defines how the FlowServer retrieves flow definitions.
+ * This interface defines how the FlowEngine retrieves flow definitions.
  * Applications provide their own implementation to load flows from a database,
  * configuration files, or any other source.
  *
@@ -89,7 +89,7 @@ import type { FlowJob } from "./types/flow-job";
  *   })
  * };
  *
- * // Provide to FlowServer
+ * // Provide to FlowEngine
  * const flowProviderLayer = Layer.succeed(FlowProvider, dbFlowProvider);
  * ```
  */
@@ -104,7 +104,7 @@ export type FlowProviderShape<TRequirements = any> = {
  * Effect-TS context tag for the FlowProvider service.
  *
  * Applications must provide an implementation of FlowProviderShape
- * to enable the FlowServer to retrieve flow definitions.
+ * to enable the FlowEngine to retrieve flow definitions.
  *
  * @example
  * ```typescript
@@ -144,7 +144,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  * ```typescript
  * // Execute a flow
  * const program = Effect.gen(function* () {
- *   const server = yield* FlowServer;
+ *   const server = yield* FlowEngine;
  *
  *   // Start flow execution (returns immediately)
  *   const job = yield* server.runFlow({
@@ -171,7 +171,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  *
  * // Resume a paused flow
  * const resume = Effect.gen(function* () {
- *   const server = yield* FlowServer;
+ *   const server = yield* FlowEngine;
  *
  *   // Flow paused waiting for user input at node "approval_1"
  *   const job = yield* server.resumeFlow({
@@ -186,7 +186,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  *
  * // Cancel a flow
  * const cancel = Effect.gen(function* () {
- *   const server = yield* FlowServer;
+ *   const server = yield* FlowEngine;
  *
  *   // Cancel flow and cleanup intermediate files
  *   const job = yield* server.cancelFlow("job123", "client123");
@@ -196,7 +196,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  *
  * // Check flow structure before execution
  * const inspect = Effect.gen(function* () {
- *   const server = yield* FlowServer;
+ *   const server = yield* FlowEngine;
  *
  *   const flowData = yield* server.getFlowData("resize-optimize", "client123");
  *   console.log("Nodes:", flowData.nodes);
@@ -206,7 +206,7 @@ export class FlowProvider extends Context.Tag("FlowProvider")<
  * });
  * ```
  */
-export type FlowServerShape = {
+export type FlowEngineShape = {
   getFlow: <TRequirements>(
     flowId: string,
     clientId: string | null,
@@ -264,16 +264,16 @@ export type FlowServerShape = {
 };
 
 /**
- * Effect-TS context tag for the FlowServer service.
+ * Effect-TS context tag for the FlowEngine service.
  *
- * Use this tag to access the FlowServer in an Effect context.
+ * Use this tag to access the FlowEngine in an Effect context.
  * The server must be provided via a Layer or dependency injection.
  *
  * @example
  * ```typescript
- * // Access FlowServer in an Effect
+ * // Access FlowEngine in an Effect
  * const flowEffect = Effect.gen(function* () {
- *   const server = yield* FlowServer;
+ *   const server = yield* FlowEngine;
  *   const job = yield* server.runFlow({
  *     flowId: "my-flow",
  *     storageId: "s3",
@@ -283,7 +283,7 @@ export type FlowServerShape = {
  *   return job;
  * });
  *
- * // Provide FlowServer layer
+ * // Provide FlowEngine layer
  * const program = flowEffect.pipe(
  *   Effect.provide(flowServer),
  *   Effect.provide(flowProviderLayer),
@@ -291,13 +291,13 @@ export type FlowServerShape = {
  * );
  * ```
  */
-export class FlowServer extends Context.Tag("FlowServer")<
-  FlowServer,
-  FlowServerShape
+export class FlowEngine extends Context.Tag("FlowEngine")<
+  FlowEngine,
+  FlowEngineShape
 >() {}
 
 /**
- * Legacy configuration options for FlowServer.
+ * Legacy configuration options for FlowEngine.
  *
  * @deprecated Use Effect Layers and FlowProvider instead.
  * This type is kept for backward compatibility.
@@ -305,7 +305,7 @@ export class FlowServer extends Context.Tag("FlowServer")<
  * @property getFlow - Function to retrieve flow definitions
  * @property kvStore - KV store for flow job metadata
  */
-export type FlowServerOptions = {
+export type FlowEngineOptions = {
   getFlow: <TRequirements>({
     flowId,
     storageId,
@@ -706,12 +706,12 @@ function withFlowEvents<
 }
 
 // Core FlowServer implementation
-export function createFlowServer() {
+export function createFlowEngine() {
   return Effect.gen(function* () {
     const flowProvider = yield* FlowProvider;
     const eventEmitter = yield* FlowEventEmitter;
     const kvStore = yield* FlowJobKVStore;
-    const uploadServer = yield* UploadServer;
+    const uploadEngine = yield* UploadEngine;
     const dlqOption = yield* DeadLetterQueueService.optional;
 
     const updateJob = (jobId: string, updates: Partial<FlowJob>) =>
@@ -747,7 +747,7 @@ export function createFlowServer() {
         yield* Effect.all(
           job.intermediateFiles.map((fileId) =>
             Effect.gen(function* () {
-              yield* uploadServer.delete(fileId, clientId);
+              yield* uploadEngine.delete(fileId, clientId);
               yield* Effect.logDebug(`Deleted intermediate file ${fileId}`);
             }).pipe(
               Effect.catchAll((error) =>
@@ -770,10 +770,7 @@ export function createFlowServer() {
       });
 
     // Helper function to add failed job to Dead Letter Queue
-    const addToDeadLetterQueue = (
-      jobId: string,
-      error: UploadistaError,
-    ) =>
+    const addToDeadLetterQueue = (jobId: string, error: UploadistaError) =>
       Effect.gen(function* () {
         if (Option.isNone(dlqOption)) {
           // DLQ not configured, skip
@@ -957,7 +954,7 @@ export function createFlowServer() {
               ),
             );
 
-            // Emit FlowError event to notify client
+            // Emit FlowError event to notify client via WebSocket
             const job = yield* kvStore.get(jobId);
             if (job) {
               yield* eventEmitter
@@ -975,6 +972,28 @@ export function createFlowServer() {
                         emitError,
                       );
                       return Effect.succeed(undefined);
+                    }),
+                  ),
+                );
+            }
+
+            // Also call flow's onEvent callback to update external databases (like uploadista-cloud)
+            if (flow.onEvent) {
+              yield* flow
+                .onEvent({
+                  jobId,
+                  eventType: EventType.FlowError,
+                  flowId: flow.id,
+                  error: errorMessage,
+                })
+                .pipe(
+                  Effect.catchAll((onEventError) =>
+                    Effect.gen(function* () {
+                      yield* Effect.logError(
+                        `Failed to call flow.onEvent for FlowError event for job ${jobId}`,
+                        onEventError,
+                      );
+                      return Effect.succeed({ eventId: null });
                     }),
                   ),
                 );
@@ -1285,88 +1304,91 @@ export function createFlowServer() {
             }),
           );
 
-          const resumeFlowInBackgroundWithErrorHandling = resumeFlowInBackground.pipe(
-            Effect.catchAll((error) =>
-              Effect.gen(function* () {
-                yield* Effect.logError("Flow resume failed", error);
+          const resumeFlowInBackgroundWithErrorHandling =
+            resumeFlowInBackground.pipe(
+              Effect.catchAll((error) =>
+                Effect.gen(function* () {
+                  yield* Effect.logError("Flow resume failed", error);
 
-                // Convert error to a proper message
-                const errorMessage =
-                  error instanceof UploadistaError ? error.body : String(error);
+                  // Convert error to a proper message
+                  const errorMessage =
+                    error instanceof UploadistaError
+                      ? error.body
+                      : String(error);
 
-                yield* Effect.logInfo(
-                  `Updating job ${jobId} to failed status with error: ${errorMessage}`,
-                );
+                  yield* Effect.logInfo(
+                    `Updating job ${jobId} to failed status with error: ${errorMessage}`,
+                  );
 
-                // Update job as failed - do this FIRST before cleanup
-                yield* updateJob(jobId, {
-                  status: "failed",
-                  error: errorMessage,
-                  updatedAt: new Date(),
-                }).pipe(
-                  Effect.catchAll((updateError) =>
-                    Effect.gen(function* () {
-                      yield* Effect.logError(
-                        `Failed to update job ${jobId}`,
-                        updateError,
+                  // Update job as failed - do this FIRST before cleanup
+                  yield* updateJob(jobId, {
+                    status: "failed",
+                    error: errorMessage,
+                    updatedAt: new Date(),
+                  }).pipe(
+                    Effect.catchAll((updateError) =>
+                      Effect.gen(function* () {
+                        yield* Effect.logError(
+                          `Failed to update job ${jobId}`,
+                          updateError,
+                        );
+                        return Effect.succeed(undefined);
+                      }),
+                    ),
+                  );
+
+                  // Emit FlowError event to notify client
+                  const currentJob = yield* kvStore.get(jobId);
+                  if (currentJob) {
+                    yield* eventEmitter
+                      .emit(jobId, {
+                        jobId,
+                        eventType: EventType.FlowError,
+                        flowId: currentJob.flowId,
+                        error: errorMessage,
+                      })
+                      .pipe(
+                        Effect.catchAll((emitError) =>
+                          Effect.gen(function* () {
+                            yield* Effect.logError(
+                              `Failed to emit FlowError event for job ${jobId}`,
+                              emitError,
+                            );
+                            return Effect.succeed(undefined);
+                          }),
+                        ),
                       );
-                      return Effect.succeed(undefined);
-                    }),
-                  ),
-                );
+                  }
 
-                // Emit FlowError event to notify client
-                const currentJob = yield* kvStore.get(jobId);
-                if (currentJob) {
-                  yield* eventEmitter
-                    .emit(jobId, {
-                      jobId,
-                      eventType: EventType.FlowError,
-                      flowId: currentJob.flowId,
-                      error: errorMessage,
-                    })
-                    .pipe(
-                      Effect.catchAll((emitError) =>
-                        Effect.gen(function* () {
-                          yield* Effect.logError(
-                            `Failed to emit FlowError event for job ${jobId}`,
-                            emitError,
-                          );
-                          return Effect.succeed(undefined);
-                        }),
-                      ),
-                    );
-                }
+                  // Cleanup intermediate files even on failure (don't let this fail the error handling)
+                  yield* cleanupIntermediateFiles(jobId, clientId).pipe(
+                    Effect.catchAll((cleanupError) =>
+                      Effect.gen(function* () {
+                        yield* Effect.logWarning(
+                          `Failed to cleanup intermediate files for job ${jobId}`,
+                          cleanupError,
+                        );
+                        return Effect.succeed(undefined);
+                      }),
+                    ),
+                  );
 
-                // Cleanup intermediate files even on failure (don't let this fail the error handling)
-                yield* cleanupIntermediateFiles(jobId, clientId).pipe(
-                  Effect.catchAll((cleanupError) =>
-                    Effect.gen(function* () {
-                      yield* Effect.logWarning(
-                        `Failed to cleanup intermediate files for job ${jobId}`,
-                        cleanupError,
-                      );
-                      return Effect.succeed(undefined);
-                    }),
-                  ),
-                );
+                  // Add failed job to Dead Letter Queue for retry/debugging
+                  const uploadistaError =
+                    error instanceof UploadistaError
+                      ? error
+                      : new UploadistaError({
+                          code: "UNKNOWN_ERROR",
+                          status: 500,
+                          body: String(error),
+                          cause: error,
+                        });
+                  yield* addToDeadLetterQueue(jobId, uploadistaError);
 
-                // Add failed job to Dead Letter Queue for retry/debugging
-                const uploadistaError =
-                  error instanceof UploadistaError
-                    ? error
-                    : new UploadistaError({
-                        code: "UNKNOWN_ERROR",
-                        status: 500,
-                        body: String(error),
-                        cause: error,
-                      });
-                yield* addToDeadLetterQueue(jobId, uploadistaError);
-
-                throw error;
-              }),
-            ),
-          );
+                  throw error;
+                }),
+              ),
+            );
 
           // Fork the resume execution to run in background
           // Use waitUntil if available (Cloudflare Workers), otherwise fork normally
@@ -1542,10 +1564,10 @@ export function createFlowServer() {
         Effect.gen(function* () {
           yield* eventEmitter.unsubscribe(jobId);
         }),
-    } satisfies FlowServerShape;
+    } satisfies FlowEngineShape;
   });
 }
 
-// Export the FlowServer layer with job store dependency
-export const flowServer = Layer.effect(FlowServer, createFlowServer());
-export type FlowServerLayer = typeof flowServer;
+// Export the FlowEngine layer with job store dependency
+export const flowEngine = Layer.effect(FlowEngine, createFlowEngine());
+export type FlowEngineLayer = typeof flowEngine;

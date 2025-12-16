@@ -1,8 +1,8 @@
 import { Layer } from "effect";
 import { UploadObservability } from "../core/layers.js";
-import { createUploadServerMetrics } from "./metrics.js";
+import { createUploadEngineMetrics } from "./metrics.js";
 
-// ============================================================================
+// ======================== ====================================================
 // Upload Observability Testing Utilities
 // ============================================================================
 
@@ -24,7 +24,7 @@ export const UploadObservabilityTest = Layer.succeed(UploadObservability, {
 /**
  * Get metrics for validation (useful for testing metric definitions)
  */
-export const getTestMetrics = () => createUploadServerMetrics();
+export const getTestMetrics = () => createUploadEngineMetrics();
 
 /**
  * Validate that all required metrics exist

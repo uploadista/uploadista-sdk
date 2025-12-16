@@ -8,4 +8,4 @@ import type {} from "@uploadista/core/upload";
 export type { ScanMetadata, ScanResult } from "@uploadista/core/flow";
 
 // Export plugin implementation
-export { type ClamScanConfig, ClamScanPluginLayer } from "./clamscan-plugin";
+export { type VirusScanPluginConfig, virusScanPlugin } from "./clamscan-plugin";

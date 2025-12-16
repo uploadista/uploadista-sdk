@@ -17,10 +17,12 @@ Perfect for Node.js and Fastify/Express servers.
 ## Installation
 
 ```bash
-npm install @uploadista/flow-images-sharp sharp
+npm install @uploadista/flow-images-sharp
 # or
-pnpm add @uploadista/flow-images-sharp sharp
+pnpm add @uploadista/flow-images-sharp
 ```
+
+Note: Sharp is bundled as a dependency, no separate installation required.
 
 ### Prerequisites
 

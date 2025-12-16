@@ -2,8 +2,8 @@
 
 export * from "./utils/av-check";
 export * from "./utils/format-mappings";
-export { createAVNodeVideoPlugin } from "./video-plugin";
+export { createVideoPlugin } from "./video-plugin";
 export {
-  AVNodeVideoPlugin,
-  AVNodeVideoPluginWithCheck,
+  videoPlugin,
+  videoPluginWithCheck,
 } from "./video-plugin-layer";

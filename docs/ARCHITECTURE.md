@@ -68,11 +68,11 @@ const program = myEffect.pipe(
 );
 ```
 
-All core types use this pattern: `UploadServer`, `UploadFileDataStores`, `UploadFileKVStore`, `EventBroadcaster`, etc.
+All core types use this pattern: `UploadEngine`, `UploadFileDataStores`, `UploadFileKVStore`, `EventBroadcaster`, etc.
 
 ## Core Concepts
 
-### 1. Upload Server
+### 1. Upload Engine
 
 A **business logic service** (not an HTTP handler) that manages the complete file upload lifecycle. It's implemented as an Effect service that can be composed with other services.
 
@@ -93,7 +93,7 @@ A **business logic service** (not an HTTP handler) that manages the complete fil
 **HTTP Upload Sequence**:
 
 ```
-Client (Browser)                HTTP Adapter                UploadServer
+Client (Browser)                HTTP Adapter                UploadEngine
         │                             │                           │
         ├─ POST /uploads ────────────→│ handleUploadPost          │
         │  { fileName, size, type }   ├─ validateInput ──────────→│
@@ -162,7 +162,7 @@ Client (Browser)                HTTP Adapter                UploadServer
 **Example Usage**:
 ```typescript
 const uploadEffect = Effect.gen(function* () {
-  const server = yield* UploadServer;
+  const server = yield* UploadEngine;
 
   // Create upload session
   const upload = yield* server.createUpload({

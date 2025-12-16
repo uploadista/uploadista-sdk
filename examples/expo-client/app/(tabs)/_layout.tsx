@@ -53,6 +53,24 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="flow-compound"
+        options={{
+          title: "Flow Compound",
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="git-network-outline" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="upload-compound"
+        options={{
+          title: "Upload Compound",
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="layers-outline" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

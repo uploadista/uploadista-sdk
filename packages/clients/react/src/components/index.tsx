@@ -1,7 +1,35 @@
-// Flow Upload Components
-export type { FlowInputProps } from "./flow-input";
-export { FlowInput } from "./flow-input";
+// Flow Primitives (NEW compound component)
+export {
+  Flow,
+  useFlowContext,
+  useFlowInputContext,
+} from "./flow-primitives";
+export type {
+  FlowCancelProps,
+  FlowContextValue,
+  FlowDropZoneProps,
+  FlowDropZoneRenderProps,
+  FlowErrorProps,
+  FlowErrorRenderProps,
+  FlowInputContextValue,
+  FlowInputDropZoneProps,
+  FlowInputDropZoneRenderProps,
+  FlowInputPreviewProps,
+  FlowInputPreviewRenderProps,
+  FlowInputProps,
+  FlowInputsProps,
+  FlowInputsRenderProps,
+  FlowInputUrlFieldProps,
+  FlowProgressProps,
+  FlowProgressRenderProps,
+  FlowProps,
+  FlowResetProps,
+  FlowStatusProps,
+  FlowStatusRenderProps,
+  FlowSubmitProps,
+} from "./flow-primitives";
 
+// Flow Upload List (for batch uploads with useMultiFlowUpload)
 export type {
   FlowUploadListProps,
   FlowUploadListRenderProps,
@@ -13,16 +41,6 @@ export {
   SimpleFlowUploadList,
   SimpleFlowUploadListItem,
 } from "./flow-upload-list";
-
-export type {
-  FlowUploadZoneProps,
-  FlowUploadZoneRenderProps,
-  SimpleFlowUploadZoneProps,
-} from "./flow-upload-zone";
-export {
-  FlowUploadZone,
-  SimpleFlowUploadZone,
-} from "./flow-upload-zone";
 
 // Upload Components
 export type {
