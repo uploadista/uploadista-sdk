@@ -5,9 +5,9 @@ Video processing nodes for Uploadista flows. Transcode, resize, trim, and extrac
 ## Installation
 
 ```bash
-npm install @uploadista/flow-videos-nodes @uploadista/flow-videos-ffmpeg
+npm install @uploadista/flow-videos-nodes @uploadista/flow-videos-av-node
 # or
-pnpm add @uploadista/flow-videos-nodes @uploadista/flow-videos-ffmpeg
+pnpm add @uploadista/flow-videos-nodes @uploadista/flow-videos-av-node
 ```
 
 ## Quick Start
@@ -208,9 +208,8 @@ All video transform nodes support three processing modes:
 
 ## Requirements
 
-- Node.js environment (video processing requires FFmpeg binary)
-- FFmpeg >= 4.0 installed on the system
-- See [@uploadista/flow-videos-ffmpeg](../ffmpeg/README.md) for installation instructions
+- Node.js environment
+- See [@uploadista/flow-videos-av-node](../av-node/README.md) for video processing plugin setup (includes bundled FFmpeg)
 
 ## License
 

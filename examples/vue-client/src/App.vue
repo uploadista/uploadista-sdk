@@ -6,9 +6,10 @@ import BasicUploadExample from "./components/BasicUploadExample.vue";
 import DragDropUploadExample from "./components/DragDropUploadExample.vue";
 import FlowUploadExample from "./components/FlowUploadExample.vue";
 import MultiUploadExample from "./components/MultiUploadExample.vue";
+import UploadCompoundExample from "./components/UploadCompoundExample.vue";
 import Card from "./components/ui/Card.vue";
 
-type TabId = "basic" | "flow" | "multi" | "dragdrop";
+type TabId = "basic" | "flow" | "multi" | "dragdrop" | "compound";
 
 const serverUrl = ref("http://localhost:3000");
 const activeTab = ref<TabId>("basic");
@@ -42,6 +43,12 @@ const tabs = [
     label: "Drag & Drop",
     description: "Dropzone interface with auto uploads",
     icon: "M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122",
+  },
+  {
+    id: "compound",
+    label: "Compound",
+    description: "Composable primitives pattern",
+    icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
   },
 ] as const satisfies readonly {
   id: TabId;
@@ -148,7 +155,8 @@ const handleEvent = (event: UploadistaEvent) => {
             <BasicUploadExample v-if="activeTab === 'basic'" />
             <FlowUploadExample v-else-if="activeTab === 'flow'" />
             <MultiUploadExample v-else-if="activeTab === 'multi'" />
-            <DragDropUploadExample v-else />
+            <DragDropUploadExample v-else-if="activeTab === 'dragdrop'" />
+            <UploadCompoundExample v-else />
           </div>
         </section>
       </main>

@@ -11,3 +11,6 @@ export { default as UploadZone } from "./UploadZone.vue";
 
 // Flow compound components
 export * from "./flow";
+
+// Upload compound components
+export * from "./upload";

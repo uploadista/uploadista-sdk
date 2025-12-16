@@ -111,6 +111,10 @@ export {
   useFlowManagerContext,
   // useFlow hook
   useFlow,
+  // Upload compound component
+  Upload,
+  useUploadContext,
+  useUploadItemContext,
 } from "@uploadista/react-native-core";
 
 // Re-export Flow component types
@@ -147,4 +151,32 @@ export type {
   InputExecutionState,
   UseFlowOptions,
   UseFlowReturn,
+  // Upload component types
+  UploadProps,
+  UploadRenderProps,
+  UploadContextValue,
+  UploadItemContextValue,
+  UploadFilePickerProps,
+  UploadFilePickerRenderProps,
+  UploadGalleryPickerProps,
+  UploadGalleryPickerRenderProps,
+  UploadCameraPickerProps,
+  UploadCameraPickerRenderProps,
+  UploadItemsProps,
+  UploadItemsRenderProps,
+  UploadItemProps,
+  UploadCompoundProgressProps,
+  UploadCompoundProgressRenderProps,
+  UploadStatusProps,
+  UploadStatusRenderProps,
+  UploadErrorProps,
+  UploadErrorRenderProps,
+  UploadCancelProps,
+  UploadCancelRenderProps,
+  UploadRetryProps,
+  UploadRetryRenderProps,
+  UploadResetProps,
+  UploadResetRenderProps,
+  UploadStartAllProps,
+  UploadStartAllRenderProps,
 } from "@uploadista/react-native-core";

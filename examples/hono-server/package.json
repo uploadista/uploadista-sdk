@@ -33,6 +33,7 @@
     "@uploadista/observability": "workspace:*",
     "@uploadista/flow-utility-zipjs": "workspace:*",
     "@uploadista/flow-videos-av-node": "workspace:*",
+    "node-av": "5.0.3",
     "@uploadista/flow-documents-plugin": "workspace:*",
     "@uploadista/flow-documents-replicate": "workspace:*",
     "@uploadista/flow-security-clamscan": "workspace:*",

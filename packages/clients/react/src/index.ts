@@ -86,7 +86,36 @@ export type {
 } from "./hooks/use-drag-drop";
 export { useDragDrop } from "./hooks/use-drag-drop";
 
-// ============ UPLOAD COMPONENTS ============
+// ============ UPLOAD PRIMITIVES (NEW) ============
+// Compound component for file uploads
+export {
+  Upload,
+  useUploadContext,
+  useUploadItemContext,
+} from "./components/upload-primitives";
+export type {
+  UploadProps,
+  UploadContextValue,
+  UploadItemContextValue,
+  UploadDropZoneProps,
+  UploadDropZoneRenderProps,
+  UploadItemsProps,
+  UploadItemsRenderProps,
+  UploadItemProps,
+  UploadProgressProps,
+  UploadProgressRenderProps,
+  UploadStatusProps,
+  UploadStatusRenderProps,
+  UploadErrorProps,
+  UploadErrorRenderProps,
+  UploadCancelProps,
+  UploadRetryProps,
+  UploadResetProps,
+  UploadStartAllProps,
+  UploadClearCompletedProps,
+} from "./components/upload-primitives";
+
+// ============ UPLOAD COMPONENTS (LEGACY) ============
 export type {
   SimpleUploadListItemProps,
   UploadListProps,
