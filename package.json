@@ -15,7 +15,7 @@
     "bump": "bumpp"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
+    "@biomejs/biome": "2.3.10",
     "@nx/js": "22.2.3",
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.5",
