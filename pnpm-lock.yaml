@@ -31,8 +31,8 @@ catalogs:
       specifier: 5.9.3
       version: 5.9.3
     zod:
-      specifier: 4.2.0
-      version: 4.2.0
+      specifier: 4.2.1
+      version: 4.2.1
 
 importers:
 
@@ -418,7 +418,7 @@ importers:
         version: 3.19.12
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -473,7 +473,7 @@ importers:
         version: 10.1.0
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -579,7 +579,7 @@ importers:
         version: 10.0.0
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -798,7 +798,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/clients/expo:
     dependencies:
@@ -1035,7 +1035,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/data-stores/azure:
     dependencies:
@@ -1349,7 +1349,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/documents/pdflib:
     dependencies:
@@ -1492,7 +1492,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/images/photon:
     dependencies:
@@ -1532,7 +1532,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/images/replicate:
     dependencies:
@@ -1566,7 +1566,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/images/sharp:
     dependencies:
@@ -1606,7 +1606,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/security/clamscan:
     dependencies:
@@ -1640,7 +1640,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/security/nodes:
     dependencies:
@@ -1668,7 +1668,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/utility/nodes:
     dependencies:
@@ -1696,7 +1696,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/utility/zipjs:
     dependencies:
@@ -1730,7 +1730,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/videos/av-node:
     dependencies:
@@ -1764,7 +1764,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/flow/videos/nodes:
     dependencies:
@@ -1792,7 +1792,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/kv-stores/bun:
     dependencies:
@@ -2086,7 +2086,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/servers/adapters-fastify:
     dependencies:
@@ -2135,7 +2135,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/servers/adapters-hono:
     dependencies:
@@ -2190,7 +2190,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/servers/server:
     dependencies:
@@ -2245,7 +2245,7 @@ importers:
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       zod:
         specifier: 'catalog:'
-        version: 4.2.0
+        version: 4.2.1
 
   packages/typescript-config: {}
 
@@ -11409,8 +11409,8 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.2.0:
-    resolution: {integrity: sha512-Bd5fw9wlIhtqCCxotZgdTOMwGm1a0u75wARVEY9HMs1X17trvA/lMi4+MGK5EUfYkXVTbX8UDiDKW4OgzHVUZw==}
+  zod@4.2.1:
+    resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
 
 snapshots:
 
@@ -23078,4 +23078,4 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zod@4.2.0: {}
+  zod@4.2.1: {}
