@@ -25,8 +25,8 @@ catalogs:
       specifier: 19.2.3
       version: 19.2.3
     tsdown:
-      specifier: 0.18.3
-      version: 0.18.3
+      specifier: 0.18.4
+      version: 0.18.4
     typescript:
       specifier: 5.9.3
       version: 5.9.3
@@ -428,7 +428,7 @@ importers:
         version: link:../../packages/typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
 
   examples/hono-cf-example:
     dependencies:
@@ -773,7 +773,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -792,7 +792,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -853,7 +853,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
 
   packages/clients/react:
     dependencies:
@@ -884,7 +884,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -933,7 +933,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
 
   packages/clients/react-native-core:
     dependencies:
@@ -967,7 +967,7 @@ importers:
         version: link:../../typescript-config
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
 
   packages/clients/vue:
     dependencies:
@@ -989,7 +989,7 @@ importers:
         version: 2.4.6
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       unplugin-vue:
         specifier: ^7.0.2
         version: 7.1.0(@types/node@24.10.4)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(vue@3.5.26(typescript@5.9.3))(yaml@2.8.1)
@@ -1029,7 +1029,7 @@ importers:
         version: 0.33.0
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1066,7 +1066,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1097,7 +1097,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1128,7 +1128,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1159,7 +1159,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1190,7 +1190,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1218,7 +1218,7 @@ importers:
         version: 5.8.2
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1240,7 +1240,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1268,7 +1268,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1293,7 +1293,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1318,7 +1318,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1343,7 +1343,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1377,7 +1377,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1405,7 +1405,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
 
   packages/flow/documents/replicate:
     dependencies:
@@ -1430,7 +1430,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
 
   packages/flow/documents/unpdf:
     dependencies:
@@ -1461,7 +1461,7 @@ importers:
         version: 1.17.1
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1486,7 +1486,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1526,7 +1526,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1560,7 +1560,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1600,7 +1600,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1634,7 +1634,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1662,7 +1662,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1690,7 +1690,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1724,7 +1724,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1758,7 +1758,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1786,7 +1786,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1814,7 +1814,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1839,7 +1839,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1864,7 +1864,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1889,7 +1889,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1914,7 +1914,7 @@ importers:
         version: 5.8.2
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1936,7 +1936,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -1961,7 +1961,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       vitest:
         specifier: 4.0.16
         version: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.4)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
@@ -2025,7 +2025,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2077,7 +2077,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2126,7 +2126,7 @@ importers:
         version: 3.19.13
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2181,7 +2181,7 @@ importers:
         version: 4.11.3
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -2236,7 +2236,7 @@ importers:
         version: 0.33.0
       tsdown:
         specifier: 'catalog:'
-        version: 0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
+        version: 0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3))
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -10760,8 +10760,8 @@ packages:
     engines: {node: '>=14.16'}
     hasBin: true
 
-  tsdown@0.18.3:
-    resolution: {integrity: sha512-OVFzktKDTglFAUh/WO8WamBUbZoBlJ9m7NgZZrVyIKe32BfXBeRZ+soFFpuOGVP8g8OU4tOLOpTyPTELWvcTFw==}
+  tsdown@0.18.4:
+    resolution: {integrity: sha512-J/tRS6hsZTkvqmt4+xdELUCkQYDuUCXgBv0fw3ImV09WPGbEKfsPD65E+WUjSu3E7Z6tji9XZ1iWs8rbGqB/ZA==}
     engines: {node: '>=20.19.0'}
     hasBin: true
     peerDependencies:
@@ -22483,7 +22483,7 @@ snapshots:
       path-exists: 4.0.0
       read-pkg-up: 7.0.1
 
-  tsdown@0.18.3(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3)):
+  tsdown@0.18.4(oxc-resolver@11.14.0)(typescript@5.9.3)(vue-tsc@3.2.1(typescript@5.9.3)):
     dependencies:
       ansis: 4.2.0
       cac: 6.7.14

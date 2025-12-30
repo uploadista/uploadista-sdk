@@ -12,7 +12,7 @@ catalog:
   react-dom: 19.2.3
   react-router: 7.11.0
   react-router-dom: 7.11.0
-  tsdown: 0.18.3
+  tsdown: 0.18.4
   typescript: 5.9.3
   zod: 4.2.1
 
