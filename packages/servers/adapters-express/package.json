@@ -29,7 +29,7 @@
     "@uploadista/event-broadcaster-memory": "workspace:*",
     "@uploadista/event-emitter-websocket": "workspace:*",
     "@uploadista/server": "workspace:*",
-    "ws": "8.18.3"
+    "ws": "8.19.0"
   },
   "peerDependencies": {
     "effect": "^3.0.0",
