@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/react-native-core",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.1",
   "type": "module",
   "description": "Core React Native client for Uploadista",
   "license": "MIT",
