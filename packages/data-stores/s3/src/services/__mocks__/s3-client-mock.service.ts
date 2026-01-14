@@ -101,7 +101,7 @@ export const makeMockS3ClientService = (
           // Don't remove the error - let it persist for retries
           // Tests should clear errors explicitly when done
           yield* Effect.fail(
-            UploadistaError.fromCode("FILE_WRITE_ERROR", error),
+            UploadistaError.fromCode("FILE_WRITE_ERROR", { cause: error }),
           );
         }
       });
@@ -111,10 +111,9 @@ export const makeMockS3ClientService = (
         const config = yield* Ref.get(configRef);
         if (config.errorRate && Math.random() < config.errorRate) {
           yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_WRITE_ERROR",
-              new Error(`Random error in ${operation}`),
-            ),
+            UploadistaError.fromCode("FILE_WRITE_ERROR", {
+              cause: new Error(`Random error in ${operation}`),
+            }),
           );
         }
       });
@@ -180,10 +179,9 @@ export const makeMockS3ClientService = (
 
         if (!data) {
           yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_NOT_FOUND",
-              new Error(`Object not found: ${key}`),
-            ),
+            UploadistaError.fromCode("FILE_NOT_FOUND", {
+              cause: new Error(`Object not found: ${key}`),
+            }),
           );
           return new ReadableStream(); // Never reached but helps TypeScript
         }
@@ -223,12 +221,11 @@ export const makeMockS3ClientService = (
         const config = yield* Ref.get(configRef);
         if (config.maxObjectSize && body.length > config.maxObjectSize) {
           yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_WRITE_ERROR",
-              new Error(
+            UploadistaError.fromCode("FILE_WRITE_ERROR", {
+              cause: new Error(
                 `Object size ${body.length} exceeds maximum ${config.maxObjectSize}`,
               ),
-            ),
+            }),
           );
         }
 
@@ -328,10 +325,9 @@ export const makeMockS3ClientService = (
           Math.random() < config.uploadFailureRate
         ) {
           yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_WRITE_ERROR",
-              new Error(`Upload failed for part ${context.partNumber}`),
-            ),
+            UploadistaError.fromCode("FILE_WRITE_ERROR", {
+              cause: new Error(`Upload failed for part ${context.partNumber}`),
+            }),
           );
         }
 
@@ -392,10 +388,9 @@ export const makeMockS3ClientService = (
         for (const part of parts) {
           if (!part.PartNumber || !upload.parts.has(part.PartNumber)) {
             yield* Effect.fail(
-              UploadistaError.fromCode(
-                "FILE_WRITE_ERROR",
-                new Error(`Part ${part.PartNumber} not found`),
-              ),
+              UploadistaError.fromCode("FILE_WRITE_ERROR", {
+                cause: new Error(`Part ${part.PartNumber} not found`),
+              }),
             );
           }
         }
@@ -418,12 +413,11 @@ export const makeMockS3ClientService = (
         const config = yield* Ref.get(configRef);
         if (config.maxObjectSize && totalLength > config.maxObjectSize) {
           yield* Effect.fail(
-            UploadistaError.fromCode(
-              "FILE_WRITE_ERROR",
-              new Error(
+            UploadistaError.fromCode("FILE_WRITE_ERROR", {
+              cause: new Error(
                 `Total upload size ${totalLength} exceeds maximum ${config.maxObjectSize}`,
               ),
-            ),
+            }),
           );
         }
 

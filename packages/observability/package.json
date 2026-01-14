@@ -19,7 +19,7 @@
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest watch"
   },

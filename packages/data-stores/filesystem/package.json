@@ -19,7 +19,7 @@
     "dev": "tsc -b",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch"
   },

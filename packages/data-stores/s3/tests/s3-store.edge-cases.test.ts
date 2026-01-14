@@ -671,7 +671,7 @@ describe("S3Store - Edge Cases and Error Handling", () => {
           );
 
           expect(result2).toBe(testFile.size ?? 0);
-        }).pipe(Effect.provide(TestLayersWithMockS3())),
+        }),
         20000,
       );
     });
