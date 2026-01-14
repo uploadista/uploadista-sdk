@@ -1,6 +1,5 @@
 // Event composables
 export { isFlowEvent, isUploadEvent } from "./eventUtils";
-export { useUploadistaEvents } from "./useUploadistaEvents";
 export type { UseFlowEventsOptions } from "./useFlowEvents";
 export { useFlowEvents } from "./useFlowEvents";
 export type {
@@ -13,6 +12,7 @@ export type {
   UseUploadEventsOptions,
 } from "./useUploadEvents";
 export { useUploadEvents } from "./useUploadEvents";
+export { useUploadistaEvents } from "./useUploadistaEvents";
 
 // Plugin
 

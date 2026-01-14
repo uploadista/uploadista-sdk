@@ -32,6 +32,7 @@
  *   :sort-by="(a, b) => a.uploadedAt - b.uploadedAt"
  * />
  */
+import type { VNodeChild } from "vue";
 import { computed } from "vue";
 import type { UploadItem } from "../composables";
 import { isBrowserFile } from "../utils";
@@ -69,7 +70,7 @@ defineSlots<{
     isSuccess: boolean;
     isError: boolean;
     formatFileSize: (bytes: number) => string;
-  }): any;
+  }): VNodeChild;
   default?(props: {
     items: UploadItem[];
     itemsByStatus: {
@@ -79,7 +80,7 @@ defineSlots<{
       error: UploadItem[];
       aborted: UploadItem[];
     };
-  }): any;
+  }): VNodeChild;
 }>();
 
 // Apply filtering and sorting
@@ -98,7 +99,6 @@ const filteredItems = computed(() => {
 });
 
 // Group items by status
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const itemsByStatus = computed(() => ({
   idle: filteredItems.value.filter((item) => item.state.status === "idle"),
   uploading: filteredItems.value.filter(
@@ -114,7 +114,6 @@ const itemsByStatus = computed(() => ({
 }));
 
 // Helper function to format file sizes
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -124,7 +123,6 @@ const formatFileSize = (bytes: number): string => {
 };
 
 // Helper function to get status icon
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const getStatusIcon = (status: string): string => {
   switch (status) {
     case "idle":
@@ -143,7 +141,6 @@ const getStatusIcon = (status: string): string => {
 };
 
 // Helper function to get status color
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const getStatusColor = (status: string): string => {
   switch (status) {
     case "idle":

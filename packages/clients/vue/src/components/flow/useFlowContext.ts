@@ -30,11 +30,13 @@ export interface FlowInputContextValue {
   /** Set the value for this input */
   setValue: (value: unknown) => void;
   /** Per-input execution state (if available) */
-  state: {
-    status: string;
-    progress: number;
-    error: Error | null;
-  } | undefined;
+  state:
+    | {
+        status: string;
+        progress: number;
+        error: Error | null;
+      }
+    | undefined;
 }
 
 /**

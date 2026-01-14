@@ -1,8 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createLogger } from "../../logger";
+import { MockPlatformService } from "../../testing/mock-service-container";
 import { DirectAuthManager } from "../direct-auth";
 import type { DirectAuthConfig } from "../types";
 
 describe("DirectAuthManager", () => {
+  let mockPlatformService: MockPlatformService;
+
+  beforeEach(() => {
+    mockPlatformService = new MockPlatformService(false); // Node.js environment for tests
+  });
+
   describe("attachCredentials", () => {
     it("should attach headers from getCredentials", async () => {
       const config: DirectAuthConfig = {
@@ -15,7 +23,11 @@ describe("DirectAuthManager", () => {
         }),
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const result = await manager.attachCredentials({
         "Content-Type": "application/json",
       });
@@ -41,7 +53,11 @@ describe("DirectAuthManager", () => {
         },
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const result = await manager.attachCredentials();
 
       expect(result).toEqual({
@@ -55,7 +71,11 @@ describe("DirectAuthManager", () => {
         getCredentials: () => ({}),
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const result = await manager.attachCredentials({
         "Content-Type": "application/json",
       });
@@ -75,7 +95,11 @@ describe("DirectAuthManager", () => {
         }),
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const result = await manager.attachCredentials({
         Authorization: "Bearer old-token",
         "Content-Type": "application/json",
@@ -90,10 +114,18 @@ describe("DirectAuthManager", () => {
     it("should throw error if getCredentials returns non-object", async () => {
       const config: DirectAuthConfig = {
         mode: "direct",
-        getCredentials: () => null as any,
+        getCredentials: () =>
+          null as unknown as {
+            headers?: Record<string, string>;
+            cookies?: Record<string, string>;
+          },
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
 
       await expect(manager.attachCredentials()).rejects.toThrow(
         "Failed to attach auth credentials",
@@ -108,7 +140,11 @@ describe("DirectAuthManager", () => {
         },
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
 
       await expect(manager.attachCredentials()).rejects.toThrow(
         "Failed to attach auth credentials: Token fetch failed",
@@ -120,12 +156,16 @@ describe("DirectAuthManager", () => {
         mode: "direct",
         getCredentials: () => ({
           headers: {
-            Authorization: 123 as any, // Invalid: number instead of string
+            Authorization: 123 as unknown as string, // Invalid: number instead of string
           },
         }),
       };
 
-      const manager = new DirectAuthManager(config);
+      const manager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
 
       await expect(manager.attachCredentials()).rejects.toThrow(
         "Invalid header",

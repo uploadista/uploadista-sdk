@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useDragDrop, type DragDropState } from "../../composables/useDragDrop";
+import { type DragDropState, useDragDrop } from "../../composables/useDragDrop";
 import { useFlowInputContext } from "./useFlowContext";
 
 // Helper function to check if value is a File (for template use)
@@ -32,7 +32,9 @@ const dragDrop = useDragDrop({
       input.setValue(file);
     }
   },
-  accept: props.accept ? props.accept.split(",").map((t) => t.trim()) : undefined,
+  accept: props.accept
+    ? props.accept.split(",").map((t) => t.trim())
+    : undefined,
   maxFileSize: props.maxFileSize,
   multiple: false,
 });

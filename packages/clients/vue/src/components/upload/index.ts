@@ -57,46 +57,42 @@
  * ```
  */
 
+export type { UploadContextValue, UploadProps } from "./Upload.vue";
 // Root component
 export { default as Upload } from "./Upload.vue";
-export type { UploadProps, UploadContextValue } from "./Upload.vue";
-
-// Drop zone
-export { default as UploadDropZone } from "./UploadDropZone.vue";
-export type { UploadDropZoneProps, UploadDropZoneSlotProps } from "./UploadDropZone.vue";
-
-// Items
-export { default as UploadItems } from "./UploadItems.vue";
-export type { UploadItemsSlotProps } from "./UploadItems.vue";
-
-// Item
-export { default as UploadItem } from "./UploadItem.vue";
-export type { UploadItemProps, UploadItemSlotProps } from "./UploadItem.vue";
-
-// Progress
-export { default as UploadProgress } from "./UploadProgress.vue";
-export type { UploadProgressSlotProps } from "./UploadProgress.vue";
-
-// Status
-export { default as UploadStatus } from "./UploadStatus.vue";
-export type { UploadStatusSlotProps } from "./UploadStatus.vue";
-
-// Error
-export { default as UploadError } from "./UploadError.vue";
-export type { UploadErrorSlotProps } from "./UploadError.vue";
-
 // Action components
 export { default as UploadCancel } from "./UploadCancel.vue";
-export { default as UploadRetry } from "./UploadRetry.vue";
-export { default as UploadReset } from "./UploadReset.vue";
-export { default as UploadStartAll } from "./UploadStartAll.vue";
 export { default as UploadClearCompleted } from "./UploadClearCompleted.vue";
+export type {
+  UploadDropZoneProps,
+  UploadDropZoneSlotProps,
+} from "./UploadDropZone.vue";
+// Drop zone
+export { default as UploadDropZone } from "./UploadDropZone.vue";
+export type { UploadErrorSlotProps } from "./UploadError.vue";
+// Error
+export { default as UploadError } from "./UploadError.vue";
+export type { UploadItemProps, UploadItemSlotProps } from "./UploadItem.vue";
+// Item
+export { default as UploadItem } from "./UploadItem.vue";
+export type { UploadItemsSlotProps } from "./UploadItems.vue";
+// Items
+export { default as UploadItems } from "./UploadItems.vue";
+export type { UploadProgressSlotProps } from "./UploadProgress.vue";
+// Progress
+export { default as UploadProgress } from "./UploadProgress.vue";
+export { default as UploadReset } from "./UploadReset.vue";
+export { default as UploadRetry } from "./UploadRetry.vue";
+export { default as UploadStartAll } from "./UploadStartAll.vue";
+export type { UploadStatusSlotProps } from "./UploadStatus.vue";
+// Status
+export { default as UploadStatus } from "./UploadStatus.vue";
 
 // Context hooks
 export {
   UPLOAD_CONTEXT_KEY,
   UPLOAD_ITEM_CONTEXT_KEY,
+  type UploadItemContextValue,
   useUploadContext,
   useUploadItemContext,
-  type UploadItemContextValue,
 } from "./useUploadContext";

@@ -1,7 +1,4 @@
-import {
-  createFlow,
-  createInputNode,
-} from "@uploadista/core";
+import { createFlow, createInputNode } from "@uploadista/core";
 import {
   createDescribeImageNode,
   createOptimizeNode,

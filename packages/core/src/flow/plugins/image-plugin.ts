@@ -105,7 +105,10 @@ export type ImagePluginShape = {
   optimizeStream?: (
     input: Stream.Stream<Uint8Array, UploadistaError>,
     options: OptimizeParams,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
 
   /**
    * Resizes an image using streaming for memory-efficient processing of large files.
@@ -136,7 +139,10 @@ export type ImagePluginShape = {
   resizeStream?: (
     input: Stream.Stream<Uint8Array, UploadistaError>,
     options: ResizeParams,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
 
   /**
    * Applies a single transformation using streaming for memory-efficient processing.
@@ -166,7 +172,10 @@ export type ImagePluginShape = {
   transformStream?: (
     input: Stream.Stream<Uint8Array, UploadistaError>,
     transformation: Transformation,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
 
   /**
    * Indicates whether this plugin supports streaming operations.

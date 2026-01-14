@@ -10,10 +10,7 @@
 
 import { render } from "micromustache";
 import type { UploadFile } from "../../types/upload-file";
-import type {
-  FileNamingConfig,
-  NamingContext,
-} from "../types/flow-types";
+import type { FileNamingConfig, NamingContext } from "../types/flow-types";
 
 /**
  * Extracts the base name (without extension) from a filename.
@@ -292,16 +289,44 @@ export function validatePattern(pattern: string): {
  * List of available template variables for documentation and UI.
  */
 export const AVAILABLE_TEMPLATE_VARIABLES = [
-  { name: "baseName", description: "Filename without extension", example: "photo" },
-  { name: "extension", description: "File extension without dot", example: "jpg" },
-  { name: "fileName", description: "Full original filename", example: "photo.jpg" },
-  { name: "nodeType", description: "Type of processing node", example: "resize" },
-  { name: "nodeId", description: "Specific node instance ID", example: "resize-1" },
+  {
+    name: "baseName",
+    description: "Filename without extension",
+    example: "photo",
+  },
+  {
+    name: "extension",
+    description: "File extension without dot",
+    example: "jpg",
+  },
+  {
+    name: "fileName",
+    description: "Full original filename",
+    example: "photo.jpg",
+  },
+  {
+    name: "nodeType",
+    description: "Type of processing node",
+    example: "resize",
+  },
+  {
+    name: "nodeId",
+    description: "Specific node instance ID",
+    example: "resize-1",
+  },
   { name: "flowId", description: "Flow identifier", example: "flow-abc" },
   { name: "jobId", description: "Execution job ID", example: "job-123" },
-  { name: "timestamp", description: "ISO 8601 processing time", example: "2024-01-15T10:30:00Z" },
+  {
+    name: "timestamp",
+    description: "ISO 8601 processing time",
+    example: "2024-01-15T10:30:00Z",
+  },
   { name: "width", description: "Output width (image/video)", example: "800" },
-  { name: "height", description: "Output height (image/video)", example: "600" },
+  {
+    name: "height",
+    description: "Output height (image/video)",
+    example: "600",
+  },
   { name: "format", description: "Output format", example: "webp" },
   { name: "quality", description: "Quality setting", example: "80" },
   { name: "pageNumber", description: "Page number (documents)", example: "1" },

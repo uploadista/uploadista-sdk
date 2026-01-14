@@ -10,7 +10,6 @@ import type { SmartChunker, SmartChunkerConfig } from "../smart-chunker";
 import { shouldRetry } from "./chunk-upload";
 import type { Callbacks } from "./single-upload";
 import type { UploadMetrics } from "./upload-metrics";
-import { inStatusCategory } from "./upload-utils";
 
 /**
  * Result from initializing a flow input node
@@ -178,7 +177,6 @@ export async function uploadInputChunks(
 ): Promise<void> {
   const {
     nodeId,
-    jobId,
     uploadFile,
     source,
     offset = 0,
@@ -289,7 +287,6 @@ export async function uploadInputChunks(
     if (retryDelays != null) {
       const shouldResetDelays = currentOffset > offsetBeforeRetry;
       if (shouldResetDelays) {
-        // biome-ignore lint: mutation needed for retry logic
         retryAttempt = 0;
       }
 

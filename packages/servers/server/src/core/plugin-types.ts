@@ -186,9 +186,8 @@ export type ExtractFlowPluginRequirements<
     flowId: string,
     clientId: string | null,
   ) => Effect.Effect<unknown, unknown, unknown>,
-  // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for error and requirements parameters
 > =
-  ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, any, any>
+  ReturnType<TFlowFn> extends Effect.Effect<infer TFlow, unknown, unknown>
     ? // biome-ignore lint/suspicious/noExplicitAny: Conditional type inference requires any for input and output schema parameters
       TFlow extends Flow<any, any, infer TRequirements>
       ? Exclude<TRequirements, never> // Exclude UploadEngine is handled by FlowPluginRequirements in core

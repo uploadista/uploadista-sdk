@@ -1,37 +1,42 @@
 import type { TypedOutput, UploadFile } from "@uploadista/core";
-import { isStorageOutput } from "@uploadista/core";
+import {
+  isStorageOutput,
+  isStorageOutputV1,
+  isStreamingInputV1,
+} from "@uploadista/core";
 
 /**
- * Automatic Type Narrowing Example
+ * Type Guards Example
  *
- * This example demonstrates the difference between built-in types (automatic narrowing)
- * and custom types (require type guards) after the discriminated union improvement.
+ * This example demonstrates how to use type guards for type-safe narrowing
+ * of TypedOutput values. Built-in type guards like isStorageOutputV1 and
+ * isStreamingInputV1 are provided for common types.
  */
 
 /**
- * Example 1: Built-in types with automatic narrowing (NO type guards needed!)
+ * Example 1: Built-in types with type guards
  *
- * Built-in types ('storage-output-v1') use discriminated
- * unions, which means TypeScript automatically narrows the type in switch statements.
+ * Built-in types ('storage-output-v1') have pre-built type guards
+ * that enable type-safe narrowing.
  */
 export function exampleAutomaticNarrowing(outputs: TypedOutput[]): void {
-  console.log("=== Automatic Narrowing for Built-in Types ===\n");
+  console.log("=== Type Guards for Built-in Types ===\n");
 
   for (const output of outputs) {
-    // ✅ Switch statement automatically narrows built-in types
-    switch (output.nodeType) {
-      case "storage-output-v1":
-        // ✅ TypeScript knows output.data is UploadFile - NO type guard needed!
-        console.log("Storage Output:");
-        console.log(`  - URL: ${output.data.url}`);
-        console.log(`  - Size: ${output.data.size} bytes`);
-        console.log(`  - MIME: ${output.data.mimeType}`);
-        console.log(`  - ID: ${output.data.id}`);
-        break;
-
-      default:
-        // Custom types or untyped nodes fall through to default
-        console.log(`Unknown type: ${output.nodeType || "untyped"}`);
+    // ✅ Use the pre-built type guard for narrowing
+    if (isStorageOutputV1(output)) {
+      // ✅ TypeScript knows output.data is UploadFile
+      console.log("Storage Output:");
+      console.log(`  - URL: ${output.data.url}`);
+      console.log(`  - Size: ${output.data.size} bytes`);
+      console.log(`  - ID: ${output.data.id}`);
+      console.log(`  - Storage type: ${output.data.storage.type}`);
+    } else if (isStreamingInputV1(output)) {
+      console.log("Streaming Input:");
+      console.log(`  - URL: ${output.data.url}`);
+    } else {
+      // Custom types or untyped nodes
+      console.log(`Unknown type: ${output.nodeType || "untyped"}`);
     }
   }
 }
@@ -47,12 +52,12 @@ export function exampleCustomTypeGuards(outputs: TypedOutput[]): void {
   console.log("\n=== Type Guards for Custom Types ===\n");
 
   for (const output of outputs) {
-    // Built-in types: automatic narrowing
-    if (output.nodeType === "storage-output-v1") {
-      console.log("Built-in (automatic):", output.data.url);
+    // Built-in types: use pre-built type guards
+    if (isStorageOutputV1(output)) {
+      console.log("Built-in (type guard):", output.data.url);
     }
 
-    // Custom types: use type guards
+    // Custom types: use custom type guards
     // Note: This example uses isStorageOutput to show the pattern
     // In real code, you'd use custom type guards like isThumbnailOutput
     else if (isStorageOutput(output)) {
@@ -62,13 +67,12 @@ export function exampleCustomTypeGuards(outputs: TypedOutput[]): void {
 }
 
 /**
- * Example 3: Hybrid approach - best of both worlds
+ * Example 3: Categorizing outputs by type
  *
- * Use switch for built-in types, then fall back to type guards for custom types.
- * This gives you the best developer experience for both cases.
+ * Use type guards to categorize outputs into different buckets.
  */
 export function exampleHybridApproach(outputs: TypedOutput[]): void {
-  console.log("\n=== Hybrid Approach (Recommended) ===\n");
+  console.log("\n=== Categorizing Outputs ===\n");
 
   const results = {
     storage: [] as UploadFile[],
@@ -77,21 +81,14 @@ export function exampleHybridApproach(outputs: TypedOutput[]): void {
   };
 
   for (const output of outputs) {
-    // First, try automatic narrowing for built-in types
-    switch (output.nodeType) {
-      case "storage-output-v1":
-        results.storage.push(output.data);
-        break;
-
-      case "streaming-input-v1":
-        results.streaming.push(output.data);
-        break;
-
-      default:
-        // For everything else (custom types), collect for type guard processing
-        if (output.nodeType) {
-          results.custom.push(output);
-        }
+    // Use type guards for built-in types
+    if (isStorageOutputV1(output)) {
+      results.storage.push(output.data);
+    } else if (isStreamingInputV1(output)) {
+      results.streaming.push(output.data);
+    } else if (output.nodeType) {
+      // Custom types
+      results.custom.push(output);
     }
   }
 
@@ -99,7 +96,7 @@ export function exampleHybridApproach(outputs: TypedOutput[]): void {
   console.log(`Streaming outputs: ${results.streaming.length}`);
   console.log(`Custom outputs: ${results.custom.length}`);
 
-  // Now process custom types with type guards
+  // Now process custom types with custom type guards
   for (const customOutput of results.custom) {
     // Apply custom type guards here
     // if (isThumbnailOutput(customOutput)) { ... }
@@ -109,49 +106,45 @@ export function exampleHybridApproach(outputs: TypedOutput[]): void {
 }
 
 /**
- * Example 4: Before vs After comparison
+ * Example 4: Using type guards vs generic isStorageOutput
  *
- * This shows the improvement in developer experience with discriminated unions.
+ * This shows the difference between the generic type guard and built-in type guards.
  */
 export function exampleBeforeAfter(outputs: TypedOutput[]): void {
-  console.log("\n=== Before vs After Comparison ===\n");
+  console.log("\n=== Type Guard Comparison ===\n");
 
-  // BEFORE (required type guards for everything)
-  console.log("BEFORE: Always needed type guards");
+  // Using the generic isStorageOutput (works with any storage output)
+  console.log("Generic isStorageOutput:");
   for (const output of outputs) {
     if (isStorageOutput(output)) {
-      // Type guard required even for built-in types
-      console.log("Storage (with type guard):", output.data.url);
+      console.log("Storage (generic):", output.data.url);
     }
   }
 
-  // AFTER (automatic narrowing for built-in types)
-  console.log("\nAFTER: Automatic narrowing for built-in types");
+  // Using the specific isStorageOutputV1 (built-in type guard)
+  console.log("\nSpecific isStorageOutputV1:");
   for (const output of outputs) {
-    switch (output.nodeType) {
-      case "storage-output-v1":
-        // ✅ No type guard needed!
-        console.log("Storage (automatic):", output.data.url);
-        break;
+    if (isStorageOutputV1(output)) {
+      console.log("Storage (v1 specific):", output.data.url);
     }
   }
 }
 
 /**
- * Example 5: Type-safe extraction without type guards
+ * Example 5: Type-safe extraction with type guards
  *
- * Extract data from built-in types without any type guards.
+ * Extract data from built-in types using type guards.
  */
 export function exampleTypeSafeExtraction(
   outputs: TypedOutput[],
 ): UploadFile[] {
-  console.log("\n=== Type-Safe Extraction (No Type Guards) ===\n");
+  console.log("\n=== Type-Safe Extraction ===\n");
 
   const storageFiles: UploadFile[] = [];
 
   for (const output of outputs) {
-    // ✅ Automatic narrowing - no type guard needed!
-    if (output.nodeType === "storage-output-v1") {
+    // Use type guard for narrowing
+    if (isStorageOutputV1(output)) {
       // TypeScript knows output.data is UploadFile
       storageFiles.push(output.data);
     }
@@ -164,22 +157,17 @@ export function exampleTypeSafeExtraction(
 /**
  * Example 6: Working with arrays - filter and map
  *
- * Demonstrates automatic narrowing with array methods.
+ * Demonstrates type guards with array methods.
  */
 export function exampleArrayOperations(outputs: TypedOutput[]): void {
-  console.log("\n=== Array Operations with Automatic Narrowing ===\n");
+  console.log("\n=== Array Operations with Type Guards ===\n");
 
-  // Filter for storage outputs - automatic narrowing!
-  const storageOutputs = outputs.filter(
-    (
-      output,
-    ): output is Extract<TypedOutput, { nodeType: "storage-output-v1" }> =>
-      output.nodeType === "storage-output-v1",
-  );
+  // Filter for storage outputs using the type guard
+  const storageOutputs = outputs.filter(isStorageOutputV1);
 
   // Now TypeScript knows storageOutputs have UploadFile data
-  const urls = storageOutputs.map((output) => output.data.url);
-  const sizes = storageOutputs.map((output) => output.data.size);
+  const urls = storageOutputs.map((output) => output.data.url ?? "unknown");
+  const sizes = storageOutputs.map((output) => output.data.size ?? 0);
 
   console.log(`URLs: ${urls.join(", ")}`);
   console.log(
@@ -190,7 +178,7 @@ export function exampleArrayOperations(outputs: TypedOutput[]): void {
 /**
  * Main demo function that runs all examples
  */
-export function runAutomaticNarrowingDemo(): void {
+export function runTypeGuardsDemo(): void {
   // Create sample outputs
   const sampleOutputs: TypedOutput[] = [
     {
@@ -200,17 +188,12 @@ export function runAutomaticNarrowingDemo(): void {
         id: "file-1",
         url: "https://cdn.example.com/file1.jpg",
         size: 1024000,
-        mimeType: "image/jpeg",
-        name: "file1.jpg",
-        uploadId: "upload-1",
         storage: {
           id: "storage-1",
           type: "s3",
           bucket: "my-bucket",
         },
         offset: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
       timestamp: "2024-01-15T10:30:00Z",
     },
@@ -221,24 +204,19 @@ export function runAutomaticNarrowingDemo(): void {
         id: "file-2",
         url: "https://cdn.example.com/file2.jpg",
         size: 2048000,
-        mimeType: "image/jpeg",
-        name: "file2.jpg",
-        uploadId: "upload-2",
         storage: {
           id: "storage-1",
           type: "s3",
           bucket: "my-bucket",
         },
         offset: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
       timestamp: "2024-01-15T10:31:00Z",
     },
   ];
 
   console.log("\n========================================");
-  console.log("  Automatic Type Narrowing Demo");
+  console.log("  Type Guards Demo");
   console.log("========================================\n");
 
   exampleAutomaticNarrowing(sampleOutputs);
@@ -254,4 +232,4 @@ export function runAutomaticNarrowingDemo(): void {
 }
 
 // Uncomment to run the demo:
-// runAutomaticNarrowingDemo();
+// runTypeGuardsDemo();

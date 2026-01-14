@@ -279,7 +279,10 @@ export type DataStore<TData = unknown> = {
   readonly readStream?: (
     file_id: string,
     config?: StreamingConfig,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
   readonly write: (
     options: DataStoreWriteOptions,
     dependencies: {

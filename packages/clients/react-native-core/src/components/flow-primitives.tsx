@@ -648,11 +648,14 @@ function FlowSubmit({ children, disabled }: FlowSubmitProps) {
 
   const renderProps: FlowSubmitRenderProps = {
     submit: flow.execute,
-    isDisabled: disabled || flow.isActive || Object.keys(flow.inputs).length === 0,
+    isDisabled:
+      disabled || flow.isActive || Object.keys(flow.inputs).length === 0,
     isSubmitting: flow.isActive,
   };
 
-  return <>{typeof children === "function" ? children(renderProps) : children}</>;
+  return (
+    <>{typeof children === "function" ? children(renderProps) : children}</>
+  );
 }
 
 /**
@@ -684,7 +687,9 @@ function FlowCancel({ children }: FlowCancelProps) {
     isDisabled: !flow.isActive,
   };
 
-  return <>{typeof children === "function" ? children(renderProps) : children}</>;
+  return (
+    <>{typeof children === "function" ? children(renderProps) : children}</>
+  );
 }
 
 /**
@@ -716,7 +721,9 @@ function FlowReset({ children }: FlowResetProps) {
     isDisabled: flow.isActive,
   };
 
-  return <>{typeof children === "function" ? children(renderProps) : children}</>;
+  return (
+    <>{typeof children === "function" ? children(renderProps) : children}</>
+  );
 }
 
 // ============ QUICK UPLOAD PRIMITIVE ============

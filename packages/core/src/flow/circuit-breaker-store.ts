@@ -9,12 +9,7 @@
 
 import { Effect, Layer } from "effect";
 
-import { UploadistaError } from "../errors";
-import {
-  type BaseKvStore,
-  BaseKvStoreService,
-  jsonSerializer,
-} from "../types/kv-store";
+import type { UploadistaError } from "../errors";
 import {
   type CircuitBreakerStateData,
   type CircuitBreakerStats,
@@ -22,6 +17,11 @@ import {
   CircuitBreakerStoreService,
   createInitialCircuitBreakerState,
 } from "../types/circuit-breaker-store";
+import {
+  type BaseKvStore,
+  BaseKvStoreService,
+  jsonSerializer,
+} from "../types/kv-store";
 
 // ============================================================================
 // Key Prefix
@@ -231,8 +231,7 @@ export function makeMemoryCircuitBreakerStore(): CircuitBreakerStore {
   const store = new Map<string, CircuitBreakerStateData>();
 
   return {
-    getState: (nodeType: string) =>
-      Effect.succeed(store.get(nodeType) ?? null),
+    getState: (nodeType: string) => Effect.succeed(store.get(nodeType) ?? null),
 
     setState: (nodeType: string, state: CircuitBreakerStateData) =>
       Effect.sync(() => {

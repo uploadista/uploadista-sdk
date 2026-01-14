@@ -74,7 +74,10 @@ export interface ExponentialBackoff {
 /**
  * Union type for all backoff strategies.
  */
-export type BackoffStrategy = ImmediateBackoff | FixedBackoff | ExponentialBackoff;
+export type BackoffStrategy =
+  | ImmediateBackoff
+  | FixedBackoff
+  | ExponentialBackoff;
 
 /**
  * Configuration for automatic retry behavior.
@@ -182,7 +185,7 @@ export function calculateBackoffDelay(
 
     case "exponential": {
       const baseDelay =
-        backoff.initialDelayMs * Math.pow(backoff.multiplier, retryCount);
+        backoff.initialDelayMs * backoff.multiplier ** retryCount;
       const cappedDelay = Math.min(baseDelay, backoff.maxDelayMs);
 
       if (backoff.jitter) {

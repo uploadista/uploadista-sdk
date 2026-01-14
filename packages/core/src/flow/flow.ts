@@ -890,9 +890,9 @@ export function createFlowWithSchema<
                 });
 
                 // Support both Effect and Promise
-                result = yield* (Effect.isEffect(hookResult)
+                result = yield* Effect.isEffect(hookResult)
                   ? hookResult
-                  : Effect.promise(() => hookResult as Promise<unknown>));
+                  : Effect.promise(() => hookResult as Promise<unknown>);
               }
             }
 
@@ -1040,9 +1040,10 @@ export function createFlowWithSchema<
         const circuitBreakerStore = yield* Effect.serviceOption(
           CircuitBreakerStoreService,
         );
-        const circuitBreakerRegistry = circuitBreakerStore._tag === "Some"
-          ? new DistributedCircuitBreakerRegistry(circuitBreakerStore.value)
-          : null;
+        const circuitBreakerRegistry =
+          circuitBreakerStore._tag === "Some"
+            ? new DistributedCircuitBreakerRegistry(circuitBreakerStore.value)
+            : null;
 
         // Emit FlowStart event only if starting fresh
         if (!resumeFrom && onEvent) {

@@ -110,9 +110,8 @@ export type ExtractLayerServices<
  * ```
  */
 // biome-ignore lint/suspicious/noExplicitAny: Utility type needs to handle any Effect type parameters
-export type ResolveEffect<T> = T extends Effect.Effect<infer S, any, any>
-  ? S
-  : T;
+export type ResolveEffect<T> =
+  T extends Effect.Effect<infer S, any, any> ? S : T;
 
 /**
  * Extracts the error type from an Effect.
@@ -138,9 +137,8 @@ export type ResolveEffect<T> = T extends Effect.Effect<infer S, any, any>
  * ```
  */
 // biome-ignore lint/suspicious/noExplicitAny: Utility type needs to handle any Effect type parameters
-export type ExtractEffectError<T> = T extends Effect.Effect<any, infer E, any>
-  ? E
-  : never;
+export type ExtractEffectError<T> =
+  T extends Effect.Effect<any, infer E, any> ? E : never;
 
 /**
  * Extracts the requirements (context) type from an Effect.

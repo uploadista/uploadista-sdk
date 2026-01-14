@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, provide, inject } from "vue";
-import { UPLOAD_CONTEXT_KEY, UPLOAD_ITEM_CONTEXT_KEY, type UploadItemContextValue } from "./useUploadContext";
+import { computed, inject, provide } from "vue";
 import type { UploadContextValue } from "./Upload.vue";
+import {
+  UPLOAD_CONTEXT_KEY,
+  UPLOAD_ITEM_CONTEXT_KEY,
+  type UploadItemContextValue,
+} from "./useUploadContext";
 
 /**
  * Props for UploadItem component.
@@ -20,13 +24,11 @@ const props = defineProps<UploadItemProps>();
 
 const uploadContext = inject<{ value: UploadContextValue }>(UPLOAD_CONTEXT_KEY);
 if (!uploadContext) {
-  throw new Error(
-    "UploadItem must be used within an <Upload> component.",
-  );
+  throw new Error("UploadItem must be used within an <Upload> component.");
 }
 
 const item = computed(() =>
-  uploadContext.value.items.find((i) => i.id === props.id)
+  uploadContext.value.items.find((i) => i.id === props.id),
 );
 
 const itemContext = computed<UploadItemContextValue | null>(() => {

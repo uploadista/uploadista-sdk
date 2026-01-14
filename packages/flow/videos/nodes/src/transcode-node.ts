@@ -128,7 +128,8 @@ export function createTranscodeVideoNode(
           const namingConfig: FileNamingConfig = {
             ...options.naming,
             autoSuffix:
-              options.naming.autoSuffix ?? ((ctx) => ctx.format ?? params.format),
+              options.naming.autoSuffix ??
+              ((ctx) => ctx.format ?? params.format),
           };
           const namingContext = buildNamingContext(
             file as Parameters<typeof buildNamingContext>[0],
@@ -186,7 +187,10 @@ export function createTranscodeVideoNode(
               if (!transcodeStreamFn) {
                 throw new Error("transcodeStream not available");
               }
-              const outputStream = yield* transcodeStreamFn(inputStream, params);
+              const outputStream = yield* transcodeStreamFn(
+                inputStream,
+                params,
+              );
               const { newType, newFileName } = buildOutputMetadata(file);
               return {
                 stream: outputStream,

@@ -10,10 +10,10 @@ import {
   computed,
   onMounted,
   onUnmounted,
+  type Ref,
   readonly,
   ref,
   shallowReadonly,
-  type Ref,
 } from "vue";
 import { useFlowManagerContext } from "./useFlowManagerContext";
 import { useUploadistaClient } from "./useUploadistaClient";
@@ -306,7 +306,11 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
         bytesAccepted: number,
         bytesTotal: number | null,
       ) => {
-        optionsRef.value.onChunkComplete?.(chunkSize, bytesAccepted, bytesTotal);
+        optionsRef.value.onChunkComplete?.(
+          chunkSize,
+          bytesAccepted,
+          bytesTotal,
+        );
       },
       onFlowComplete: (outputs: TypedOutput[]) => {
         optionsRef.value.onFlowComplete?.(outputs);

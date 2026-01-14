@@ -14,7 +14,10 @@ import { waitForUrlAvailability } from "./wait-for-url";
 
 export function createDescribeImageNode(
   id: string,
-  { credentialId, keepOutput }: { credentialId?: string; keepOutput?: boolean } = {},
+  {
+    credentialId,
+    keepOutput,
+  }: { credentialId?: string; keepOutput?: boolean } = {},
 ) {
   return Effect.gen(function* () {
     const imageAiService = yield* ImageAiPlugin;

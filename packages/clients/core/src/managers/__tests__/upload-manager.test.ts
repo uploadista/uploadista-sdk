@@ -573,7 +573,7 @@ describe("UploadManager", () => {
       manager.abort();
 
       // Now resolve
-      resolveUpload!(mockAbortController);
+      resolveUpload?.(mockAbortController);
       await upload;
 
       // Abort should have been attempted (though controller wasn't available yet)

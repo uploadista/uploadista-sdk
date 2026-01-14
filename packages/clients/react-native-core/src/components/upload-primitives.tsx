@@ -133,7 +133,11 @@ export interface UploadProps {
   /** Called when an upload fails */
   onError?: (error: Error) => void;
   /** Called when all uploads complete (multi mode) */
-  onComplete?: (results: { successful: number; failed: number; total: number }) => void;
+  onComplete?: (results: {
+    successful: number;
+    failed: number;
+    total: number;
+  }) => void;
   /** Children to render (can be render function or ReactNode) */
   children: ReactNode | ((props: UploadRenderProps) => ReactNode);
 }
@@ -215,12 +219,21 @@ function UploadRoot({
   // Track completion
   const checkComplete = useCallback(() => {
     const { items } = multiUpload.state;
-    const allComplete = items.length > 0 && items.every(
-      (item) => item.status === "success" || item.status === "error" || item.status === "aborted"
-    );
+    const allComplete =
+      items.length > 0 &&
+      items.every(
+        (item) =>
+          item.status === "success" ||
+          item.status === "error" ||
+          item.status === "aborted",
+      );
     if (allComplete && onComplete) {
-      const successful = items.filter((item) => item.status === "success").length;
-      const failed = items.filter((item) => item.status === "error" || item.status === "aborted").length;
+      const successful = items.filter(
+        (item) => item.status === "success",
+      ).length;
+      const failed = items.filter(
+        (item) => item.status === "error" || item.status === "aborted",
+      ).length;
       onComplete({ successful, failed, total: items.length });
     }
   }, [multiUpload.state, onComplete]);
@@ -255,7 +268,9 @@ function UploadRoot({
     if (!fileSystemProvider?.pickImage) {
       throw new Error("Image picker not available");
     }
-    const result = await fileSystemProvider.pickImage({ allowMultiple: multiple });
+    const result = await fileSystemProvider.pickImage({
+      allowMultiple: multiple,
+    });
     if (result.status === "success") {
       handleFilesReceived([result]);
       return result;
@@ -669,7 +684,10 @@ function UploadStatus({ children }: UploadStatusProps) {
     status = "uploading";
   } else if (state.items.length > 0) {
     const allComplete = state.items.every(
-      (item) => item.status === "success" || item.status === "error" || item.status === "aborted"
+      (item) =>
+        item.status === "success" ||
+        item.status === "error" ||
+        item.status === "aborted",
     );
     if (allComplete) {
       status = state.failedCount > 0 ? "error" : "success";
@@ -680,7 +698,10 @@ function UploadStatus({ children }: UploadStatusProps) {
     status,
     isIdle: status === "idle",
     isUploading: state.activeCount > 0,
-    isSuccess: state.completedCount > 0 && state.failedCount === 0 && state.activeCount === 0,
+    isSuccess:
+      state.completedCount > 0 &&
+      state.failedCount === 0 &&
+      state.activeCount === 0,
     isError: state.failedCount > 0,
     total: state.items.length,
     successful: state.completedCount,
@@ -737,8 +758,8 @@ export interface UploadErrorProps {
 function UploadError({ children }: UploadErrorProps) {
   const upload = useUploadContext();
 
-  const failedItems = upload.state.items.filter((item) =>
-    item.status === "error" || item.status === "aborted"
+  const failedItems = upload.state.items.filter(
+    (item) => item.status === "error" || item.status === "aborted",
   );
 
   const renderProps: UploadErrorRenderProps = {
@@ -778,9 +799,11 @@ function UploadCancel({ children }: UploadCancelProps) {
   const upload = useUploadContext();
 
   const cancel = useCallback(() => {
-    upload.state.items
-      .filter((item) => item.status === "uploading")
-      .forEach((item) => upload.abortItem(item.id));
+    for (const item of upload.state.items.filter(
+      (item) => item.status === "uploading",
+    )) {
+      upload.abortItem(item.id);
+    }
   }, [upload]);
 
   const renderProps: UploadCancelRenderProps = {
@@ -817,7 +840,7 @@ function UploadRetry({ children }: UploadRetryProps) {
 
   const retry = useCallback(async () => {
     const failedItems = upload.state.items.filter(
-      (item) => item.status === "error" || item.status === "aborted"
+      (item) => item.status === "error" || item.status === "aborted",
     );
     for (const item of failedItems) {
       await upload.retryItem(item.id);
@@ -886,7 +909,7 @@ function UploadStartAll({ children }: UploadStartAllProps) {
   const upload = useUploadContext();
 
   const idleCount = upload.state.items.filter(
-    (item) => item.status === "idle"
+    (item) => item.status === "idle",
   ).length;
 
   const start = useCallback(async () => {

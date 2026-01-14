@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import type { FlowUploadOptions } from "@uploadista/client-browser";
+import type {
+  FlowUploadState,
+  FlowUploadStatus,
+  InputExecutionState,
+} from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
-import { provide, computed, toRefs } from "vue";
-import { useFlow, type UseFlowReturn, type FlowInputMetadata } from "../../composables/useFlow";
-import type { FlowUploadState, FlowUploadStatus, InputExecutionState } from "@uploadista/client-core";
+import { provide } from "vue";
+import {
+  type FlowInputMetadata,
+  type UseFlowReturn,
+  useFlow,
+} from "../../composables/useFlow";
 
 /**
  * Props for the Flow root component.
@@ -27,7 +35,11 @@ const emit = defineEmits<{
   /** Called when flow fails */
   error: [error: Error];
   /** Called on upload progress */
-  progress: [uploadId: string, bytesUploaded: number, totalBytes: number | null];
+  progress: [
+    uploadId: string,
+    bytesUploaded: number,
+    totalBytes: number | null,
+  ];
   /** Called when flow completes with all outputs */
   flowComplete: [outputs: TypedOutput[]];
   /** Called when upload is aborted */

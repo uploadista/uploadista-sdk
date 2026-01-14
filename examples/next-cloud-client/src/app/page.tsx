@@ -26,9 +26,6 @@ function App() {
         authServerUrl: `/api/auth/token`,
         clientId: `${process.env.NEXT_PUBLIC_UPLOADISTA_CLIENT_ID}`,
       }}
-      onEvent={(event) => {
-        console.log("Global upload event:", event);
-      }}
     >
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         {/* Header */}

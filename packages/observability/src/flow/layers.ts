@@ -3,7 +3,7 @@ import {
   FlowObservability,
   makeFlowObservabilityLayer,
 } from "../core/layers.js";
-import { createFlowMetrics, type FlowMetrics } from "./metrics.js";
+import { createFlowMetrics } from "./metrics.js";
 
 // ============================================================================
 // Flow Observability Layer Implementation

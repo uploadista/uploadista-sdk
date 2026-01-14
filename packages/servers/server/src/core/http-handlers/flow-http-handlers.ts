@@ -94,7 +94,7 @@ export const handleRunFlow = <TRequirements>({
     }
 
     // Run flow returns immediately with jobId
-    const startTime = Date.now();
+
     yield* Effect.logInfo(`[Flow] Calling flowServer.runFlow...`);
     const result = yield* flowEngine
       .runFlow<TRequirements>({

@@ -57,6 +57,12 @@ export type FlowNodeData = {
 };
 
 /**
+ * All built-in node type identifiers.
+ * Used to exclude these from custom types for proper discriminated union narrowing.
+ */
+export type BuiltInNodeType = "storage-output-v1" | "streaming-input-v1";
+
+/**
  * Built-in typed outputs with automatic TypeScript narrowing.
  *
  * These outputs use discriminated unions to enable automatic type narrowing
@@ -72,12 +78,19 @@ export type FlowNodeData = {
  * }
  * ```
  */
-export type BuiltInTypedOutput = {
-  nodeType: "storage-output-v1";
-  data: UploadFile;
-  nodeId: string;
-  timestamp: string;
-};
+export type BuiltInTypedOutput =
+  | {
+      nodeType: "storage-output-v1";
+      data: UploadFile;
+      nodeId: string;
+      timestamp: string;
+    }
+  | {
+      nodeType: "streaming-input-v1";
+      data: UploadFile;
+      nodeId: string;
+      timestamp: string;
+    };
 
 /**
  * Custom typed output for user-defined node types.
@@ -178,6 +191,62 @@ export type CustomTypedOutput<T = unknown> = {
 export type TypedOutput<T = unknown> =
   | BuiltInTypedOutput
   | CustomTypedOutput<T>;
+
+/**
+ * Helper type to extract a specific built-in output by nodeType.
+ *
+ * This enables type-safe narrowing when you know the nodeType:
+ * ```typescript
+ * if (output.nodeType === "storage-output-v1") {
+ *   const narrowed = output as NarrowTypedOutput<"storage-output-v1">;
+ *   narrowed.data.url; // ✅ TypeScript knows data is UploadFile
+ * }
+ * ```
+ */
+export type NarrowTypedOutput<NodeType extends BuiltInNodeType> = Extract<
+  BuiltInTypedOutput,
+  { nodeType: NodeType }
+>;
+
+/**
+ * Type guard function signature for narrowing TypedOutput.
+ *
+ * @template NodeType - The built-in node type to narrow to
+ */
+export type TypedOutputGuard<NodeType extends BuiltInNodeType> = (
+  output: TypedOutput,
+) => output is NarrowTypedOutput<NodeType>;
+
+/**
+ * Creates a type-safe type guard for a built-in node type.
+ *
+ * @example
+ * ```typescript
+ * const isStorageV1 = createOutputGuard("storage-output-v1");
+ *
+ * for (const output of outputs) {
+ *   if (isStorageV1(output)) {
+ *     output.data.url; // ✅ TypeScript knows data is UploadFile
+ *   }
+ * }
+ * ```
+ */
+export const createOutputGuard =
+  <NodeType extends BuiltInNodeType>(
+    nodeType: NodeType,
+  ): TypedOutputGuard<NodeType> =>
+  (output: TypedOutput): output is NarrowTypedOutput<NodeType> =>
+    output.nodeType === nodeType;
+
+/**
+ * Pre-built type guard for storage-output-v1.
+ */
+export const isStorageOutputV1 = createOutputGuard("storage-output-v1");
+
+/**
+ * Pre-built type guard for streaming-input-v1.
+ */
+export const isStreamingInputV1 = createOutputGuard("streaming-input-v1");
 
 /**
  * Result of a node execution - either complete or waiting for more data.

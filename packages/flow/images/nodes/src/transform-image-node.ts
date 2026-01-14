@@ -1,3 +1,4 @@
+import type { UploadistaError } from "@uploadista/core/errors";
 import {
   createTransformNode,
   type FileNamingConfig,
@@ -7,7 +8,6 @@ import {
   type TransformImageParams,
   type TransformMode,
 } from "@uploadista/core/flow";
-import type { UploadistaError } from "@uploadista/core/errors";
 import { Effect, Stream } from "effect";
 
 /**
@@ -204,12 +204,11 @@ export function createTransformImageNode(
         supportsStreaming && !hasUnsupportedTransformations
           ? (inputStream) =>
               Effect.gen(function* () {
-                const outputStream =
-                  yield* applyStreamingTransformationChain(
-                    imageService,
-                    inputStream,
-                    transformations,
-                  );
+                const outputStream = yield* applyStreamingTransformationChain(
+                  imageService,
+                  inputStream,
+                  transformations,
+                );
                 return { stream: outputStream };
               })
           : undefined,

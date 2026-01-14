@@ -2,12 +2,7 @@
 
 import type { BrowserUploadInput } from "@uploadista/client-browser";
 import type { UploadFile } from "@uploadista/core/types";
-import {
-  type ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext } from "react";
 import {
   type DragDropState,
   type UseDragDropReturn,
@@ -15,13 +10,21 @@ import {
 } from "../hooks/use-drag-drop";
 import {
   type MultiUploadState,
-  type UploadItem,
+  type UploadItem as UploadItemData,
   useMultiUpload,
 } from "../hooks/use-multi-upload";
-import type { UploadState, UploadStatus } from "../hooks/use-upload";
+import type {
+  UploadState,
+  UploadStatus as UploadStatusType,
+} from "../hooks/use-upload";
 
 // Re-export types for convenience
-export type { UploadState, UploadStatus, UploadItem, MultiUploadState };
+export type {
+  UploadState,
+  UploadStatusType as UploadStatus,
+  UploadItemData as UploadItem,
+  MultiUploadState,
+};
 
 // ============ UPLOAD CONTEXT ============
 
@@ -35,7 +38,7 @@ export interface UploadContextValue {
   /** Current multi-upload state (aggregate) */
   state: MultiUploadState;
   /** All upload items */
-  items: UploadItem[];
+  items: UploadItemData[];
   /** Whether auto-start is enabled */
   autoStart: boolean;
 
@@ -73,7 +76,7 @@ export function useUploadContext(): UploadContextValue {
   if (!context) {
     throw new Error(
       "useUploadContext must be used within an <Upload> component. " +
-        'Wrap your component tree with <Upload onSuccess={...}>',
+        "Wrap your component tree with <Upload onSuccess={...}>",
     );
   }
   return context;
@@ -133,18 +136,18 @@ export interface UploadProps {
   /** Called when a single file upload succeeds (single mode) */
   onSuccess?: (result: UploadFile) => void;
   /** Called when an upload fails */
-  onError?: (error: Error, item?: UploadItem) => void;
+  onError?: (error: Error, item?: UploadItemData) => void;
   /** Called when all uploads complete (multi mode) */
   onComplete?: (results: {
-    successful: UploadItem[];
-    failed: UploadItem[];
+    successful: UploadItemData[];
+    failed: UploadItemData[];
     total: number;
   }) => void;
   /** Called when an individual upload starts */
-  onUploadStart?: (item: UploadItem) => void;
+  onUploadStart?: (item: UploadItemData) => void;
   /** Called on upload progress */
   onProgress?: (
-    item: UploadItem,
+    item: UploadItemData,
     progress: number,
     bytesUploaded: number,
     totalBytes: number | null,
@@ -211,7 +214,7 @@ function UploadRoot({
     metadata,
     onUploadStart,
     onUploadProgress: onProgress,
-    onUploadSuccess: (item, result) => {
+    onUploadSuccess: (_item, result) => {
       // In single mode, call onSuccess directly
       if (!multiple) {
         onSuccess?.(result);
@@ -350,7 +353,7 @@ function UploadDropZone({
  */
 export interface UploadItemsRenderProps {
   /** All upload items */
-  items: UploadItem[];
+  items: UploadItemData[];
   /** Whether there are any items */
   hasItems: boolean;
   /** Whether items array is empty */
@@ -590,7 +593,7 @@ export interface UploadErrorRenderProps {
   /** Number of failed uploads */
   failedCount: number;
   /** Failed items */
-  failedItems: UploadItem[];
+  failedItems: UploadItemData[];
   /** Reset/clear all errors */
   reset: () => void;
 }

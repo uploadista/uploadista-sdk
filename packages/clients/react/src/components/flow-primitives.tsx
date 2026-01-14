@@ -7,12 +7,7 @@ import type {
   InputExecutionState,
 } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
-import {
-  type ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext } from "react";
 import {
   type DragDropState,
   type UseDragDropReturn,
@@ -78,7 +73,7 @@ export function useFlowContext(): FlowContextValue {
   if (!context) {
     throw new Error(
       "useFlowContext must be used within a <Flow> component. " +
-        "Wrap your component tree with <Flow flowId=\"...\" storageId=\"...\">",
+        'Wrap your component tree with <Flow flowId="..." storageId="...">',
     );
   }
   return context;
@@ -113,7 +108,7 @@ export function useFlowInputContext(): FlowInputContextValue {
   if (!context) {
     throw new Error(
       "useFlowInputContext must be used within a <Flow.Input> component. " +
-        "Wrap your component with <Flow.Input nodeId=\"...\">",
+        'Wrap your component with <Flow.Input nodeId="...">',
     );
   }
   return context;

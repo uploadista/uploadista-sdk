@@ -1,7 +1,4 @@
-import {
-  createFlow,
-  createInputNode,
-} from "@uploadista/core";
+import { createFlow, createInputNode } from "@uploadista/core";
 import {
   createConditionalNode,
   createMergeNode,
@@ -41,9 +38,7 @@ export const conditionalFlow = createFlow({
       value: 1000000, // 1MB
     }),
   },
-  edges: [
-    { source: "input", target: "conditional" },
-  ],
+  edges: [{ source: "input", target: "conditional" }],
 });
 
 /**
@@ -106,9 +101,7 @@ export const multiplexFlow = createFlow({
       strategy: "copy",
     }),
   },
-  edges: [
-    { source: "input", target: "multiplex" },
-  ],
+  edges: [{ source: "input", target: "multiplex" }],
 });
 
 /**

@@ -70,7 +70,9 @@ function mapResolution(resolution?: string): string {
 /**
  * Determine format based on task type
  */
-function getFormatFromTaskType(taskType: string): "markdown" | "plain" | "structured" {
+function getFormatFromTaskType(
+  taskType: string,
+): "markdown" | "plain" | "structured" {
   switch (taskType) {
     case "convertToMarkdown":
       return "markdown";
@@ -186,7 +188,7 @@ export const documentAiPlugin = (
           const apiToken = yield* getApiToken(context);
 
           yield* Effect.logInfo(
-            `Starting OCR for document with task type: ${params.taskType}`
+            `Starting OCR for document with task type: ${params.taskType}`,
           );
 
           const output = yield* Effect.tryPromise({
@@ -213,7 +215,8 @@ export const documentAiPlugin = (
               return result;
             },
             catch: (error) => {
-              const errorMessage = error instanceof Error ? error.message : String(error);
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
 
               return UploadistaError.fromCode("OCR_FAILED", {
                 cause: errorMessage,
@@ -221,8 +224,10 @@ export const documentAiPlugin = (
             },
           }).pipe(
             Effect.tapError((error) =>
-              Effect.logError(`OCR failed: ${error instanceof UploadistaError ? error.cause : String(error)}`)
-            )
+              Effect.logError(
+                `OCR failed: ${error instanceof UploadistaError ? error.cause : String(error)}`,
+              ),
+            ),
           );
 
           // Extract text from the result
@@ -243,7 +248,9 @@ export const documentAiPlugin = (
             extractedText = JSON.stringify(output);
           }
 
-          yield* Effect.logInfo(`OCR completed, extracted ${extractedText.length} characters`);
+          yield* Effect.logInfo(
+            `OCR completed, extracted ${extractedText.length} characters`,
+          );
 
           const result: OcrResult = {
             extractedText,
@@ -260,7 +267,7 @@ export const documentAiPlugin = (
           }),
         );
       },
-    })
+    }),
   );
 };
 

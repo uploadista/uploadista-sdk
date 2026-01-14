@@ -83,7 +83,11 @@ export function createVideoThumbnailNode(
                   { format },
                 );
                 // Apply naming to get base name with suffix
-                const namedFile = applyFileNaming(file, namingContext, namingConfig);
+                const namedFile = applyFileNaming(
+                  file,
+                  namingContext,
+                  namingConfig,
+                );
                 // Replace extension with image extension
                 newFileName = `${getBaseName(namedFile)}.${extension}`;
               } else {
