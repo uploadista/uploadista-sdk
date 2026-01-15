@@ -52,7 +52,7 @@ describe("Sharp Image Plugin", () => {
           getImageMetadata(optimized),
         );
         expect(metadata.format).toBe("jpeg");
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should optimize to webp format", () =>
@@ -71,7 +71,7 @@ describe("Sharp Image Plugin", () => {
           getImageMetadata(optimized),
         );
         expect(metadata.format).toBe("webp");
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should optimize to png format", () =>
@@ -90,7 +90,7 @@ describe("Sharp Image Plugin", () => {
           getImageMetadata(optimized),
         );
         expect(metadata.format).toBe("png");
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should handle different quality levels", () =>
@@ -114,7 +114,7 @@ describe("Sharp Image Plugin", () => {
 
         // Lower quality should result in smaller file size
         expect(lowQuality.length).toBeLessThan(highQuality.length);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
   });
 
@@ -135,7 +135,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(150);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should resize with width only", () =>
@@ -154,7 +154,7 @@ describe("Sharp Image Plugin", () => {
         expect(metadata.width).toBe(200);
         // Height should be proportional
         expect(metadata.height).toBeLessThanOrEqual(300);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should resize with height only", () =>
@@ -172,7 +172,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.height).toBe(150);
         expect(metadata.width).toBeLessThanOrEqual(400);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should handle 'cover' fit mode", () =>
@@ -191,7 +191,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(200);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should handle 'contain' fit mode", () =>
@@ -210,7 +210,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.width).toBeLessThanOrEqual(200);
         expect(metadata.height).toBeLessThanOrEqual(200);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should handle 'fill' fit mode (maps to cover)", () =>
@@ -229,7 +229,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(200);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should handle upscaling", () =>
@@ -248,7 +248,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(200);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
   });
 
@@ -271,7 +271,7 @@ describe("Sharp Image Plugin", () => {
         // After 90° rotation, dimensions should swap
         expect(metadata.width).toBe(100);
         expect(metadata.height).toBe(200);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should apply flip transformation", () =>
@@ -292,7 +292,7 @@ describe("Sharp Image Plugin", () => {
         );
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(100);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should apply flop transformation", () =>
@@ -313,7 +313,7 @@ describe("Sharp Image Plugin", () => {
         );
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(100);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should apply blur transformation", () =>
@@ -330,7 +330,7 @@ describe("Sharp Image Plugin", () => {
 
         expect(transformed).toBeInstanceOf(Uint8Array);
         expect(transformed.length).toBeGreaterThan(0);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should apply grayscale transformation", () =>
@@ -346,7 +346,7 @@ describe("Sharp Image Plugin", () => {
 
         expect(transformed).toBeInstanceOf(Uint8Array);
         expect(transformed.length).toBeGreaterThan(0);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should apply multiple transformations together", () =>
@@ -382,7 +382,7 @@ describe("Sharp Image Plugin", () => {
         // Dimensions should remain same after 180° rotation
         expect(metadata.width).toBe(200);
         expect(metadata.height).toBe(100);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should handle sepia transformation", () =>
@@ -398,7 +398,7 @@ describe("Sharp Image Plugin", () => {
 
         expect(transformed).toBeInstanceOf(Uint8Array);
         expect(transformed.length).toBeGreaterThan(0);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
   });
 
@@ -416,7 +416,7 @@ describe("Sharp Image Plugin", () => {
         );
 
         expect(result._tag).toBe("Left");
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
 
     it.effect("should fail resize with invalid dimensions", () =>
@@ -435,7 +435,7 @@ describe("Sharp Image Plugin", () => {
         );
 
         expect(result._tag).toBe("Left");
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
   });
 
@@ -464,7 +464,7 @@ describe("Sharp Image Plugin", () => {
         const metadata = yield* Effect.promise(() => getImageMetadata(resized));
         expect(metadata.width).toBe(500);
         expect(metadata.height).toBe(500);
-      }).pipe(Effect.provide(imagePlugin)),
+      }).pipe(Effect.provide(imagePlugin())),
     );
   });
 });

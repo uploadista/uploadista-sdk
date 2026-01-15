@@ -340,9 +340,9 @@ export const makeMockS3ClientService = (
             `Upload not found: ${context.uploadId}`,
           ) as Error & { code: string };
           awsError.code = "NoSuchUpload";
-          yield* Effect.fail(
-            UploadistaError.fromCode("FILE_NOT_FOUND", { cause: awsError }),
-          );
+          yield* UploadistaError.fromCode("FILE_NOT_FOUND", {
+            cause: awsError,
+          }).toEffect();
           return ""; // Never reached but helps TypeScript
         }
 

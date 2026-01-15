@@ -661,6 +661,9 @@ describe("S3Store - Edge Cases and Error Handling", () => {
             uploadFailureRate: 0, // No failures
           });
 
+          // Recreate the upload after failure (the previous upload may have been consumed/aborted)
+          yield* s3Store.create(testFile);
+
           const result2 = yield* s3Store.write(
             {
               file_id: testFile.id,
@@ -671,7 +674,7 @@ describe("S3Store - Edge Cases and Error Handling", () => {
           );
 
           expect(result2).toBe(testFile.size ?? 0);
-        }),
+        }).pipe(Effect.provide(TestLayersWithMockS3())),
         20000,
       );
     });

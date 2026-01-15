@@ -1,4 +1,4 @@
-import { TestUploadServer, TestVideoPlugin } from "@uploadista/core/testing";
+import { TestUploadEngine, TestVideoPlugin } from "@uploadista/core/testing";
 import type { UploadFile } from "@uploadista/core/types";
 import { it as effectIt } from "@effect/vitest";
 import { Effect, Layer } from "effect";
@@ -12,7 +12,7 @@ import {
 } from "../src";
 
 // Combined test layer with all required dependencies
-const TestLayer = Layer.merge(TestUploadServer, TestVideoPlugin);
+const TestLayer = Layer.mergeAll(TestUploadEngine, TestVideoPlugin);
 
 // Helper to create test video file
 const createTestVideoFile = (): UploadFile => ({

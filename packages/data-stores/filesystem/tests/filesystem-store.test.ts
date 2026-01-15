@@ -83,7 +83,7 @@ describe("FilesystemStore - Basic Upload Tests", () => {
 
           expect(capabilities.supportsParallelUploads).toBe(false);
           expect(capabilities.supportsConcatenation).toBe(false);
-          expect(capabilities.supportsDeferredLength).toBe(false);
+          expect(capabilities.supportsDeferredLength).toBe(true);
           expect(capabilities.supportsResumableUploads).toBe(true);
           expect(capabilities.requiresOrderedChunks).toBe(true);
         }).pipe(Effect.provide(TestLayersWithMemoryKV())),

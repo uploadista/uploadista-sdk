@@ -16,6 +16,7 @@ import type {
 } from "@uploadista/core/types";
 import { Effect } from "effect";
 import { describe, expect } from "vitest";
+import { AuthContextServiceLive } from "../../../src";
 import {
   handleHealthComponents,
   handleHealthLiveness,
@@ -133,7 +134,7 @@ describe("HTTP Health Check Handlers", () => {
 
         expect(response.status).toBe(200);
         expect(response.type).toBe("health-ready");
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should include component status in response", () =>
@@ -147,7 +148,7 @@ describe("HTTP Health Check Handlers", () => {
         const body = response.body as HealthResponseBody;
 
         expect(body.components).toBeDefined();
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should return plain text when Accept: text/plain", () =>
@@ -161,7 +162,7 @@ describe("HTTP Health Check Handlers", () => {
 
         expect(response.headers["Content-Type"]).toBe("text/plain");
         expect(typeof response.body).toBe("string");
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should respect checkStorage config option", () =>
@@ -177,7 +178,7 @@ describe("HTTP Health Check Handlers", () => {
 
         // Storage should be checked when enabled
         expect(body.components?.storage).toBeDefined();
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should skip storage check when disabled", () =>
@@ -193,7 +194,7 @@ describe("HTTP Health Check Handlers", () => {
 
         // Storage should not be present when disabled
         expect(body.components?.storage).toBeUndefined();
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
   });
 
@@ -210,7 +211,7 @@ describe("HTTP Health Check Handlers", () => {
         // Components endpoint always returns 200 for debugging
         expect(response.status).toBe(200);
         expect(response.type).toBe("health-components");
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should include detailed component status", () =>
@@ -224,7 +225,7 @@ describe("HTTP Health Check Handlers", () => {
         const body = response.body as HealthResponseBody;
 
         expect(body.components).toBeDefined();
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should include timestamp and uptime", () =>
@@ -239,7 +240,7 @@ describe("HTTP Health Check Handlers", () => {
 
         expect(body.timestamp).toBeDefined();
         expect(body.uptime).toBeDefined();
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
 
     it.effect("should return plain text when Accept: text/plain", () =>
@@ -253,7 +254,7 @@ describe("HTTP Health Check Handlers", () => {
 
         expect(response.headers["Content-Type"]).toBe("text/plain");
         expect(typeof response.body).toBe("string");
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
   });
 
@@ -345,7 +346,7 @@ describe("HTTP Health Check Handlers", () => {
           "unhealthy",
         ];
         expect(validStatuses).toContain(body.status);
-      }),
+      }).pipe(Effect.provide(AuthContextServiceLive(null, { bypassAuth: true }))),
     );
   });
 });

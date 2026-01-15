@@ -111,7 +111,13 @@ export interface TransformNodeConfig {
     bytes: Uint8Array,
     file: UploadFile,
   ) => Effect.Effect<
-    Uint8Array | { bytes: Uint8Array; type?: string; fileName?: string },
+    | Uint8Array
+    | {
+        bytes: Uint8Array;
+        type?: string;
+        fileName?: string;
+        metadata?: Record<string, unknown>;
+      },
     UploadistaError
   >;
   /**
@@ -470,6 +476,12 @@ export function createTransformNode({
               ? undefined
               : transformResult.fileName;
 
+          // Get metadata from transform result if provided
+          const outputMetadata =
+            transformResult instanceof Uint8Array
+              ? undefined
+              : transformResult.metadata;
+
           // Apply file naming if configured and no explicit fileName from transform
           if (!outputFileName && naming) {
             const namingContext = buildNamingContext(
@@ -513,6 +525,8 @@ export function createTransformNode({
           const updatedMetadata = metadata
             ? {
                 ...metadata,
+                // Merge transform-returned metadata (e.g., virusScan results)
+                ...outputMetadata,
                 // Update mimeType and related fields if type changed
                 ...(outputType && {
                   mimeType: outputType,
