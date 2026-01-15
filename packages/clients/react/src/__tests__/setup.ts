@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
 
 // Mock the uploadista client-browser module
 vi.mock("@uploadista/client-browser", () => ({

@@ -1,11 +1,11 @@
-import type { UploadistaEvent } from "@uploadista/client-browser";
 import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import { type UploadEvent, UploadEventType } from "@uploadista/core/types";
 
 /**
  * Type guard to check if an event is a flow event
  */
-export function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
+export function isFlowEvent(event: unknown): event is FlowEvent {
+  if (typeof event !== "object" || event === null) return false;
   if (!("eventType" in event)) return false;
   const e = event as { eventType: unknown };
   return (
@@ -29,7 +29,8 @@ export function isFlowEvent(event: UploadistaEvent): event is FlowEvent {
 /**
  * Type guard to check if an event is an upload event
  */
-export function isUploadEvent(event: UploadistaEvent): event is UploadEvent {
+export function isUploadEvent(event: unknown): event is UploadEvent {
+  if (typeof event !== "object" || event === null) return false;
   if (!("type" in event)) return false;
   const e = event as { type: unknown };
   return (

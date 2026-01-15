@@ -72,7 +72,12 @@ vi.mock("@uploadista/client-core", async (importOriginal) => {
 
 // Wrapper component that provides the context
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+  <UploadistaProvider
+    baseUrl="https://api.example.com"
+    storageId="test"
+    chunkSize={1024 * 1024}
+    storeFingerprintForResuming={true}
+  >
     {children}
   </UploadistaProvider>
 );

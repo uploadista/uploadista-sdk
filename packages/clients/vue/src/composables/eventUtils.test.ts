@@ -260,8 +260,8 @@ describe("eventUtils", () => {
     });
 
     it("should return false for empty objects", () => {
-      expect(isFlowEvent({} as object)).toBe(false);
-      expect(isUploadEvent({} as object)).toBe(false);
+      expect(isFlowEvent({})).toBe(false);
+      expect(isUploadEvent({})).toBe(false);
     });
   });
 });

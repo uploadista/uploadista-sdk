@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
 import { createUploadistaClient } from "@uploadista/client-browser";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUploadistaClient } from "../hooks/use-uploadista-client";
 
 vi.mock("@uploadista/client-browser", () => ({
@@ -22,6 +22,7 @@ describe("useUploadistaClient", () => {
         baseUrl: "https://api.example.com",
         storageId: "test-storage",
         chunkSize: 1024 * 1024,
+        storeFingerprintForResuming: true,
       };
 
       renderHook(() => useUploadistaClient(options));
@@ -31,6 +32,7 @@ describe("useUploadistaClient", () => {
           baseUrl: "https://api.example.com",
           storageId: "test-storage",
           chunkSize: 1024 * 1024,
+          storeFingerprintForResuming: true,
         }),
       );
     });
@@ -39,6 +41,8 @@ describe("useUploadistaClient", () => {
       const options = {
         baseUrl: "https://api.example.com",
         storageId: "test-storage",
+        chunkSize: 1024 * 1024,
+        storeFingerprintForResuming: true,
       };
 
       const { result } = renderHook(() => useUploadistaClient(options));
@@ -53,6 +57,8 @@ describe("useUploadistaClient", () => {
       const options = {
         baseUrl: "https://api.example.com",
         storageId: "test-storage",
+        chunkSize: 1024 * 1024,
+        storeFingerprintForResuming: true,
       };
 
       const { result, rerender } = renderHook(() =>
@@ -73,6 +79,8 @@ describe("useUploadistaClient", () => {
           useUploadistaClient({
             baseUrl,
             storageId: "test-storage",
+            chunkSize: 1024 * 1024,
+            storeFingerprintForResuming: true,
           }),
         {
           initialProps: { baseUrl: "https://api1.example.com" },
@@ -92,6 +100,8 @@ describe("useUploadistaClient", () => {
           useUploadistaClient({
             baseUrl: "https://api.example.com",
             storageId,
+            chunkSize: 1024 * 1024,
+            storeFingerprintForResuming: true,
           }),
         {
           initialProps: { storageId: "storage-1" },
@@ -112,6 +122,7 @@ describe("useUploadistaClient", () => {
             baseUrl: "https://api.example.com",
             storageId: "test-storage",
             chunkSize,
+            storeFingerprintForResuming: true,
           }),
         {
           initialProps: { chunkSize: 1024 * 1024 },
@@ -129,6 +140,7 @@ describe("useUploadistaClient", () => {
   describe("options passthrough", () => {
     it("should pass all client options to createUploadistaClient", () => {
       const onEvent = vi.fn();
+      const connectionPoolingConfig = { maxConnectionsPerHost: 6 };
       const options = {
         baseUrl: "https://api.example.com",
         storageId: "test-storage",
@@ -138,12 +150,12 @@ describe("useUploadistaClient", () => {
         retryDelays: [1000, 2000, 5000],
         parallelUploads: 3,
         parallelChunkSize: 5,
-        uploadStrategy: "parallel" as const,
-        smartChunking: true,
-        networkMonitoring: true,
-        uploadMetrics: true,
-        connectionPooling: true,
-        auth: { token: "test-token" },
+        uploadStrategy: { preferredStrategy: "parallel" as const },
+        smartChunking: { enabled: true },
+        networkMonitoring: { maxSamples: 100 },
+        uploadMetrics: { maxChunkHistory: 500 },
+        connectionPooling: connectionPoolingConfig,
+        auth: { mode: "direct" as const, getCredentials: () => ({ headers: { Authorization: "Bearer test-token" } }) },
         onEvent,
       };
 
@@ -159,12 +171,12 @@ describe("useUploadistaClient", () => {
           retryDelays: [1000, 2000, 5000],
           parallelUploads: 3,
           parallelChunkSize: 5,
-          uploadStrategy: "parallel",
-          smartChunking: true,
-          networkMonitoring: true,
-          uploadMetrics: true,
-          connectionPooling: true,
-          auth: { token: "test-token" },
+          uploadStrategy: { preferredStrategy: "parallel" },
+          smartChunking: { enabled: true },
+          networkMonitoring: { maxSamples: 100 },
+          uploadMetrics: { maxChunkHistory: 500 },
+          connectionPooling: connectionPoolingConfig,
+          auth: expect.objectContaining({ mode: "direct" }),
           onEvent,
         }),
       );
@@ -178,6 +190,8 @@ describe("useUploadistaClient", () => {
           useUploadistaClient({
             baseUrl: "https://api.example.com",
             storageId,
+            chunkSize: 1024 * 1024,
+            storeFingerprintForResuming: true,
           }),
         {
           initialProps: { storageId: "storage-1" },

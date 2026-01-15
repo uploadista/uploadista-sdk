@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { renderHook } from "@testing-library/react";
+import { render, renderHook, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -32,7 +31,8 @@ vi.mock("@uploadista/client-browser", () => ({
 }));
 
 vi.mock("@uploadista/client-core", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@uploadista/client-core")>();
+  const actual =
+    await importOriginal<typeof import("@uploadista/client-core")>();
   return {
     ...actual,
     FlowManager: vi.fn().mockImplementation(() => ({
@@ -47,7 +47,12 @@ describe("UploadistaProvider", () => {
   describe("context provision", () => {
     it("should render children", () => {
       render(
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           <div data-testid="child">Child content</div>
         </UploadistaProvider>,
       );
@@ -66,7 +71,12 @@ describe("UploadistaProvider", () => {
       };
 
       render(
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           <TestComponent />
         </UploadistaProvider>,
       );
@@ -90,6 +100,8 @@ describe("UploadistaProvider", () => {
         <UploadistaProvider
           baseUrl="https://api.example.com"
           storageId="my-storage"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
         >
           <TestComponent />
         </UploadistaProvider>,
@@ -119,7 +131,12 @@ describe("UploadistaProvider", () => {
 
     it("should return context value when used within provider", () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           {children}
         </UploadistaProvider>
       );
@@ -136,7 +153,12 @@ describe("UploadistaProvider", () => {
   describe("event subscription", () => {
     it("should provide subscribeToEvents function", () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           {children}
         </UploadistaProvider>
       );
@@ -148,7 +170,12 @@ describe("UploadistaProvider", () => {
 
     it("should allow subscribing to events", () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           {children}
         </UploadistaProvider>
       );
@@ -163,7 +190,12 @@ describe("UploadistaProvider", () => {
 
     it("should return unsubscribe function from subscribeToEvents", () => {
       const wrapper = ({ children }: { children: ReactNode }) => (
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           {children}
         </UploadistaProvider>
       );
@@ -196,6 +228,7 @@ describe("UploadistaProvider", () => {
           storageId="test"
           chunkSize={2 * 1024 * 1024}
           parallelUploads={4}
+          storeFingerprintForResuming={true}
         >
           <TestComponent />
         </UploadistaProvider>,
@@ -219,11 +252,15 @@ describe("UploadistaProvider", () => {
         <UploadistaProvider
           baseUrl="https://api.example.com"
           storageId="outer-storage"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
         >
           <TestComponent testId="outer" />
           <UploadistaProvider
             baseUrl="https://api.example.com"
             storageId="inner-storage"
+            chunkSize={1024 * 1024}
+            storeFingerprintForResuming={true}
           >
             <TestComponent testId="inner" />
           </UploadistaProvider>
@@ -237,7 +274,7 @@ describe("UploadistaProvider", () => {
 
   describe("context stability", () => {
     it("should maintain stable context value reference", async () => {
-      let contextValues: any[] = [];
+      const contextValues: any[] = [];
 
       const TestComponent = () => {
         const context = useUploadistaContext();
@@ -246,14 +283,24 @@ describe("UploadistaProvider", () => {
       };
 
       const { rerender } = render(
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           <TestComponent />
         </UploadistaProvider>,
       );
 
       // Re-render with same props
       rerender(
-        <UploadistaProvider baseUrl="https://api.example.com" storageId="test">
+        <UploadistaProvider
+          baseUrl="https://api.example.com"
+          storageId="test"
+          chunkSize={1024 * 1024}
+          storeFingerprintForResuming={true}
+        >
           <TestComponent />
         </UploadistaProvider>,
       );
