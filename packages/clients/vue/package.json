@@ -48,7 +48,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/test-utils": "^2.4.6",
-    "happy-dom": "^18.0.1",
+    "happy-dom": "^20.0.0",
     "tsdown": "catalog:",
     "unplugin-vue": "^7.0.2",
     "vitest": "4.0.17",
