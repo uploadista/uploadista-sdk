@@ -15,6 +15,9 @@ catalogs:
     effect:
       specifier: 3.19.14
       version: 3.19.14
+    hono:
+      specifier: 4.11.3
+      version: 4.11.3
     react:
       specifier: 19.2.3
       version: 19.2.3
@@ -467,10 +470,10 @@ importers:
         version: 3.19.14
       hono:
         specifier: 'catalog:'
-        version: 4.11.4
+        version: 4.11.3
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.11.4)(pino@10.1.0)
+        version: 0.10.3(hono@4.11.3)(pino@10.1.0)
       pino:
         specifier: 10.1.0
         version: 10.1.0
@@ -495,10 +498,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 1.19.5
-        version: 1.19.5(hono@4.11.4)
+        version: 1.19.5(hono@4.11.3)
       '@hono/node-ws':
         specifier: 1.2.0
-        version: 1.2.0(@hono/node-server@1.19.5(hono@4.11.4))(hono@4.11.4)
+        version: 1.2.0(@hono/node-server@1.19.5(hono@4.11.3))(hono@4.11.3)
       '@redis/client':
         specifier: 5.10.0
         version: 5.10.0
@@ -570,10 +573,10 @@ importers:
         version: 3.19.14
       hono:
         specifier: 'catalog:'
-        version: 4.11.4
+        version: 4.11.3
       hono-pino:
         specifier: 0.10.3
-        version: 0.10.3(hono@4.11.4)(pino@10.0.0)
+        version: 0.10.3(hono@4.11.3)(pino@10.0.0)
       node-av:
         specifier: 5.0.3
         version: 5.0.3
@@ -1000,8 +1003,8 @@ importers:
         specifier: workspace:*
         version: link:../../typescript-config
       '@vitejs/plugin-vue':
-        specifier: ^5.2.4
-        version: 5.2.4(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))
+        specifier: ^6.0.0
+        version: 6.0.1(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
@@ -6450,13 +6453,6 @@ packages:
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
 
-  '@vitejs/plugin-vue@5.2.4':
-    resolution: {integrity: sha512-7Yx/SXSOcQq5HiiV3orevHUFn+pmMB4cgbEkDYgnkUWb0WfeQ/wa2yFv6D5ICiCQOVpjA7vYDXrC7AGO8yjDHA==}
-    engines: {node: ^18.0.0 || >=20.0.0}
-    peerDependencies:
-      vite: ^5.0.0 || ^6.0.0
-      vue: ^3.2.25
-
   '@vitejs/plugin-vue@6.0.1':
     resolution: {integrity: sha512-+MaE752hU0wfPFJEUAIxqw18+20euHHdxVtMvbFcOEpjEyfqXH/5DCoTHiVJ0J29EhTJdoTkjEv5YBKU9dnoTw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -8527,6 +8523,10 @@ packages:
 
   hono@4.10.7:
     resolution: {integrity: sha512-icXIITfw/07Q88nLSkB9aiUrd8rYzSweK681Kjo/TSggaGbOX4RRyxxm71v+3PC8C/j+4rlxGeoTRxQDkaJkUw==}
+    engines: {node: '>=16.9.0'}
+
+  hono@4.11.3:
+    resolution: {integrity: sha512-PmQi306+M/ct/m5s66Hrg+adPnkD5jiO6IjA7WhWw0gSBSo1EcRegwuI1deZ+wd5pzCGynCcn2DprnE4/yEV4w==}
     engines: {node: '>=16.9.0'}
 
   hono@4.11.4:
@@ -14452,14 +14452,14 @@ snapshots:
       - encoding
       - supports-color
 
-  '@hono/node-server@1.19.5(hono@4.11.4)':
+  '@hono/node-server@1.19.5(hono@4.11.3)':
     dependencies:
-      hono: 4.11.4
+      hono: 4.11.3
 
-  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.11.4))(hono@4.11.4)':
+  '@hono/node-ws@1.2.0(@hono/node-server@1.19.5(hono@4.11.3))(hono@4.11.3)':
     dependencies:
-      '@hono/node-server': 1.19.5(hono@4.11.4)
-      hono: 4.11.4
+      '@hono/node-server': 1.19.5(hono@4.11.3)
+      hono: 4.11.3
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -16934,7 +16934,7 @@ snapshots:
 
   '@testing-library/dom@10.4.1':
     dependencies:
-      '@babel/code-frame': 7.27.1
+      '@babel/code-frame': 7.28.6
       '@babel/runtime': 7.28.4
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
@@ -17353,16 +17353,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.2.4(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))':
-    dependencies:
-      vite: 8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2)
-      vue: 3.5.26(typescript@5.9.3)
-
   '@vitejs/plugin-vue@6.0.1(vite@7.1.10(@types/node@24.10.7)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.22(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
       vite: 7.1.10(@types/node@24.10.7)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2)
       vue: 3.5.22(typescript@5.9.3)
+
+  '@vitejs/plugin-vue@6.0.1(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.0-beta.29
+      vite: 8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2)
+      vue: 3.5.26(typescript@5.9.3)
 
   '@vitest/expect@4.0.17':
     dependencies:
@@ -20058,19 +20059,21 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono-pino@0.10.3(hono@4.11.4)(pino@10.0.0):
+  hono-pino@0.10.3(hono@4.11.3)(pino@10.0.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.11.4
+      hono: 4.11.3
       pino: 10.0.0
 
-  hono-pino@0.10.3(hono@4.11.4)(pino@10.1.0):
+  hono-pino@0.10.3(hono@4.11.3)(pino@10.1.0):
     dependencies:
       defu: 6.1.4
-      hono: 4.11.4
+      hono: 4.11.3
       pino: 10.1.0
 
   hono@4.10.7: {}
+
+  hono@4.11.3: {}
 
   hono@4.11.4: {}
 
