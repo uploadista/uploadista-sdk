@@ -22,7 +22,7 @@
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
-    "bumpp": "10.3.2",
+    "bumpp": "10.4.0",
     "changelogen": "^0.6.2",
     "changelogithub": "^14.0.0",
     "nx": "22.3.3",
