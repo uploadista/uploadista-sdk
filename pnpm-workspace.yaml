@@ -4,7 +4,7 @@ packages:
 
 catalog:
   '@effect/vitest': 0.27.0
-  '@types/node': 24.10.7
+  '@types/node': 24.10.8
   effect: 3.19.14
   hono: 4.11.4
   react: 19.2.3
