@@ -1003,8 +1003,8 @@ importers:
         specifier: workspace:*
         version: link:../../typescript-config
       '@vitejs/plugin-vue':
-        specifier: ^5.2.4
-        version: 5.2.4(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))
+        specifier: ^6.0.0
+        version: 6.0.1(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
@@ -6474,13 +6474,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
-
-  '@vitejs/plugin-vue@5.2.4':
-    resolution: {integrity: sha512-7Yx/SXSOcQq5HiiV3orevHUFn+pmMB4cgbEkDYgnkUWb0WfeQ/wa2yFv6D5ICiCQOVpjA7vYDXrC7AGO8yjDHA==}
-    engines: {node: ^18.0.0 || >=20.0.0}
-    peerDependencies:
-      vite: ^5.0.0 || ^6.0.0
-      vue: ^3.2.25
 
   '@vitejs/plugin-vue@6.0.1':
     resolution: {integrity: sha512-+MaE752hU0wfPFJEUAIxqw18+20euHHdxVtMvbFcOEpjEyfqXH/5DCoTHiVJ0J29EhTJdoTkjEv5YBKU9dnoTw==}
@@ -17397,16 +17390,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.2.4(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))':
-    dependencies:
-      vite: 8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2)
-      vue: 3.5.26(typescript@5.9.3)
-
   '@vitejs/plugin-vue@6.0.1(vite@7.1.10(@types/node@24.10.7)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.22(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
       vite: 7.1.10(@types/node@24.10.7)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2)
       vue: 3.5.22(typescript@5.9.3)
+
+  '@vitejs/plugin-vue@6.0.1(vite@8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.0-beta.29
+      vite: 8.0.0-beta.2(@types/node@24.10.7)(esbuild@0.25.12)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2)
+      vue: 3.5.26(typescript@5.9.3)
 
   '@vitest/expect@4.0.17':
     dependencies:
