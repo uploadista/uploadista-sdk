@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v0.1.0-beta.5...v0.1.0-beta.5
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0-beta.5...v0.1.0-beta.5)
+
 ## v0.0.20-beta.9...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.0.20-beta.9...dev)
