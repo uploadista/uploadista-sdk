@@ -1,9 +1,19 @@
 # Changelog
 
+## v0.1.0
 
-## v0.1.0-beta.5...v0.1.0-beta.5
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0-beta.5...v0.1.0)
 
-[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0-beta.5...v0.1.0-beta.5)
+### Chores
+
+- Release v0.0.20 ([57b26d9](https://github.com/uploadista/uploadista-sdk/commit/57b26d9))
+- Changelog ([ae929c1](https://github.com/uploadista/uploadista-sdk/commit/ae929c1))
+- Merge with main ([67fe392](https://github.com/uploadista/uploadista-sdk/commit/67fe392))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 
 ## v0.0.20-beta.9...dev
 
