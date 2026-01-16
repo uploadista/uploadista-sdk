@@ -124,7 +124,10 @@ export type VideoPluginShape = {
     input: VideoStreamInput,
     options: TranscodeVideoParams,
     streamOptions?: VideoStreamOptions,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
 
   /**
    * Resizes a video using streaming for memory-efficient processing of large files.
@@ -157,7 +160,10 @@ export type VideoPluginShape = {
     input: VideoStreamInput,
     options: ResizeVideoParams,
     streamOptions?: VideoStreamOptions,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
 
   /**
    * Trims a video using streaming for memory-efficient processing of large files.
@@ -189,7 +195,10 @@ export type VideoPluginShape = {
     input: VideoStreamInput,
     options: TrimVideoParams,
     streamOptions?: VideoStreamOptions,
-  ) => Effect.Effect<Stream.Stream<Uint8Array, UploadistaError>, UploadistaError>;
+  ) => Effect.Effect<
+    Stream.Stream<Uint8Array, UploadistaError>,
+    UploadistaError
+  >;
 
   /**
    * Indicates whether this plugin supports streaming operations.

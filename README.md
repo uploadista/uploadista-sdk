@@ -2,6 +2,7 @@
 
 The modern upload and file processing platform for TypeScript. Build powerful file upload and processing pipelines with a modular, type-safe architecture.
 
+[![CI](https://github.com/uploadista/uploadista-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/uploadista/uploadista-sdk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-enabled-blueviolet)](https://opentelemetry.io/)
@@ -365,13 +366,11 @@ Check the `/examples` directory for complete working examples:
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting PRs.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
+
+This project adheres to the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## License
 

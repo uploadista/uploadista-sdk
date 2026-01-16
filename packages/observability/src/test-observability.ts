@@ -9,7 +9,7 @@
  * 5. Structured logging
  */
 
-import { Effect, Layer, Metric } from "effect";
+import { Effect, Metric } from "effect";
 import {
   classifyStorageError,
   createStorageMetrics,
@@ -102,7 +102,7 @@ const simulateUpload = (fileSize: number, shouldFail: boolean) =>
 // Test: Error Classification
 // ============================================================================
 
-const testErrorClassification = Effect.gen(function* () {
+const testErrorClassification = Effect.sync(() => {
   console.log("\n🔍 Testing Error Classification:");
 
   const testErrors = [
@@ -134,7 +134,7 @@ const testErrorTracking = Effect.gen(function* () {
   console.log("\n⚠️  Testing Error Tracking:");
 
   const error = new Error("ECONNRESET: Connection reset by peer");
-  (error as any).code = "ECONNRESET";
+  (error as unknown as { code: string }).code = "ECONNRESET";
 
   yield* trackStorageError(testStorageType, obs.metrics, "uploadPart", error, {
     upload_id: "test-upload-456",
@@ -220,7 +220,7 @@ const runTests = Effect.gen(function* () {
   yield* testErrorTracking;
   yield* testMetricsSnapshot;
 
-  console.log("\n" + "=".repeat(50));
+  console.log(`\n${"=".repeat(50)}`);
   console.log("✅ All tests completed successfully!");
   console.log("\nCore observability infrastructure is working correctly:");
   console.log("  ✅ Layer creation and composition");

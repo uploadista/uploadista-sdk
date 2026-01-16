@@ -1,7 +1,4 @@
-import {
-  createFlow,
-  createInputNode,
-} from "@uploadista/core";
+import { createFlow, createInputNode } from "@uploadista/core";
 import {
   createDescribeVideoNode,
   createTranscodeVideoNode,
@@ -42,9 +39,7 @@ export const transcodeVideoFlow = createFlow({
       videoBitrate: "1000k",
     }),
   },
-  edges: [
-    { source: "input", target: "transcode" },
-  ],
+  edges: [{ source: "input", target: "transcode" }],
 });
 
 /**
@@ -77,9 +72,7 @@ export const trimVideoFlow = createFlow({
       endTime: 30,
     }),
   },
-  edges: [
-    { source: "input", target: "trim" },
-  ],
+  edges: [{ source: "input", target: "trim" }],
 });
 
 /**
@@ -114,9 +107,7 @@ export const thumbnailFlow = createFlow({
       quality: 85,
     }),
   },
-  edges: [
-    { source: "input", target: "thumbnail" },
-  ],
+  edges: [{ source: "input", target: "thumbnail" }],
 });
 
 /**
@@ -153,9 +144,7 @@ export const resizeVideoFlow = createFlow({
       scaling: "bicubic",
     }),
   },
-  edges: [
-    { source: "input", target: "resize" },
-  ],
+  edges: [{ source: "input", target: "resize" }],
 });
 
 /**
@@ -188,7 +177,5 @@ export const describeVideoFlow = createFlow({
     input: createInputNode("input"),
     "describe-video": createDescribeVideoNode("describe-video"),
   },
-  edges: [
-    { source: "input", target: "describe-video" },
-  ],
+  edges: [{ source: "input", target: "describe-video" }],
 });

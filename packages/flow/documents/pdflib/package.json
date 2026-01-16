@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-pdflib",
   "type": "module",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.5",
   "description": "pdf-lib plugin for Uploadista document processing",
   "license": "MIT",
   "author": "Uploadista",
@@ -35,6 +35,6 @@
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.15"
+    "vitest": "4.0.17"
   }
 }

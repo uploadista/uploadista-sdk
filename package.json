@@ -2,34 +2,38 @@
   "name": "uploadista-sdk",
   "private": true,
   "version": "0.0.2",
-  "packageManager": "pnpm@10.26.0",
+  "packageManager": "pnpm@10.28.0",
   "scripts": {
     "build": "turbo run build --filter=\"./packages/**/*\"",
     "dev": "turbo watch build --filter=\"./packages/**/*\"",
     "test": "turbo test --filter=\"./packages/**/*\"",
-    "release": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm --filter \"./packages/**/*\" --filter !@uploadista/typescript-config publish --access restricted --no-git-checks",
-    "release:npm_only": "pnpm --filter \"./packages/**/*\" --filter !@uploadista/typescript-config publish --access restricted --no-git-checks",
-    "release:no-build": "bumpp && pnpm -r publish --access restricted --no-git-checks --tag next",
-    "release:canary": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access restricted --tag canary --no-git-checks",
-    "pub": "pnpm --filter @uploadista/core publish --access restricted --no-git-checks",
-    "bump": "bumpp"
+    "release": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm --filter \"./packages/**/*\" --filter !@uploadista/typescript-config publish --access public --no-git-checks",
+    "release:npm_only": "pnpm --filter \"./packages/**/*\" --filter !@uploadista/typescript-config publish --access public --no-git-checks",
+    "release:no-build": "bumpp && pnpm -r publish --access public --no-git-checks --tag next",
+    "release:canary": "turbo --filter \"./packages/**/*\" build && bumpp && pnpm -r publish --access public --tag canary --no-git-checks",
+    "pub": "pnpm --filter @uploadista/core publish --access public --no-git-checks",
+    "bump": "bumpp",
+    "changelog": "changelogen --output CHANGELOG.md",
+    "changelog:github": "changelogithub"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
-    "@nx/js": "22.2.3",
+    "@biomejs/biome": "2.3.11",
+    "@nx/js": "22.3.3",
     "@swc-node/register": "1.11.1",
-    "@swc/core": "1.15.5",
-    "@swc/helpers": "0.5.17",
-    "bumpp": "10.3.2",
-    "nx": "22.2.3",
+    "@swc/core": "1.15.8",
+    "@swc/helpers": "0.5.18",
+    "bumpp": "10.4.0",
+    "changelogen": "^0.6.2",
+    "changelogithub": "^14.0.0",
+    "nx": "22.3.3",
     "rimraf": "6.1.2",
     "tinyglobby": "0.2.15",
-    "turbo": "2.6.3",
+    "turbo": "2.7.4",
     "typescript": "catalog:"
   },
   "volta": {
-    "node": "24.12.0",
-    "pnpm": "10.26.0"
+    "node": "24.13.0",
+    "pnpm": "10.28.0"
   },
   "workspaces": [
     "packages/**",
@@ -40,6 +44,5 @@
     "@tailwindcss/oxide",
     "core-js-pure",
     "unrs-resolver"
-  ],
-  "dependencies": {}
+  ]
 }

@@ -18,72 +18,70 @@
 
 // Re-export all components
 export * from "./components";
-
-// Re-export composables with explicit types to avoid conflicts
-// Types with potential conflicts are renamed for clarity
-export {
-  // Event composables
-  isFlowEvent,
-  isUploadEvent,
-  useUploadistaEvents,
-  useFlowEvents,
-  useUploadEvents,
-  // Plugin
-  createUploadistaPlugin,
-  UPLOADISTA_CLIENT_KEY,
-  // Drag and drop
-  useDragDrop,
-  // Flow composables
-  useFlow,
-  // Multi-upload
-  useMultiFlowUpload,
-  useMultiUpload,
-  // Upload composables
-  useUpload,
-  // Client
-  useUploadistaClient,
-  // Metrics
-  useUploadMetrics,
-} from "./composables";
-
 // Re-export types from composables
 export type {
-  // Event types
-  UseFlowEventsOptions,
-  UploadFailedEventData,
-  UploadFileEventData,
-  UploadProgressEventData,
-  UploadValidationFailedEventData,
-  UploadValidationSuccessEventData,
-  UploadValidationWarningEventData,
-  UseUploadEventsOptions,
-  // Plugin types
-  UploadistaPluginOptions,
+  // Upload types - rename to avoid conflict
+  ChunkMetrics,
   // Drag and drop types
   DragDropOptions,
   DragDropState,
+  // Metrics types
+  FileUploadMetrics,
   // Flow types
   FlowInputMetadata,
   FlowUploadState,
   FlowUploadStatus,
   InputExecutionState,
-  UseFlowReturn,
   // Multi-upload types - rename to avoid conflict
   MultiUploadOptions,
   MultiUploadState,
-  UploadItem as MultiUploadItem,
-  // Upload types - rename to avoid conflict
-  ChunkMetrics,
   PerformanceInsights,
+  UploadFailedEventData,
+  UploadFileEventData,
   UploadInput,
+  UploadItem as MultiUploadItem,
+  // Plugin types
+  UploadistaPluginOptions,
+  UploadProgressEventData,
   UploadSessionMetrics,
   UploadState,
   UploadStatus as UploadStatusType,
+  UploadValidationFailedEventData,
+  UploadValidationSuccessEventData,
+  UploadValidationWarningEventData,
+  // Event types
+  UseFlowEventsOptions,
+  UseFlowReturn,
+  UseUploadEventsOptions,
   // Client types
   UseUploadistaClientReturn,
-  // Metrics types
-  FileUploadMetrics,
   UseUploadMetricsOptions,
+} from "./composables";
+// Re-export composables with explicit types to avoid conflicts
+// Types with potential conflicts are renamed for clarity
+export {
+  // Plugin
+  createUploadistaPlugin,
+  // Event composables
+  isFlowEvent,
+  isUploadEvent,
+  UPLOADISTA_CLIENT_KEY,
+  // Drag and drop
+  useDragDrop,
+  // Flow composables
+  useFlow,
+  useFlowEvents,
+  // Multi-upload
+  useMultiFlowUpload,
+  useMultiUpload,
+  // Upload composables
+  useUpload,
+  useUploadEvents,
+  // Client
+  useUploadistaClient,
+  useUploadistaEvents,
+  // Metrics
+  useUploadMetrics,
 } from "./composables";
 
 export * from "./providers";

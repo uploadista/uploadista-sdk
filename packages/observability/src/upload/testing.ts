@@ -1,8 +1,8 @@
-import { Layer } from "effect";
+import { Effect, Layer } from "effect";
 import { UploadObservability } from "../core/layers.js";
 import { createUploadEngineMetrics } from "./metrics.js";
 
-// ======================== ====================================================
+// ============================================================================
 // Upload Observability Testing Utilities
 // ============================================================================
 
@@ -14,11 +14,11 @@ export const UploadObservabilityTest = Layer.succeed(UploadObservability, {
   serviceName: "uploadista-upload-server-test",
   enabled: true,
   metrics: {
-    uploadCreated: () => Promise.resolve(),
-    uploadCompleted: () => Promise.resolve(),
-    uploadFailed: () => Promise.resolve(),
-    chunkUploaded: () => Promise.resolve(),
-  } as any,
+    uploadCreated: Effect.void,
+    uploadCompleted: Effect.void,
+    uploadFailed: Effect.void,
+    chunkUploaded: Effect.void,
+  },
 });
 
 /**

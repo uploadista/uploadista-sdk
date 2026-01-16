@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { UploadFile } from "@uploadista/core/types";
-import { provide, computed } from "vue";
-import { useMultiUpload, type UploadItem, type MultiUploadState } from "../../composables/useMultiUpload";
+import { computed, provide } from "vue";
+import {
+  type MultiUploadState,
+  type UploadItem,
+  useMultiUpload,
+} from "../../composables/useMultiUpload";
 import { UPLOAD_CONTEXT_KEY } from "./useUploadContext";
 
 /**
@@ -30,11 +34,18 @@ const emit = defineEmits<{
   /** Called when an upload fails */
   error: [error: Error, item?: UploadItem];
   /** Called when all uploads complete (multi mode) */
-  complete: [results: { successful: UploadItem[]; failed: UploadItem[]; total: number }];
+  complete: [
+    results: { successful: UploadItem[]; failed: UploadItem[]; total: number },
+  ];
   /** Called when an individual upload starts */
   uploadStart: [item: UploadItem];
   /** Called on upload progress */
-  progress: [item: UploadItem, progress: number, bytesUploaded: number, totalBytes: number | null];
+  progress: [
+    item: UploadItem,
+    progress: number,
+    bytesUploaded: number,
+    totalBytes: number | null,
+  ];
 }>();
 
 const multiUpload = useMultiUpload({
@@ -43,7 +54,7 @@ const multiUpload = useMultiUpload({
   onUploadStart: (item) => emit("uploadStart", item),
   onUploadProgress: (item, progress, bytesUploaded, totalBytes) =>
     emit("progress", item, progress, bytesUploaded, totalBytes),
-  onUploadSuccess: (item, result) => {
+  onUploadSuccess: (_item, result) => {
     // In single mode, call success directly
     if (!props.multiple) {
       emit("success", result);

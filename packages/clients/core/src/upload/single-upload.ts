@@ -288,7 +288,7 @@ export async function createUpload({
     try {
       logger.log("Computing file checksum...");
       checksum = await checksumService.computeChecksum(
-        new Uint8Array(source.input as any),
+        new Uint8Array(source.input as unknown as ArrayBuffer),
       );
       logger.log(`Checksum computed: ${checksum}`);
     } catch (error) {

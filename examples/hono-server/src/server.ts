@@ -76,16 +76,32 @@ const eventBroadcaster = redisEventBroadcaster({
   subscriberRedis: redisSubscriberClient,
 });
 
+if (!process.env.R2_DELIVERY_URL) {
+  throw new Error("R2_DELIVERY_URL is not set");
+}
+if (!process.env.R2_BUCKET) {
+  throw new Error("R2_BUCKET is not set");
+}
+if (!process.env.R2_ACCESS_KEY_ID) {
+  throw new Error("R2_ACCESS_KEY_ID is not set");
+}
+if (!process.env.R2_SECRET_ACCESS_KEY) {
+  throw new Error("R2_SECRET_ACCESS_KEY is not set");
+}
+if (!process.env.R2_ENDPOINT) {
+  throw new Error("R2_ENDPOINT is not set");
+}
+
 const dataStore = s3Store({
-  deliveryUrl: process.env.R2_DELIVERY_URL!,
+  deliveryUrl: process.env.R2_DELIVERY_URL,
   s3ClientConfig: {
-    bucket: process.env.R2_BUCKET!,
+    bucket: process.env.R2_BUCKET,
     region: "auto",
     credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
-    endpoint: process.env.R2_ENDPOINT!,
+    endpoint: process.env.R2_ENDPOINT,
   },
 });
 
@@ -185,7 +201,7 @@ export type AppType = typeof routes;
 
 const server = serve(
   {
-    port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
+    port: process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000,
     fetch: routes.fetch,
   },
   (info) => {

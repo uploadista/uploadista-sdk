@@ -100,7 +100,8 @@ export function createVideoResizeNode(
           ...options.naming,
           autoSuffix:
             options.naming.autoSuffix ??
-            ((ctx) => `${ctx.width ?? params.width}x${ctx.height ?? params.height}`),
+            ((ctx) =>
+              `${ctx.width ?? params.width}x${ctx.height ?? params.height}`),
         }
       : undefined;
 

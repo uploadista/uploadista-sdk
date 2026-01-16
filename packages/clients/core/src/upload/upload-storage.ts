@@ -1,3 +1,4 @@
+import type { JsonValue } from "@uploadista/core/types";
 import type { IdGenerationService } from "../services/id-generation-service";
 import type { ClientStorage } from "../storage/client-storage";
 import type { PreviousUpload } from "../types/previous-upload";
@@ -42,7 +43,7 @@ export async function saveUploadInClientStorage({
   clientStorage: ClientStorage;
   fingerprint: string;
   size: number;
-  metadata: Record<string, string | number | boolean>;
+  metadata: Record<string, JsonValue>;
   clientStorageKey: string | null;
   storeFingerprintForResuming: boolean;
   generateId: IdGenerationService;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject } from "vue";
-import { UPLOAD_CONTEXT_KEY } from "./useUploadContext";
 import type { UploadContextValue } from "./Upload.vue";
+import { UPLOAD_CONTEXT_KEY } from "./useUploadContext";
 
 /**
  * Slot props for UploadProgress component.
@@ -19,9 +19,7 @@ export interface UploadProgressSlotProps {
 
 const uploadContext = inject<{ value: UploadContextValue }>(UPLOAD_CONTEXT_KEY);
 if (!uploadContext) {
-  throw new Error(
-    "UploadProgress must be used within an <Upload> component.",
-  );
+  throw new Error("UploadProgress must be used within an <Upload> component.");
 }
 
 const slotProps = computed<UploadProgressSlotProps>(() => ({

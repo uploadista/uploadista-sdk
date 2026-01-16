@@ -1,7 +1,4 @@
-import {
-  createFlow,
-  createInputNode,
-} from "@uploadista/core";
+import { createFlow, createInputNode } from "@uploadista/core";
 import {
   createDescribeImageNode,
   createRemoveBackgroundNode,
@@ -37,9 +34,7 @@ export const describeImageFlow = createFlow({
     input: createInputNode("input"),
     "describe-image": createDescribeImageNode("describe-image"),
   },
-  edges: [
-    { source: "input", target: "describe-image" },
-  ],
+  edges: [{ source: "input", target: "describe-image" }],
 });
 
 /**
@@ -72,7 +67,5 @@ export const removeBackgroundFlow = createFlow({
     input: createInputNode("input"),
     "remove-background": createRemoveBackgroundNode("remove-background"),
   },
-  edges: [
-    { source: "input", target: "remove-background" },
-  ],
+  edges: [{ source: "input", target: "remove-background" }],
 });

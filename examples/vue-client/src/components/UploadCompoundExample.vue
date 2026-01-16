@@ -7,19 +7,19 @@
 import type { UploadFile } from "@uploadista/core";
 import {
   Upload,
-  UploadDropZone,
-  UploadItems,
-  UploadItem,
-  UploadProgress,
-  UploadStatus,
-  UploadError,
-  UploadStartAll,
   UploadCancel,
-  UploadRetry,
+  UploadDropZone,
+  UploadError,
+  UploadItem,
+  UploadItems,
+  UploadProgress,
   UploadReset,
+  UploadRetry,
+  UploadStartAll,
+  UploadStatus,
 } from "@uploadista/vue";
-import Card from "./ui/Card.vue";
 import FilePreview from "./FilePreview.vue";
+import Card from "./ui/Card.vue";
 
 const handleSuccess = (result: UploadFile) => {
   console.log("File uploaded:", result);
@@ -36,7 +36,9 @@ const handleComplete = (results: {
 }) => {
   console.log("All uploads complete:", results);
   if (results.successful.length > 0) {
-    alert(`${results.successful.length}/${results.total} files uploaded successfully`);
+    alert(
+      `${results.successful.length}/${results.total} files uploaded successfully`,
+    );
   }
 };
 

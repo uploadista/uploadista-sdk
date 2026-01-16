@@ -7,9 +7,7 @@ export const ocrParamsSchema = z.object({
     "parseFigure",
     "locateObject",
   ]),
-  resolution: z
-    .enum(["tiny", "small", "base", "gundam", "large"])
-    .optional(),
+  resolution: z.enum(["tiny", "small", "base", "gundam", "large"]).optional(),
   credentialId: z.string().optional(),
   referenceText: z.string().optional(),
 });

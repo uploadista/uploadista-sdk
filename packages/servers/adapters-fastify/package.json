@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/adapters-fastify",
   "type": "module",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.5",
   "description": "Fastify adapter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -19,7 +19,7 @@
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo",
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch"
   },
@@ -43,7 +43,7 @@
     "effect": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.15",
+    "vitest": "4.0.17",
     "zod": "catalog:"
   }
 }

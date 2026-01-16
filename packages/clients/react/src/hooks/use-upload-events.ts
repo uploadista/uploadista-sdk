@@ -1,4 +1,4 @@
-import { UploadEventType, type UploadEvent } from "@uploadista/core/types";
+import { UploadEventType } from "@uploadista/core/types";
 import { useEffect } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
 import { isUploadEvent } from "./event-utils";
@@ -163,10 +163,7 @@ export function useUploadEvents(options: UseUploadEventsOptions): void {
           break;
         case UploadEventType.UPLOAD_PROGRESS:
           options.onUploadProgress?.({
-            ...(event.data as unknown as Omit<
-              UploadProgressEventData,
-              "flow"
-            >),
+            ...(event.data as unknown as Omit<UploadProgressEventData, "flow">),
             flow: flowContext,
           });
           break;

@@ -42,6 +42,7 @@ import type {
   BrowserUploadInput,
   FlowUploadItem,
 } from "@uploadista/client-browser";
+import type { VNodeChild } from "vue";
 import { computed } from "vue";
 import { isBrowserFile } from "../utils";
 
@@ -73,27 +74,31 @@ export interface FlowUploadListProps {
 
 const props = defineProps<FlowUploadListProps>();
 
+interface FlowUploadListItemProps {
+  item: FlowUploadItem<BrowserUploadInput>;
+  index: number;
+  isPending: boolean;
+  isUploading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  isAborted: boolean;
+  formatFileSize: (bytes: number) => string;
+}
+
+interface FlowUploadListDefaultProps {
+  items: FlowUploadItem<BrowserUploadInput>[];
+  itemsByStatus: {
+    pending: FlowUploadItem<BrowserUploadInput>[];
+    uploading: FlowUploadItem<BrowserUploadInput>[];
+    success: FlowUploadItem<BrowserUploadInput>[];
+    error: FlowUploadItem<BrowserUploadInput>[];
+    aborted: FlowUploadItem<BrowserUploadInput>[];
+  };
+}
+
 defineSlots<{
-  item(props: {
-    item: FlowUploadItem<BrowserUploadInput>;
-    index: number;
-    isPending: boolean;
-    isUploading: boolean;
-    isSuccess: boolean;
-    isError: boolean;
-    isAborted: boolean;
-    formatFileSize: (bytes: number) => string;
-  }): any;
-  default?(props: {
-    items: FlowUploadItem<BrowserUploadInput>[];
-    itemsByStatus: {
-      pending: FlowUploadItem<BrowserUploadInput>[];
-      uploading: FlowUploadItem<BrowserUploadInput>[];
-      success: FlowUploadItem<BrowserUploadInput>[];
-      error: FlowUploadItem<BrowserUploadInput>[];
-      aborted: FlowUploadItem<BrowserUploadInput>[];
-    };
-  }): any;
+  item(props: FlowUploadListItemProps): VNodeChild;
+  default(props: FlowUploadListDefaultProps): VNodeChild;
 }>();
 
 // Apply filtering and sorting
@@ -112,7 +117,6 @@ const filteredItems = computed(() => {
 });
 
 // Group items by status
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const itemsByStatus = computed(() => ({
   pending: filteredItems.value.filter((item) => item.status === "pending"),
   uploading: filteredItems.value.filter((item) => item.status === "uploading"),
@@ -122,7 +126,6 @@ const itemsByStatus = computed(() => ({
 }));
 
 // Helper function to format file sizes
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -132,7 +135,6 @@ const formatFileSize = (bytes: number): string => {
 };
 
 // Helper function to get status icon
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const getStatusIcon = (status: string): string => {
   switch (status) {
     case "pending":
@@ -151,7 +153,6 @@ const getStatusIcon = (status: string): string => {
 };
 
 // Helper function to get status color
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const getStatusColor = (status: string): string => {
   switch (status) {
     case "pending":

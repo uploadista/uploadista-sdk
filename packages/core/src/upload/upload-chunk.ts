@@ -51,7 +51,7 @@ const createUploadCompleteSpanEffect = (
         "upload.size": file.size ?? 0,
         "upload.total_duration_ms": totalDurationMs,
         "upload.storage_id": file.storage.id,
-        "upload.file_name": file.metadata?.fileName ?? "unknown",
+        "upload.file_name": file.metadata?.fileName?.toString() ?? "unknown",
         "upload.creation_date": file.creationDate as string,
         "upload.completion_date": new Date().toISOString(),
       },

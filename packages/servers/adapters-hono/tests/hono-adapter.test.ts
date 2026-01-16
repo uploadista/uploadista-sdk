@@ -28,6 +28,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "POST",
               url: "http://localhost/uploadista/api/upload",
+              headers: new Headers(),
               json: async () => ({
                 storageId: "test-storage",
                 size: 1024,
@@ -57,6 +58,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "GET",
               url: "http://localhost/uploadista/api/upload/upload-123",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -81,6 +83,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "PATCH",
               url: "http://localhost/uploadista/api/upload/upload-123",
+              headers: new Headers(),
               body: mockChunkData,
             },
           },
@@ -105,6 +108,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "GET",
               url: "http://localhost/uploadista/api/upload/test-storage/capabilities?storageId=test-storage",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -127,6 +131,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "POST",
               url: "http://localhost/uploadista/api/flow/flow-123/storage-456",
+              headers: new Headers(),
               json: async () => ({
                 inputs: { file: "data" },
               }),
@@ -154,6 +159,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "GET",
               url: "http://localhost/uploadista/api/jobs/job-123/status",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -232,6 +238,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "GET",
               url: "http://localhost/invalid/path",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -251,6 +258,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "DELETE",
               url: "http://localhost/uploadista/api/upload/upload-123",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -270,6 +278,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "PATCH",
               url: "http://localhost/uploadista/api/upload/upload-123",
+              headers: new Headers(),
               body: null,
             },
           },
@@ -293,6 +302,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "POST",
               url: "http://localhost/uploadista/api/jobs/job-123/pause",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -315,6 +325,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "POST",
               url: "http://localhost/uploadista/api/jobs/job-123/cancel",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -533,6 +544,7 @@ describe("Hono Adapter Integration", () => {
                 raw: {
                   method: "GET",
                   url: "http://localhost/api/v1/api/upload/test-123",
+                  headers: new Headers(),
                 },
               },
             } as unknown as Context<Env>,
@@ -544,6 +556,7 @@ describe("Hono Adapter Integration", () => {
                 raw: {
                   method: "GET",
                   url: "http://localhost/uploadista/api/upload/test-456",
+                  headers: new Headers(),
                 },
               },
             } as unknown as Context<Env>,
@@ -565,6 +578,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "GET",
               url: "http://localhost/uploadista/api/upload/capabilities?storageId=s3-bucket",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -587,6 +601,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "POST",
               url: "http://localhost/uploadista/api/flow/image-resize-flow/my-storage-123",
+              headers: new Headers(),
               json: async () => ({
                 inputs: { width: 800, height: 600 },
               }),
@@ -615,6 +630,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "GET",
               url: "http://localhost/uploadista/api/jobs//status",
+              headers: new Headers(),
             },
           },
         } as unknown as Context<Env>;
@@ -634,6 +650,7 @@ describe("Hono Adapter Integration", () => {
             raw: {
               method: "POST",
               url: "http://localhost/uploadista/api/flow/flow-123/storage-456",
+              headers: new Headers(),
               json: async () => ({}),
             },
           },

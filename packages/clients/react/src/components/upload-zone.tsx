@@ -522,8 +522,7 @@ export function SimpleUploadZone({
               </p>
               {dragDrop.state.errors.map((error, index) => (
                 <p
-                  // biome-ignore lint/suspicious/noArrayIndexKey: index is used as key
-                  key={index}
+                  key={`${error}-${index}`}
                   style={{
                     color: "#721c24",
                     fontSize: "11px",

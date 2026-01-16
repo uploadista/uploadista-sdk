@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, inject } from "vue";
-import { useDragDrop, type DragDropState } from "../../composables/useDragDrop";
-import { UPLOAD_CONTEXT_KEY } from "./useUploadContext";
+import { computed, inject, ref } from "vue";
+import { type DragDropState, useDragDrop } from "../../composables/useDragDrop";
 import type { UploadContextValue } from "./Upload.vue";
+import { UPLOAD_CONTEXT_KEY } from "./useUploadContext";
 
 /**
  * Props for UploadDropZone component.
@@ -51,16 +51,16 @@ const props = defineProps<UploadDropZoneProps>();
 
 const uploadContext = inject<{ value: UploadContextValue }>(UPLOAD_CONTEXT_KEY);
 if (!uploadContext) {
-  throw new Error(
-    "UploadDropZone must be used within an <Upload> component.",
-  );
+  throw new Error("UploadDropZone must be used within an <Upload> component.");
 }
 
 const inputRef = ref<HTMLInputElement>();
 
 const dragDrop = useDragDrop({
   onFilesReceived: (files) => uploadContext.value.handleFilesReceived(files),
-  accept: props.accept ? props.accept.split(",").map((t) => t.trim()) : undefined,
+  accept: props.accept
+    ? props.accept.split(",").map((t) => t.trim())
+    : undefined,
   maxFileSize: props.maxFileSize,
   maxFiles: uploadContext.value.mode === "multi" ? props.maxFiles : 1,
   multiple: uploadContext.value.mode === "multi",

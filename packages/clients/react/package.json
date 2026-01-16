@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/react",
   "type": "module",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.5",
   "description": "React client for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,7 +24,7 @@
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch"
   },
@@ -37,9 +37,12 @@
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
-    "@types/react": "19.2.7",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "19.2.8",
     "@types/react-dom": "19.2.3",
+    "jsdom": "^27.0.0",
     "tsdown": "catalog:",
-    "vitest": "4.0.15"
+    "vitest": "4.0.17"
   }
 }

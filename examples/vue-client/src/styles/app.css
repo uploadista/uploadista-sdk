@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind custom variant */
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -99,7 +98,6 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind theme directive */
 @theme inline {
   --font-family-sans: var(--font-sans);
   --color-background: var(--background);
@@ -161,12 +159,10 @@
 
 @layer base {
   * {
-    /* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind apply directive */
     @apply border-border outline-ring/50;
   }
 
   body {
-    /* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind apply directive */
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
   }

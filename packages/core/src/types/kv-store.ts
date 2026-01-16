@@ -196,15 +196,17 @@ export class TypedKvStore<TData> implements KvStore<TData> {
   list = (): Effect.Effect<Array<string>, UploadistaError> => {
     if (this.baseStore.list) {
       // Get keys with prefix and strip the prefix for use with get/set/delete
-      return this.baseStore.list(this.keyPrefix).pipe(
-        Effect.map((keys) =>
-          keys.map((key) =>
-            key.startsWith(this.keyPrefix)
-              ? key.slice(this.keyPrefix.length)
-              : key,
+      return this.baseStore
+        .list(this.keyPrefix)
+        .pipe(
+          Effect.map((keys) =>
+            keys.map((key) =>
+              key.startsWith(this.keyPrefix)
+                ? key.slice(this.keyPrefix.length)
+                : key,
+            ),
           ),
-        ),
-      );
+        );
     }
     return Effect.fail(
       new UploadistaError({
@@ -419,10 +421,9 @@ export const flowJobKvStore = Layer.effect(
  * });
  * ```
  */
-export class DeadLetterQueueKVStore extends Context.Tag("DeadLetterQueueKVStore")<
-  DeadLetterQueueKVStore,
-  KvStore<DeadLetterItem>
->() {}
+export class DeadLetterQueueKVStore extends Context.Tag(
+  "DeadLetterQueueKVStore",
+)<DeadLetterQueueKVStore, KvStore<DeadLetterItem>>() {}
 
 /**
  * Effect Layer that creates the DeadLetterQueueKVStore from a BaseKvStore.

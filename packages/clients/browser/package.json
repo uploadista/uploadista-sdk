@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/client-browser",
   "type": "module",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.5",
   "description": "Browser client for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -28,7 +28,7 @@
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src ",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch"
   },
@@ -39,7 +39,8 @@
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
+    "happy-dom": "^20.1.0",
     "tsdown": "catalog:",
-    "vitest": "4.0.15"
+    "vitest": "4.0.17"
   }
 }

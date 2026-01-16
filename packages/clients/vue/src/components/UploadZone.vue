@@ -34,6 +34,7 @@
  * @emits validation-error - When validation fails
  */
 import type { UploadOptions } from "@uploadista/client-browser";
+import type { VNodeChild } from "vue";
 import { computed, ref } from "vue";
 import type { MultiUploadOptions } from "../composables";
 import { useDragDrop, useMultiUpload, useUpload } from "../composables";
@@ -97,14 +98,13 @@ const emit = defineEmits<{
 }>();
 
 defineSlots<{
-  // biome-ignore lint/suspicious/noExplicitAny: Vue slot definition requires any
   default(props: {
     isDragging: boolean;
     isOver: boolean;
     isUploading: boolean;
     errors: string[];
     openFilePicker: () => void;
-  }): any;
+  }): VNodeChild;
 }>();
 
 // Initialize upload composables
@@ -147,7 +147,6 @@ const dragDrop = useDragDrop({
 const fileInputRef = ref<HTMLInputElement>();
 
 // Open file picker
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const openFilePicker = () => {
   if (!props.disabled) {
     fileInputRef.value?.click();
@@ -155,12 +154,10 @@ const openFilePicker = () => {
 };
 
 // Computed states
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const isActive = computed(
   () => dragDrop.state.value.isDragging || dragDrop.state.value.isOver,
 );
 
-// biome-ignore lint/correctness/noUnusedVariables: Used in slot templates
 const isUploading = computed(() => {
   if (props.multiple && multiUpload) {
     return multiUpload.state.value.isUploading;

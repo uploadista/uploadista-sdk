@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, provide } from "vue";
-import { useFlowContext, FLOW_INPUT_CONTEXT_KEY, type FlowInputContextValue } from "./useFlowContext";
+import {
+  FLOW_INPUT_CONTEXT_KEY,
+  type FlowInputContextValue,
+  useFlowContext,
+} from "./useFlowContext";
 
 /**
  * Props for FlowInput component.
@@ -15,7 +19,7 @@ const flow = useFlowContext();
 
 // Find metadata for this input
 const metadata = computed(() =>
-  flow.inputMetadata.value?.find((m) => m.nodeId === props.nodeId)
+  flow.inputMetadata.value?.find((m) => m.nodeId === props.nodeId),
 );
 
 // Get current value for this input
@@ -36,12 +40,14 @@ const contextValue: FlowInputContextValue = {
     return props.nodeId;
   },
   get metadata() {
-    return metadata.value ?? {
-      nodeId: props.nodeId,
-      nodeName: "",
-      nodeDescription: "",
-      required: false,
-    };
+    return (
+      metadata.value ?? {
+        nodeId: props.nodeId,
+        nodeName: "",
+        nodeDescription: "",
+        required: false,
+      }
+    );
   },
   get value() {
     return value.value;

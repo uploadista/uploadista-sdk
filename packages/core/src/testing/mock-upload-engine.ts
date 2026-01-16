@@ -9,6 +9,13 @@ import {
 import { UploadEngine } from "../upload";
 
 /**
+ * EICAR test file signature (standard antivirus test file)
+ * This is a safe, non-malicious string used to test antivirus software
+ */
+const EICAR_SIGNATURE =
+  "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+
+/**
  * Mock UploadEngine implementation for testing.
  *
  * Provides a complete in-memory implementation of all UploadEngine methods
@@ -30,7 +37,17 @@ export const TestUploadEngine = Layer.succeed(
   UploadEngine.of({
     read: (fileId: string, _clientId: string | null) =>
       Effect.sync(() => {
-        // Generate mock file data based on fileId
+        // Return infected content for files that should trigger virus detection
+        // This allows tests to verify virus scanning behavior
+        if (
+          fileId.toLowerCase().includes("infected") ||
+          fileId.toLowerCase().includes("virus") ||
+          fileId.toLowerCase().includes("malware") ||
+          fileId.toLowerCase().includes("eicar")
+        ) {
+          return new TextEncoder().encode(EICAR_SIGNATURE);
+        }
+        // Generate clean mock file data for other files
         const text = `Content of file ${fileId}`;
         return new TextEncoder().encode(text);
       }),

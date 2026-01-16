@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import type { FlowUploadStatus } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
+import { computed } from "vue";
 import { useFlowContext } from "./useFlowContext";
 
 const flow = useFlowContext();

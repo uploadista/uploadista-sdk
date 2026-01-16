@@ -17,13 +17,38 @@ export const traceContextSchema = z.object({
   traceFlags: z.number(),
 });
 
+/**
+ * JSON value type that allows any JSON-serializable data.
+ * Used for metadata values which can be primitives, arrays, or nested objects.
+ */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+/**
+ * JSON value schema that allows any JSON-serializable data.
+ * This is used for metadata values which can be primitives, arrays, or objects.
+ */
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
+  ]),
+);
+
 export const uploadFileSchema = z.object({
   id: z.string(),
   size: z.number().optional(),
   offset: z.number(),
-  metadata: z
-    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
-    .optional(),
+  metadata: z.record(z.string(), jsonValueSchema).optional(),
   creationDate: z.string().optional(),
   url: z.string().optional(),
   sizeIsDeferred: z.boolean().optional(),
@@ -172,7 +197,7 @@ export type UploadFile = {
     jobId: string;
   };
   size?: number | undefined;
-  metadata?: Record<string, string | number | boolean> | undefined;
+  metadata?: Record<string, JsonValue> | undefined;
   creationDate?: string | undefined;
   url?: string | undefined;
   sizeIsDeferred?: boolean | undefined;

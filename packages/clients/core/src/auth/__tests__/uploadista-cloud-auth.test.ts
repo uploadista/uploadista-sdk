@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { HttpClient } from "../../services";
+import type { HttpClient, HttpResponse } from "../../services";
 import type { UploadistaCloudAuthConfig } from "../types";
 import { UploadistaCloudAuthManager } from "../uploadista-cloud-auth";
 
@@ -57,12 +57,17 @@ describe("UploadistaCloudAuthManager", () => {
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({
           token: "jwt-token-123",
           expiresIn: 3600,
         }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
       const result = await manager.fetchToken();
@@ -91,11 +96,14 @@ describe("UploadistaCloudAuthManager", () => {
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
-        ok: false,
         status: 401,
         statusText: "Unauthorized",
+        headers: new Headers(),
+        ok: false,
+        json: async () => ({ error: "Invalid credentials" }),
         text: async () => JSON.stringify({ error: "Invalid credentials" }),
-      } as any);
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -130,9 +138,14 @@ describe("UploadistaCloudAuthManager", () => {
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ noToken: "here" }), // Missing token field
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -151,9 +164,14 @@ describe("UploadistaCloudAuthManager", () => {
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ token: "jwt-token-123" }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
       const result = await manager.attachToken({
@@ -174,9 +192,14 @@ describe("UploadistaCloudAuthManager", () => {
       };
 
       vi.mocked(mockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ token: "jwt-token-123" }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -198,13 +221,23 @@ describe("UploadistaCloudAuthManager", () => {
 
       vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        } as any);
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -234,16 +267,26 @@ describe("UploadistaCloudAuthManager", () => {
       // First token expires in 1 second
       vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({
             token: "jwt-token-old",
             expiresIn: 0.001, // Expires very soon
           }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-new" }),
-        } as any);
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -270,13 +313,23 @@ describe("UploadistaCloudAuthManager", () => {
 
       vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        } as any);
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -303,17 +356,32 @@ describe("UploadistaCloudAuthManager", () => {
 
       vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-3" }),
-        } as any);
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 
@@ -340,17 +408,32 @@ describe("UploadistaCloudAuthManager", () => {
 
       vi.mocked(mockHttpClient.request)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-1" }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-2" }),
-        } as any)
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse)
         .mockResolvedValueOnce({
+          status: 200,
+          statusText: "OK",
+          headers: new Headers(),
           ok: true,
           json: async () => ({ token: "jwt-token-3" }),
-        } as any);
+          text: async () => "",
+          arrayBuffer: async () => new ArrayBuffer(0),
+        } satisfies HttpResponse);
 
       const manager = new UploadistaCloudAuthManager(config, mockHttpClient);
 

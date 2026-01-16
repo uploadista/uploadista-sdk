@@ -102,7 +102,7 @@ export const classifyStorageError = (error: unknown): StorageErrorCategory => {
 
 // Storage-specific error classifier factory
 export const createStorageErrorClassifier = (
-  storageType: string,
+  _storageType: string,
   customErrorMapping?: (error: unknown) => StorageErrorCategory | null,
 ) => {
   return (error: unknown): StorageErrorCategory => {

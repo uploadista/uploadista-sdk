@@ -5,7 +5,9 @@ import { useFlowInputContext } from "./useFlowContext";
 const input = useFlowInputContext();
 
 const isFile = computed(() => input.value instanceof File);
-const isUrl = computed(() => typeof input.value === "string" && (input.value as string).length > 0);
+const isUrl = computed(
+  () => typeof input.value === "string" && (input.value as string).length > 0,
+);
 
 const clear = () => {
   input.setValue(undefined);

@@ -23,7 +23,10 @@ describe("buildFlowInputs", () => {
     });
 
     it("builds init operation for Blob input", () => {
-      const blob = new Blob(["content"], { type: "application/json" });
+      const blob = new Blob(["content"], {
+        type: "application/json",
+        lastModified: 0,
+      });
       const result = buildFlowInputs({ "blob-node": blob }, storageId);
 
       expect(result["blob-node"]).toMatchObject({
@@ -40,7 +43,7 @@ describe("buildFlowInputs", () => {
       const file = new File(["content"], "", { type: "text/plain" });
       const result = buildFlowInputs({ node: file }, storageId);
 
-      expect(result["node"]).toMatchObject({
+      expect(result.node).toMatchObject({
         metadata: {
           originalName: "",
         },
@@ -51,7 +54,7 @@ describe("buildFlowInputs", () => {
       const file = new File(["content"], "test.txt");
       const result = buildFlowInputs({ node: file }, storageId);
 
-      expect(result["node"]).toMatchObject({
+      expect(result.node).toMatchObject({
         metadata: {
           mimeType: "",
         },
@@ -150,11 +153,11 @@ describe("buildFlowInputs", () => {
       const file2 = new File(["content2"], "file2.txt");
       const result = buildFlowInputs({ node1: file1, node2: file2 }, storageId);
 
-      expect(result["node1"]).toMatchObject({
+      expect(result.node1).toMatchObject({
         operation: "init",
         metadata: { originalName: "file1.txt" },
       });
-      expect(result["node2"]).toMatchObject({
+      expect(result.node2).toMatchObject({
         operation: "init",
         metadata: { originalName: "file2.txt" },
       });
@@ -206,7 +209,7 @@ describe("buildFlowInputs", () => {
       const file = new File(["content"], "test.txt");
       const result = buildFlowInputs({ node: file }, "custom-storage");
 
-      expect(result["node"]).toMatchObject({
+      expect(result.node).toMatchObject({
         storageId: "custom-storage",
       });
     });
@@ -215,7 +218,7 @@ describe("buildFlowInputs", () => {
       const url = "https://example.com/file.jpg";
       const result = buildFlowInputs({ node: url }, "custom-storage");
 
-      expect(result["node"]).toMatchObject({
+      expect(result.node).toMatchObject({
         storageId: "custom-storage",
       });
     });

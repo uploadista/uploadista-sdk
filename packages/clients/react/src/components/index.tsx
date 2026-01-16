@@ -1,9 +1,5 @@
 // Flow Primitives (NEW compound component)
-export {
-  Flow,
-  useFlowContext,
-  useFlowInputContext,
-} from "./flow-primitives";
+
 export type {
   FlowCancelProps,
   FlowContextValue,
@@ -28,6 +24,11 @@ export type {
   FlowStatusRenderProps,
   FlowSubmitProps,
 } from "./flow-primitives";
+export {
+  Flow,
+  useFlowContext,
+  useFlowInputContext,
+} from "./flow-primitives";
 
 // Flow Upload List (for batch uploads with useMultiFlowUpload)
 export type {
@@ -49,7 +50,37 @@ export type {
   UploadListRenderProps,
 } from "./upload-list";
 export { SimpleUploadListItem, UploadList } from "./upload-list";
-
+export type {
+  MultiUploadState,
+  UploadCancelProps,
+  UploadClearCompletedProps,
+  UploadContextValue,
+  UploadDropZoneProps,
+  UploadDropZoneRenderProps,
+  UploadErrorProps,
+  UploadErrorRenderProps,
+  UploadItem,
+  UploadItemContextValue,
+  UploadItemProps,
+  UploadItemsProps,
+  UploadItemsRenderProps,
+  UploadProgressProps,
+  UploadProgressRenderProps,
+  UploadProps,
+  UploadResetProps,
+  UploadRetryProps,
+  UploadStartAllProps,
+  UploadState,
+  UploadStatus,
+  UploadStatusProps,
+  UploadStatusRenderProps,
+} from "./upload-primitives";
+// Upload Primitives (NEW compound component)
+export {
+  Upload,
+  useUploadContext,
+  useUploadItemContext,
+} from "./upload-primitives";
 export type {
   SimpleUploadZoneProps,
   UploadZoneProps,

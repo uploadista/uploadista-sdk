@@ -101,7 +101,7 @@ export default function FilePreview({
               />
               <View style={styles.headerText}>
                 <ThemedText style={styles.fileName} numberOfLines={1}>
-                  {file.metadata?.fileName || "Uploaded File"}
+                  {file.metadata?.fileName?.toString() || "Uploaded File"}
                 </ThemedText>
                 <ThemedText style={styles.fileSize}>
                   {formatFileSize(file.size)} • {mimeType || "Unknown type"}

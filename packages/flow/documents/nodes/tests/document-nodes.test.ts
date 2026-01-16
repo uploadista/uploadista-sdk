@@ -257,8 +257,8 @@ describe("Document Nodes", () => {
 
         expect(result.type).toBe("complete");
         if (result.type === "complete") {
-          expect(result.data.metadata?.ocrText).toBeDefined();
-          expect(result.data.metadata?.ocrFormat).toBe("markdown");
+          expect(result.data.extractedText).toBeDefined();
+          expect(result.data.format).toBe("markdown");
         }
       }).pipe(Effect.provide(TestLayer)),
     );
@@ -281,8 +281,8 @@ describe("Document Nodes", () => {
 
         expect(result.type).toBe("complete");
         if (result.type === "complete") {
-          expect(result.data.metadata?.ocrText).toBeDefined();
-          expect(result.data.metadata?.ocrFormat).toBe("plain");
+          expect(result.data.extractedText).toBeDefined();
+          expect(result.data.format).toBe("plain");
         }
       }).pipe(Effect.provide(TestLayer)),
     );

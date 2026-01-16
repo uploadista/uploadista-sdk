@@ -1,4 +1,3 @@
-import type { FlowJob } from "@uploadista/core/flow";
 import type { DataStoreCapabilities } from "@uploadista/core/types";
 import type { AuthConfig, AuthManager } from "../auth";
 import {

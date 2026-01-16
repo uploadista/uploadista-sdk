@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/adapters-hono",
   "type": "module",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.5",
   "description": "Hono adapter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -18,13 +18,13 @@
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "4.20251213.0",
+    "@cloudflare/workers-types": "4.20260115.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "@uploadista/event-broadcaster-memory": "workspace:*",
@@ -46,7 +46,7 @@
     "hono": "^4.0.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.15",
+    "vitest": "4.0.17",
     "zod": "catalog:"
   }
 }

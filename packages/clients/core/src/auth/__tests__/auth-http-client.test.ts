@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { HttpClient } from "../../services";
+import { createLogger } from "../../logger";
+import type { HttpClient, HttpResponse } from "../../services";
+import { MockPlatformService } from "../../testing/mock-service-container";
 import { AuthHttpClient } from "../auth-http-client";
 import { DirectAuthManager } from "../direct-auth";
 import { NoAuthManager } from "../no-auth";
@@ -83,6 +85,12 @@ describe("AuthHttpClient", () => {
   });
 
   describe("with DirectAuthManager", () => {
+    let mockPlatformService: MockPlatformService;
+
+    beforeEach(() => {
+      mockPlatformService = new MockPlatformService(false); // Node.js environment for tests
+    });
+
     it("should attach credentials from DirectAuthManager", async () => {
       const config: DirectAuthConfig = {
         mode: "direct",
@@ -90,7 +98,12 @@ describe("AuthHttpClient", () => {
           headers: { Authorization: "Bearer direct-token" },
         }),
       };
-      const authManager = new DirectAuthManager(config);
+
+      const authManager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await authClient.request("https://api.example.com/upload", {
@@ -118,7 +131,11 @@ describe("AuthHttpClient", () => {
           return { headers: { Authorization: "Bearer async-token" } };
         },
       };
-      const authManager = new DirectAuthManager(config);
+      const authManager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await authClient.request("https://api.example.com/upload");
@@ -183,9 +200,14 @@ describe("AuthHttpClient", () => {
       };
 
       vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ token: "jwt-token-123" }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const authManager = new UploadistaCloudAuthManager(
         config,
@@ -218,9 +240,14 @@ describe("AuthHttpClient", () => {
       };
 
       vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ token: "jwt-token-for-upload-123" }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const authManager = new UploadistaCloudAuthManager(
         config,
@@ -246,9 +273,14 @@ describe("AuthHttpClient", () => {
       };
 
       vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ token: "jwt-token-for-flow-456" }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const authManager = new UploadistaCloudAuthManager(
         config,
@@ -274,9 +306,14 @@ describe("AuthHttpClient", () => {
       };
 
       vi.mocked(uploadAuthMockHttpClient.request).mockResolvedValueOnce({
+        status: 200,
+        statusText: "OK",
+        headers: new Headers(),
         ok: true,
         json: async () => ({ token: "jwt-token-for-job-789" }),
-      } as any);
+        text: async () => "",
+        arrayBuffer: async () => new ArrayBuffer(0),
+      } satisfies HttpResponse);
 
       const authManager = new UploadistaCloudAuthManager(
         config,
@@ -296,6 +333,12 @@ describe("AuthHttpClient", () => {
   });
 
   describe("error handling", () => {
+    let mockPlatformService: MockPlatformService;
+
+    beforeEach(() => {
+      mockPlatformService = new MockPlatformService(false); // Node.js environment for tests
+    });
+
     it("should propagate auth errors", async () => {
       const config: DirectAuthConfig = {
         mode: "direct",
@@ -304,7 +347,11 @@ describe("AuthHttpClient", () => {
         },
       };
 
-      const authManager = new DirectAuthManager(config);
+      const authManager = new DirectAuthManager(
+        config,
+        mockPlatformService,
+        createLogger(true),
+      );
       const authClient = new AuthHttpClient(mockHttpClient, authManager);
 
       await expect(

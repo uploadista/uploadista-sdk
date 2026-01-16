@@ -134,6 +134,17 @@ class BrowserHttpClient implements HttpClient {
    * @private
    */
   private detectHttp2Support(): Http2Info {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+      // SSR/Node.js environment - return safe defaults
+      return {
+        supported: false,
+        detected: false,
+        version: "h1.1",
+        multiplexingActive: false,
+      };
+    }
+
     // Check if the browser supports HTTP/2
     const supported = "serviceWorker" in navigator && "fetch" in window;
 

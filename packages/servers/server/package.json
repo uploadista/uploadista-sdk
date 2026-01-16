@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/server",
   "type": "module",
-  "version": "0.0.20",
+  "version": "0.1.0-beta.5",
   "description": "Core Server package for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,7 +24,7 @@
     "format": "biome format --write ./src",
     "lint": "biome lint --write ./src",
     "check": "biome check --write ./src",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo"
@@ -36,7 +36,7 @@
     "@uploadista/event-broadcaster-memory": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20251213.0",
+    "@cloudflare/workers-types": "4.20260115.0",
     "@effect/vitest": "catalog:",
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
@@ -45,7 +45,7 @@
     "tsd": "0.33.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.15",
+    "vitest": "4.0.17",
     "zod": "catalog:"
   },
   "peerDependencies": {

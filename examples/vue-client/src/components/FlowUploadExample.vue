@@ -278,7 +278,11 @@ const getMimeType = (file: UploadFile): string => {
 
 // Helper to get file name from upload file
 const getFileName = (file: UploadFile): string => {
-  return file.metadata?.fileName?.toString() || file.metadata?.name?.toString() || "File";
+  return (
+    file.metadata?.fileName?.toString() ||
+    file.metadata?.name?.toString() ||
+    "File"
+  );
 };
 
 // Helper to get preview URL from upload file

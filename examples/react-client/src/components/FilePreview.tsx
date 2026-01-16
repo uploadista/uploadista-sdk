@@ -17,7 +17,8 @@ export function FilePreview({
     result?.metadata?.type?.toString() ||
     result?.metadata?.mimeType?.toString() ||
     "";
-  const fileName = file?.name || result?.metadata?.fileName || "File";
+  const fileName =
+    file?.name || result?.metadata?.fileName?.toString() || "File";
 
   // Determine if this is an image or video
   const isImage = mimeType.startsWith("image/");

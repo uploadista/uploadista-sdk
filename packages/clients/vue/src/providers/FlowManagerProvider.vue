@@ -3,7 +3,10 @@
 </template>
 
 <script setup lang="ts">
-import type { BrowserUploadInput, UploadistaEvent } from "@uploadista/client-browser";
+import type {
+  BrowserUploadInput,
+  UploadistaEvent,
+} from "@uploadista/client-browser";
 import {
   FlowManager,
   type FlowManagerCallbacks,
@@ -11,7 +14,7 @@ import {
 } from "@uploadista/client-core";
 import { EventType, type FlowEvent } from "@uploadista/core/flow";
 import { UploadEventType } from "@uploadista/core/types";
-import { onMounted, onBeforeUnmount, provide } from "vue";
+import { onBeforeUnmount, onMounted, provide } from "vue";
 import { useUploadistaClient } from "../composables/useUploadistaClient";
 
 /**

@@ -8,8 +8,8 @@
  * @module types/circuit-breaker-store
  */
 
-import { Context, Effect, Layer } from "effect";
-import { UploadistaError } from "../errors";
+import { Context, type Effect, Layer } from "effect";
+import type { UploadistaError } from "../errors";
 
 // ============================================================================
 // State Types

@@ -504,9 +504,9 @@ describe("Image Nodes", () => {
         expect(result.type).toBe("complete");
         if (result.type === "complete") {
           expect(result.data).toBeDefined();
-          expect(result.data.metadata?.description).toBeDefined();
-          expect(typeof result.data.metadata?.description).toBe("string");
-          expect(result.data.metadata?.description).toContain("test image");
+          expect(result.data.description).toBeDefined();
+          expect(typeof result.data.description).toBe("string");
+          expect(result.data.description).toContain("test image");
         }
       }).pipe(Effect.provide(TestLayer)),
     );
@@ -555,7 +555,7 @@ describe("Image Nodes", () => {
         expect(result.type).toBe("complete");
         if (result.type === "complete") {
           expect(result.data).toBeDefined();
-          expect(result.data.metadata?.description).toBeDefined();
+          expect(result.data.description).toBeDefined();
         }
       }).pipe(Effect.provide(TestLayer)),
     );

@@ -96,7 +96,8 @@ export const extractExpressRequest = (
 
             // Only use path segment if it's not "upload"
             const finalStorageId =
-              storageId || (storageIdFromPath !== "upload" ? storageIdFromPath : null);
+              storageId ||
+              (storageIdFromPath !== "upload" ? storageIdFromPath : null);
 
             if (!finalStorageId) {
               return {
@@ -193,10 +194,10 @@ export const extractExpressRequest = (
               | string
               | undefined;
             const limit = url.searchParams.get("limit")
-              ? Number.parseInt(url.searchParams.get("limit") as string)
+              ? Number.parseInt(url.searchParams.get("limit") as string, 10)
               : undefined;
             const offset = url.searchParams.get("offset")
-              ? Number.parseInt(url.searchParams.get("offset") as string)
+              ? Number.parseInt(url.searchParams.get("offset") as string, 10)
               : undefined;
             return {
               type: "dlq-list",

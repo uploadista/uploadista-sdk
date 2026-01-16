@@ -1,4 +1,8 @@
-import type { FlowManager, FlowManagerCallbacks, FlowUploadOptions } from "@uploadista/client-core";
+import type {
+  FlowManager,
+  FlowManagerCallbacks,
+  FlowUploadOptions,
+} from "@uploadista/client-core";
 import { inject } from "vue";
 
 /**

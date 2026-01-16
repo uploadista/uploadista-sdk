@@ -52,7 +52,10 @@ async function computeFingerprintFromUri(uri: string): Promise<string> {
     }
 
     // Read the entire file as base64
-    const base64String = await RNFetchBlob.fs.readFile(normalizedPath, "base64");
+    const base64String = await RNFetchBlob.fs.readFile(
+      normalizedPath,
+      "base64",
+    );
 
     // Convert base64 to Uint8Array
     const uint8Array = base64ToUint8Array(base64String);

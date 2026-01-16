@@ -13,10 +13,14 @@
 
 import { it } from "@effect/vitest";
 import type { FlowData, FlowJob } from "@uploadista/core";
-import { FlowServer } from "@uploadista/core/flow";
+import { FlowEngine } from "@uploadista/core/flow";
 import { Effect, Layer } from "effect";
 import { describe, expect } from "vitest";
-import { AuthCacheServiceLive, AuthContextServiceLive } from "../../../src";
+import {
+  AuthCacheServiceLive,
+  AuthContextServiceLive,
+  NoUsageHookServiceLive,
+} from "../../../src";
 import {
   handleCancelFlow,
   handleGetFlow,
@@ -26,8 +30,8 @@ import {
   handleRunFlow,
 } from "../../../src/core/http-handlers/flow-http-handlers";
 
-// Mock FlowServer implementation for testing
-const mockFlowServerMethods = {
+// Mock FlowEngine implementation for testing
+const mockFlowEngineMethods = {
   getFlowData: (flowId: string, _clientId: string | null) =>
     Effect.succeed<FlowData>({
       id: flowId,
@@ -113,13 +117,13 @@ const mockFlowServerMethods = {
       updatedAt: new Date(),
     }),
 
-  // Mock methods required by FlowServerShape but not used in tests
+  // Mock methods required by FlowEngineShape but not used in tests
   getFlow: () => Effect.die("getFlow not implemented in test"),
   subscribeToFlowEvents: () => Effect.void,
   unsubscribeFromFlowEvents: () => Effect.void,
 };
 
-const FlowServerTest = Layer.succeed(FlowServer, mockFlowServerMethods);
+const FlowEngineTest = Layer.succeed(FlowEngine, mockFlowEngineMethods);
 
 describe("HTTP Flow Handlers", () => {
   describe("handleGetFlow", () => {
@@ -134,9 +138,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.id).toBe("flow-123");
         expect(result.body.name).toBe("Flow flow-123");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
 
@@ -150,13 +155,17 @@ describe("HTTP Flow Handlers", () => {
         expect(result.status).toBe(200);
         expect(result.body.id).toBe("flow-456");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
         Effect.provide(
-          AuthContextServiceLive({
-            clientId: "user-123",
-            metadata: { role: "admin" },
-          }),
+          AuthContextServiceLive(
+            {
+              clientId: "user-123",
+              metadata: { role: "admin" },
+            },
+            { bypassAuth: true },
+          ),
         ),
       ),
     );
@@ -175,9 +184,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body).toHaveProperty("edges");
         expect(result.body.id).toBe("flow-789");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
   });
@@ -198,9 +208,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.storageId).toBe("storage-1");
         expect(result.body.status).toBe("running");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
 
@@ -217,13 +228,17 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.clientId).toBe("user-123");
         // Auth context is cached internally by the handler
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
         Effect.provide(
-          AuthContextServiceLive({
-            clientId: "user-123",
-            metadata: { plan: "premium" },
-          }),
+          AuthContextServiceLive(
+            {
+              clientId: "user-123",
+              metadata: { plan: "premium" },
+            },
+            { bypassAuth: true },
+          ),
         ),
       ),
     );
@@ -240,9 +255,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.status).toBe(200);
         expect(result.body.clientId).toBeNull();
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
 
@@ -259,9 +275,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.id).toContain("job-");
         expect(result.body.status).toBe("running");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
   });
@@ -279,17 +296,18 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.flowId).toBe("flow-123");
         expect(result.body).toHaveProperty("status");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
 
     it.effect("should clear cache when flow completes", () =>
       Effect.gen(function* () {
-        // Create FlowServer that returns completed status
+        // Create FlowEngine that returns completed status
         const completedMethods = {
-          ...mockFlowServerMethods,
+          ...mockFlowEngineMethods,
           getJobStatus: (jobId: string) =>
             Effect.succeed<FlowJob>({
               id: jobId,
@@ -307,9 +325,10 @@ describe("HTTP Flow Handlers", () => {
           type: "job-status",
           jobId: "job-completed",
         }).pipe(
-          Effect.provide(Layer.succeed(FlowServer, completedMethods)),
+          Effect.provide(Layer.succeed(FlowEngine, completedMethods)),
+          Effect.provide(NoUsageHookServiceLive),
           Effect.provide(AuthCacheServiceLive()),
-          Effect.provide(AuthContextServiceLive(null)),
+          Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
         );
 
         expect(result.status).toBe(200);
@@ -327,9 +346,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.status).toBe(200);
         expect(result.body.status).toBe("running");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
   });
@@ -347,9 +367,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.status).toBe(200);
         expect(result.body.id).toBe("job-cached");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
   });
@@ -366,9 +387,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.id).toBe("job-pause");
         expect(result.body.status).toBe("paused");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
 
@@ -383,9 +405,12 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.status).toBe("paused");
         expect(result.body.clientId).toBe("user-pause");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive({ clientId: "user-pause" })),
+        Effect.provide(
+          AuthContextServiceLive({ clientId: "user-pause" }, { bypassAuth: true }),
+        ),
       ),
     );
   });
@@ -402,9 +427,10 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.id).toBe("job-cancel");
         expect(result.body.status).toBe("cancelled");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
 
@@ -419,13 +445,17 @@ describe("HTTP Flow Handlers", () => {
         expect(result.body.status).toBe("cancelled");
         expect(result.body.clientId).toBe("user-cancel-auth");
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
         Effect.provide(
-          AuthContextServiceLive({
-            clientId: "user-cancel-auth",
-            metadata: { reason: "manual" },
-          }),
+          AuthContextServiceLive(
+            {
+              clientId: "user-cancel-auth",
+              metadata: { reason: "manual" },
+            },
+            { bypassAuth: true },
+          ),
         ),
       ),
     );
@@ -454,9 +484,10 @@ describe("HTTP Flow Handlers", () => {
         });
         expect(statusResult.status).toBe(200);
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
   });
@@ -486,9 +517,10 @@ describe("HTTP Flow Handlers", () => {
         });
         expect(statusResult.status).toBe(200);
       }).pipe(
-        Effect.provide(FlowServerTest),
+        Effect.provide(FlowEngineTest),
+        Effect.provide(NoUsageHookServiceLive),
         Effect.provide(AuthCacheServiceLive()),
-        Effect.provide(AuthContextServiceLive(null)),
+        Effect.provide(AuthContextServiceLive(null, { bypassAuth: true })),
       ),
     );
   });

@@ -1,2 +1,5 @@
-export { pdfLibDocumentPlugin, PdfLibDocumentPluginLive } from "./document-plugin";
+export {
+  PdfLibDocumentPluginLive,
+  pdfLibDocumentPlugin,
+} from "./document-plugin";
 export * from "./utils/format-mappings";
