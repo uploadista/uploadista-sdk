@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.1-beta.2...v0.1.1-beta.3
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.1-beta.2...v0.1.1-beta.3)
+
+### Chores
+
+- Npm release tag and workflow publish on beta or stable ([f888d70](https://github.com/uploadista/uploadista-sdk/commit/f888d70))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.1-beta.1...v0.1.1-beta.2
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.1-beta.1...v0.1.1-beta.2)
