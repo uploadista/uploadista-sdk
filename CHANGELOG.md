@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.0...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0...dev)
+
+### Bug Fixes
+
+- **deps:** Update dependency @azure/storage-blob to v12.30.0 ([a2dcebf](https://github.com/uploadista/uploadista-sdk/commit/a2dcebf))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260118.0 ([ee4ef52](https://github.com/uploadista/uploadista-sdk/commit/ee4ef52))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.971.0 ([389176f](https://github.com/uploadista/uploadista-sdk/commit/389176f))
+- Vitest timeout ([ec674d3](https://github.com/uploadista/uploadista-sdk/commit/ec674d3))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.0
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0-beta.5...v0.1.0)
