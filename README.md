@@ -3,6 +3,7 @@
 The modern upload and file processing platform for TypeScript. Build powerful file upload and processing pipelines with a modular, type-safe architecture.
 
 [![CI](https://github.com/uploadista/uploadista-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/uploadista/uploadista-sdk/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@uploadista/core.svg)](https://www.npmjs.com/package/@uploadista/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)](https://www.typescriptlang.org/)
 [![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-enabled-blueviolet)](https://opentelemetry.io/)
