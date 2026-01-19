@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-plugin",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1-beta.1",
   "description": "Combined pdf-lib + unpdf DocumentPlugin for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
