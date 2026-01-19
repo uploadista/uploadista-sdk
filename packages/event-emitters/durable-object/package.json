@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/event-emitter-durable-object",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1-beta.3",
   "description": "Durable Object event emitter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "@cloudflare/workers-types": "4.20260115.0"
+    "@cloudflare/workers-types": "4.20260118.0"
   },
   "peerDependencies": {
     "effect": "^3.0.0"

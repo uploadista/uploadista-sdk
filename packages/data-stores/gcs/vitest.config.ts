@@ -23,6 +23,8 @@ export default defineConfig({
     environment: "node",
     include: ["tests/**/*.test.ts"],
     exclude: ["node_modules", "dist"],
+    // Large file upload tests (49MB, 50MB, 100MB) require longer timeouts
+    testTimeout: 120000, // 2 minutes
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
