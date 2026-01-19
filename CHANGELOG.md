@@ -1,8 +1,20 @@
 # Changelog
 
-## v0.1.0...dev
+## v0.1.1-beta.1...v0.1.1-beta.2
 
-[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0...dev)
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.1-beta.1...v0.1.1-beta.2)
+
+### Bug Fixes
+
+- Vitest thresholds for gcs, r2 and s3 ([e87d746](https://github.com/uploadista/uploadista-sdk/commit/e87d746))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.0...v0.1.1-beta.1
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0...v0.1.1-beta.1)
 
 ### Bug Fixes
 
