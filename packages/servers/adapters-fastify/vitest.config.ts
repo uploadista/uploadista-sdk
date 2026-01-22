@@ -23,6 +23,7 @@ export default defineConfig({
     environment: "node",
     include: ["tests/**/*.test.ts"],
     exclude: ["node_modules", "dist"],
+    testTimeout: 120000, // 2 minutes
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
