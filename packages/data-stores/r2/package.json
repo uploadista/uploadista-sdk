@@ -37,6 +37,6 @@
     "@uploadista/kv-store-memory": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

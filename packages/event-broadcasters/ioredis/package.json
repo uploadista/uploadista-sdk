@@ -36,6 +36,6 @@
     "@uploadista/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

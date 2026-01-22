@@ -43,6 +43,6 @@
     "@types/react-dom": "19.2.3",
     "jsdom": "^27.0.0",
     "tsdown": "catalog:",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }
