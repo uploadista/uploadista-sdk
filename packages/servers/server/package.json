@@ -36,7 +36,7 @@
     "@uploadista/event-broadcaster-memory": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20260120.0",
+    "@cloudflare/workers-types": "4.20260122.0",
     "@effect/vitest": "catalog:",
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
