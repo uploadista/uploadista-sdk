@@ -8,7 +8,7 @@ import { MultiUploadExample } from "../components/MultiUploadExample";
 import "./globals.css";
 
 function App() {
-  const [serverUrl, setServerUrl] = useState("https://api.uploadista.tech");
+  const [serverUrl, setServerUrl] = useState("https://api.uploadista.com");
 
   const [activeTab, setActiveTab] = useState<
     "basic" | "flow" | "multi" | "dragdrop"

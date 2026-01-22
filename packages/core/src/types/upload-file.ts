@@ -33,7 +33,7 @@ export type JsonValue =
  * JSON value schema that allows any JSON-serializable data.
  * This is used for metadata values which can be primitives, arrays, or objects.
  */
-const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
   z.union([
     z.string(),
     z.number(),

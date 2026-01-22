@@ -379,10 +379,13 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## Support
 
-- GitHub Issues: [Report bugs or request features](https://github.com/uploadista/uploadista-sdk/issues)
+- Website: [uploadista.com](https://uploadista.com)
 - Documentation: [docs.uploadista.com](https://docs.uploadista.com)
-- Discord: [Join our community](https://discord.gg/uploadista)
+- GitHub Issues: [Report bugs or request features](https://github.com/uploadista/uploadista-sdk/issues)
+- Discord: [Join our community](https://discord.gg/A2R4XTXV)
 
 ## Credits
 
 Built with [Effect-TS](https://effect.website) for composable, type-safe file processing.
+
+Inspired by the [TUS protocol](https://tus.io/) for resumable file uploads.
