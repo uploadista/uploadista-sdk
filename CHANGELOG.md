@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.1...v0.1.2
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.1...v0.1.2)
+
+### Chores
+
+- Update readme and minor things ([fdaf635](https://github.com/uploadista/uploadista-sdk/commit/fdaf635))
+- Release v0.1.2 ([b6ac054](https://github.com/uploadista/uploadista-sdk/commit/b6ac054))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.0...v0.1.1
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.0...v0.1.1)
