@@ -19,7 +19,7 @@
 - Event broadcasting system (Redis, IORedis, Memory)
 - Memory-efficient streaming for video processing
 
-**Major Achievements (December 2024):**
+**Major Achievements (December 2025):**
 - **Permissions System IMPLEMENTED**: Full RBAC with hierarchical permissions and predefined roles
 - **OpenTelemetry OTLP Export IMPLEMENTED**: Traces, metrics, and logs to Grafana, Jaeger, etc.
 - **Media Streaming IMPLEMENTED**: Memory-efficient video processing with Effect streams
@@ -230,7 +230,7 @@ interface OtlpSdkConfig {
 - `uploadista storage test` - Verify storage connectivity
 
 ### Visual Flow Builder
-**Status**: NOT IMPLEMENTED
+**Status**: In Uploadista Cloud
 - Drag-and-drop interface with real-time validation
 - Node library with search and filtering
 - Flow execution simulation
@@ -281,99 +281,6 @@ interface OtlpSdkConfig {
   - Document archival workflow
   - Video transcoding pipeline
 
-## Implementation Priority (December 2024)
-
-### Phase 1: Production Hardening (COMPLETE)
-
-| Task | Priority | Status |
-|------|----------|--------|
-| Circuit Breaker Pattern | CRITICAL | **COMPLETE** |
-| Dead Letter Queue | CRITICAL | **COMPLETE** |
-| Health Check Endpoints | CRITICAL | **COMPLETE** |
-
-### Phase 2: Security & Observability (COMPLETE)
-
-| Task | Priority | Status |
-|------|----------|--------|
-| Permissions System (RBAC) | CRITICAL | **COMPLETE** |
-| OpenTelemetry OTLP Export | CRITICAL | **COMPLETE** |
-| Distributed Tracing | HIGH | **COMPLETE** |
-| Media Streaming | HIGH | **COMPLETE** |
-
-### Phase 3: Performance Optimization (Q1 2025)
-
-| Task | Priority | Effort | Status |
-|------|----------|--------|--------|
-| Flow Definition Caching | High | Low | Not Started |
-| KV Store Memory Management | High | Low | Not Started |
-| Enhanced Path Sanitization | Medium | Low | Not Started |
-
-### Phase 4: Enterprise Features (Q1-Q2 2025)
-
-| Task | Priority | Effort | Status |
-|------|----------|--------|--------|
-| Audit Trail System | High | Medium | Not Started |
-| End-to-End Encryption | Medium | High | Not Started |
-| Pre-built Dashboards | Medium | Low | Not Started |
-
-### Phase 5: Developer Experience (Q2 2025)
-
-| Task | Priority | Effort | Status |
-|------|----------|--------|--------|
-| CLI Tools | Medium | Medium | Not Started |
-| Visual Flow Builder | Low | High | Not Started |
-| IDE Extensions | Low | Medium | Not Started |
-
-### Phase 6: Advanced Features (Q3 2025+)
-
-| Task | Priority | Effort | Status |
-|------|----------|--------|--------|
-| Queue Node | Medium | Medium | Not Started |
-| External API Node | Medium | Medium | Not Started |
-| Sub-flows | Medium | High | Not Started |
-| Database Node | Low | High | Not Started |
-| Flow Templates | Low | Medium | Not Started |
-
-## Recent Progress Summary (December 2024)
-
-The uploadista engine has achieved major enterprise milestones:
-
-**Security & Observability COMPLETE (December 2024):**
-
-| Feature | Key Capabilities | Status |
-|---------|------------------|--------|
-| **Permissions (RBAC)** | Hierarchical permissions, wildcards, predefined roles | COMPLETE |
-| **OTLP Export** | Traces, metrics, logs to Grafana/Jaeger | COMPLETE |
-| **Distributed Tracing** | Cross-service trace linking, context propagation | COMPLETE |
-| **Media Streaming** | Memory-efficient video processing | COMPLETE |
-
-**Production Hardening (Previously Completed):**
-
-| Feature | Key Capabilities | Status |
-|---------|------------------|--------|
-| **Circuit Breakers** | Distributed state, 3 fallback strategies | COMPLETE |
-| **Dead Letter Queue** | 8 admin endpoints, 3 retry policies | COMPLETE |
-| **Health Checks** | Kubernetes probes, component aggregation | COMPLETE |
-
-**Code Quality:**
-- 84,215 lines of source TypeScript (19% growth)
-- 650 TypeScript files across 40+ packages (39% growth)
-- Effect-ts patterns throughout for error handling
-- Strict type safety with Zod schemas
-- 74 test files covering critical paths
-
-**Platform & Deployment:**
-- Multi-platform clients (Browser, React, Vue, React Native)
-- Multi-framework servers (Hono, Express, Fastify)
-- Cloudflare Workers edge deployment
-- Traditional Node.js deployment
-- Full OpenTelemetry observability
-
-**Next Focus: Performance & Convenience**
-1. Flow definition caching
-2. KV store memory management
-3. Pre-built Grafana dashboards
-
 ## Ideas for Future Consideration
 
 ### Potential New Node Types
@@ -387,8 +294,6 @@ The uploadista engine has achieved major enterprise milestones:
 - Svelte client SDK
 - Solid.js client SDK
 - Angular client SDK
-- Deno server adapter
-- Bun server adapter
 
 ### Advanced Features
 - Flow versioning and migration tools
