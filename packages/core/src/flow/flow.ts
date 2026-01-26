@@ -510,6 +510,93 @@ export function createFlowWithSchema<
       return inputs;
     };
 
+    /**
+     * Checks if a node should be skipped due to conditional routing.
+     * A node should be skipped if:
+     * 1. ALL its incoming edges from conditional nodes were filtered out (wrong branch)
+     * 2. ALL its inputs come from nodes that were previously skipped (cascading skip)
+     *
+     * @param nodeId - The node to check
+     * @param nodeResults - Map of node results (nodes that executed successfully)
+     * @param skippedNodes - Set of node IDs that were skipped due to conditional routing
+     * @returns "skip" if node should be skipped, "execute" if it should run, "wait" if dependencies aren't ready
+     */
+    const shouldSkipDueToConditionalRouting = (
+      nodeId: string,
+      nodeResults: Map<string, unknown>,
+      skippedNodes: Set<string>,
+    ): "skip" | "execute" | "wait" => {
+      const incomingEdges = edgesByTarget.get(nodeId) || [];
+
+      // Input nodes are never skipped via this mechanism
+      const node = nodes.find((n) => n.id === nodeId);
+      if (node?.type === "input") {
+        return "execute";
+      }
+
+      // If no incoming edges, can't determine - let normal flow handle it
+      if (incomingEdges.length === 0) {
+        return "execute";
+      }
+
+      let hasConditionalSkip = false;
+      let hasSkippedSource = false;
+      let hasValidInput = false;
+      let hasPendingDependency = false;
+
+      for (const edge of incomingEdges) {
+        const sourceNodeId = edge.source;
+
+        // Check if source node was skipped (cascading skip)
+        if (skippedNodes.has(sourceNodeId)) {
+          hasSkippedSource = true;
+          continue;
+        }
+
+        const result = nodeResults.get(sourceNodeId);
+
+        // Check if source node has produced a result
+        if (result === undefined) {
+          // Source hasn't run yet - could be waiting on dependencies
+          hasPendingDependency = true;
+          continue;
+        }
+
+        // Check if the source node is a conditional node with port routing
+        const sourceNode = nodes.find((n) => n.id === sourceNodeId);
+        if (sourceNode?.type === "conditional" && edge.sourcePort) {
+          const condResult = conditionalResults.get(sourceNodeId);
+          // If conditional hasn't run yet, wait
+          if (condResult === undefined) {
+            hasPendingDependency = true;
+            continue;
+          }
+          const expectedPort = condResult ? "true" : "false";
+          if (edge.sourcePort !== expectedPort) {
+            // This edge was filtered by conditional routing
+            hasConditionalSkip = true;
+          } else {
+            // This edge matches the conditional result - valid input
+            hasValidInput = true;
+          }
+        } else {
+          // Non-conditional edge with a result - valid input
+          hasValidInput = true;
+        }
+      }
+
+      const decision =
+        hasValidInput
+          ? "execute"
+          : (hasConditionalSkip || hasSkippedSource) && !hasPendingDependency
+            ? "skip"
+            : hasPendingDependency
+              ? "wait"
+              : "execute";
+
+      return decision;
+    };
+
     // Map flow inputs to input nodes
     const mapFlowInputsToNodes = (
       flowInputs: Record<string, z.infer<TFlowInputSchema>>,
@@ -1110,6 +1197,9 @@ export function createFlowWithSchema<
         // Create node map for quick lookup
         const nodeMap = new Map(nodes.map((node) => [node.id, node]));
 
+        // Track nodes skipped due to conditional routing (for cascading skip detection)
+        const skippedNodeIds = new Set<string>();
+
         // Determine execution strategy
         const useParallelExecution = config.parallelExecution?.enabled ?? false;
 
@@ -1148,8 +1238,40 @@ export function createFlowWithSchema<
               `Flow ${flowId}: Executing level ${level.level} with nodes: ${level.nodes.join(", ")}`,
             );
 
-            // Create executor functions for all nodes in this level
-            const nodeExecutors = level.nodes.map(
+            // Filter out nodes that should be skipped due to conditional routing
+            const nodesToExecute: string[] = [];
+            const levelSkippedNodes: string[] = [];
+            for (const nodeId of level.nodes) {
+              const skipStatus = shouldSkipDueToConditionalRouting(
+                nodeId,
+                nodeResults,
+                skippedNodeIds,
+              );
+              if (skipStatus === "skip") {
+                levelSkippedNodes.push(nodeId);
+                skippedNodeIds.add(nodeId); // Track for cascading skips
+              } else {
+                nodesToExecute.push(nodeId);
+              }
+            }
+
+            // Log skipped nodes
+            if (levelSkippedNodes.length > 0) {
+              yield* Effect.logDebug(
+                `Flow ${flowId}: Skipping nodes due to conditional routing: ${levelSkippedNodes.join(", ")}`,
+              );
+            }
+
+            // If all nodes in this level are skipped, continue to next level
+            if (nodesToExecute.length === 0) {
+              yield* Effect.logDebug(
+                `Flow ${flowId}: All nodes in level ${level.level} skipped due to conditional routing`,
+              );
+              continue;
+            }
+
+            // Create executor functions for nodes that should execute
+            const nodeExecutors = nodesToExecute.map(
               (nodeId) => () =>
                 Effect.gen(function* () {
                   // Emit NodeResume event if we're resuming from a paused state at this node
@@ -1232,6 +1354,24 @@ export function createFlowWithSchema<
               return yield* UploadistaError.fromCode(
                 "FLOW_NODE_NOT_FOUND",
               ).toEffect();
+            }
+
+            // Check if this node should be skipped due to conditional routing
+            // (e.g., it's on a branch that wasn't taken by the conditional)
+            const skipStatus = shouldSkipDueToConditionalRouting(
+              nodeId,
+              nodeResults,
+              skippedNodeIds,
+            );
+            if (skipStatus === "skip") {
+              yield* Effect.logDebug(
+                `Flow ${flowId}: Skipping node ${nodeId} due to conditional routing`,
+              );
+              // Track skipped node for cascading skip detection
+              skippedNodeIds.add(nodeId);
+              // Don't store any result - this node didn't execute
+              // Downstream nodes depending only on this node will also be skipped
+              continue;
             }
 
             // Emit NodeResume event if we're resuming from a paused state at this node

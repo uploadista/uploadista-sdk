@@ -1,8 +1,14 @@
 import { describe, expect, it } from "@effect/vitest";
 import { UploadistaError } from "@uploadista/core/errors";
+import {
+  createFlow,
+  createFlowNode,
+  NodeType,
+} from "@uploadista/core/flow";
 import { TestUploadEngine, TestZipPlugin } from "@uploadista/core/testing";
 import type { UploadFile } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
+import { z } from "zod";
 import {
   createConditionalNode,
   createMergeNode,
@@ -771,6 +777,629 @@ describe("Utility Nodes", () => {
           expect(duration).toBeLessThan(5000);
         }
       }).pipe(Effect.provide(TestLayer)),
+    );
+  });
+
+  describe("Conditional Flow Routing", () => {
+    /**
+     * Helper to create an UploadFile for testing conditional routing
+     */
+    const createConditionalTestFile = (
+      id: string,
+      overrides?: { size?: number; mimeType?: string },
+    ): UploadFile => ({
+      id,
+      offset: 0,
+      size: overrides?.size ?? 1024,
+      storage: {
+        id: "test-storage",
+        type: "memory",
+      },
+      metadata: {
+        mimeType: overrides?.mimeType ?? "text/plain",
+        originalName: `file-${id}.txt`,
+        extension: "txt",
+      },
+      creationDate: new Date().toISOString(),
+    });
+
+    /**
+     * Schema for UploadFile used in conditional routing tests
+     */
+    const uploadFileSchema = z.object({
+      id: z.string(),
+      offset: z.number(),
+      size: z.number(),
+      storage: z.object({
+        id: z.string(),
+        type: z.string(),
+      }),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+      creationDate: z.string().optional(),
+    });
+
+    it.effect(
+      "should execute only the true branch when condition evaluates to true",
+      () =>
+        Effect.gen(function* () {
+          // Create input node
+          const inputNode = yield* createFlowNode({
+            id: "input",
+            name: "Input",
+            description: "Input node",
+            type: NodeType.input,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({ type: "complete", data }),
+          });
+
+          // Create conditional node that checks if size > 500
+          const conditionalNode = yield* createConditionalNode("conditional", {
+            field: "size",
+            operator: "greaterThan",
+            value: 500,
+          });
+
+          // Create node for true branch (size > 500)
+          const trueBranchNode = yield* createFlowNode({
+            id: "true-branch",
+            name: "True Branch",
+            description: "Executes when condition is true",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-TRUE` },
+              }),
+          });
+
+          // Create node for false branch (size <= 500)
+          const falseBranchNode = yield* createFlowNode({
+            id: "false-branch",
+            name: "False Branch",
+            description: "Executes when condition is false",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-FALSE` },
+              }),
+          });
+
+          // Create flow with conditional routing
+          const flow = yield* createFlow({
+            flowId: "conditional-true-test",
+            name: "Conditional True Test",
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            nodes: {
+              input: inputNode,
+              conditional: conditionalNode,
+              "true-branch": trueBranchNode,
+              "false-branch": falseBranchNode,
+            },
+            edges: [
+              { source: "input", target: "conditional" },
+              { source: "conditional", target: "true-branch", sourcePort: "true" },
+              { source: "conditional", target: "false-branch", sourcePort: "false" },
+            ],
+          });
+
+          // Run with size > 500 (should trigger true branch)
+          const result = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { size: 1000 }) },
+            storageId: "test-storage",
+            jobId: "test-job",
+            clientId: null,
+          });
+
+          expect(result.type).toBe("completed");
+          if (result.type === "completed") {
+            // True branch should have executed
+            expect(result.result["true-branch"]).toBeDefined();
+            expect(result.result["true-branch"].id).toBe("test-TRUE");
+            // False branch should NOT have executed (skipped)
+            expect(result.result["false-branch"]).toBeUndefined();
+          }
+        }),
+    );
+
+    it.effect(
+      "should execute only the false branch when condition evaluates to false",
+      () =>
+        Effect.gen(function* () {
+          // Create input node
+          const inputNode = yield* createFlowNode({
+            id: "input",
+            name: "Input",
+            description: "Input node",
+            type: NodeType.input,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({ type: "complete", data }),
+          });
+
+          // Create conditional node that checks if size > 500
+          const conditionalNode = yield* createConditionalNode("conditional", {
+            field: "size",
+            operator: "greaterThan",
+            value: 500,
+          });
+
+          // Create node for true branch
+          const trueBranchNode = yield* createFlowNode({
+            id: "true-branch",
+            name: "True Branch",
+            description: "Executes when condition is true",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-TRUE` },
+              }),
+          });
+
+          // Create node for false branch
+          const falseBranchNode = yield* createFlowNode({
+            id: "false-branch",
+            name: "False Branch",
+            description: "Executes when condition is false",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-FALSE` },
+              }),
+          });
+
+          // Create flow
+          const flow = yield* createFlow({
+            flowId: "conditional-false-test",
+            name: "Conditional False Test",
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            nodes: {
+              input: inputNode,
+              conditional: conditionalNode,
+              "true-branch": trueBranchNode,
+              "false-branch": falseBranchNode,
+            },
+            edges: [
+              { source: "input", target: "conditional" },
+              { source: "conditional", target: "true-branch", sourcePort: "true" },
+              { source: "conditional", target: "false-branch", sourcePort: "false" },
+            ],
+          });
+
+          // Run with size <= 500 (should trigger false branch)
+          const result = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { size: 100 }) },
+            storageId: "test-storage",
+            jobId: "test-job",
+            clientId: null,
+          });
+
+          expect(result.type).toBe("completed");
+          if (result.type === "completed") {
+            // False branch should have executed
+            expect(result.result["false-branch"]).toBeDefined();
+            expect(result.result["false-branch"].id).toBe("test-FALSE");
+            // True branch should NOT have executed (skipped)
+            expect(result.result["true-branch"]).toBeUndefined();
+          }
+        }),
+    );
+
+    it.effect(
+      "should skip downstream nodes when their only input is from a skipped conditional branch",
+      () =>
+        Effect.gen(function* () {
+          // Create input node
+          const inputNode = yield* createFlowNode({
+            id: "input",
+            name: "Input",
+            description: "Input node",
+            type: NodeType.input,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({ type: "complete", data }),
+          });
+
+          // Create conditional node
+          const conditionalNode = yield* createConditionalNode("conditional", {
+            field: "mimeType",
+            operator: "equals",
+            value: "image/jpeg",
+          });
+
+          // Create true branch node
+          const trueBranchNode = yield* createFlowNode({
+            id: "true-branch",
+            name: "True Branch",
+            description: "First node in true path",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-TRUE` },
+              }),
+          });
+
+          // Create downstream node that depends on true branch
+          const downstreamNode = yield* createFlowNode({
+            id: "downstream",
+            name: "Downstream",
+            description: "Depends on true branch",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-DOWNSTREAM` },
+              }),
+          });
+
+          // Create false branch node (this will be a sink)
+          const falseBranchNode = yield* createFlowNode({
+            id: "false-branch",
+            name: "False Branch",
+            description: "False path sink",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: `${data.id}-FALSE` },
+              }),
+          });
+
+          // Create flow: input -> conditional -> true-branch -> downstream
+          //                                   -> false-branch
+          const flow = yield* createFlow({
+            flowId: "conditional-cascade-test",
+            name: "Conditional Cascade Test",
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            nodes: {
+              input: inputNode,
+              conditional: conditionalNode,
+              "true-branch": trueBranchNode,
+              downstream: downstreamNode,
+              "false-branch": falseBranchNode,
+            },
+            edges: [
+              { source: "input", target: "conditional" },
+              { source: "conditional", target: "true-branch", sourcePort: "true" },
+              { source: "true-branch", target: "downstream" },
+              { source: "conditional", target: "false-branch", sourcePort: "false" },
+            ],
+          });
+
+          // Run with mimeType != "image/jpeg" (should trigger false branch)
+          const result = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { mimeType: "text/plain" }) },
+            storageId: "test-storage",
+            jobId: "test-job",
+            clientId: null,
+          });
+
+          expect(result.type).toBe("completed");
+          if (result.type === "completed") {
+            // False branch should have executed
+            expect(result.result["false-branch"]).toBeDefined();
+            expect(result.result["false-branch"].id).toBe("test-FALSE");
+            // True branch and its downstream should NOT have executed
+            expect(result.result["true-branch"]).toBeUndefined();
+            expect(result.result["downstream"]).toBeUndefined();
+          }
+        }),
+    );
+
+    it.effect(
+      "should handle conditional with equals operator on mimeType",
+      () =>
+        Effect.gen(function* () {
+          const inputNode = yield* createFlowNode({
+            id: "input",
+            name: "Input",
+            description: "Input node",
+            type: NodeType.input,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({ type: "complete", data }),
+          });
+
+          const conditionalNode = yield* createConditionalNode("conditional", {
+            field: "mimeType",
+            operator: "equals",
+            value: "image/png",
+          });
+
+          const trueBranchNode = yield* createFlowNode({
+            id: "true-branch",
+            name: "True Branch",
+            description: "PNG handler",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: "PNG_PROCESSED" },
+              }),
+          });
+
+          const falseBranchNode = yield* createFlowNode({
+            id: "false-branch",
+            name: "False Branch",
+            description: "Non-PNG handler",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: "OTHER_PROCESSED" },
+              }),
+          });
+
+          const flow = yield* createFlow({
+            flowId: "mimetype-conditional-test",
+            name: "MimeType Conditional Test",
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            nodes: {
+              input: inputNode,
+              conditional: conditionalNode,
+              "true-branch": trueBranchNode,
+              "false-branch": falseBranchNode,
+            },
+            edges: [
+              { source: "input", target: "conditional" },
+              { source: "conditional", target: "true-branch", sourcePort: "true" },
+              { source: "conditional", target: "false-branch", sourcePort: "false" },
+            ],
+          });
+
+          // Test with PNG - should go to true branch
+          const pngResult = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { mimeType: "image/png" }) },
+            storageId: "test-storage",
+            jobId: "test-job-1",
+            clientId: null,
+          });
+
+          expect(pngResult.type).toBe("completed");
+          if (pngResult.type === "completed") {
+            expect(pngResult.result["true-branch"]?.id).toBe("PNG_PROCESSED");
+            expect(pngResult.result["false-branch"]).toBeUndefined();
+          }
+
+          // Test with JPEG - should go to false branch
+          const jpegResult = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { mimeType: "image/jpeg" }) },
+            storageId: "test-storage",
+            jobId: "test-job-2",
+            clientId: null,
+          });
+
+          expect(jpegResult.type).toBe("completed");
+          if (jpegResult.type === "completed") {
+            expect(jpegResult.result["false-branch"]?.id).toBe("OTHER_PROCESSED");
+            expect(jpegResult.result["true-branch"]).toBeUndefined();
+          }
+        }),
+    );
+
+    it.effect(
+      "should handle conditional with contains operator",
+      () =>
+        Effect.gen(function* () {
+          const inputNode = yield* createFlowNode({
+            id: "input",
+            name: "Input",
+            description: "Input node",
+            type: NodeType.input,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({ type: "complete", data }),
+          });
+
+          const conditionalNode = yield* createConditionalNode("conditional", {
+            field: "mimeType",
+            operator: "contains",
+            value: "image",
+          });
+
+          const imageBranchNode = yield* createFlowNode({
+            id: "image-branch",
+            name: "Image Branch",
+            description: "Handles images",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: "IMAGE_HANDLED" },
+              }),
+          });
+
+          const otherBranchNode = yield* createFlowNode({
+            id: "other-branch",
+            name: "Other Branch",
+            description: "Handles non-images",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: "OTHER_HANDLED" },
+              }),
+          });
+
+          const flow = yield* createFlow({
+            flowId: "contains-conditional-test",
+            name: "Contains Conditional Test",
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            nodes: {
+              input: inputNode,
+              conditional: conditionalNode,
+              "image-branch": imageBranchNode,
+              "other-branch": otherBranchNode,
+            },
+            edges: [
+              { source: "input", target: "conditional" },
+              { source: "conditional", target: "image-branch", sourcePort: "true" },
+              { source: "conditional", target: "other-branch", sourcePort: "false" },
+            ],
+          });
+
+          // Test with image/jpeg - contains "image" -> true branch
+          const imageResult = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { mimeType: "image/jpeg" }) },
+            storageId: "test-storage",
+            jobId: "test-job-1",
+            clientId: null,
+          });
+
+          expect(imageResult.type).toBe("completed");
+          if (imageResult.type === "completed") {
+            expect(imageResult.result["image-branch"]?.id).toBe("IMAGE_HANDLED");
+            expect(imageResult.result["other-branch"]).toBeUndefined();
+          }
+
+          // Test with text/plain - doesn't contain "image" -> false branch
+          const textResult = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { mimeType: "text/plain" }) },
+            storageId: "test-storage",
+            jobId: "test-job-2",
+            clientId: null,
+          });
+
+          expect(textResult.type).toBe("completed");
+          if (textResult.type === "completed") {
+            expect(textResult.result["other-branch"]?.id).toBe("OTHER_HANDLED");
+            expect(textResult.result["image-branch"]).toBeUndefined();
+          }
+        }),
+    );
+
+    it.effect(
+      "should handle conditional with lessThan operator on size",
+      () =>
+        Effect.gen(function* () {
+          const inputNode = yield* createFlowNode({
+            id: "input",
+            name: "Input",
+            description: "Input node",
+            type: NodeType.input,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({ type: "complete", data }),
+          });
+
+          // Small files (< 1000 bytes) go to optimization, large files go direct
+          const conditionalNode = yield* createConditionalNode("conditional", {
+            field: "size",
+            operator: "lessThan",
+            value: 1000,
+          });
+
+          const smallFileBranch = yield* createFlowNode({
+            id: "small-file",
+            name: "Small File Handler",
+            description: "Handles small files",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: "SMALL_OPTIMIZED" },
+              }),
+          });
+
+          const largeFileBranch = yield* createFlowNode({
+            id: "large-file",
+            name: "Large File Handler",
+            description: "Handles large files",
+            type: NodeType.process,
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            run: ({ data }) =>
+              Effect.succeed({
+                type: "complete",
+                data: { ...data, id: "LARGE_DIRECT" },
+              }),
+          });
+
+          const flow = yield* createFlow({
+            flowId: "size-conditional-test",
+            name: "Size Conditional Test",
+            inputSchema: uploadFileSchema,
+            outputSchema: uploadFileSchema,
+            nodes: {
+              input: inputNode,
+              conditional: conditionalNode,
+              "small-file": smallFileBranch,
+              "large-file": largeFileBranch,
+            },
+            edges: [
+              { source: "input", target: "conditional" },
+              { source: "conditional", target: "small-file", sourcePort: "true" },
+              { source: "conditional", target: "large-file", sourcePort: "false" },
+            ],
+          });
+
+          // Test with small file (< 1000)
+          const smallResult = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { size: 500 }) },
+            storageId: "test-storage",
+            jobId: "test-job-1",
+            clientId: null,
+          });
+
+          expect(smallResult.type).toBe("completed");
+          if (smallResult.type === "completed") {
+            expect(smallResult.result["small-file"]?.id).toBe("SMALL_OPTIMIZED");
+            expect(smallResult.result["large-file"]).toBeUndefined();
+          }
+
+          // Test with large file (>= 1000)
+          const largeResult = yield* flow.run({
+            inputs: { input: createConditionalTestFile("test", { size: 5000 }) },
+            storageId: "test-storage",
+            jobId: "test-job-2",
+            clientId: null,
+          });
+
+          expect(largeResult.type).toBe("completed");
+          if (largeResult.type === "completed") {
+            expect(largeResult.result["large-file"]?.id).toBe("LARGE_DIRECT");
+            expect(largeResult.result["small-file"]).toBeUndefined();
+          }
+        }),
     );
   });
 });
