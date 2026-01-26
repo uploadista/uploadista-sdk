@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.1.3-beta.2...dev
+## v0.1.3-beta.3...v0.1.3-beta.4
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.3...dev)
+
+### Features
+
+- Add passthrough node ([e7e3393](https://github.com/uploadista/uploadista-sdk/commit/e7e3393))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.2...v0.1.3-beta.3
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.2...dev)
 
