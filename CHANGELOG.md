@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.1.2...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.2...dev)
+
+### Bug Fixes
+
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260120.0 ([9858c2d](https://github.com/uploadista/uploadista-sdk/commit/9858c2d))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.972.0 ([119476d](https://github.com/uploadista/uploadista-sdk/commit/119476d))
+- **deps:** Update opentelemetry-js monorepo ([8466026](https://github.com/uploadista/uploadista-sdk/commit/8466026))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260122.0 ([174e525](https://github.com/uploadista/uploadista-sdk/commit/174e525))
+- Fix conditional node routing with port ([1a02ead](https://github.com/uploadista/uploadista-sdk/commit/1a02ead))
+
+### Chores
+
+- Changelog ([e30ea9a](https://github.com/uploadista/uploadista-sdk/commit/e30ea9a))
+- Pnpm lock ([eec768d](https://github.com/uploadista/uploadista-sdk/commit/eec768d))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.1...v0.1.2
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.1...v0.1.2)
