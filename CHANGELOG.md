@@ -1,6 +1,22 @@
 # Changelog
 
-## v0.1.2...dev
+## v0.1.3-beta.2...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.2...dev)
+
+### Bug Fixes
+
+- Conditional routing use target port ([17db26e](https://github.com/uploadista/uploadista-sdk/commit/17db26e))
+
+### Chores
+
+- Deps ([0197fc6](https://github.com/uploadista/uploadista-sdk/commit/0197fc6))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.2...v0.1.3-beta.1
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.2...dev)
 
