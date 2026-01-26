@@ -390,6 +390,25 @@ export function createFlowWithSchema<
       return { graph, reverseGraph, inDegree };
     };
 
+    // Build edge map for port-aware routing (conditional nodes)
+    // Maps: targetNodeId -> [{ source, sourcePort, targetPort }]
+    const edgesByTarget = new Map<
+      string,
+      Array<{ source: string; sourcePort?: string; targetPort?: string }>
+    >();
+    edges.forEach((edge) => {
+      const existing = edgesByTarget.get(edge.target) || [];
+      existing.push({
+        source: edge.source,
+        sourcePort: edge.sourcePort,
+        targetPort: edge.targetPort,
+      });
+      edgesByTarget.set(edge.target, existing);
+    });
+
+    // Track conditional node results (true/false) for port-based routing
+    const conditionalResults = new Map<string, boolean>();
+
     // Topological sort to determine execution order
     const topologicalSort = () => {
       const { graph, inDegree } = buildGraph();
@@ -457,20 +476,35 @@ export function createFlowWithSchema<
       return Effect.succeed(result);
     };
 
-    // Get all inputs for a node
+    // Get all inputs for a node, considering port-based routing for conditional nodes
     const getNodeInputs = (
       nodeId: string,
       nodeResults: Map<string, unknown>,
     ) => {
-      const { reverseGraph } = buildGraph();
-      const incomingNodes = reverseGraph[nodeId] || [];
+      const incomingEdges = edgesByTarget.get(nodeId) || [];
       const inputs: Record<string, unknown> = {};
 
-      incomingNodes.forEach((sourceNodeId: any) => {
+      incomingEdges.forEach((edge) => {
+        const sourceNodeId = edge.source;
         const result = nodeResults.get(sourceNodeId);
-        if (result !== undefined) {
-          inputs[sourceNodeId] = result;
+
+        if (result === undefined) {
+          return;
         }
+
+        // Check if the source node is a conditional node
+        const sourceNode = nodes.find((n) => n.id === sourceNodeId);
+        if (sourceNode?.type === "conditional" && edge.sourcePort) {
+          // Only include input if the conditional result matches the edge's sourcePort
+          const condResult = conditionalResults.get(sourceNodeId);
+          const expectedPort = condResult ? "true" : "false";
+          if (edge.sourcePort !== expectedPort) {
+            // This edge doesn't match the conditional result, skip it
+            return;
+          }
+        }
+
+        inputs[sourceNodeId] = result;
       });
 
       return inputs;
@@ -799,27 +833,12 @@ export function createFlowWithSchema<
               }
             }
 
-            // Check condition for conditional nodes
+            // Check condition for conditional nodes and store result for port-based routing
             if (node.type === "conditional") {
               const conditionResult = yield* evaluateCondition(node, nodeInput);
-              if (!conditionResult) {
-                // Skip this node - return success but no result
-                if (onEvent) {
-                  yield* onEvent({
-                    jobId,
-                    flowId,
-                    nodeId,
-                    eventType: EventType.NodeEnd,
-                    nodeName: node.name,
-                  });
-                }
-                return {
-                  nodeId,
-                  result: nodeInput,
-                  success: true,
-                  waiting: false,
-                };
-              }
+              // Store the conditional result for port-based routing to downstream nodes
+              conditionalResults.set(nodeId, conditionResult);
+              // Conditional nodes always pass through - routing happens via sourcePort filtering
             }
 
             // Execute the node
