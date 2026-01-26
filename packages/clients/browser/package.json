@@ -41,6 +41,6 @@
     "@uploadista/typescript-config": "workspace:*",
     "happy-dom": "^20.1.0",
     "tsdown": "catalog:",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

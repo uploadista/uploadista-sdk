@@ -50,8 +50,8 @@
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^20.0.0",
     "tsdown": "catalog:",
-    "unplugin-vue": "^7.0.2",
-    "vitest": "4.0.17",
+    "unplugin-vue": "7.1.1",
+    "vitest": "4.0.18",
     "vue": "^3.5.0",
     "vue-tsc": "3.2.3"
   }
