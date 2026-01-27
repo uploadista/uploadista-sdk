@@ -186,7 +186,7 @@ export const imageAiPlugin = (
                 auth: apiToken,
               });
 
-              return (await replicate.run(describeImageModelId, {
+              const result = await replicate.run(describeImageModelId, {
                 input: {
                   image: inputUrl,
                   top_k: 50,
@@ -202,7 +202,27 @@ export const imageAiPlugin = (
                   max_new_tokens: 768,
                   repetition_penalty: 1,
                 },
-              })) as unknown as string;
+              });
+
+              // Handle different response formats from Replicate
+              // Some models return arrays, some return strings directly
+              let description: string;
+              if (typeof result === "string") {
+                description = result;
+              } else if (Array.isArray(result) && result.length > 0) {
+                // Some models return output as an array
+                description =
+                  typeof result[0] === "string" ? result[0] : String(result[0]);
+              } else if (result != null) {
+                // Fallback: stringify the result
+                description = String(result);
+              } else {
+                throw new Error(
+                  "Replicate returned empty or undefined response for image description",
+                );
+              }
+
+              return description;
             },
             catch: (error) => {
               return UploadistaError.fromCode("UNKNOWN_ERROR", {
