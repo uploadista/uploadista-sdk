@@ -460,8 +460,12 @@ export function createFlow<TNodes extends NodeDefinitionsRecord>(
         ),
     );
 
+    // Output schemas include both sink nodes AND nodes with keepOutput flag
+    // This matches the shouldIncludeInOutputs logic in flow.ts
     const outputSchemas = resolvedEntries
-      .filter(([, node]) => sinkNodeIds.has(node.id))
+      .filter(
+        ([, node]) => sinkNodeIds.has(node.id) || node.keepOutput === true,
+      )
       .map(([, node]) => node.outputSchema);
 
     const inputSchema =
