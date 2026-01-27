@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.3-beta.6...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.6...dev)
+
+### Bug Fixes
+
+- Add keepOutput to the outputSchemas ([65152499](https://github.com/uploadista/uploadista-sdk/commit/65152499))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.5...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.5...dev)
