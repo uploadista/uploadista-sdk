@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.3-beta.5...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.5...dev)
+
+### Bug Fixes
+
+- Circuit breaker fail when replicate fail ([68a80a11](https://github.com/uploadista/uploadista-sdk/commit/68a80a11))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.4...v0.1.3-beta.5
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.4...v0.1.3-beta.5)
