@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/expo",
-  "version": "0.1.3-beta.4",
+  "version": "0.1.3-beta.5",
   "type": "module",
   "description": "Expo client for Uploadista with managed workflow support",
   "license": "MIT",
