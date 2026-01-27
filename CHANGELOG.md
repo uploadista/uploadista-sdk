@@ -1,8 +1,20 @@
 # Changelog
 
+## v0.1.3-beta.4...v0.1.3-beta.5
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.4...v0.1.3-beta.5)
+
+### Bug Fixes
+
+- Output format for replicate plugin ([ac6e265](https://github.com/uploadista/uploadista-sdk/commit/ac6e265))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.3...v0.1.3-beta.4
 
-[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.3...dev)
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.3...v0.1.3-beta.4)
 
 ### Features
 
@@ -14,7 +26,7 @@
 
 ## v0.1.3-beta.2...v0.1.3-beta.3
 
-[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.2...dev)
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.2...v0.1.3-beta.3)
 
 ### Bug Fixes
 
