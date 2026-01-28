@@ -120,7 +120,7 @@ export const documentAiPlugin = (
   // Model ID for DeepSeek-OCR
   const ocrModelId =
     (isStatic ? options?.ocrModelId : config.ocrModelId) ||
-    "lucataco/deepseek-ocr:0080ec8faf4da6a14afb8502e96f5bb53afbc28b40e2d4a5e17945b8f69eb863";
+    "lucataco/deepseek-ocr:cb3b474fbfc56b1664c8c7841550bccecbe7b74c30e45ce938ffca1180b4dff5";
 
   // Helper to get API token (either static, from provider function, or from service)
   const getApiToken = (context: DocumentAiContext) => {
