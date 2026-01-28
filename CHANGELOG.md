@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.3-beta.8...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.8...dev)
+
+### Features
+
+- Add pause features to react native and vue ([721769bf](https://github.com/uploadista/uploadista-sdk/commit/721769bf))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.7...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.7...dev)
