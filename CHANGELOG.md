@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.3-beta.7...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.7...dev)
+
+### Features
+
+- Pause flow in react client ([6e1e5b72](https://github.com/uploadista/uploadista-sdk/commit/6e1e5b72))
+
+### Bug Fixes
+
+- Update deepseek ocr version ([bd3e2756](https://github.com/uploadista/uploadista-sdk/commit/bd3e2756))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.6...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.6...dev)
