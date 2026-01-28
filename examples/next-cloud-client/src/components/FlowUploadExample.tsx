@@ -127,10 +127,15 @@ function FlowUploadContent() {
                       />
                     </div>
 
-                    {/* Abort Button */}
-                    <Flow.Cancel className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
-                      Abort Upload
-                    </Flow.Cancel>
+                    {/* Pause and Abort Buttons */}
+                    <div className="flex gap-3">
+                      <Flow.Pause className="flex-1 px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                        Pause Upload
+                      </Flow.Pause>
+                      <Flow.Cancel className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                        Abort Upload
+                      </Flow.Cancel>
+                    </div>
                   </div>
                 )}
 
@@ -162,10 +167,59 @@ function FlowUploadContent() {
                             : "Processing flow..."}
                         </p>
 
-                        {/* Abort Button */}
-                        <Flow.Cancel className="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
-                          Abort Flow
-                        </Flow.Cancel>
+                        {/* Pause and Abort Buttons */}
+                        <div className="flex gap-3">
+                          <Flow.Pause className="flex-1 px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                            Pause Flow
+                          </Flow.Pause>
+                          <Flow.Cancel className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                            Abort Flow
+                          </Flow.Cancel>
+                        </div>
+                      </div>
+                    )
+                  }
+                </Flow.Status>
+
+                {/* Paused State */}
+                <Flow.Status>
+                  {({ status: flowStatus }) =>
+                    flowStatus === "paused" && (
+                      <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200">
+                        <div className="flex items-start gap-3 mb-4">
+                          <div className="flex-shrink-0 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-6 h-6 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-amber-900 mb-1">
+                              Upload Paused
+                            </h3>
+                            <p className="text-amber-700">
+                              The upload has been paused. Resume to continue.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <Flow.Submit className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-100 transition-all shadow-md">
+                            Resume
+                          </Flow.Submit>
+                          <Flow.Cancel className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md">
+                            Cancel
+                          </Flow.Cancel>
+                        </div>
                       </div>
                     )
                   }

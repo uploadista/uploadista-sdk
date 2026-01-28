@@ -135,6 +135,11 @@ export interface UseFlowReturn {
    * Whether the hook is discovering flow inputs
    */
   isDiscoveringInputs: Readonly<Ref<boolean>>;
+
+  /**
+   * Whether the flow is currently paused
+   */
+  isPaused: Readonly<Ref<boolean>>;
 }
 
 const initialState: FlowUploadState = {
@@ -148,6 +153,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -414,6 +420,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
   );
   const isUploadingFile = computed(() => state.value.status === "uploading");
   const isProcessing = computed(() => state.value.status === "processing");
+  const isPaused = computed(() => state.value.status === "paused");
 
   return {
     state: shallowReadonly(state),
@@ -430,5 +437,6 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     isUploadingFile: readonly(isUploadingFile),
     isProcessing: readonly(isProcessing),
     isDiscoveringInputs: readonly(isDiscoveringInputs),
+    isPaused: readonly(isPaused),
   };
 }

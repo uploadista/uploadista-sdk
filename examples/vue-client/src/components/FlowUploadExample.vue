@@ -10,6 +10,7 @@ import {
   type FlowInputMetadata,
   FlowInputPreview,
   FlowInputs,
+  FlowPause,
   FlowProgress,
   FlowReset,
   FlowStatus,
@@ -510,11 +511,18 @@ const isVideo = (file: UploadFile): boolean => {
               />
             </div>
 
-            <FlowCancel
-              class="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
-            >
-              Abort Upload
-            </FlowCancel>
+            <div class="flex gap-3">
+              <FlowPause
+                class="flex-1 px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-100 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Pause Upload
+              </FlowPause>
+              <FlowCancel
+                class="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
+              >
+                Abort Upload
+              </FlowCancel>
+            </div>
           </div>
         </FlowProgress>
 
@@ -549,11 +557,66 @@ const isVideo = (file: UploadFile): boolean => {
               }}
             </p>
 
-            <FlowCancel
-              class="w-full px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
-            >
-              Abort Flow
-            </FlowCancel>
+            <div class="flex gap-3">
+              <FlowPause
+                class="flex-1 px-6 py-3 bg-amber-600 text-white font-semibold rounded-xl hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-100 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Pause Flow
+              </FlowPause>
+              <FlowCancel
+                class="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
+              >
+                Abort Flow
+              </FlowCancel>
+            </div>
+          </div>
+        </FlowStatus>
+
+        <!-- Paused State -->
+        <FlowStatus v-slot="{ status }">
+          <div
+            v-if="status === 'paused'"
+            class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200"
+          >
+            <div class="flex items-start gap-3 mb-4">
+              <div
+                class="flex-shrink-0 w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center"
+              >
+                <svg
+                  class="w-6 h-6 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-amber-900 mb-1">
+                  Upload Paused
+                </h3>
+                <p class="text-amber-700">
+                  The upload has been paused. Resume to continue.
+                </p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <FlowSubmit
+                class="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-green-100 transition-all shadow-md"
+              >
+                Resume
+              </FlowSubmit>
+              <FlowCancel
+                class="flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100 transition-all shadow-md"
+              >
+                Cancel
+              </FlowCancel>
+            </div>
           </div>
         </FlowStatus>
 

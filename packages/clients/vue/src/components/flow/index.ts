@@ -54,6 +54,7 @@ export type { FlowContextValue, FlowProps } from "./Flow.vue";
 // Root component
 export { default as Flow } from "./Flow.vue";
 export { default as FlowCancel } from "./FlowCancel.vue";
+export { default as FlowPause } from "./FlowPause.vue";
 export type {
   FlowDropZoneProps,
   FlowDropZoneSlotProps,

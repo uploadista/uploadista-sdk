@@ -4,6 +4,7 @@ import {
   Flow,
   type FlowCancelRenderProps,
   type FlowInputFilePickerRenderProps,
+  type FlowPauseRenderProps,
   type FlowRenderProps,
   type FlowResetRenderProps,
   type FlowSubmitRenderProps,
@@ -341,6 +342,22 @@ export default function FlowCompoundScreen() {
                       />
                     )}
                   </Flow.Submit>
+
+                  <Flow.Pause>
+                    {({
+                      pause: handlePause,
+                      isDisabled,
+                      isPaused,
+                    }: FlowPauseRenderProps) => (
+                      <Button
+                        title={isPaused ? "Paused" : "Pause"}
+                        onPress={handlePause}
+                        disabled={isDisabled}
+                        variant="secondary"
+                        style={styles.controlButton}
+                      />
+                    )}
+                  </Flow.Pause>
 
                   <Flow.Cancel>
                     {({

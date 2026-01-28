@@ -166,6 +166,16 @@ export interface UseFlowReturn {
    * Whether a retry is possible (after error or abort with stored inputs)
    */
   canRetry: boolean;
+
+  /**
+   * Pause the current upload
+   */
+  pause: () => void;
+
+  /**
+   * Whether the flow is currently paused
+   */
+  isPaused: boolean;
 }
 
 const initialState: FlowUploadState = {
@@ -179,6 +189,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -529,6 +540,10 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     managerRef.current?.abort();
   }, []);
 
+  const pause = useCallback(() => {
+    managerRef.current?.pause();
+  }, []);
+
   const reset = useCallback(() => {
     managerRef.current?.reset();
     setInputs({});
@@ -552,6 +567,7 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     state.status === "uploading" || state.status === "processing";
   const isUploadingFile = state.status === "uploading";
   const isProcessing = state.status === "processing";
+  const isPaused = state.status === "paused";
   const canRetry =
     (state.status === "error" || state.status === "aborted") &&
     lastInputsRef.current !== null;
@@ -565,6 +581,7 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     execute,
     upload,
     abort,
+    pause,
     reset,
     retry,
     isActive,
@@ -572,5 +589,6 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     isProcessing,
     isDiscoveringInputs,
     canRetry,
+    isPaused,
   };
 }

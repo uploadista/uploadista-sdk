@@ -72,6 +72,8 @@ export type {
   FlowInputProps,
   FlowInputsProps,
   FlowInputsRenderProps,
+  FlowPauseProps,
+  FlowPauseRenderProps,
   FlowProgressProps,
   FlowProgressRenderProps,
   FlowProps,
