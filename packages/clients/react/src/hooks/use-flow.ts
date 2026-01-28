@@ -127,6 +127,11 @@ export interface UseFlowReturn {
    * Whether the hook is discovering flow inputs
    */
   isDiscoveringInputs: boolean;
+
+  /**
+   * Whether the flow is currently paused
+   */
+  isPaused: boolean;
 }
 
 const initialState: FlowUploadState = {
@@ -140,6 +145,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -422,6 +428,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     state.status === "uploading" || state.status === "processing";
   const isUploadingFile = state.status === "uploading";
   const isProcessing = state.status === "processing";
+  const isPaused = state.status === "paused";
 
   return {
     state,
@@ -438,5 +445,6 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     isUploadingFile,
     isProcessing,
     isDiscoveringInputs,
+    isPaused,
   };
 }

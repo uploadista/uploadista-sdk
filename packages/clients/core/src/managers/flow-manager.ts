@@ -6,7 +6,7 @@ import { detectInputType } from "../utils/input-detection";
 
 /**
  * Flow upload status representing the current state of a flow upload lifecycle.
- * Flow uploads progress through: idle → uploading → processing → success/error/aborted
+ * Flow uploads progress through: idle → uploading → processing → success/error/aborted/paused
  */
 export type FlowUploadStatus =
   | "idle"
@@ -14,7 +14,8 @@ export type FlowUploadStatus =
   | "processing"
   | "success"
   | "error"
-  | "aborted";
+  | "aborted"
+  | "paused";
 
 /**
  * Complete state information for a flow upload operation.
@@ -45,6 +46,8 @@ export interface FlowUploadState {
    * Available when status is "success".
    */
   flowOutputs: TypedOutput[] | null;
+  /** Node ID where the flow was paused (available when status is "paused") */
+  pausedAtNodeId: string | null;
 }
 
 /**
@@ -146,6 +149,11 @@ export interface FlowManagerCallbacks {
    * Called when upload or flow is aborted
    */
   onAbort?: () => void;
+
+  /**
+   * Called when flow is paused
+   */
+  onPause?: () => void;
 }
 
 /**
@@ -293,6 +301,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -379,10 +388,24 @@ export class FlowManager<TInput = FlowUploadInput> {
   }
 
   /**
+   * Check if flow is paused
+   */
+  isPaused(): boolean {
+    return this.state.status === "paused";
+  }
+
+  /**
    * Get the current job ID
    */
   getJobId(): string | null {
     return this.state.jobId;
+  }
+
+  /**
+   * Get the node ID where the flow is paused (if applicable)
+   */
+  getPausedAtNodeId(): string | null {
+    return this.state.pausedAtNodeId;
   }
 
   /**
@@ -515,6 +538,14 @@ export class FlowManager<TInput = FlowUploadInput> {
         });
         this.callbacks.onAbort?.();
         this.abortController = null;
+        break;
+
+      case EventType.FlowPause:
+        this.updateState({
+          status: "paused",
+          pausedAtNodeId: event.pausedAt ?? null,
+        });
+        this.callbacks.onPause?.();
         break;
     }
   }

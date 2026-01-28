@@ -370,6 +370,8 @@ export class UploadistaError extends Data.TaggedError("UploadistaError") {
     this.status = status;
     this.status_code = status; // legacy alias
     this.body = body;
+    // Set message property from body so it's serializable to JSON
+    (this as unknown as { message: string }).message = body;
     this.details = details;
     if (cause) (this as unknown as { cause?: unknown }).cause = cause;
   }

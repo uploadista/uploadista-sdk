@@ -60,6 +60,8 @@ export interface FlowContextValue {
   isProcessing: boolean;
   /** Whether the hook is discovering flow inputs */
   isDiscoveringInputs: boolean;
+  /** Whether the flow is currently paused */
+  isPaused: boolean;
 }
 
 const FlowContext = createContext<FlowContextValue | null>(null);
@@ -207,6 +209,7 @@ function FlowRoot({
     isUploadingFile: flow.isUploadingFile,
     isProcessing: flow.isProcessing,
     isDiscoveringInputs: flow.isDiscoveringInputs,
+    isPaused: flow.isPaused,
   };
 
   return (
@@ -773,6 +776,38 @@ function FlowReset({ children, ...props }: FlowResetProps) {
   );
 }
 
+/**
+ * Props for Flow.Pause component.
+ */
+export interface FlowPauseProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
+  /** Button content */
+  children: React.ReactNode;
+}
+
+/**
+ * Pause button that pauses the current flow upload.
+ * Only visible/enabled when upload is in progress.
+ */
+function FlowPause({ children, disabled, ...props }: FlowPauseProps) {
+  const flow = useFlowContext();
+
+  const handleClick = useCallback(() => {
+    flow.pause();
+  }, [flow]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={disabled || !flow.isUploading}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ============ COMPOUND COMPONENT EXPORT ============
 
 /**
@@ -834,5 +869,6 @@ export const Flow = Object.assign(FlowRoot, {
   Error: FlowError,
   Submit: FlowSubmit,
   Cancel: FlowCancel,
+  Pause: FlowPause,
   Reset: FlowReset,
 });
