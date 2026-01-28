@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-documents-nodes",
   "type": "module",
-  "version": "0.1.3-beta.7",
+  "version": "0.1.3-beta.8",
   "description": "Document processing nodes for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",

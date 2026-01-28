@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-images-photon",
   "type": "module",
-  "version": "0.1.3-beta.7",
+  "version": "0.1.3-beta.8",
   "description": "Photon image processing service for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
