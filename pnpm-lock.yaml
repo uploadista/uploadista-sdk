@@ -1828,8 +1828,8 @@ importers:
         specifier: 'catalog:'
         version: 0.27.0(effect@3.19.15)(vitest@4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(happy-dom@20.3.6)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))
       '@types/bun':
-        specifier: 1.3.7
-        version: 1.3.7
+        specifier: 1.3.8
+        version: 1.3.8
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -6224,8 +6224,8 @@ packages:
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
-  '@types/bun@1.3.7':
-    resolution: {integrity: sha512-lmNuMda+Z9b7tmhA0tohwy8ZWFSnmQm1UDWXtH5r9F7wZCfkeO3Jx7wKQ1EOiKq43yHts7ky6r8SDJQWRNupkA==}
+  '@types/bun@1.3.8':
+    resolution: {integrity: sha512-3LvWJ2q5GerAXYxO2mffLTqOzEu5qnhEAlh48Vnu8WQfnmSwbgagjGZV6BoHKJztENYEDn6QmVd949W4uESRJA==}
 
   '@types/caseless@0.12.5':
     resolution: {integrity: sha512-hWtVTC2q7hc7xZ/RLbxapMvDMgUnDvKvMOpKal4DrMyfGBUfB1oKaZlIRr6mJL+If3bAP6sV/QneGzF6tJjZDg==}
@@ -7132,8 +7132,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  bun-types@1.3.7:
-    resolution: {integrity: sha512-qyschsA03Qz+gou+apt6HNl6HnI+sJJLL4wLDke4iugsE6584CMupOtTY1n+2YC9nGVrEKUlTs99jjRLKgWnjQ==}
+  bun-types@1.3.8:
+    resolution: {integrity: sha512-fL99nxdOWvV4LqjmC+8Q9kW3M4QTtTR1eePs94v5ctGqU8OeceWrSUaRw3JYb7tU3FkMIAjkueehrHPPPGKi5Q==}
 
   bundle-name@4.1.0:
     resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
@@ -17186,9 +17186,9 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 24.3.1
 
-  '@types/bun@1.3.7':
+  '@types/bun@1.3.8':
     dependencies:
-      bun-types: 1.3.7
+      bun-types: 1.3.8
 
   '@types/caseless@0.12.5': {}
 
@@ -18290,7 +18290,7 @@ snapshots:
     transitivePeerDependencies:
       - magicast
 
-  bun-types@1.3.7:
+  bun-types@1.3.8:
     dependencies:
       '@types/node': 24.3.1
 
