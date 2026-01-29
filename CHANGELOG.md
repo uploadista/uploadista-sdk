@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.1.3-beta.9...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.9...dev)
+
+### Features
+
+- Better handling of pause and cancel ([3f7a2e32](https://github.com/uploadista/uploadista-sdk/commit/3f7a2e32))
+
+### Bug Fixes
+
+- **deps:** Update dependency node-av to v5.0.4 ([13fd34f8](https://github.com/uploadista/uploadista-sdk/commit/13fd34f8))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260127.0 ([0cb4c8f9](https://github.com/uploadista/uploadista-sdk/commit/0cb4c8f9))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.978.0 ([a68b4b05](https://github.com/uploadista/uploadista-sdk/commit/a68b4b05))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260129.0 ([e5bdb5f7](https://github.com/uploadista/uploadista-sdk/commit/e5bdb5f7))
+
+### Chores
+
+- Pnpm lock ([8b8565f2](https://github.com/uploadista/uploadista-sdk/commit/8b8565f2))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.8...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.8...dev)
