@@ -96,12 +96,17 @@ export interface UseFlowReturn {
   /**
    * Abort the current upload
    */
-  abort: () => void;
+  abort: () => Promise<void>;
 
   /**
    * Pause the current upload
    */
-  pause: () => void;
+  pause: () => Promise<void>;
+
+  /**
+   * Resume a paused upload
+   */
+  resume: () => Promise<void>;
 
   /**
    * Reset the upload state and clear all inputs
@@ -409,12 +414,16 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     [inputMetadata],
   );
 
-  const abort = useCallback(() => {
-    managerRef.current?.abort();
+  const abort = useCallback(async () => {
+    await managerRef.current?.abort();
   }, []);
 
-  const pause = useCallback(() => {
-    managerRef.current?.pause();
+  const pause = useCallback(async () => {
+    await managerRef.current?.pause();
+  }, []);
+
+  const resume = useCallback(async () => {
+    await managerRef.current?.resume();
   }, []);
 
   const reset = useCallback(() => {
@@ -440,6 +449,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     upload,
     abort,
     pause,
+    resume,
     reset,
     isUploading,
     isUploadingFile,

@@ -472,9 +472,20 @@ function withFlowEvents<
                       },
                     ];
 
+                // Track active upload IDs for cleanup on cancel
+                // The partialData from streaming-input contains the upload file info
+                const partialData = event.partialData as
+                  | { id?: string }
+                  | undefined;
+                const uploadId = partialData?.id;
+                const activeUploads = uploadId
+                  ? [...(job.activeUploads || []), uploadId]
+                  : job.activeUploads;
+
                 yield* kvStore.set(executionJobId, {
                   ...job,
                   tasks: updatedTasks,
+                  activeUploads,
                   updatedAt: new Date(),
                 });
               }
@@ -566,10 +577,20 @@ function withFlowEvents<
                   }
                 }
 
+                // Remove completed upload from activeUploads
+                // The upload is now complete and tracked in intermediateFiles (or preserved as output)
+                let activeUploads = job.activeUploads || [];
+                if (isResultUploadFile(resultData) && resultData.id) {
+                  activeUploads = activeUploads.filter(
+                    (uploadId) => uploadId !== resultData.id,
+                  );
+                }
+
                 yield* kvStore.set(executionJobId, {
                   ...job,
                   tasks: updatedTasks,
                   intermediateFiles,
+                  activeUploads,
                   updatedAt: new Date(),
                 });
               }
@@ -1012,6 +1033,56 @@ export function createFlowEngine() {
               ),
             );
 
+            // Cleanup active uploads (in-progress multipart uploads) on failure
+            yield* Effect.gen(function* () {
+              const failedJob = yield* kvStore.get(jobId);
+              if (
+                failedJob &&
+                failedJob.activeUploads &&
+                failedJob.activeUploads.length > 0
+              ) {
+                yield* Effect.logInfo(
+                  `Cleaning up ${failedJob.activeUploads.length} active uploads for failed job ${jobId}`,
+                );
+
+                yield* Effect.all(
+                  failedJob.activeUploads.map((uploadId) =>
+                    Effect.gen(function* () {
+                      yield* uploadEngine.delete(uploadId, clientId);
+                      yield* Effect.logDebug(
+                        `Aborted active upload ${uploadId} for failed job ${jobId}`,
+                      );
+                    }).pipe(
+                      Effect.catchAll((deleteError) =>
+                        Effect.gen(function* () {
+                          yield* Effect.logWarning(
+                            `Failed to abort active upload ${uploadId}: ${deleteError}`,
+                          );
+                          return Effect.succeed(undefined);
+                        }),
+                      ),
+                    ),
+                  ),
+                  { concurrency: 5 },
+                );
+
+                // Clear the activeUploads array
+                yield* updateJob(jobId, {
+                  activeUploads: [],
+                });
+              }
+            }).pipe(
+              Effect.catchAll((cleanupError) =>
+                Effect.gen(function* () {
+                  yield* Effect.logWarning(
+                    `Failed to cleanup active uploads for job ${jobId}`,
+                    cleanupError,
+                  );
+                  return Effect.succeed(undefined);
+                }),
+              ),
+            );
+
             // Add failed job to Dead Letter Queue for retry/debugging
             const uploadistaError =
               error instanceof UploadistaError
@@ -1373,6 +1444,56 @@ export function createFlowEngine() {
                     ),
                   );
 
+                  // Cleanup active uploads (in-progress multipart uploads) on failure
+                  yield* Effect.gen(function* () {
+                    const failedJob = yield* kvStore.get(jobId);
+                    if (
+                      failedJob &&
+                      failedJob.activeUploads &&
+                      failedJob.activeUploads.length > 0
+                    ) {
+                      yield* Effect.logInfo(
+                        `Cleaning up ${failedJob.activeUploads.length} active uploads for failed job ${jobId}`,
+                      );
+
+                      yield* Effect.all(
+                        failedJob.activeUploads.map((uploadId) =>
+                          Effect.gen(function* () {
+                            yield* uploadEngine.delete(uploadId, clientId);
+                            yield* Effect.logDebug(
+                              `Aborted active upload ${uploadId} for failed job ${jobId}`,
+                            );
+                          }).pipe(
+                            Effect.catchAll((deleteError) =>
+                              Effect.gen(function* () {
+                                yield* Effect.logWarning(
+                                  `Failed to abort active upload ${uploadId}: ${deleteError}`,
+                                );
+                                return Effect.succeed(undefined);
+                              }),
+                            ),
+                          ),
+                        ),
+                        { concurrency: 5 },
+                      );
+
+                      // Clear the activeUploads array
+                      yield* updateJob(jobId, {
+                        activeUploads: [],
+                      });
+                    }
+                  }).pipe(
+                    Effect.catchAll((cleanupError) =>
+                      Effect.gen(function* () {
+                        yield* Effect.logWarning(
+                          `Failed to cleanup active uploads for job ${jobId}`,
+                          cleanupError,
+                        );
+                        return Effect.succeed(undefined);
+                      }),
+                    ),
+                  );
+
                   // Add failed job to Dead Letter Queue for retry/debugging
                   const uploadistaError =
                     error instanceof UploadistaError
@@ -1539,6 +1660,39 @@ export function createFlowEngine() {
             flowId: job.flowId,
             eventType: EventType.FlowCancel,
           });
+
+          // Cleanup active uploads (in-progress multipart uploads)
+          if (job.activeUploads && job.activeUploads.length > 0) {
+            yield* Effect.logInfo(
+              `Cleaning up ${job.activeUploads.length} active uploads for job ${jobId}`,
+            );
+
+            yield* Effect.all(
+              job.activeUploads.map((uploadId) =>
+                Effect.gen(function* () {
+                  yield* uploadEngine.delete(uploadId, clientId);
+                  yield* Effect.logDebug(
+                    `Aborted active upload ${uploadId} for job ${jobId}`,
+                  );
+                }).pipe(
+                  Effect.catchAll((error) =>
+                    Effect.gen(function* () {
+                      yield* Effect.logWarning(
+                        `Failed to abort active upload ${uploadId}: ${error}`,
+                      );
+                      return Effect.succeed(undefined);
+                    }),
+                  ),
+                ),
+              ),
+              { concurrency: 5 },
+            );
+
+            // Clear the activeUploads array
+            yield* updateJob(jobId, {
+              activeUploads: [],
+            });
+          }
 
           // Cleanup intermediate files
           yield* cleanupIntermediateFiles(jobId, clientId);

@@ -32,6 +32,7 @@ import { Effect, Ref, Schedule, Stream } from "effect";
 import { R2ClientLayer, R2ClientService } from "./services/r2-client.service";
 import type { ChunkInfo, R2StoreConfig, R2UploadedPart } from "./types";
 import { calcOffsetFromParts, calcOptimalPartSize } from "./utils";
+import { isUploadNotFoundError } from "./utils/error-handling";
 
 /**
  * Generates an S3 key from an upload file, preserving the file extension if available.
@@ -109,11 +110,13 @@ export function createR2Store(config: R2StoreConfig) {
               data,
             })
             .pipe(
-              Effect.retry(
-                Schedule.exponential("1 second", 2.0).pipe(
+              Effect.retry({
+                schedule: Schedule.exponential("1 second", 2.0).pipe(
                   Schedule.intersect(Schedule.recurs(3)),
                 ),
-              ),
+                // Don't retry on upload not found errors - they're permanent
+                while: (error) => !isUploadNotFoundError(error),
+              }),
               Effect.tapError((error) =>
                 Effect.logWarning("Retrying part upload").pipe(
                   Effect.annotateLogs({
@@ -126,6 +129,18 @@ export function createR2Store(config: R2StoreConfig) {
                   }),
                 ),
               ),
+              // Convert NoSuchUpload errors to UPLOAD_CANCELLED for graceful handling
+              Effect.catchAll((error) => {
+                if (isUploadNotFoundError(error)) {
+                  return Effect.fail(
+                    UploadistaError.fromCode("UPLOAD_CANCELLED", {
+                      cause: error,
+                      body: `Upload ${uploadFile.id} was cancelled`,
+                    }),
+                  );
+                }
+                return Effect.fail(error);
+              }),
             );
 
           // Store part metadata in KV (R2 doesn't provide listParts API)

@@ -134,6 +134,18 @@ export function createS3Store(config: S3StoreConfig) {
                   }),
                 ),
               ),
+              // Convert NoSuchUpload errors to UPLOAD_CANCELLED for graceful handling
+              Effect.catchAll((error) => {
+                if (isUploadNotFoundError(error)) {
+                  return Effect.fail(
+                    UploadistaError.fromCode("UPLOAD_CANCELLED", {
+                      cause: error,
+                      body: `Upload ${uploadFile.id} was cancelled`,
+                    }),
+                  );
+                }
+                return Effect.fail(error);
+              }),
             );
 
           yield* uploadPartsTotal(Effect.succeed(1));

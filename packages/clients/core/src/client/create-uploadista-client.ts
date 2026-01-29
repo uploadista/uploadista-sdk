@@ -9,7 +9,10 @@ import type { Logger } from "../logger";
 import { createLogger } from "../logger";
 import { defaultClientCapabilities } from "../mock-data-store";
 import { NetworkMonitor, type NetworkMonitorConfig } from "../network-monitor";
-import type { AbortControllerFactory } from "../services/abort-controller-service";
+import {
+  type AbortControllerFactory,
+  PausableAbortController,
+} from "../services/abort-controller-service";
 import type { ChecksumService } from "../services/checksum-service";
 import type { FileReaderService } from "../services/file-reader-service";
 import type { FingerprintService } from "../services/fingerprint-service";
@@ -671,13 +674,15 @@ export function createUploadistaClient<UploadInput>({
       onShouldRetry,
       onJobStart,
       onError,
+      onAbort,
     }: Omit<
       UploadistaUploadOptions,
       "uploadLengthDeferred" | "uploadSize" | "metadata"
-    > = {},
+    > & { onAbort?: () => void } = {},
   ): Promise<{
     abort: () => Promise<void>;
     pause: () => Promise<void>;
+    resume: () => Promise<void>;
     jobId: string;
   }> => {
     const source = await fileReader.openFile(file, chunkSize);
@@ -712,12 +717,17 @@ export function createUploadistaClient<UploadInput>({
       return {
         abort: async () => {},
         pause: async () => {},
+        resume: async () => {},
         jobId: "",
       };
     }
 
     const { jobId, uploadFile, inputNodeId } = result;
-    const abortController = abortControllerFactory.create();
+    // Use PausableAbortController to support pausing chunk uploads
+    // Pass a real AbortController from the factory to ensure fetch compatibility
+    const abortController = new PausableAbortController(
+      abortControllerFactory.create(),
+    );
 
     // Open upload WebSocket to receive upload progress events
     await wsManager.openUploadWebSocket(uploadFile.id);
@@ -742,6 +752,7 @@ export function createUploadistaClient<UploadInput>({
       onChunkComplete,
       onSuccess,
       onShouldRetry,
+      onAbort,
       onRetry: (timeout) => {
         timeoutId = timeout;
       },
@@ -769,7 +780,13 @@ export function createUploadistaClient<UploadInput>({
         wsManager.closeUploadWebSocket(uploadFile.id);
       },
       pause: async () => {
-        await uploadistaApi.pauseFlow(jobId);
+        // Pause client-side chunk uploads immediately
+        // This will cause the upload loop to wait at the start of the next chunk
+        abortController.pause();
+      },
+      resume: async () => {
+        // Resume client-side chunk uploads
+        abortController.resume();
       },
       jobId,
     };
@@ -812,6 +829,7 @@ export function createUploadistaClient<UploadInput>({
   ): Promise<{
     abort: () => Promise<void>;
     pause: () => Promise<void>;
+    resume: () => Promise<void>;
     jobId: string;
   }> => {
     // Start the flow and get job ID
@@ -905,7 +923,11 @@ export function createUploadistaClient<UploadInput>({
             input.inputType === "file" && input.uploadFile && input.source,
         )
         .map(async ({ nodeId, uploadFile, source }) => {
-          const abortController = abortControllerFactory.create();
+          // Use PausableAbortController to support pausing chunk uploads
+          // Pass a real AbortController from the factory to ensure fetch compatibility
+          const abortController = new PausableAbortController(
+            abortControllerFactory.create(),
+          );
           abortControllers.set(nodeId, abortController);
 
           const metrics = new UploadMetrics({
@@ -1009,7 +1031,23 @@ export function createUploadistaClient<UploadInput>({
         }
       },
       pause: async () => {
-        await uploadistaApi.pauseFlow(jobId);
+        // Pause all client-side chunk uploads
+        for (const controller of abortControllers.values()) {
+          if ("pause" in controller && typeof controller.pause === "function") {
+            controller.pause();
+          }
+        }
+      },
+      resume: async () => {
+        // Resume all client-side chunk uploads
+        for (const controller of abortControllers.values()) {
+          if (
+            "resume" in controller &&
+            typeof controller.resume === "function"
+          ) {
+            controller.resume();
+          }
+        }
       },
       jobId,
     };
