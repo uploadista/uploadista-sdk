@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.1.3-beta.10...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.10...dev)
+
+### Bug Fixes
+
+- **deps:** Update dependency node-av to v5.1.1 ([5fb637cc](https://github.com/uploadista/uploadista-sdk/commit/5fb637cc))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260130.0 ([d9e5fe2b](https://github.com/uploadista/uploadista-sdk/commit/d9e5fe2b))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.980.0 ([a1f9f727](https://github.com/uploadista/uploadista-sdk/commit/a1f9f727))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260131.0 ([0607bb45](https://github.com/uploadista/uploadista-sdk/commit/0607bb45))
+
+### Chores
+
+- Deps ([18e32a2e](https://github.com/uploadista/uploadista-sdk/commit/18e32a2e))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3-beta.9...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.9...dev)
