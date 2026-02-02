@@ -2,7 +2,7 @@
   "name": "uploadista-sdk",
   "private": true,
   "version": "0.0.2",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.2",
   "scripts": {
     "build": "turbo run build --filter=\"./packages/**/*\"",
     "dev": "turbo watch build --filter=\"./packages/**/*\"",
@@ -17,23 +17,23 @@
     "changelog:github": "changelogithub"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.11",
-    "@nx/js": "22.3.3",
+    "@biomejs/biome": "2.3.13",
+    "@nx/js": "22.4.1",
     "@swc-node/register": "1.11.1",
-    "@swc/core": "1.15.8",
+    "@swc/core": "1.15.11",
     "@swc/helpers": "0.5.18",
     "bumpp": "10.4.0",
     "changelogen": "^0.6.2",
     "changelogithub": "^14.0.0",
-    "nx": "22.3.3",
+    "nx": "22.4.4",
     "rimraf": "6.1.2",
     "tinyglobby": "0.2.15",
-    "turbo": "2.7.5",
+    "turbo": "2.8.1",
     "typescript": "catalog:"
   },
   "volta": {
     "node": "24.13.0",
-    "pnpm": "10.28.0"
+    "pnpm": "10.28.2"
   },
   "workspaces": [
     "packages/**",

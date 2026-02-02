@@ -13,22 +13,50 @@ export const handleS3Error = (
   return UploadistaError.fromCode("FILE_WRITE_ERROR", error as Error);
 };
 
+/**
+ * Helper to check if an error code/name indicates a not found error
+ */
+const isNotFoundErrorCode = (codeOrName: string): boolean =>
+  ["NotFound", "NoSuchKey", "NoSuchUpload"].includes(codeOrName);
+
+/**
+ * Helper to get the error identifier from an error object
+ * AWS SDK errors may have the error code in either .code or .name
+ */
+const getErrorIdentifier = (
+  error: unknown,
+): { code?: string; name?: string } | null => {
+  if (typeof error !== "object" || error === null) return null;
+
+  const result: { code?: string; name?: string } = {};
+
+  if ("code" in error && typeof error.code === "string") {
+    result.code = error.code;
+  }
+  if ("name" in error && typeof error.name === "string") {
+    result.name = error.name;
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
+};
+
 export const handleS3NotFoundError = (
   operation: string,
   error: unknown,
   context: Record<string, unknown> = {},
 ): UploadistaError => {
+  const errorId = getErrorIdentifier(error);
+
   if (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string" &&
-    ["NotFound", "NoSuchKey", "NoSuchUpload"].includes(error.code)
+    errorId &&
+    ((errorId.code && isNotFoundErrorCode(errorId.code)) ||
+      (errorId.name && isNotFoundErrorCode(errorId.name)))
   ) {
     Effect.runSync(
       Effect.logWarning(`File not found during ${operation} operation`).pipe(
         Effect.annotateLogs({
-          error_code: error.code,
+          error_code: errorId.code,
+          error_name: errorId.name,
           ...context,
         }),
       ),
@@ -39,30 +67,38 @@ export const handleS3NotFoundError = (
   return handleS3Error(operation, error, context);
 };
 
+/**
+ * Helper to check if an error code/name indicates an upload not found error
+ */
+const isUploadNotFoundCode = (codeOrName: string): boolean =>
+  codeOrName === "NoSuchUpload" || codeOrName === "NoSuchKey";
+
 export const isUploadNotFoundError = (
   error: unknown,
-): error is { code: "NoSuchUpload" | "NoSuchKey" } => {
-  // Check direct error code
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    typeof error.code === "string" &&
-    (error.code === "NoSuchUpload" || error.code === "NoSuchKey")
-  ) {
-    return true;
+): error is { code?: string; name?: string } => {
+  const errorId = getErrorIdentifier(error);
+
+  // Check direct error code or name
+  if (errorId) {
+    if (errorId.code && isUploadNotFoundCode(errorId.code)) {
+      return true;
+    }
+    if (errorId.name && isUploadNotFoundCode(errorId.name)) {
+      return true;
+    }
   }
 
-  // Check if it's an UploadistaError wrapping an AWS error with code
-  if (
-    error instanceof UploadistaError &&
-    error.cause &&
-    typeof error.cause === "object" &&
-    "code" in error.cause &&
-    typeof error.cause.code === "string" &&
-    (error.cause.code === "NoSuchUpload" || error.cause.code === "NoSuchKey")
-  ) {
-    return true;
+  // Check if it's an UploadistaError wrapping an AWS error
+  if (error instanceof UploadistaError && error.cause) {
+    const causeErrorId = getErrorIdentifier(error.cause);
+    if (causeErrorId) {
+      if (causeErrorId.code && isUploadNotFoundCode(causeErrorId.code)) {
+        return true;
+      }
+      if (causeErrorId.name && isUploadNotFoundCode(causeErrorId.name)) {
+        return true;
+      }
+    }
   }
 
   return false;

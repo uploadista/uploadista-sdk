@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/adapters-fastify",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.1.3-beta.11",
   "description": "Fastify adapter for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -43,7 +43,7 @@
     "effect": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.17",
+    "vitest": "4.0.18",
     "zod": "catalog:"
   }
 }

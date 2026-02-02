@@ -1,5 +1,160 @@
 # Changelog
 
+## v0.1.3-beta.10...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.10...dev)
+
+### Bug Fixes
+
+- **deps:** Update dependency node-av to v5.1.1 ([5fb637cc](https://github.com/uploadista/uploadista-sdk/commit/5fb637cc))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260130.0 ([d9e5fe2b](https://github.com/uploadista/uploadista-sdk/commit/d9e5fe2b))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.980.0 ([a1f9f727](https://github.com/uploadista/uploadista-sdk/commit/a1f9f727))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260131.0 ([0607bb45](https://github.com/uploadista/uploadista-sdk/commit/0607bb45))
+
+### Chores
+
+- Deps ([18e32a2e](https://github.com/uploadista/uploadista-sdk/commit/18e32a2e))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.9...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.9...dev)
+
+### Features
+
+- Better handling of pause and cancel ([3f7a2e32](https://github.com/uploadista/uploadista-sdk/commit/3f7a2e32))
+
+### Bug Fixes
+
+- **deps:** Update dependency node-av to v5.0.4 ([13fd34f8](https://github.com/uploadista/uploadista-sdk/commit/13fd34f8))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260127.0 ([0cb4c8f9](https://github.com/uploadista/uploadista-sdk/commit/0cb4c8f9))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.978.0 ([a68b4b05](https://github.com/uploadista/uploadista-sdk/commit/a68b4b05))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260129.0 ([e5bdb5f7](https://github.com/uploadista/uploadista-sdk/commit/e5bdb5f7))
+
+### Chores
+
+- Pnpm lock ([8b8565f2](https://github.com/uploadista/uploadista-sdk/commit/8b8565f2))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.8...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.8...dev)
+
+### Features
+
+- Add pause features to react native and vue ([721769bf](https://github.com/uploadista/uploadista-sdk/commit/721769bf))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.7...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.7...dev)
+
+### Features
+
+- Pause flow in react client ([6e1e5b72](https://github.com/uploadista/uploadista-sdk/commit/6e1e5b72))
+
+### Bug Fixes
+
+- Update deepseek ocr version ([bd3e2756](https://github.com/uploadista/uploadista-sdk/commit/bd3e2756))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.6...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.6...dev)
+
+### Bug Fixes
+
+- Add keepOutput to the outputSchemas ([65152499](https://github.com/uploadista/uploadista-sdk/commit/65152499))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.5...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.5...dev)
+
+### Bug Fixes
+
+- Circuit breaker fail when replicate fail ([68a80a11](https://github.com/uploadista/uploadista-sdk/commit/68a80a11))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.4...v0.1.3-beta.5
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.4...v0.1.3-beta.5)
+
+### Bug Fixes
+
+- Output format for replicate plugin ([ac6e265](https://github.com/uploadista/uploadista-sdk/commit/ac6e265))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.3...v0.1.3-beta.4
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.3...v0.1.3-beta.4)
+
+### Features
+
+- Add passthrough node ([e7e3393](https://github.com/uploadista/uploadista-sdk/commit/e7e3393))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3-beta.2...v0.1.3-beta.3
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3-beta.2...v0.1.3-beta.3)
+
+### Bug Fixes
+
+- Conditional routing use target port ([17db26e](https://github.com/uploadista/uploadista-sdk/commit/17db26e))
+
+### Chores
+
+- Deps ([0197fc6](https://github.com/uploadista/uploadista-sdk/commit/0197fc6))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.2...v0.1.3-beta.1
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.2...dev)
+
+### Bug Fixes
+
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260120.0 ([9858c2d](https://github.com/uploadista/uploadista-sdk/commit/9858c2d))
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.972.0 ([119476d](https://github.com/uploadista/uploadista-sdk/commit/119476d))
+- **deps:** Update opentelemetry-js monorepo ([8466026](https://github.com/uploadista/uploadista-sdk/commit/8466026))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260122.0 ([174e525](https://github.com/uploadista/uploadista-sdk/commit/174e525))
+- Fix conditional node routing with port ([1a02ead](https://github.com/uploadista/uploadista-sdk/commit/1a02ead))
+
+### Chores
+
+- Changelog ([e30ea9a](https://github.com/uploadista/uploadista-sdk/commit/e30ea9a))
+- Pnpm lock ([eec768d](https://github.com/uploadista/uploadista-sdk/commit/eec768d))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.1...v0.1.2
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.1...v0.1.2)

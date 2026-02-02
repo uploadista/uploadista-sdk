@@ -151,6 +151,13 @@ export type FlowJob = {
   // Intermediate files to cleanup after flow completion
   intermediateFiles?: string[]; // UploadFile IDs from non-output nodes
   /**
+   * Active upload IDs for in-progress multipart uploads.
+   * These are tracked separately from intermediateFiles because they may not
+   * be complete yet. When a flow is cancelled during upload phase, these
+   * uploads need to be aborted to clean up the multipart upload in storage.
+   */
+  activeUploads?: string[];
+  /**
    * OpenTelemetry trace context for distributed tracing.
    * When set, all flow operations (node executions, uploads) will be
    * linked as children of this trace context. Enables end-to-end tracing

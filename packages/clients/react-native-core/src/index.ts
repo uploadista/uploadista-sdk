@@ -48,6 +48,8 @@ export {
   type FlowInputProps,
   type FlowInputsProps,
   type FlowInputsRenderProps,
+  type FlowPauseProps,
+  type FlowPauseRenderProps,
   type FlowProgressProps,
   type FlowProgressRenderProps,
   type FlowProps,

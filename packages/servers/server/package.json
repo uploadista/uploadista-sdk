@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/server",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.1.3-beta.11",
   "description": "Core Server package for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -36,7 +36,7 @@
     "@uploadista/event-broadcaster-memory": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20260118.0",
+    "@cloudflare/workers-types": "4.20260131.0",
     "@effect/vitest": "catalog:",
     "@types/express": "^5.0.0",
     "@types/node": "catalog:",
@@ -45,7 +45,7 @@
     "tsd": "0.33.0",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.0.17",
+    "vitest": "4.0.18",
     "zod": "catalog:"
   },
   "peerDependencies": {

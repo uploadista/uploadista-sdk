@@ -32,12 +32,14 @@ export function createDescribeImageNode(
       keepOutput,
       inputSchema: uploadFileSchema,
       outputSchema: imageDescriptionOutputSchema,
-      // AI service - enable circuit breaker with skip fallback
+      // AI service - enable circuit breaker
+      // Note: skip fallback cannot be used here because the input schema (UploadFile)
+      // differs from the output schema (ImageDescription). Using "fail" instead.
       circuitBreaker: {
         enabled: true,
         failureThreshold: 5,
         resetTimeout: 60000,
-        fallback: { type: "skip", passThrough: true },
+        fallback: { type: "fail" },
       },
       run: ({ data: file, flowId, jobId, clientId }) => {
         return Effect.gen(function* () {

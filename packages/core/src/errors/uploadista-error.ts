@@ -25,6 +25,7 @@ export type UploadistaErrorCode =
   | "FLOW_JOB_ERROR"
   | "DATASTORE_NOT_FOUND"
   | "FILE_NOT_FOUND"
+  | "UPLOAD_CANCELLED"
   | "INVALID_OFFSET"
   | "FILE_NO_LONGER_EXISTS"
   | "ERR_SIZE_EXCEEDED"
@@ -115,6 +116,10 @@ export const ERROR_CATALOG: Readonly<
   FILE_NOT_FOUND: {
     status: 404,
     body: "The file for this url was not found\n",
+  },
+  UPLOAD_CANCELLED: {
+    status: 410,
+    body: "The upload was cancelled\n",
   },
   FLOW_NOT_AUTHORIZED: {
     status: 401,
@@ -370,6 +375,8 @@ export class UploadistaError extends Data.TaggedError("UploadistaError") {
     this.status = status;
     this.status_code = status; // legacy alias
     this.body = body;
+    // Set message property from body so it's serializable to JSON
+    (this as unknown as { message: string }).message = body;
     this.details = details;
     if (cause) (this as unknown as { cause?: unknown }).cause = cause;
   }

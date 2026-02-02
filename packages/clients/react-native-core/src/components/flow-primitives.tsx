@@ -45,6 +45,8 @@ export interface FlowContextValue {
   upload: (file: FilePickResult) => Promise<void>;
   /** Abort the current upload */
   abort: () => void;
+  /** Pause the current upload */
+  pause: () => void;
   /** Reset the upload state and clear all inputs */
   reset: () => void;
 
@@ -56,6 +58,8 @@ export interface FlowContextValue {
   isProcessing: boolean;
   /** Whether the hook is discovering flow inputs */
   isDiscoveringInputs: boolean;
+  /** Whether the flow is currently paused */
+  isPaused: boolean;
 
   /** Pick a file and set it for a specific input node */
   pickFileForInput: (nodeId: string) => Promise<void>;
@@ -241,11 +245,13 @@ function FlowRoot({
     execute: flow.execute,
     upload: flow.upload,
     abort: flow.abort,
+    pause: flow.pause,
     reset: flow.reset,
     isActive: flow.isActive,
     isUploadingFile: flow.isUploadingFile,
     isProcessing: flow.isProcessing,
     isDiscoveringInputs: flow.isDiscoveringInputs,
+    isPaused: flow.isPaused,
     pickFileForInput,
     pickAndUpload,
   };
@@ -726,6 +732,43 @@ function FlowReset({ children }: FlowResetProps) {
   );
 }
 
+/**
+ * Render props for Flow.Pause component.
+ */
+export interface FlowPauseRenderProps {
+  /** Pause the flow */
+  pause: () => void;
+  /** Whether the button should be disabled */
+  isDisabled: boolean;
+  /** Whether currently paused */
+  isPaused: boolean;
+}
+
+/**
+ * Props for Flow.Pause component.
+ */
+export interface FlowPauseProps {
+  /** Render function receiving pause state */
+  children: ReactNode | ((props: FlowPauseRenderProps) => ReactNode);
+}
+
+/**
+ * Pause primitive that pauses the current upload.
+ */
+function FlowPause({ children }: FlowPauseProps) {
+  const flow = useFlowContext();
+
+  const renderProps: FlowPauseRenderProps = {
+    pause: flow.pause,
+    isDisabled: !flow.isActive || flow.isPaused,
+    isPaused: flow.isPaused,
+  };
+
+  return (
+    <>{typeof children === "function" ? children(renderProps) : children}</>
+  );
+}
+
 // ============ QUICK UPLOAD PRIMITIVE ============
 
 /**
@@ -842,6 +885,7 @@ export const Flow = Object.assign(FlowRoot, {
   Error: FlowError,
   Submit: FlowSubmit,
   Cancel: FlowCancel,
+  Pause: FlowPause,
   Reset: FlowReset,
   QuickUpload: FlowQuickUpload,
 });

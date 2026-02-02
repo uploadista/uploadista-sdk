@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-cloudflare-do",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.1.3-beta.11",
   "description": "Cloudflare Durable Object KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "@cloudflare/workers-types": "4.20260118.0"
+    "@cloudflare/workers-types": "4.20260131.0"
   },
   "peerDependencies": {
     "effect": "^3.0.0"
@@ -34,6 +34,6 @@
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.17"
+    "vitest": "4.0.18"
   }
 }

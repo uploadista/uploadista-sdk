@@ -8,6 +8,7 @@ import type { PlatformService, Timeout } from "../services/platform-service";
 import type { SmartChunker, SmartChunkerConfig } from "../smart-chunker";
 import type { FlowUploadConfig } from "../types/flow-upload-config";
 
+import { waitForResumeIfPaused } from "../services/abort-controller-service";
 import { shouldRetry } from "./chunk-upload";
 import type { Callbacks } from "./single-upload";
 import type { UploadMetrics } from "./upload-metrics";
@@ -185,6 +186,16 @@ export async function performFlowUpload({
   let currentOffset = offset;
 
   try {
+    // Check if paused before starting chunk upload
+    // This allows the upload loop to pause between chunks
+    await waitForResumeIfPaused(abortController);
+
+    // Check if aborted after waiting for resume
+    if (abortController.signal.aborted) {
+      callbacks.onAbort?.();
+      return;
+    }
+
     // Get optimal chunk size
     const remainingBytes = source.size ? source.size - offset : undefined;
     const chunkSizeDecision = smartChunker.getNextChunkSize(remainingBytes);
@@ -306,6 +317,20 @@ export async function performFlowUpload({
       ...callbacks,
     });
   } catch (err) {
+    // Check if this is an abort error (from fetch being cancelled)
+    const isAbortError =
+      abortController.signal.aborted ||
+      (err instanceof Error &&
+        (err.name === "AbortError" ||
+          (err as { code?: number }).code === 20 || // DOMException.ABORT_ERR
+          err.message?.includes("abort")));
+
+    if (isAbortError) {
+      logger.log(`Flow upload aborted for job ${jobId}`);
+      callbacks.onAbort?.();
+      return;
+    }
+
     // Retry logic similar to single-upload
     if (retryDelays != null) {
       const shouldResetDelays =

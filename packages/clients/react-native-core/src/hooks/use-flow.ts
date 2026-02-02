@@ -130,7 +130,7 @@ export interface UseFlowReturn {
   /**
    * Abort the current upload
    */
-  abort: () => void;
+  abort: () => Promise<void>;
 
   /**
    * Reset the upload state and clear all inputs
@@ -166,6 +166,21 @@ export interface UseFlowReturn {
    * Whether a retry is possible (after error or abort with stored inputs)
    */
   canRetry: boolean;
+
+  /**
+   * Pause the current upload
+   */
+  pause: () => void;
+
+  /**
+   * Resume a paused upload
+   */
+  resume: () => void;
+
+  /**
+   * Whether the flow is currently paused
+   */
+  isPaused: boolean;
 }
 
 const initialState: FlowUploadState = {
@@ -179,6 +194,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -525,8 +541,16 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     [inputMetadata, fileSystemProvider, options],
   );
 
-  const abort = useCallback(() => {
-    managerRef.current?.abort();
+  const abort = useCallback(async () => {
+    await managerRef.current?.abort();
+  }, []);
+
+  const pause = useCallback(async () => {
+    await managerRef.current?.pause();
+  }, []);
+
+  const resume = useCallback(async () => {
+    await managerRef.current?.resume();
   }, []);
 
   const reset = useCallback(() => {
@@ -552,6 +576,7 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     state.status === "uploading" || state.status === "processing";
   const isUploadingFile = state.status === "uploading";
   const isProcessing = state.status === "processing";
+  const isPaused = state.status === "paused";
   const canRetry =
     (state.status === "error" || state.status === "aborted") &&
     lastInputsRef.current !== null;
@@ -565,6 +590,8 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     execute,
     upload,
     abort,
+    pause,
+    resume,
     reset,
     retry,
     isActive,
@@ -572,5 +599,6 @@ export function useFlow(options: UseFlowOptions): UseFlowReturn {
     isProcessing,
     isDiscoveringInputs,
     canRetry,
+    isPaused,
   };
 }

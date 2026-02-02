@@ -104,12 +104,17 @@ export interface UseFlowReturn {
   /**
    * Abort the current upload
    */
-  abort: () => void;
+  abort: () => Promise<void>;
 
   /**
    * Pause the current upload
    */
-  pause: () => void;
+  pause: () => Promise<void>;
+
+  /**
+   * Resume a paused upload
+   */
+  resume: () => Promise<void>;
 
   /**
    * Reset the upload state and clear all inputs
@@ -135,6 +140,11 @@ export interface UseFlowReturn {
    * Whether the hook is discovering flow inputs
    */
   isDiscoveringInputs: Readonly<Ref<boolean>>;
+
+  /**
+   * Whether the flow is currently paused
+   */
+  isPaused: Readonly<Ref<boolean>>;
 }
 
 const initialState: FlowUploadState = {
@@ -148,6 +158,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -393,12 +404,16 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     }
   };
 
-  const abort = () => {
-    manager?.abort();
+  const abort = async () => {
+    await manager?.abort();
   };
 
-  const pause = () => {
-    manager?.pause();
+  const pause = async () => {
+    await manager?.pause();
+  };
+
+  const resume = async () => {
+    await manager?.resume();
   };
 
   const reset = () => {
@@ -414,6 +429,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
   );
   const isUploadingFile = computed(() => state.value.status === "uploading");
   const isProcessing = computed(() => state.value.status === "processing");
+  const isPaused = computed(() => state.value.status === "paused");
 
   return {
     state: shallowReadonly(state),
@@ -425,10 +441,12 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     upload,
     abort,
     pause,
+    resume,
     reset,
     isUploading: readonly(isUploading),
     isUploadingFile: readonly(isUploadingFile),
     isProcessing: readonly(isProcessing),
     isDiscoveringInputs: readonly(isDiscoveringInputs),
+    isPaused: readonly(isPaused),
   };
 }

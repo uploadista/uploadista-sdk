@@ -96,12 +96,17 @@ export interface UseFlowReturn {
   /**
    * Abort the current upload
    */
-  abort: () => void;
+  abort: () => Promise<void>;
 
   /**
    * Pause the current upload
    */
-  pause: () => void;
+  pause: () => Promise<void>;
+
+  /**
+   * Resume a paused upload
+   */
+  resume: () => Promise<void>;
 
   /**
    * Reset the upload state and clear all inputs
@@ -127,6 +132,11 @@ export interface UseFlowReturn {
    * Whether the hook is discovering flow inputs
    */
   isDiscoveringInputs: boolean;
+
+  /**
+   * Whether the flow is currently paused
+   */
+  isPaused: boolean;
 }
 
 const initialState: FlowUploadState = {
@@ -140,6 +150,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -403,12 +414,16 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     [inputMetadata],
   );
 
-  const abort = useCallback(() => {
-    managerRef.current?.abort();
+  const abort = useCallback(async () => {
+    await managerRef.current?.abort();
   }, []);
 
-  const pause = useCallback(() => {
-    managerRef.current?.pause();
+  const pause = useCallback(async () => {
+    await managerRef.current?.pause();
+  }, []);
+
+  const resume = useCallback(async () => {
+    await managerRef.current?.resume();
   }, []);
 
   const reset = useCallback(() => {
@@ -422,6 +437,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     state.status === "uploading" || state.status === "processing";
   const isUploadingFile = state.status === "uploading";
   const isProcessing = state.status === "processing";
+  const isPaused = state.status === "paused";
 
   return {
     state,
@@ -433,10 +449,12 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
     upload,
     abort,
     pause,
+    resume,
     reset,
     isUploading,
     isUploadingFile,
     isProcessing,
     isDiscoveringInputs,
+    isPaused,
   };
 }

@@ -6,7 +6,7 @@ import { detectInputType } from "../utils/input-detection";
 
 /**
  * Flow upload status representing the current state of a flow upload lifecycle.
- * Flow uploads progress through: idle → uploading → processing → success/error/aborted
+ * Flow uploads progress through: idle → uploading → processing → success/error/aborted/paused
  */
 export type FlowUploadStatus =
   | "idle"
@@ -14,7 +14,8 @@ export type FlowUploadStatus =
   | "processing"
   | "success"
   | "error"
-  | "aborted";
+  | "aborted"
+  | "paused";
 
 /**
  * Complete state information for a flow upload operation.
@@ -45,6 +46,8 @@ export interface FlowUploadState {
    * Available when status is "success".
    */
   flowOutputs: TypedOutput[] | null;
+  /** Node ID where the flow was paused (available when status is "paused") */
+  pausedAtNodeId: string | null;
 }
 
 /**
@@ -146,6 +149,11 @@ export interface FlowManagerCallbacks {
    * Called when upload or flow is aborted
    */
   onAbort?: () => void;
+
+  /**
+   * Called when flow is paused
+   */
+  onPause?: () => void;
 }
 
 /**
@@ -176,6 +184,7 @@ export interface FlowConfig {
 export interface FlowUploadAbortController {
   abort: () => void | Promise<void>;
   pause: () => void | Promise<void>;
+  resume: () => void | Promise<void>;
 }
 
 /**
@@ -293,6 +302,7 @@ const initialState: FlowUploadState = {
   currentNodeName: null,
   currentNodeType: null,
   flowOutputs: null,
+  pausedAtNodeId: null,
 };
 
 /**
@@ -379,10 +389,24 @@ export class FlowManager<TInput = FlowUploadInput> {
   }
 
   /**
+   * Check if flow is paused
+   */
+  isPaused(): boolean {
+    return this.state.status === "paused";
+  }
+
+  /**
    * Get the current job ID
    */
   getJobId(): string | null {
     return this.state.jobId;
+  }
+
+  /**
+   * Get the node ID where the flow is paused (if applicable)
+   */
+  getPausedAtNodeId(): string | null {
+    return this.state.pausedAtNodeId;
   }
 
   /**
@@ -515,6 +539,14 @@ export class FlowManager<TInput = FlowUploadInput> {
         });
         this.callbacks.onAbort?.();
         this.abortController = null;
+        break;
+
+      case EventType.FlowPause:
+        this.updateState({
+          status: "paused",
+          pausedAtNodeId: event.pausedAt ?? null,
+        });
+        this.callbacks.onPause?.();
         break;
     }
   }
@@ -723,22 +755,81 @@ export class FlowManager<TInput = FlowUploadInput> {
   }
 
   /**
-   * Abort the current flow upload
+   * Abort the current flow upload.
+   * This will:
+   * 1. Cancel the flow on the server
+   * 2. Abort any in-progress chunk uploads
+   * 3. Close WebSocket connections
    */
-  abort(): void {
+  async abort(): Promise<void> {
     if (this.abortController) {
-      this.abortController.abort();
+      await this.abortController.abort();
       // Note: State update happens in onAbort callback or FlowCancel event
     }
   }
 
   /**
-   * Pause the current flow upload
+   * Pause the current flow upload.
+   * During upload phase: Pauses chunk uploads client-side.
+   * During processing phase: Calls server to pause flow execution.
    */
-  pause(): void {
-    if (this.abortController) {
-      this.abortController.pause();
+  async pause(): Promise<void> {
+    // Only pause if we're actively uploading or processing
+    if (
+      this.state.status !== "uploading" &&
+      this.state.status !== "processing"
+    ) {
+      return;
     }
+
+    // Call abort controller's pause method if available
+    // This pauses chunk uploads during upload phase
+    if (this.abortController?.pause) {
+      try {
+        await this.abortController.pause();
+      } catch {
+        // If pause fails, continue with state update
+      }
+    }
+
+    // Update client state to paused
+    this.updateState({
+      status: "paused",
+      pausedAtNodeId: this.state.currentNodeName ?? null,
+    });
+  }
+
+  /**
+   * Resume a paused flow upload.
+   * Continues chunk uploads if paused during upload phase.
+   */
+  async resume(): Promise<void> {
+    // Only resume if we're paused
+    if (this.state.status !== "paused") {
+      return;
+    }
+
+    // Determine what status to resume to
+    // If we had started uploading, resume to uploading state
+    // Otherwise, this shouldn't happen (can only pause during upload/processing)
+    const resumeStatus: "uploading" | "processing" =
+      this.state.flowStarted ? "processing" : "uploading";
+
+    // Call abort controller's resume method if available
+    // This allows chunk uploads to continue
+    if (this.abortController?.resume) {
+      try {
+        await this.abortController.resume();
+      } catch {
+        // If resume fails, continue with state update
+      }
+    }
+
+    // Update client state to resume previous status
+    this.updateState({
+      status: resumeStatus,
+      pausedAtNodeId: null,
+    });
   }
 
   /**

@@ -10,6 +10,7 @@ import type { PlatformService, Timeout } from "../services/platform-service";
 import type { WebSocketLike } from "../services/websocket-service";
 import type { SmartChunker, SmartChunkerConfig } from "../smart-chunker";
 import type { ClientStorage } from "../storage/client-storage";
+import { waitForResumeIfPaused } from "../services/abort-controller-service";
 import {
   type OnProgress,
   type OnShouldRetry,
@@ -32,6 +33,7 @@ export type Callbacks = {
   ) => void;
   onSuccess?: (payload: UploadFile) => void;
   onError?: (error: Error | UploadistaError) => void;
+  onAbort?: () => void;
   onStart?: (file: { uploadId: string; size: number | null }) => void;
   onJobStart?: (jobId: string) => void;
   onShouldRetry?: OnShouldRetry;
@@ -84,6 +86,15 @@ export async function performUpload({
   let currentOffset = offset;
 
   try {
+    // Check if paused before starting chunk upload
+    // This allows the upload loop to pause between chunks
+    await waitForResumeIfPaused(abortController);
+
+    // Check if aborted after waiting for resume
+    if (abortController.signal.aborted) {
+      return;
+    }
+
     const res = await uploadChunk({
       uploadId,
       source,

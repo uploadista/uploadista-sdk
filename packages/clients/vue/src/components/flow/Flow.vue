@@ -96,6 +96,8 @@ export interface FlowContextValue {
   abort: UseFlowReturn["abort"];
   /** Pause the current upload */
   pause: UseFlowReturn["pause"];
+  /** Resume a paused upload */
+  resume: UseFlowReturn["resume"];
   /** Reset the upload state and clear all inputs */
   reset: UseFlowReturn["reset"];
 
@@ -120,6 +122,7 @@ const contextValue: FlowContextValue = {
   upload: flow.upload,
   abort: flow.abort,
   pause: flow.pause,
+  resume: flow.resume,
   reset: flow.reset,
   isUploading: flow.isUploading,
   isUploadingFile: flow.isUploadingFile,

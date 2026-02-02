@@ -53,7 +53,7 @@ export default function FlowUploadScreen() {
   });
 
   // Destructure for convenience (same API as useFlowUpload)
-  const { upload, state, abort } = flow;
+  const { upload, state, abort, pause, isPaused } = flow;
 
   console.log("[FlowUpload] Current state:", state);
 
@@ -186,18 +186,32 @@ export default function FlowUploadScreen() {
         <ThemedView variant="section">
           <Button
             title={
-              state.status === "uploading"
-                ? "Cancel Flow"
-                : state.status === "success"
-                  ? "Start New Flow"
-                  : "Start Flow Upload"
+              isPaused
+                ? "Resume Flow"
+                : state.status === "uploading"
+                  ? "Cancel Flow"
+                  : state.status === "success"
+                    ? "Start New Flow"
+                    : "Start Flow Upload"
             }
             onPress={
-              state.status === "uploading" ? () => abort?.() : handleStartFlow
+              isPaused
+                ? handleStartFlow
+                : state.status === "uploading"
+                  ? () => abort?.()
+                  : handleStartFlow
             }
-            loading={state.status === "uploading"}
+            loading={state.status === "uploading" && !isPaused}
             style={styles.button}
           />
+          {state.status === "uploading" && !isPaused && (
+            <Button
+              title="Pause Flow"
+              onPress={() => pause?.()}
+              variant="secondary"
+              style={styles.button}
+            />
+          )}
         </ThemedView>
 
         {/* Results Section */}

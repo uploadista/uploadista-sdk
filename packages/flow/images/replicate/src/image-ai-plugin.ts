@@ -180,13 +180,22 @@ export const imageAiPlugin = (
           // Get API token (static or from credential provider)
           const apiToken = yield* getApiToken(context);
 
+          yield* Effect.logInfo(
+            `[Replicate describeImage] Starting with URL: ${inputUrl}`,
+          );
+
           const output = yield* Effect.tryPromise({
             try: async () => {
               const replicate = new Replicate({
                 auth: apiToken,
               });
 
-              return (await replicate.run(describeImageModelId, {
+              console.log(
+                "[Replicate describeImage] Calling Replicate API with model:",
+                describeImageModelId,
+              );
+
+              const result = await replicate.run(describeImageModelId, {
                 input: {
                   image: inputUrl,
                   top_k: 50,
@@ -202,9 +211,49 @@ export const imageAiPlugin = (
                   max_new_tokens: 768,
                   repetition_penalty: 1,
                 },
-              })) as unknown as string;
+              });
+
+              console.log(
+                "[Replicate describeImage] Raw result type:",
+                typeof result,
+              );
+              console.log(
+                "[Replicate describeImage] Raw result:",
+                JSON.stringify(result, null, 2),
+              );
+
+              // Handle different response formats from Replicate
+              // Some models return arrays, some return strings directly
+              let description: string;
+              if (typeof result === "string") {
+                description = result;
+              } else if (Array.isArray(result) && result.length > 0) {
+                // Some models return output as an array
+                description =
+                  typeof result[0] === "string" ? result[0] : String(result[0]);
+              } else if (result != null) {
+                // Fallback: stringify the result
+                console.log(
+                  "[Replicate describeImage] Fallback: result is not string or array, stringifying",
+                );
+                description = String(result);
+              } else {
+                console.error(
+                  "[Replicate describeImage] ERROR: result is null or undefined",
+                );
+                throw new Error(
+                  `Replicate returned empty or undefined response for image description. Result was: ${result}`,
+                );
+              }
+
+              console.log(
+                "[Replicate describeImage] Final description:",
+                description.substring(0, 100),
+              );
+              return description;
             },
             catch: (error) => {
+              console.error("[Replicate describeImage] Caught error:", error);
               return UploadistaError.fromCode("UNKNOWN_ERROR", {
                 cause: error,
               });
