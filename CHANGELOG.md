@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.3...main
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3...main)
+
+### Features
+
+- Add usage hook to flow engine ([d9c34f51](https://github.com/uploadista/uploadista-sdk/commit/d9c34f51))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.2...v0.1.3
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.2...main)
