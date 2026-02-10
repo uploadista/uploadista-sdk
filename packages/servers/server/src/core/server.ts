@@ -2,6 +2,7 @@ import type { PluginLayer, UploadistaError } from "@uploadista/core";
 import {
   deadLetterQueueService,
   type Flow,
+  FlowLifecycleHook,
   FlowProvider,
   FlowWaitUntil,
   kvCircuitBreakerStoreLayer,
@@ -24,7 +25,7 @@ import { handleFlowError } from "../http-utils";
 import { createFlowEngineLayer, createUploadEngineLayer } from "../layer-utils";
 import { AuthContextServiceLive } from "../service";
 import type { AuthContext } from "../types";
-import { UsageHookServiceLive } from "../usage-hooks/service";
+import { UsageHookService, UsageHookServiceLive } from "../usage-hooks/service";
 import { handleUploadistaRequest } from "./http-handlers/http-handlers";
 import type { ExtractFlowPluginRequirements } from "./plugin-types";
 import type { NotFoundResponse } from "./routes";
@@ -291,6 +292,27 @@ export const createUploadistaServer = async <
   // Create usage hook layer (defaults to no-op if not configured)
   const usageHookLayer = UsageHookServiceLive(usageHooks);
 
+  // Bridge UsageHookService.onFlowComplete to FlowLifecycleHook
+  // so the flow engine can call it reliably from the execution daemon
+  const flowLifecycleHookLayer = Layer.effect(
+    FlowLifecycleHook,
+    Effect.gen(function* () {
+      const usageHookService = yield* UsageHookService;
+      return {
+        onComplete: (ctx) =>
+          usageHookService.onFlowComplete({
+            clientId: ctx.clientId ?? "",
+            operation: "flow",
+            metadata: {
+              jobId: ctx.jobId,
+              flowId: ctx.flowId,
+              status: ctx.status === "completed" ? "success" : "failed",
+            },
+          }),
+      };
+    }),
+  ).pipe(Layer.provide(usageHookLayer));
+
   /**
    * Merge all server layers including plugins.
    *
@@ -304,6 +326,7 @@ export const createUploadistaServer = async <
     effectiveMetricsLayer,
     authCacheLayer,
     usageHookLayer,
+    flowLifecycleHookLayer,
     ...plugins,
     ...(circuitBreakerStoreLayer ? [circuitBreakerStoreLayer] : []),
     ...(dlqLayer ? [dlqLayer] : []),

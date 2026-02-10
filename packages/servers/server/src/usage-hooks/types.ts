@@ -64,6 +64,15 @@ export interface UploadUsageMetadata extends BaseUsageMetadata {
   uploadId?: string;
   /** Duration of the upload in milliseconds */
   duration?: number;
+  /** Storage configuration identifier (for database persistence) */
+  storageId?: string;
+  /** URL of the uploaded file (for database persistence) */
+  url?: string;
+  /** Flow context if this upload was initiated as part of a flow (for double-counting prevention) */
+  flowContext?: {
+    flowId: string;
+    jobId: string;
+  };
 }
 
 /**
