@@ -1,11 +1,19 @@
-import type { RedisArgument, RedisClientType } from "@redis/client";
-
 import { UploadistaError } from "@uploadista/core/errors";
 import { type BaseKvStore, BaseKvStoreService } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
 
+export interface RedisLike {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<unknown>;
+  del(key: string | string[]): Promise<number>;
+  scan(
+    cursor: unknown,
+    options?: { MATCH?: string; COUNT?: number },
+  ): Promise<{ cursor: unknown; keys: string[] }>;
+}
+
 export interface RedisKvStoreConfig {
-  redis: RedisClientType;
+  redis: RedisLike;
 }
 
 // Base Redis KV store that stores raw strings
@@ -34,7 +42,7 @@ export function makeRedisBaseKvStore({
     list: (keyPrefix: string) =>
       Effect.gen(function* (_) {
         const keys = new Set<string>();
-        let cursor: RedisArgument = "0";
+        let cursor: unknown = "0";
 
         do {
           const result = yield* _(
@@ -53,7 +61,7 @@ export function makeRedisBaseKvStore({
           for (const key of result.keys) {
             keys.add(key.replace(keyPrefix, ""));
           }
-        } while (cursor !== "0");
+        } while (cursor !== 0 && cursor !== "0");
 
         return Array.from(keys);
       }),

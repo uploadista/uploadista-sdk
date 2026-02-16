@@ -33,7 +33,7 @@
     "@effect/vitest": "catalog:",
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
-    "ioredis": "5.9.2",
+    "ioredis": "5.9.3",
     "tsdown": "catalog:",
     "vitest": "4.0.18"
   }

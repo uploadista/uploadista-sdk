@@ -1,8 +1,17 @@
-import type { RedisClientType } from "@redis/client";
 import { UploadistaError } from "@uploadista/core/errors";
 import type { EventBroadcaster } from "@uploadista/core/types";
 import { EventBroadcasterService } from "@uploadista/core/types";
 import { Effect, Layer } from "effect";
+
+export interface RedisPubSubLike {
+  publish(channel: string, message: string): Promise<number>;
+  subscribe(
+    channel: string,
+    listener: (message: string, channel: string) => void,
+  ): Promise<void>;
+  unsubscribe(channel: string): Promise<void>;
+  on(event: string, listener: (...args: unknown[]) => void): unknown;
+}
 
 /**
  * Configuration for Redis event broadcaster
@@ -11,12 +20,12 @@ export interface RedisEventBroadcasterConfig {
   /**
    * Redis client for publishing messages
    */
-  redis: RedisClientType;
+  redis: RedisPubSubLike;
   /**
    * Separate Redis client for subscribing to messages
    * (Redis requires a dedicated connection for pub/sub)
    */
-  subscriberRedis: RedisClientType;
+  subscriberRedis: RedisPubSubLike;
 }
 
 /**
