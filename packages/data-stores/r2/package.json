@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/data-store-r2",
   "type": "module",
-  "version": "0.1.4-beta.1",
+  "version": "0.2.0",
   "description": "Cloudflare R2 data store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
