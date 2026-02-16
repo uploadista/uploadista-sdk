@@ -28,7 +28,7 @@
     "nx": "22.4.4",
     "rimraf": "6.1.2",
     "tinyglobby": "0.2.15",
-    "turbo": "2.8.7",
+    "turbo": "2.8.9",
     "typescript": "catalog:"
   },
   "volta": {
