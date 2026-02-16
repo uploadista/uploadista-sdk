@@ -52,6 +52,29 @@ export class FlowWaitUntil extends Context.Tag("FlowWaitUntil")<
   static optional = Effect.serviceOption(FlowWaitUntil);
 }
 
+/**
+ * Optional lifecycle hook for flow execution events.
+ * Called when a flow completes or fails, enabling usage tracking,
+ * billing, and other post-processing directly in the execution pipeline.
+ *
+ * This follows the same optional service pattern as {@link DeadLetterQueueService}.
+ * When provided, the hook fires reliably from the flow daemon — not from
+ * polling endpoints — ensuring it always runs exactly once per flow execution.
+ */
+export class FlowLifecycleHook extends Context.Tag("FlowLifecycleHook")<
+  FlowLifecycleHook,
+  {
+    readonly onComplete: (ctx: {
+      jobId: string;
+      flowId: string;
+      clientId: string | null;
+      status: "completed" | "failed";
+    }) => Effect.Effect<void>;
+  }
+>() {
+  static optional = Effect.serviceOption(FlowLifecycleHook);
+}
+
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadEngine } from "../upload";
 import { DeadLetterQueueService } from "./dead-letter-queue";
@@ -734,6 +757,7 @@ export function createFlowEngine() {
     const kvStore = yield* FlowJobKVStore;
     const uploadEngine = yield* UploadEngine;
     const dlqOption = yield* DeadLetterQueueService.optional;
+    const lifecycleHookOption = yield* FlowLifecycleHook.optional;
 
     const updateJob = (jobId: string, updates: Partial<FlowJob>) =>
       Effect.gen(function* () {
@@ -831,6 +855,23 @@ export function createFlowEngine() {
         );
       });
 
+    // Helper to call lifecycle hook (fire-and-forget)
+    const callLifecycleHook = (ctx: {
+      jobId: string;
+      flowId: string;
+      clientId: string | null;
+      status: "completed" | "failed";
+    }) =>
+      Option.isSome(lifecycleHookOption)
+        ? lifecycleHookOption.value.onComplete(ctx).pipe(
+            Effect.catchAll((error) =>
+              Effect.logWarning(
+                `FlowLifecycleHook.onComplete failed: ${error}`,
+              ),
+            ),
+          )
+        : Effect.void;
+
     /**
      * Captures the current Effect trace context for distributed tracing.
      * Uses Effect's `currentSpan` which properly integrates with @effect/opentelemetry.
@@ -917,6 +958,14 @@ export function createFlowEngine() {
 
             // Cleanup intermediate files
             yield* cleanupIntermediateFiles(jobId, clientId);
+
+            // Call lifecycle hook for flow completion
+            yield* callLifecycleHook({
+              jobId,
+              flowId: flow.id,
+              clientId,
+              status: "completed",
+            });
           }
 
           return flowResult;
@@ -1094,6 +1143,14 @@ export function createFlowEngine() {
                     cause: error,
                   });
             yield* addToDeadLetterQueue(jobId, uploadistaError);
+
+            // Call lifecycle hook for flow failure
+            yield* callLifecycleHook({
+              jobId,
+              flowId: flow.id,
+              clientId,
+              status: "failed",
+            });
 
             throw error;
           }),
@@ -1357,6 +1414,14 @@ export function createFlowEngine() {
 
               // Cleanup intermediate files
               yield* cleanupIntermediateFiles(jobId, clientId);
+
+              // Call lifecycle hook for flow completion (after resume)
+              yield* callLifecycleHook({
+                jobId,
+                flowId: flow.id,
+                clientId: job.clientId,
+                status: "completed",
+              });
             }
 
             return result;
@@ -1505,6 +1570,14 @@ export function createFlowEngine() {
                           cause: error,
                         });
                   yield* addToDeadLetterQueue(jobId, uploadistaError);
+
+                  // Call lifecycle hook for flow failure (after resume)
+                  yield* callLifecycleHook({
+                    jobId,
+                    flowId: flow.id,
+                    clientId: job.clientId,
+                    status: "failed",
+                  });
 
                   throw error;
                 }),

@@ -195,7 +195,7 @@ export const handleUploadChunk = (req: UploadChunkRequest) =>
           metricsService.recordUpload(clientId, fileResult.size, authMetadata),
         );
 
-        // Execute onUploadComplete hook for usage tracking
+        // Execute onUploadComplete hook for usage tracking and billing
         const duration = Date.now() - startTime;
         yield* Effect.forkDaemon(
           usageHookService.onUploadComplete({
@@ -205,6 +205,15 @@ export const handleUploadChunk = (req: UploadChunkRequest) =>
               uploadId,
               fileSize: fileResult.size,
               duration,
+              storageId: fileResult.storage?.id,
+              url: fileResult.url,
+              fileName: fileResult.metadata?.fileName as string | undefined,
+              flowContext: fileResult.flow
+                ? {
+                    flowId: fileResult.flow.flowId,
+                    jobId: fileResult.flow.jobId,
+                  }
+                : undefined,
             },
           }),
         );
