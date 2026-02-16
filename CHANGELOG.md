@@ -1,8 +1,42 @@
 # Changelog
 
-## v0.1.3...main
+## v0.1.3...v0.1.2
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3...main)
+
+### Features
+
+- Add usage hook to flow engine ([d9c34f51](https://github.com/uploadista/uploadista-sdk/commit/d9c34f51))
+
+### Bug Fixes
+
+- **deps:** Update dependency @aws-sdk/client-s3 to v3.981.0 ([f27ce733](https://github.com/uploadista/uploadista-sdk/commit/f27ce733))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260203.0 ([5c80ef0e](https://github.com/uploadista/uploadista-sdk/commit/5c80ef0e))
+- **deps:** Update dependency node-av to v5.2.0 ([b381f065](https://github.com/uploadista/uploadista-sdk/commit/b381f065))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260207.0 ([630b2e61](https://github.com/uploadista/uploadista-sdk/commit/630b2e61))
+- **deps:** Update dependency @google-cloud/storage to v7.19.0 ([cdb0805b](https://github.com/uploadista/uploadista-sdk/commit/cdb0805b))
+- **deps:** Update dependency node-av to v5.2.1 ([282537e6](https://github.com/uploadista/uploadista-sdk/commit/282537e6))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260210.0 ([8791116c](https://github.com/uploadista/uploadista-sdk/commit/8791116c))
+- **deps:** Update opentelemetry-js monorepo ([abde6195](https://github.com/uploadista/uploadista-sdk/commit/abde6195))
+- **deps:** Update dependency @azure/storage-blob to v12.31.0 ([c34ed778](https://github.com/uploadista/uploadista-sdk/commit/c34ed778))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260213.0 ([da3c56be](https://github.com/uploadista/uploadista-sdk/commit/da3c56be))
+- **deps:** Update dependency node-av to v5.2.2 ([83e3ab4b](https://github.com/uploadista/uploadista-sdk/commit/83e3ab4b))
+- Redis dependency version ([e6956472](https://github.com/uploadista/uploadista-sdk/commit/e6956472))
+
+### Chores
+
+- Changelog ([55543670](https://github.com/uploadista/uploadista-sdk/commit/55543670))
+- Release v0.1.4-beta.1 ([056507a9](https://github.com/uploadista/uploadista-sdk/commit/056507a9))
+- Update s3 client ([f2c1ff19](https://github.com/uploadista/uploadista-sdk/commit/f2c1ff19))
+- Nx deps ([6f46760f](https://github.com/uploadista/uploadista-sdk/commit/6f46760f))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+## v0.1.3...v0.1.4-beta.1
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3...v0.1.4-beta.1)
 
 ### Features
 
