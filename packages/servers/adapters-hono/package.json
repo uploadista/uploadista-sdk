@@ -24,7 +24,7 @@
     "clean": "rimraf -rf dist && rimraf -rf .turbo && rimraf tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "4.20260214.0",
+    "@cloudflare/workers-types": "4.20260227.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "@uploadista/event-broadcaster-memory": "workspace:*",
