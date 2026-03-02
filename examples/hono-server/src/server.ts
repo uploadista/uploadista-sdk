@@ -37,7 +37,7 @@ import { redisKvStore } from "@uploadista/kv-store-redis";
 import { OtlpNodeSdkLive } from "@uploadista/observability";
 import { createUploadistaServer } from "@uploadista/server";
 import dotenv from "dotenv";
-import { Hono } from "hono";
+import { Hono, type Env } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
 import { flows } from "./flows";
@@ -47,7 +47,7 @@ const __dirname = dirname(__filename);
 
 dotenv.config();
 
-const app = new Hono();
+const app = new Hono<Env>();
 
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 

@@ -67,8 +67,7 @@ export interface HonoAdapterOptions<TEnv extends Env = Env> {
  */
 export const honoAdapter = <TEnv extends Env = Env>(
   options: HonoAdapterOptions<TEnv> = {},
-  // biome-ignore lint/suspicious/noExplicitAny: Context<any> is required so the handler accepts any Hono env (BlankEnv, custom Env, etc.)
-): ServerAdapter<Context<any>, Response, HonoWebSocketHandler<TEnv>> => {
+): ServerAdapter<Context<TEnv>, Response, HonoWebSocketHandler<TEnv>> => {
   const { authMiddleware } = options;
 
   return {
