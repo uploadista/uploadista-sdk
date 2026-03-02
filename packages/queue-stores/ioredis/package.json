@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/queue-store-ioredis",
   "type": "module",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.1",
   "description": "IORedis-backed flow queue store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
