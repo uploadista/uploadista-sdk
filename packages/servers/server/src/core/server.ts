@@ -4,6 +4,7 @@ import {
   type Flow,
   FlowLifecycleHook,
   FlowProvider,
+  FlowQueueService,
   FlowWaitUntil,
   kvCircuitBreakerStoreLayer,
 } from "@uploadista/core/flow";
@@ -203,6 +204,7 @@ export const createUploadistaServer = async <
   authCacheConfig,
   circuitBreaker = true,
   deadLetterQueue = false,
+  flowQueue,
   healthCheck,
   usageHooks,
 }: UploadistaServerConfig<
@@ -289,6 +291,22 @@ export const createUploadistaServer = async <
       )
     : null;
 
+  // Create flow queue layer if enabled.
+  // FlowQueueService requires FlowEngine (to dispatch jobs) and optionally
+  // DeadLetterQueueService (for the DLQ retry loop — resolved via optional).
+  const flowQueueLayer = flowQueue
+    ? (() => {
+        const queueConfig =
+          flowQueue === true ? {} : (flowQueue.config ?? {});
+        const queueStore =
+          flowQueue === true ? undefined : flowQueue.store;
+        const base = queueStore
+          ? FlowQueueService.make(queueConfig, queueStore)
+          : FlowQueueService.Default(queueConfig);
+        return base.pipe(Layer.provide(flowEngineLayer));
+      })()
+    : null;
+
   // Create usage hook layer (defaults to no-op if not configured)
   const usageHookLayer = UsageHookServiceLive(usageHooks);
 
@@ -330,6 +348,7 @@ export const createUploadistaServer = async <
     ...plugins,
     ...(circuitBreakerStoreLayer ? [circuitBreakerStoreLayer] : []),
     ...(dlqLayer ? [dlqLayer] : []),
+    ...(flowQueueLayer ? [flowQueueLayer] : []),
   );
 
   /**
@@ -564,9 +583,12 @@ export const createUploadistaServer = async <
       const withCircuitBreakerContext = circuitBreakerStoreLayer
         ? Layer.merge(baseRequestContextLayer, circuitBreakerStoreLayer)
         : baseRequestContextLayer;
-      const requestContextLayer = dlqLayer
+      const withDlqContext = dlqLayer
         ? Layer.merge(withCircuitBreakerContext, dlqLayer)
         : withCircuitBreakerContext;
+      const requestContextLayer = flowQueueLayer
+        ? Layer.merge(withDlqContext, flowQueueLayer)
+        : withDlqContext;
 
       // Check for baseUrl/api/ prefix
       if (uploadistaRequest.type === "not-found") {

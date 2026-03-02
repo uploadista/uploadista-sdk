@@ -1,5 +1,6 @@
 import type { PluginLayer, UploadistaError } from "@uploadista/core";
 import type { Flow } from "@uploadista/core/flow";
+import type { FlowQueueConfig, FlowQueueStore } from "@uploadista/core/flow";
 import type {
   BaseEventEmitterService,
   BaseKvStoreService,
@@ -411,6 +412,37 @@ export interface UploadistaServerConfig<
    * ```
    */
   healthCheck?: HealthCheckConfig;
+
+  /**
+   * Optional: Flow queue for bounded concurrent flow execution.
+   *
+   * When enabled, `FlowEngine.runFlow()` delegates to the queue instead of
+   * forking immediately. The queue dispatches flows up to `maxConcurrency`
+   * simultaneously, buffering the rest as `"pending"`.
+   *
+   * Set to `true` to use the default in-memory store (state lost on restart).
+   * Provide a `store` to use a persistent backend such as `RedisFlowQueueStore`.
+   *
+   * When both `flowQueue` and `deadLetterQueue` are enabled, the queue
+   * automatically retries DLQ items on a configurable interval.
+   *
+   * @default undefined (disabled — fire-and-forget behavior preserved)
+   *
+   * @example
+   * ```typescript
+   * // Simple in-memory queue
+   * flowQueue: true
+   *
+   * // Persistent Redis-backed queue with custom concurrency
+   * import { RedisFlowQueueStore } from "@uploadista/queue-store-redis";
+   *
+   * flowQueue: {
+   *   store: new RedisFlowQueueStore({ redis }),
+   *   config: { maxConcurrency: 8, dlqRetryIntervalMs: 60_000 },
+   * }
+   * ```
+   */
+  flowQueue?: boolean | { config?: FlowQueueConfig; store?: FlowQueueStore };
 
   /**
    * Optional: Usage hooks for tracking and billing integration.

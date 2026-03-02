@@ -20,6 +20,8 @@ export type { StreamingConfig } from "../types/data-store";
 export { DEFAULT_STREAMING_CONFIG } from "../types/data-store";
 export * from "./dead-letter-queue";
 export * from "./flow";
+export * from "./flow-queue";
+export * from "./flow-queue-store";
 // Core flow engine
 export { createFlowWithSchema } from "./flow";
 export * from "./flow-engine";
@@ -55,6 +57,8 @@ export { createFlow } from "./typed-flow";
 export * from "./types/dead-letter-item";
 export * from "./types/flow-file";
 export * from "./types/flow-job";
+// Flow Queue types
+export * from "./types/flow-queue-item";
 export * from "./types/flow-types";
 export * from "./types/retry-policy";
 export * from "./types/run-args";

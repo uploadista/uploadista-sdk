@@ -78,6 +78,7 @@ export class FlowLifecycleHook extends Context.Tag("FlowLifecycleHook")<
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadEngine } from "../upload";
 import { DeadLetterQueueService } from "./dead-letter-queue";
+import { FlowQueueDispatchMarker, FlowQueueService } from "./flow-queue";
 import type { FlowEvent } from "./event";
 import type { FlowJob } from "./types/flow-job";
 
@@ -1182,6 +1183,31 @@ export function createFlowEngine() {
         inputs: unknown;
       }) =>
         Effect.gen(function* () {
+          // When FlowQueueService is present, delegate to it for concurrency control,
+          // UNLESS we're already inside the queue's worker dispatch loop (indicated by
+          // FlowQueueDispatchMarker). This prevents infinite re-enqueue cycles.
+          const dispatchMarker = yield* Effect.serviceOption(FlowQueueDispatchMarker);
+          const queueOption = yield* FlowQueueService.optional;
+          if (Option.isSome(queueOption) && Option.isNone(dispatchMarker)) {
+            const queueItem = yield* queueOption.value.enqueue({
+              flowId,
+              storageId,
+              input: inputs,
+              clientId,
+            });
+            const now = queueItem.enqueuedAt;
+            return {
+              id: queueItem.id,
+              flowId,
+              storageId,
+              clientId,
+              status: "pending" as const,
+              tasks: [],
+              createdAt: now,
+              updatedAt: now,
+            } satisfies FlowJob;
+          }
+
           const waitUntil = yield* FlowWaitUntil.optional;
 
           const parsedParams = yield* Effect.try({

@@ -1,0 +1,40 @@
+{
+  "name": "@uploadista/queue-store-ioredis",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "IORedis-backed flow queue store for Uploadista",
+  "license": "MIT",
+  "author": "Uploadista",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit && tsdown",
+    "check": "biome check --write ./src",
+    "format": "biome format --write ./src",
+    "lint": "biome lint --write ./src",
+    "test": "vitest run",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@uploadista/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0",
+    "ioredis": ">=5.0.0 <6.0.0"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@uploadista/typescript-config": "workspace:*",
+    "effect": "catalog:",
+    "ioredis": "5.9.3",
+    "tsdown": "catalog:",
+    "vitest": "4.0.18"
+  }
+}
