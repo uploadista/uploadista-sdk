@@ -43,7 +43,7 @@
     "@uploadista/kv-store-memory": "workspace:*",
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
-    "hono": "^4.0.0",
+    "hono": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "4.0.18",

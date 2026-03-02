@@ -47,7 +47,7 @@ const __dirname = dirname(__filename);
 
 dotenv.config();
 
-const app = new Hono<{ Bindings: { env: unknown } }>();
+const app = new Hono();
 
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
