@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.2.0...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.2.0...dev)
+
+### Features
+
+- Queue system to handle flows ([273f7ad1](https://github.com/uploadista/uploadista-sdk/commit/273f7ad1))
+- Add queue service for flow engine ([8ccbe429](https://github.com/uploadista/uploadista-sdk/commit/8ccbe429))
+
+### Bug Fixes
+
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260214.0 ([a0938d9e](https://github.com/uploadista/uploadista-sdk/commit/a0938d9e))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260227.0 ([69e0d56c](https://github.com/uploadista/uploadista-sdk/commit/69e0d56c))
+
+### Chores
+
+- Update deps ([e342d521](https://github.com/uploadista/uploadista-sdk/commit/e342d521))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.1.3...v0.1.2
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.1.3...main)
