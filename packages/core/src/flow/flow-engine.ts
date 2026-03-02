@@ -246,11 +246,14 @@ export type FlowEngineShape = {
     storageId,
     clientId,
     inputs,
+    jobId,
   }: {
     flowId: string;
     storageId: string;
     clientId: string | null;
     inputs: any;
+    /** Optional job ID to use instead of generating a new UUID. Used by the queue worker to keep the queue item ID and flow job ID in sync. */
+    jobId?: string;
   }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
 
   resumeFlow: <TRequirements>({
@@ -1176,11 +1179,13 @@ export function createFlowEngine() {
         storageId,
         clientId,
         inputs,
+        jobId: providedJobId,
       }: {
         flowId: string;
         storageId: string;
         clientId: string | null;
         inputs: unknown;
+        jobId?: string;
       }) =>
         Effect.gen(function* () {
           // When FlowQueueService is present, delegate to it for concurrency control,
@@ -1218,8 +1223,9 @@ export function createFlowEngine() {
               }),
           });
 
-          // Generate a unique jobId
-          const jobId = crypto.randomUUID();
+          // Generate a unique jobId, or reuse one provided by the queue worker
+          // so the queue item ID and flow job ID stay in sync.
+          const jobId = providedJobId ?? crypto.randomUUID();
           const createdAt = new Date();
 
           // Store initial job metadata

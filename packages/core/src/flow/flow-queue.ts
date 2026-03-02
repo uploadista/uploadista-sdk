@@ -34,6 +34,7 @@
 
 import { Context, Duration, Effect, Layer, Option, Ref, Schedule } from "effect";
 import { UploadistaError } from "../errors";
+import { FlowQueueKVStore, flowQueueKvStore } from "../types/kv-store";
 import { DeadLetterQueueService } from "./dead-letter-queue";
 import type { DeadLetterItem } from "./types/dead-letter-item";
 import { MemoryFlowQueueStore, type FlowQueueStore } from "./flow-queue-store";
@@ -126,6 +127,73 @@ export interface FlowQueueServiceShape {
 }
 
 /**
+ * Build a FlowQueueStore implementation backed by a KvStore<FlowQueueItem>.
+ *
+ * Items are stored as typed JSON values. listByStatus scans the full key list
+ * and filters in memory — acceptable for queue sizes up to a few thousand items.
+ */
+function makeKvStoreFlowQueueStore(
+  kv: import("../types/kv-store").KvStore<FlowQueueItem>,
+): FlowQueueStore {
+  const parseDates = (item: FlowQueueItem): FlowQueueItem => ({
+    ...item,
+    enqueuedAt: new Date(item.enqueuedAt),
+    startedAt: item.startedAt ? new Date(item.startedAt) : undefined,
+    completedAt: item.completedAt ? new Date(item.completedAt) : undefined,
+  });
+
+  return {
+    createItem: (item) =>
+      kv.set(item.id, item).pipe(Effect.map(() => item)),
+
+    getItem: (id) =>
+      kv.get(id).pipe(
+        Effect.map((item) => parseDates(item)),
+        Effect.catchAll(() => Effect.succeed(null as FlowQueueItem | null)),
+      ),
+
+    updateItem: (id, updates) =>
+      Effect.gen(function* () {
+        const existing = yield* kv.get(id).pipe(
+          Effect.map(parseDates),
+          Effect.mapError(() =>
+            UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
+              body: `Queue item ${id} not found`,
+            }),
+          ),
+        );
+        const updated: FlowQueueItem = { ...existing, ...updates };
+        yield* kv.set(id, updated);
+        return updated;
+      }),
+
+    listByStatus: (status) =>
+      Effect.gen(function* () {
+        if (!kv.list) return [];
+        const keys = yield* kv.list();
+        const items: FlowQueueItem[] = [];
+        for (const key of keys) {
+          const item = yield* kv
+            .get(key)
+            .pipe(
+              Effect.map((i) => parseDates(i) as FlowQueueItem | null),
+              Effect.catchAll(() =>
+                Effect.succeed(null as FlowQueueItem | null),
+              ),
+            );
+          if (item && item.status === status) items.push(item);
+        }
+        if (status === "pending") {
+          items.sort((a, b) => a.enqueuedAt.getTime() - b.enqueuedAt.getTime());
+        }
+        return items;
+      }),
+
+    deleteItem: (id) => kv.delete(id),
+  };
+}
+
+/**
  * Effect-TS context tag for the FlowQueueService.
  *
  * Use `FlowQueueService.optional` to resolve it optionally — this is the
@@ -183,6 +251,49 @@ export class FlowQueueService extends Context.Tag("FlowQueueService")<
     return Layer.effect(
       FlowQueueService,
       createFlowQueueService(config, store),
+    );
+  }
+
+  /**
+   * Create a FlowQueueService Layer backed by the application's BaseKvStoreService.
+   *
+   * Items are persisted under the "uploadista:queue-item:" key prefix, using the
+   * same KV store already configured for the server (Redis, Cloudflare KV, etc.).
+   * This is the recommended factory for most deployments — no separate store
+   * dependency is needed beyond the kvStore already wired at server level.
+   *
+   * @param config - Optional queue configuration (maxConcurrency, retry intervals…)
+   * @returns A Layer providing FlowQueueService, requiring FlowEngine and BaseKvStoreService
+   *
+   * @example
+   * ```typescript
+   * // In createUploadistaServer — flowQueue: true uses this automatically
+   * FlowQueueService.fromKvStore({ maxConcurrency: 8 })
+   *   .pipe(Layer.provide(flowEngineLayer), Layer.provide(kvStore))
+   * ```
+   */
+  static fromKvStore(
+    config: FlowQueueConfig = {},
+  ): Layer.Layer<FlowQueueService, never, FlowEngine | FlowQueueKVStore> {
+    return Layer.effect(
+      FlowQueueService,
+      Effect.gen(function* () {
+        const kvStore = yield* FlowQueueKVStore;
+        const store = makeKvStoreFlowQueueStore(kvStore);
+        return yield* createFlowQueueService(config, store);
+      }),
+    );
+  }
+
+  /**
+   * Shorthand for fromKvStore — creates the full layer including the KV store
+   * sub-layer, requiring only FlowEngine and BaseKvStoreService.
+   */
+  static fromBaseKvStore(
+    config: FlowQueueConfig = {},
+  ): Layer.Layer<FlowQueueService, never, FlowEngine | import("../types/kv-store").BaseKvStoreService> {
+    return FlowQueueService.fromKvStore(config).pipe(
+      Layer.provide(flowQueueKvStore),
     );
   }
 }
@@ -251,6 +362,9 @@ function createFlowQueueService(
           storageId: item.storageId,
           clientId: item.clientId,
           inputs: item.input,
+          // Reuse the queue item ID as the flow job ID so clients polling
+          // /jobs/{id}/status get results without a separate ID mapping.
+          jobId: item.id,
         }) as Effect.Effect<FlowJob, UploadistaError, never>
       ).pipe(Effect.provideService(FlowQueueDispatchMarker, true));
 

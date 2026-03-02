@@ -144,6 +144,13 @@ const uploadistaServer = await createUploadistaServer({
   // Enable tracing if OTLP endpoint is configured
   withTracing: isObservabilityEnabled,
   observabilityLayer: OtlpNodeSdkLive,
+  // Capture failed jobs for inspection and retry
+  deadLetterQueue: true,
+  // Queue backed by the same Redis kvStore — no extra client needed.
+  // Limits concurrent flows and auto-retries DLQ items every 30s.
+  flowQueue: {
+    config: { maxConcurrency: 4, dlqRetryIntervalMs: 30_000 },
+  },
 });
 
 app.use(

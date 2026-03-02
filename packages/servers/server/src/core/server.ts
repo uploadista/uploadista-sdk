@@ -300,10 +300,18 @@ export const createUploadistaServer = async <
           flowQueue === true ? {} : (flowQueue.config ?? {});
         const queueStore =
           flowQueue === true ? undefined : flowQueue.store;
+        // When a custom store is provided (e.g. RedisFlowQueueStore), use it directly.
+        // Otherwise back the queue with the application's kvStore — same backend already
+        // used by uploads, flows, and the DLQ, no extra Redis client needed.
         const base = queueStore
-          ? FlowQueueService.make(queueConfig, queueStore)
-          : FlowQueueService.Default(queueConfig);
-        return base.pipe(Layer.provide(flowEngineLayer));
+          ? FlowQueueService.make(queueConfig, queueStore).pipe(
+              Layer.provide(flowEngineLayer),
+            )
+          : FlowQueueService.fromBaseKvStore(queueConfig).pipe(
+              Layer.provide(flowEngineLayer),
+              Layer.provide(kvStore),
+            );
+        return base;
       })()
     : null;
 
