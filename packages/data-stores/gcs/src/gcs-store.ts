@@ -355,7 +355,7 @@ export function gcsStore({
     write: (
       options: DataStoreWriteOptions,
       dependencies: {
-        onProgress?: (chunkSize: number) => void;
+        onProgress?: (chunkSize: number) => Effect.Effect<void>;
       },
     ) => {
       return withUploadMetrics(
@@ -411,7 +411,13 @@ export function gcsStore({
                       callback: (error?: Error | null, data?: Buffer) => void,
                     ) {
                       bytes_received += chunk.length;
-                      onProgress?.(bytes_received);
+                      // GCS uses a Node.js Transform stream (not Effect), so we must
+                      // fire-and-forget. The Effect is always synchronous for WebSocket
+                      // emitters so this resolves immediately in practice.
+                      const progressEffect = onProgress?.(bytes_received);
+                      if (progressEffect) {
+                        Effect.runPromise(progressEffect).catch(() => {});
+                      }
                       callback(null, chunk);
                     },
                   });

@@ -6,8 +6,10 @@ import {
   type UploadStatus,
 } from "@uploadista/client-core";
 import type { UploadFile } from "@uploadista/core/types";
+import { UploadEventType } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
+import { isUploadEvent } from "./event-utils";
 
 // Re-export types from core for convenience
 export type { UploadState, UploadStatus };
@@ -180,6 +182,25 @@ export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
     BrowserUploadInput,
     UploadOptions
   > | null>(null);
+  const currentUploadIdRef = useRef<string | null>(null);
+
+  // Subscribe to WebSocket progress events for granular byte-level updates between TUS chunks
+  useEffect(() => {
+    return uploadClient.subscribeToEvents((event) => {
+      if (!isUploadEvent(event) || event.type !== UploadEventType.UPLOAD_PROGRESS) return;
+      const data = event.data as { id: string; progress: number; total: number };
+      if (data.id !== currentUploadIdRef.current || data.total <= 0) return;
+      setState((prev) => {
+        if (prev.status !== "uploading") return prev;
+        return {
+          ...prev,
+          progress: Math.round((data.progress / data.total) * 100),
+          bytesUploaded: data.progress,
+          totalBytes: data.total,
+        };
+      });
+    });
+  }, [uploadClient.subscribeToEvents]);
 
   // Create UploadManager instance
   useEffect(() => {
@@ -188,11 +209,23 @@ export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
         uploadClient.client.upload(file, opts),
       {
         onStateChange: setState,
-        onProgress: options.onProgress,
+        onProgress: (uploadId, bytesUploaded, totalBytes) => {
+          currentUploadIdRef.current = uploadId;
+          options.onProgress?.(uploadId, bytesUploaded, totalBytes);
+        },
         onChunkComplete: options.onChunkComplete,
-        onSuccess: options.onSuccess,
-        onError: options.onError,
-        onAbort: options.onAbort,
+        onSuccess: (result) => {
+          currentUploadIdRef.current = null;
+          options.onSuccess?.(result);
+        },
+        onError: (error) => {
+          currentUploadIdRef.current = null;
+          options.onError?.(error);
+        },
+        onAbort: () => {
+          currentUploadIdRef.current = null;
+          options.onAbort?.();
+        },
       },
       {
         metadata: options.metadata,
@@ -217,6 +250,7 @@ export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
   }, []);
 
   const reset = useCallback(() => {
+    currentUploadIdRef.current = null;
     managerRef.current?.reset();
   }, []);
 

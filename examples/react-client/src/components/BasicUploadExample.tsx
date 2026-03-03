@@ -10,8 +10,12 @@ export function BasicUploadExample() {
     onError: (error) => {
       console.error("Upload failed:", error);
     },
-    onProgress: (progress) => {
-      console.log("Progress:", `${progress}%`);
+    onProgress: (uploadId, bytesUploaded, totalBytes) => {
+      console.log(
+        "Chunk complete:",
+        uploadId,
+        `${bytesUploaded}/${totalBytes} bytes`,
+      );
     },
   });
 

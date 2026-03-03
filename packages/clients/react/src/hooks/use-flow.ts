@@ -6,9 +6,11 @@ import type {
   InputExecutionState,
 } from "@uploadista/client-core";
 import type { TypedOutput } from "@uploadista/core/flow";
+import { UploadEventType } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
 import { useFlowManagerContext } from "../contexts/flow-manager-context";
+import { isUploadEvent } from "./event-utils";
 
 // Re-export types from core for convenience
 export type { FlowUploadState, FlowUploadStatus, InputExecutionState };
@@ -251,9 +253,29 @@ const initialState: FlowUploadState = {
  * @see {@link useFlowUpload} for a simpler file-only upload hook
  */
 export function useFlow(options: FlowUploadOptions): UseFlowReturn {
-  const { client } = useUploadistaContext();
+  const { client, subscribeToEvents } = useUploadistaContext();
   const { getManager, releaseManager } = useFlowManagerContext();
   const [state, setState] = useState<FlowUploadState>(initialState);
+  const currentUploadIdRef = useRef<string | null>(null);
+
+  // Subscribe to WebSocket progress events for granular byte-level updates during upload phase
+  useEffect(() => {
+    return subscribeToEvents((event) => {
+      if (!isUploadEvent(event) || event.type !== UploadEventType.UPLOAD_PROGRESS) return;
+      const data = event.data as { id: string; progress: number; total: number };
+      if (data.id !== currentUploadIdRef.current || data.total <= 0) return;
+      setState((prev) => {
+        if (prev.status !== "uploading") return prev;
+        return {
+          ...prev,
+          progress: Math.round((data.progress / data.total) * 100),
+          bytesUploaded: data.progress,
+          totalBytes: data.total,
+        };
+      });
+    });
+  }, [subscribeToEvents]);
+
   const [inputMetadata, setInputMetadata] = useState<
     FlowInputMetadata[] | null
   >(null);
@@ -316,6 +338,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
         bytesUploaded: number,
         totalBytes: number | null,
       ) => {
+        currentUploadIdRef.current = uploadId;
         callbacksRef.current.onProgress?.(uploadId, bytesUploaded, totalBytes);
       },
       onChunkComplete: (
@@ -333,12 +356,15 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
         callbacksRef.current.onFlowComplete?.(outputs);
       },
       onSuccess: (outputs: TypedOutput[]) => {
+        currentUploadIdRef.current = null;
         callbacksRef.current.onSuccess?.(outputs);
       },
       onError: (error: Error) => {
+        currentUploadIdRef.current = null;
         callbacksRef.current.onError?.(error);
       },
       onAbort: () => {
+        currentUploadIdRef.current = null;
         callbacksRef.current.onAbort?.();
       },
     };
@@ -427,6 +453,7 @@ export function useFlow(options: FlowUploadOptions): UseFlowReturn {
   }, []);
 
   const reset = useCallback(() => {
+    currentUploadIdRef.current = null;
     managerRef.current?.reset();
     setInputs({});
     setInputStates(new Map());

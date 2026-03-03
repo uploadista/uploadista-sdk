@@ -1,4 +1,4 @@
-import { Effect, Ref } from "effect";
+import { Effect } from "effect";
 import { UploadistaError } from "../errors";
 import { StreamLimiterEffect } from "../streams/stream-limiter";
 import type { DataStore, UploadEvent, UploadFile } from "../types";
@@ -108,8 +108,13 @@ export function writeToStore({
       Effect.sync(() => ({ signal, onAbort })),
       ({ signal: _signal }) =>
         Effect.gen(function* () {
-          // Create a ref to track the last progress emission time for throttling
-          const lastEmitTime = yield* Ref.make(0);
+          // Plain mutable variable for throttle timing.
+          // Must NOT use a Ref here: the onProgress callback is synchronous and
+          // called from within the data-store's stream fiber. Using Effect.runPromise
+          // inside onProgress causes a race condition where all calls capture the same
+          // `now` timestamp before any update runs, so only 1 event fires per PATCH.
+          // A plain let variable updates synchronously, preventing the race.
+          let lastEmitTimeMs = 0;
 
           // Create the stream limiter
           const limiter = StreamLimiterEffect.limit({
@@ -127,33 +132,23 @@ export function writeToStore({
               offset: upload.offset,
             },
             {
-              onProgress: (newOffset: number) => {
-                // Simple throttling using timestamp check
+              onProgress: (newOffset: number): Effect.Effect<void> => {
                 const now = Date.now();
-                Ref.get(lastEmitTime)
-                  .pipe(
-                    Effect.flatMap((lastTime) => {
-                      if (now - lastTime >= uploadProgressInterval) {
-                        return Effect.gen(function* () {
-                          yield* Ref.set(lastEmitTime, now);
-                          yield* eventEmitter.emit(upload.id, {
-                            type: UploadEventType.UPLOAD_PROGRESS,
-                            data: {
-                              id: upload.id,
-                              progress: newOffset,
-                              total: upload.size ?? 0,
-                            },
-                            flow: upload.flow,
-                          });
-                        });
-                      }
-                      return Effect.void;
-                    }),
-                    Effect.runPromise,
-                  )
-                  .catch(() => {
-                    // Ignore errors during progress emission
-                  });
+                if (now - lastEmitTimeMs >= uploadProgressInterval) {
+                  lastEmitTimeMs = now;
+                  return eventEmitter
+                    .emit(upload.id, {
+                      type: UploadEventType.UPLOAD_PROGRESS,
+                      data: {
+                        id: upload.id,
+                        progress: newOffset,
+                        total: upload.size ?? 0,
+                      },
+                      flow: upload.flow,
+                    })
+                    .pipe(Effect.catchAll(() => Effect.void));
+                }
+                return Effect.void;
               },
             },
           );

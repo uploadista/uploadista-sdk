@@ -1201,7 +1201,7 @@ export function createFlowEngine() {
               clientId,
             });
             const now = queueItem.enqueuedAt;
-            return {
+            const pendingJob = {
               id: queueItem.id,
               flowId,
               storageId,
@@ -1211,6 +1211,8 @@ export function createFlowEngine() {
               createdAt: now,
               updatedAt: now,
             } satisfies FlowJob;
+            yield* kvStore.set(queueItem.id, pendingJob);
+            return pendingJob;
           }
 
           const waitUntil = yield* FlowWaitUntil.optional;

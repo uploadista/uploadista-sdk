@@ -113,7 +113,9 @@ export function MultiUploadExample() {
               <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden mb-4">
                 <div
                   className="absolute inset-y-0 left-0 progress-bar-gradient transition-all duration-300 ease-out"
-                  style={{ width: `${multiUpload.state.progress}%` }}
+                  style={{
+                    width: `${multiUpload.state.progress}%`,
+                  }}
                 />
               </div>
 

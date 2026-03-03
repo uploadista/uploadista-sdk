@@ -417,7 +417,7 @@ export function FlowExample() {
             Execute Flow
           </Flow.Submit>
 
-          {/* Progress */}
+          {/* Upload Progress */}
           <Flow.Progress>
             {({ progress, status, bytesUploaded, totalBytes }) =>
               status === "uploading" && (
