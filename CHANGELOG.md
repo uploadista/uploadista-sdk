@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.0-beta.2...dev
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v1.0.0-beta.2...dev)
+
+### Bug Fixes
+
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260301.1 ([fccf37e9](https://github.com/uploadista/uploadista-sdk/commit/fccf37e9))
+- Hono adapater ([8d5ded08](https://github.com/uploadista/uploadista-sdk/commit/8d5ded08))
+- Progress hooked with ws ([4eedb23b](https://github.com/uploadista/uploadista-sdk/commit/4eedb23b))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
 ## v0.2.0...dev
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.2.0...dev)
