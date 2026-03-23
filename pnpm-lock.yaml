@@ -2131,8 +2131,8 @@ importers:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
       ws:
-        specifier: 8.19.0
-        version: 8.19.0
+        specifier: 8.20.0
+        version: 8.20.0
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
@@ -12159,6 +12159,18 @@ packages:
       utf-8-validate:
         optional: true
 
+  ws@8.20.0:
+    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   wsl-utils@0.1.0:
     resolution: {integrity: sha512-h3Fbisa2nKGPxCpm89Hk33lBLsnaGBvctQopaBSOW/uIs6FTe1ATyAnKFJrzVs9vpGdsTe73WF3V4lIsk4Gacw==}
     engines: {node: '>=18'}
@@ -14227,7 +14239,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
-      ws: 8.19.0
+      ws: 8.20.0
     optionalDependencies:
       expo-router: 6.0.15(5a68218f561ac1a7d3478e6c66d4ad8b)
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
@@ -14304,7 +14316,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
-      ws: 8.19.0
+      ws: 8.20.0
     optionalDependencies:
       expo-router: 6.0.15(c72bd7cf2229429578b99f0aff9eeee8)
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0)
@@ -14427,7 +14439,7 @@ snapshots:
 
   '@expo/mcp-tunnel@0.1.0':
     dependencies:
-      ws: 8.19.0
+      ws: 8.20.0
       zod: 3.25.76
       zod-to-json-schema: 3.25.0(zod@3.25.76)
     transitivePeerDependencies:
@@ -24602,6 +24614,8 @@ snapshots:
   ws@8.18.3: {}
 
   ws@8.19.0: {}
+
+  ws@8.20.0: {}
 
   wsl-utils@0.1.0:
     dependencies:
