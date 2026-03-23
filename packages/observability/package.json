@@ -37,7 +37,7 @@
     "@opentelemetry/sdk-trace-web": "2.6.0"
   },
   "peerDependencies": {
-    "@effect/platform": "^0.93.8 || ^0.94.0",
+    "@effect/platform": "^0.93.8 || ^0.94.0 || ^0.96.0",
     "@opentelemetry/semantic-conventions": "^1.33.0",
     "effect": "^3.0.0"
   },
