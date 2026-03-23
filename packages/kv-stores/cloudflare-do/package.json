@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "@cloudflare/workers-types": "4.20260316.1"
+    "@cloudflare/workers-types": "4.20260317.1"
   },
   "peerDependencies": {
     "effect": "^3.0.0"
