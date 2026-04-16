@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
-    "@redis/client": "5.11.0",
+    "@redis/client": "5.12.1",
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
