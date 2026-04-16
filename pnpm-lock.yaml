@@ -830,8 +830,8 @@ importers:
         specifier: '>=15.0.0'
         version: 17.0.9(expo@54.0.25)(react-native-web@0.21.2(react-dom@19.2.4(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0))(react@19.1.0)
       expo-crypto:
-        specifier: 55.0.10
-        version: 55.0.10(expo@54.0.25)
+        specifier: 55.0.14
+        version: 55.0.14(expo@54.0.25)
       expo-document-picker:
         specifier: '>=12.0.0'
         version: 14.0.7(expo@54.0.25)
@@ -6813,6 +6813,7 @@ packages:
   '@xmldom/xmldom@0.8.11':
     resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
@@ -8143,8 +8144,8 @@ packages:
       expo: '*'
       react-native: '*'
 
-  expo-crypto@55.0.10:
-    resolution: {integrity: sha512-3emt67pWch07F7DPQutn7CUpaiCJI8OOFxCGiwmzeSqSjuWP9upGOXkLQNVWf+29KZQRTVgf88LhDC2GFshMNA==}
+  expo-crypto@55.0.14:
+    resolution: {integrity: sha512-TfAADBGZNNv9OOmdKFJCz54wDj87ufxtzQNSY+Roycpm8e5tuCnDIL7EjqUOmNTGH99Jj8ftPGFt4KGG2Ii2fg==}
     peerDependencies:
       expo: '*'
 
@@ -19477,7 +19478,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-crypto@55.0.10(expo@54.0.25):
+  expo-crypto@55.0.14(expo@54.0.25):
     dependencies:
       expo: 54.0.25(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0))(react@19.1.0)
 
