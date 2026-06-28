@@ -1828,8 +1828,8 @@ importers:
         specifier: 'catalog:'
         version: 0.29.0(effect@3.19.19)(vitest@4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.0.10)(happy-dom@20.4.0)(jiti@2.6.1)(jsdom@29.0.0(@noble/hashes@1.8.0))(lightningcss@1.30.2)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.2))
       '@types/bun':
-        specifier: 1.3.11
-        version: 1.3.11
+        specifier: 1.3.12
+        version: 1.3.12
       '@uploadista/typescript-config':
         specifier: workspace:*
         version: link:../../typescript-config
@@ -6409,8 +6409,8 @@ packages:
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
-  '@types/bun@1.3.11':
-    resolution: {integrity: sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg==}
+  '@types/bun@1.3.12':
+    resolution: {integrity: sha512-DBv81elK+/VSwXHDlnH3Qduw+KxkTIWi7TXkAeh24zpi5l0B2kUg9Ga3tb4nJaPcOFswflgi/yAvMVBPrxMB+A==}
 
   '@types/caseless@0.12.5':
     resolution: {integrity: sha512-hWtVTC2q7hc7xZ/RLbxapMvDMgUnDvKvMOpKal4DrMyfGBUfB1oKaZlIRr6mJL+If3bAP6sV/QneGzF6tJjZDg==}
@@ -7307,8 +7307,8 @@ packages:
     engines: {node: '>=20.19.0'}
     hasBin: true
 
-  bun-types@1.3.11:
-    resolution: {integrity: sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg==}
+  bun-types@1.3.12:
+    resolution: {integrity: sha512-HqOLj5PoFajAQciOMRiIZGNoKxDJSr6qigAttOX40vJuSp6DN/CxWp9s3C1Xwm4oH7ybueITwiaOcWXoYVoRkA==}
 
   bundle-name@4.1.0:
     resolution: {integrity: sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q==}
@@ -17351,9 +17351,9 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 24.3.1
 
-  '@types/bun@1.3.11':
+  '@types/bun@1.3.12':
     dependencies:
-      bun-types: 1.3.11
+      bun-types: 1.3.12
 
   '@types/caseless@0.12.5': {}
 
@@ -18430,7 +18430,7 @@ snapshots:
       unconfig: 7.5.0
       yaml: 2.8.2
 
-  bun-types@1.3.11:
+  bun-types@1.3.12:
     dependencies:
       '@types/node': 24.3.1
 
