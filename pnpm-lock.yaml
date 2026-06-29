@@ -771,8 +771,8 @@ importers:
         specifier: workspace:*
         version: link:../../core
       js-base64:
-        specifier: 3.7.8
-        version: 3.7.8
+        specifier: 3.8.0
+        version: 3.8.0
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -793,8 +793,8 @@ importers:
         specifier: workspace:*
         version: link:../../core
       js-base64:
-        specifier: 3.7.8
-        version: 3.7.8
+        specifier: 3.8.0
+        version: 3.8.0
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -9428,6 +9428,9 @@ packages:
 
   js-base64@3.7.8:
     resolution: {integrity: sha512-hNngCeKxIUQiEUN3GPJOkz4wF/YvdUdbNL9hsBcMQTkKzboD7T/q3OYOuuPZLUE6dBxSGpwhk5mwuDud7JVAow==}
+
+  js-base64@3.8.0:
+    resolution: {integrity: sha512-65kvbemyZhj+ExQt1PEFyBEjL5vAHysu1lJdW1AwhhChkO8ZBPizYk/m9GVrpbS2Je1hF+UYZ+6KywqtZV8mHw==}
 
   js-beautify@1.15.4:
     resolution: {integrity: sha512-9/KXeZUKKJwqCXUdBxFJ3vPh467OCckSBmYDwSK/EtV090K+iMJ7zx2S3HLVDIWFQdqMIsZWbnaGiba18aWhaA==}
@@ -21286,6 +21289,8 @@ snapshots:
   joycon@3.1.1: {}
 
   js-base64@3.7.8: {}
+
+  js-base64@3.8.0: {}
 
   js-beautify@1.15.4:
     dependencies:
