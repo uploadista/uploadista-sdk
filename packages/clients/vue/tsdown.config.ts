@@ -15,6 +15,8 @@ export default defineConfig({
   plugins: [Vue({ isProduction: true })],
   dts: { vue: true },
   outDir: "dist",
-  external: ["vue"],
+  deps: {
+    neverBundle: ["vue"],
+  },
   fixedExtension: true,
 });
