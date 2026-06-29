@@ -824,14 +824,14 @@ importers:
         specifier: workspace:*
         version: link:../react-native-core
       expo-blob:
-        specifier: ^0.1.6 || ^55.0.0
+        specifier: ^0.1.6 || ^55.0.0 || ^56.0.0
         version: 0.1.6(expo@54.0.25)
       expo-camera:
         specifier: '>=15.0.0'
         version: 17.0.9(expo@54.0.25)(react-native-web@0.21.2(react-dom@19.2.7(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0))(react@19.1.0)
       expo-crypto:
-        specifier: 55.0.10
-        version: 55.0.10(expo@54.0.25)
+        specifier: 56.0.3
+        version: 56.0.3(expo@54.0.25)
       expo-document-picker:
         specifier: '>=12.0.0'
         version: 14.0.7(expo@54.0.25)
@@ -8374,8 +8374,8 @@ packages:
       expo: '*'
       react-native: '*'
 
-  expo-crypto@55.0.10:
-    resolution: {integrity: sha512-3emt67pWch07F7DPQutn7CUpaiCJI8OOFxCGiwmzeSqSjuWP9upGOXkLQNVWf+29KZQRTVgf88LhDC2GFshMNA==}
+  expo-crypto@56.0.3:
+    resolution: {integrity: sha512-Ehiub29JVhN69RbMfaBoZbrrT55o9zU5YojHg48W63aCSN7lGyFz5g8JdUN3mXMaZCAUoExdk24NJPvMgbFZ+w==}
     peerDependencies:
       expo: '*'
 
@@ -19927,7 +19927,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-crypto@55.0.10(expo@54.0.25):
+  expo-crypto@56.0.3(expo@54.0.25):
     dependencies:
       expo: 54.0.25(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0))(react@19.1.0)
 
