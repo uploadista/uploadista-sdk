@@ -23,7 +23,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "node-av": "5.2.2",
+    "node-av": "6.1.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*"
   },
