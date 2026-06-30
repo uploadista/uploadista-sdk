@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@google-cloud/storage": "7.19.0",
+    "@google-cloud/storage": "7.21.0",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*"
   },
