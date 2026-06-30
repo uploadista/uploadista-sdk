@@ -824,14 +824,14 @@ importers:
         specifier: workspace:*
         version: link:../react-native-core
       expo-blob:
-        specifier: ^0.1.6 || ^55.0.0 || ^56.0.0
+        specifier: ^0.1.6 || ^55.0.0 || ^56.0.0 || ^57.0.0
         version: 0.1.6(expo@54.0.25)
       expo-camera:
         specifier: '>=15.0.0'
         version: 17.0.9(expo@54.0.25)(react-native-web@0.21.2(react-dom@19.2.7(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0))(react@19.1.0)
       expo-crypto:
-        specifier: 56.0.3
-        version: 56.0.3(expo@54.0.25)
+        specifier: 57.0.0
+        version: 57.0.0(expo@54.0.25)
       expo-document-picker:
         specifier: '>=12.0.0'
         version: 14.0.7(expo@54.0.25)
@@ -8509,8 +8509,8 @@ packages:
       expo: '*'
       react-native: '*'
 
-  expo-crypto@56.0.3:
-    resolution: {integrity: sha512-Ehiub29JVhN69RbMfaBoZbrrT55o9zU5YojHg48W63aCSN7lGyFz5g8JdUN3mXMaZCAUoExdk24NJPvMgbFZ+w==}
+  expo-crypto@57.0.0:
+    resolution: {integrity: sha512-vd0kdUO14h9CgPcgzcR8nmy/wgz3zSOhQmucnbDdyn/z9eAeR2IB5BKaDvPbg/lrIT+KweGAV5IlrK5PZFqUSQ==}
     peerDependencies:
       expo: '*'
 
@@ -18528,7 +18528,7 @@ snapshots:
     dependencies:
       '@volar/language-core': 2.4.28
       '@vue/compiler-dom': 3.5.30
-      '@vue/shared': 3.5.30
+      '@vue/shared': 3.5.39
       alien-signals: 3.2.1
       muggle-string: 0.4.1
       path-browserify: 1.0.1
@@ -20247,7 +20247,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-crypto@56.0.3(expo@54.0.25):
+  expo-crypto@57.0.0(expo@54.0.25):
     dependencies:
       expo: 54.0.25(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.15)(react-native@0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0))(react@19.1.0)
 
