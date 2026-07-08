@@ -1,5 +1,75 @@
 # Changelog
 
+## v0.2.0...v1.0.0
+
+[compare changes](https://github.com/uploadista/uploadista-sdk/compare/v0.2.0...v1.0.0)
+
+### Features
+
+- Queue system to handle flows ([273f7ad1](https://github.com/uploadista/uploadista-sdk/commit/273f7ad1))
+- Add queue service for flow engine ([8ccbe429](https://github.com/uploadista/uploadista-sdk/commit/8ccbe429))
+
+### Bug Fixes
+
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260214.0 ([a0938d9e](https://github.com/uploadista/uploadista-sdk/commit/a0938d9e))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260227.0 ([69e0d56c](https://github.com/uploadista/uploadista-sdk/commit/69e0d56c))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260301.1 ([fccf37e9](https://github.com/uploadista/uploadista-sdk/commit/fccf37e9))
+- Hono version ([5b13bd99](https://github.com/uploadista/uploadista-sdk/commit/5b13bd99))
+- Hono adapater ([8d5ded08](https://github.com/uploadista/uploadista-sdk/commit/8d5ded08))
+- Progress hooked with ws ([4eedb23b](https://github.com/uploadista/uploadista-sdk/commit/4eedb23b))
+- **deps:** Update opentelemetry-js monorepo ([211f19dd](https://github.com/uploadista/uploadista-sdk/commit/211f19dd))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260305.1 ([fa0f946b](https://github.com/uploadista/uploadista-sdk/commit/fa0f946b))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260313.1 ([82c1c15c](https://github.com/uploadista/uploadista-sdk/commit/82c1c15c))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260316.1 ([607ed6de](https://github.com/uploadista/uploadista-sdk/commit/607ed6de))
+- **deps:** Update dependency @effect/opentelemetry to v0.62.0 ([437636fc](https://github.com/uploadista/uploadista-sdk/commit/437636fc))
+- **deps:** Update dependency ws to v8.20.0 ([c2e3c555](https://github.com/uploadista/uploadista-sdk/commit/c2e3c555))
+- **deps:** Update dependency @effect/opentelemetry to v0.63.0 ([1fbe3d39](https://github.com/uploadista/uploadista-sdk/commit/1fbe3d39))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260317.1 ([5d8fe1b8](https://github.com/uploadista/uploadista-sdk/commit/5d8fe1b8))
+- **deps:** Update dependency ws to v8.20.1 ([ad536af7](https://github.com/uploadista/uploadista-sdk/commit/ad536af7))
+- **deps:** Update dependency @cf-wasm/photon to v0.3.5 ([d3e1b580](https://github.com/uploadista/uploadista-sdk/commit/d3e1b580))
+- **deps:** Update dependency uuid to v14 ([ed509351](https://github.com/uploadista/uploadista-sdk/commit/ed509351))
+- **deps:** Update azure-sdk-for-js monorepo to v12.32.0 ([77a4b5aa](https://github.com/uploadista/uploadista-sdk/commit/77a4b5aa))
+- Update for typescript 6 ([2eb527b1](https://github.com/uploadista/uploadista-sdk/commit/2eb527b1))
+- **deps:** Update dependency @cf-wasm/photon to v0.3.6 ([c5933c36](https://github.com/uploadista/uploadista-sdk/commit/c5933c36))
+- **deps:** Update dependency @cloudflare/workers-types to v4.20260629.1 ([4dc16bf1](https://github.com/uploadista/uploadista-sdk/commit/4dc16bf1))
+- **deps:** Update dependency ws to v8.21.0 ([5f0ce933](https://github.com/uploadista/uploadista-sdk/commit/5f0ce933))
+- **deps:** Update dependency node-av to v6 ([6cf82390](https://github.com/uploadista/uploadista-sdk/commit/6cf82390))
+- **deps:** Update dependency @azure/storage-blob to v12.33.0 ([7b44b11b](https://github.com/uploadista/uploadista-sdk/commit/7b44b11b))
+- **deps:** Update dependency js-base64 to v3.8.0 ([9476b6b2](https://github.com/uploadista/uploadista-sdk/commit/9476b6b2))
+- **deps:** Update dependency sharp to v0.35.2 ([7ef0ec74](https://github.com/uploadista/uploadista-sdk/commit/7ef0ec74))
+- Remove cloudflare from check dep ([61f8507f](https://github.com/uploadista/uploadista-sdk/commit/61f8507f))
+- **deps:** Update dependency sharp to v0.35.3 ([00edc8ab](https://github.com/uploadista/uploadista-sdk/commit/00edc8ab))
+- Allow node av for pnpm ([1ad93566](https://github.com/uploadista/uploadista-sdk/commit/1ad93566))
+- **deps:** Update dependency @cloudflare/workers-types to v5 ([52678f7d](https://github.com/uploadista/uploadista-sdk/commit/52678f7d))
+- Fix build errors due to deps upgrades, mainly typescript 6, tsdown and small packages ([50f120ea](https://github.com/uploadista/uploadista-sdk/commit/50f120ea))
+- Linter biome config ([ac25619e](https://github.com/uploadista/uploadista-sdk/commit/ac25619e))
+- **lint:** Resolve biome check errors ([f593c16f](https://github.com/uploadista/uploadista-sdk/commit/f593c16f))
+
+### Chores
+
+- Update deps ([e342d521](https://github.com/uploadista/uploadista-sdk/commit/e342d521))
+- Changelog ([17fff5c8](https://github.com/uploadista/uploadista-sdk/commit/17fff5c8))
+- Release v1.0.0-beta.1 ([687e1c80](https://github.com/uploadista/uploadista-sdk/commit/687e1c80))
+- Release v1.0.0-beta.2 ([3304321b](https://github.com/uploadista/uploadista-sdk/commit/3304321b))
+- Changelog ([82f4a846](https://github.com/uploadista/uploadista-sdk/commit/82f4a846))
+- Release v1.0.0-beta.3 ([df4687c2](https://github.com/uploadista/uploadista-sdk/commit/df4687c2))
+- Deps ([a77b5fdf](https://github.com/uploadista/uploadista-sdk/commit/a77b5fdf))
+- Upgrade deps ([1e0afca2](https://github.com/uploadista/uploadista-sdk/commit/1e0afca2))
+- Update deps ([21167bcf](https://github.com/uploadista/uploadista-sdk/commit/21167bcf))
+- Release v1.0.0-beta.4 ([072992a9](https://github.com/uploadista/uploadista-sdk/commit/072992a9))
+- Changelog ([5b930a5a](https://github.com/uploadista/uploadista-sdk/commit/5b930a5a))
+- Upgrade deps ([1b906a7e](https://github.com/uploadista/uploadista-sdk/commit/1b906a7e))
+- Release v1.0.0 ([c211ee1e](https://github.com/uploadista/uploadista-sdk/commit/c211ee1e))
+
+### Tests
+
+- Fix onProgress callbacks to return Effect and update stale react assertion ([71e46a8e](https://github.com/uploadista/uploadista-sdk/commit/71e46a8e))
+
+### ❤️ Contributors
+
+- DenisLaboureyras ([@DenisLaboureyras](https://github.com/DenisLaboureyras))
+
+
 ## v1.0.0-beta.3...v1.0.0-beta.4
 
 [compare changes](https://github.com/uploadista/uploadista-sdk/compare/v1.0.0-beta.2...v1.0.0-beta.4)
