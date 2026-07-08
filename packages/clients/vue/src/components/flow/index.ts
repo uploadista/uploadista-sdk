@@ -54,8 +54,6 @@ export type { FlowContextValue, FlowProps } from "./Flow.vue";
 // Root component
 export { default as Flow } from "./Flow.vue";
 export { default as FlowCancel } from "./FlowCancel.vue";
-export { default as FlowPause } from "./FlowPause.vue";
-export { default as FlowResume } from "./FlowResume.vue";
 export type {
   FlowDropZoneProps,
   FlowDropZoneSlotProps,
@@ -80,10 +78,12 @@ export type { FlowInputsSlotProps } from "./FlowInputs.vue";
 export { default as FlowInputs } from "./FlowInputs.vue";
 export type { FlowInputUrlFieldProps } from "./FlowInputUrlField.vue";
 export { default as FlowInputUrlField } from "./FlowInputUrlField.vue";
+export { default as FlowPause } from "./FlowPause.vue";
 export type { FlowProgressSlotProps } from "./FlowProgress.vue";
 // Status primitives
 export { default as FlowProgress } from "./FlowProgress.vue";
 export { default as FlowReset } from "./FlowReset.vue";
+export { default as FlowResume } from "./FlowResume.vue";
 export type { FlowStatusSlotProps } from "./FlowStatus.vue";
 export { default as FlowStatus } from "./FlowStatus.vue";
 // Action primitives

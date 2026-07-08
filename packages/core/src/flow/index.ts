@@ -12,6 +12,7 @@ export type { Flow, FlowData } from "./flow";
 // Type registries (separate registries for input and output types)
 export * from "./input-type-registry";
 export * from "./output-type-registry";
+
 // Built-in node types (auto-registers on import)
 import "./node-types";
 
@@ -23,6 +24,8 @@ export * from "./flow";
 // Core flow engine
 export { createFlowWithSchema } from "./flow";
 export * from "./flow-engine";
+export * from "./flow-queue";
+export * from "./flow-queue-store";
 export * from "./node";
 // Node types and interfaces
 export { createFlowNode, NodeType } from "./node";
@@ -55,6 +58,8 @@ export { createFlow } from "./typed-flow";
 export * from "./types/dead-letter-item";
 export * from "./types/flow-file";
 export * from "./types/flow-job";
+// Flow Queue types
+export * from "./types/flow-queue-item";
 export * from "./types/flow-types";
 export * from "./types/retry-policy";
 export * from "./types/run-args";

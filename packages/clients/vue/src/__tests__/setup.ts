@@ -74,11 +74,7 @@ afterEach(() => {
 });
 
 // Helper to create a mock File
-export function createMockFile(
-  name: string,
-  size: number,
-  type: string,
-): File {
+export function createMockFile(name: string, size: number, type: string): File {
   const buffer = new ArrayBuffer(size);
   const blob = new Blob([buffer], { type });
   return new File([blob], name, { type });

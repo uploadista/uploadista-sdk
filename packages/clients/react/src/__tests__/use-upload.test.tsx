@@ -1,6 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi, beforeEach, type MockInstance } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
 import { UploadistaProvider } from "../components/uploadista-provider";
 import { useUpload } from "../hooks/use-upload";
 
@@ -42,7 +49,8 @@ vi.mock("@uploadista/client-browser", () => ({
 }));
 
 vi.mock("@uploadista/client-core", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@uploadista/client-core")>();
+  const actual =
+    await importOriginal<typeof import("@uploadista/client-core")>();
 
   // Use a proper class mock
   class MockUploadManager {
@@ -137,7 +145,9 @@ describe("useUpload", () => {
       expect(typeof result.current.metrics.getInsights).toBe("function");
       expect(typeof result.current.metrics.exportMetrics).toBe("function");
       expect(typeof result.current.metrics.getNetworkMetrics).toBe("function");
-      expect(typeof result.current.metrics.getNetworkCondition).toBe("function");
+      expect(typeof result.current.metrics.getNetworkCondition).toBe(
+        "function",
+      );
       expect(typeof result.current.metrics.resetMetrics).toBe("function");
     });
   });
@@ -177,11 +187,26 @@ describe("useUpload", () => {
 
       expect(uploadManagerConstructorCalls.length).toBeGreaterThan(0);
       const callbacks = uploadManagerConstructorCalls[0][1];
-      expect(callbacks.onProgress).toBe(onProgress);
+
+      // onChunkComplete is forwarded to the UploadManager by reference.
       expect(callbacks.onChunkComplete).toBe(onChunkComplete);
-      expect(callbacks.onSuccess).toBe(onSuccess);
-      expect(callbacks.onError).toBe(onError);
-      expect(callbacks.onAbort).toBe(onAbort);
+
+      // The remaining callbacks are wrapped by the hook (to track the current
+      // upload id), so they are not the same reference but must forward to the
+      // user-provided callbacks.
+      callbacks.onProgress("upload-1", 10, 100);
+      expect(onProgress).toHaveBeenCalledWith("upload-1", 10, 100);
+
+      const result = { id: "upload-1" };
+      callbacks.onSuccess(result);
+      expect(onSuccess).toHaveBeenCalledWith(result);
+
+      const error = new Error("boom");
+      callbacks.onError(error);
+      expect(onError).toHaveBeenCalledWith(error);
+
+      callbacks.onAbort();
+      expect(onAbort).toHaveBeenCalled();
     });
 
     it("should pass options to UploadManager", () => {
@@ -293,7 +318,9 @@ describe("useUpload", () => {
     it("should throw when used outside provider", () => {
       expect(() => {
         renderHook(() => useUpload());
-      }).toThrow("useUploadistaContext must be used within an UploadistaProvider");
+      }).toThrow(
+        "useUploadistaContext must be used within an UploadistaProvider",
+      );
     });
   });
 

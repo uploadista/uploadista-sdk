@@ -15,10 +15,10 @@ import type { FilePickResult } from "../types";
 
 // Re-export types for convenience
 export type {
+  FlowInputMetadata,
   FlowUploadState,
   FlowUploadStatus,
   InputExecutionState,
-  FlowInputMetadata,
 };
 
 // ============ FLOW CONTEXT ============

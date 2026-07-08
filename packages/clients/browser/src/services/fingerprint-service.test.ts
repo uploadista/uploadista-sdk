@@ -18,7 +18,7 @@ describe("createFingerprintService", () => {
 
       const fingerprint = await service.computeFingerprint(
         file,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       // Should return a 64-character hex string (SHA-256)
@@ -32,7 +32,7 @@ describe("createFingerprintService", () => {
 
       const fingerprint = await service.computeFingerprint(
         blob,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       expect(fingerprint).toHaveLength(64);
@@ -47,11 +47,11 @@ describe("createFingerprintService", () => {
 
       const fingerprint1 = await service.computeFingerprint(
         file1,
-        "https://api.example.com"
+        "https://api.example.com",
       );
       const fingerprint2 = await service.computeFingerprint(
         file2,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       expect(fingerprint1).toBe(fingerprint2);
@@ -59,16 +59,20 @@ describe("createFingerprintService", () => {
 
     it("should return different fingerprint for different files", async () => {
       const service = createFingerprintService();
-      const file1 = new File(["Content A"], "file1.txt", { type: "text/plain" });
-      const file2 = new File(["Content B"], "file2.txt", { type: "text/plain" });
+      const file1 = new File(["Content A"], "file1.txt", {
+        type: "text/plain",
+      });
+      const file2 = new File(["Content B"], "file2.txt", {
+        type: "text/plain",
+      });
 
       const fingerprint1 = await service.computeFingerprint(
         file1,
-        "https://api.example.com"
+        "https://api.example.com",
       );
       const fingerprint2 = await service.computeFingerprint(
         file2,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       expect(fingerprint1).not.toBe(fingerprint2);
@@ -82,11 +86,11 @@ describe("createFingerprintService", () => {
 
       const fingerprint1 = await service.computeFingerprint(
         file,
-        "https://api1.example.com"
+        "https://api1.example.com",
       );
       const fingerprint2 = await service.computeFingerprint(
         file,
-        "https://api2.example.com"
+        "https://api2.example.com",
       );
 
       // The current implementation ignores the endpoint
@@ -99,7 +103,7 @@ describe("createFingerprintService", () => {
 
       const fingerprint = await service.computeFingerprint(
         file,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       expect(fingerprint).toHaveLength(64);
@@ -113,7 +117,7 @@ describe("createFingerprintService", () => {
 
       const fingerprint = await service.computeFingerprint(
         blob,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       expect(fingerprint).toHaveLength(64);

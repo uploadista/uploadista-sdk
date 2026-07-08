@@ -528,7 +528,7 @@ describe("AzureStore - Basic Upload Tests", () => {
               offset: 0,
             },
             {
-              onProgress: (offset) => progressUpdates.push(offset),
+              onProgress: (offset) => Effect.sync(() => { progressUpdates.push(offset); }),
             },
           );
 
@@ -564,7 +564,7 @@ describe("AzureStore - Basic Upload Tests", () => {
               offset: 0,
             },
             {
-              onProgress: (offset) => progressUpdates.push(offset),
+              onProgress: (offset) => Effect.sync(() => { progressUpdates.push(offset); }),
             },
           );
 

@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-redis",
   "type": "module",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "description": "Redis KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -26,15 +26,15 @@
     "@uploadista/core": "workspace:*"
   },
   "peerDependencies": {
-    "@redis/client": ">=5.8.0 <6.0.0",
+    "@redis/client": ">=5.8.0 <7.0.0",
     "effect": "^3.0.0"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
-    "@redis/client": "5.11.0",
+    "@redis/client": "6.1.0",
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.18"
+    "vitest": "4.1.10"
   }
 }

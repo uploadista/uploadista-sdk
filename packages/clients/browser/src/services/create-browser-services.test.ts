@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createBrowserServices, type BrowserServiceOptions } from "./create-browser-services";
+import {
+  type BrowserServiceOptions,
+  createBrowserServices,
+} from "./create-browser-services";
 
 describe("createBrowserServices", () => {
   it("should create a service container with default options", () => {
@@ -186,7 +189,7 @@ describe("createBrowserServices", () => {
 
       const fingerprint = await services.fingerprintService.computeFingerprint(
         file,
-        "https://api.example.com"
+        "https://api.example.com",
       );
 
       expect(fingerprint).toBeDefined();
@@ -216,7 +219,7 @@ describe("createBrowserServices", () => {
       // 4. Compute fingerprint for deduplication
       const fingerprint = await services.fingerprintService.computeFingerprint(
         file,
-        "https://api.example.com"
+        "https://api.example.com",
       );
       expect(fingerprint).toHaveLength(64);
 
@@ -231,7 +234,7 @@ describe("createBrowserServices", () => {
           id: uploadId,
           fingerprint,
           status: "pending",
-        })
+        }),
       );
 
       // 7. Retrieve stored state

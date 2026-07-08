@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/client-browser",
   "type": "module",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "description": "Browser client for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -35,12 +35,12 @@
   "dependencies": {
     "@uploadista/client-core": "workspace:*",
     "@uploadista/core": "workspace:*",
-    "js-base64": "3.7.8"
+    "js-base64": "3.8.0"
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
     "happy-dom": "20.4.0",
     "tsdown": "catalog:",
-    "vitest": "4.0.18"
+    "vitest": "4.1.10"
   }
 }

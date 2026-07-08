@@ -3,11 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { useDragDrop } from "../hooks/use-drag-drop";
 
 // Helper to create mock files
-function createMockFile(
-  name: string,
-  size: number,
-  type: string,
-): File {
+function createMockFile(name: string, size: number, type: string): File {
   const file = new File(["x".repeat(size)], name, { type });
   Object.defineProperty(file, "size", { value: size });
   return file;
@@ -175,7 +171,9 @@ describe("useDragDrop", () => {
     it("should reset drag state on drop", () => {
       const { result } = renderHook(() => useDragDrop());
       const enterEvent = createDragEvent([]);
-      const dropEvent = createDragEvent([createMockFile("test.txt", 100, "text/plain")]);
+      const dropEvent = createDragEvent([
+        createMockFile("test.txt", 100, "text/plain"),
+      ]);
 
       act(() => {
         result.current.dragHandlers.onDragEnter(enterEvent);
@@ -334,7 +332,11 @@ describe("useDragDrop", () => {
       const onValidationError = vi.fn();
       const onFilesReceived = vi.fn();
       const { result } = renderHook(() =>
-        useDragDrop({ accept: ["image/*"], onValidationError, onFilesReceived }),
+        useDragDrop({
+          accept: ["image/*"],
+          onValidationError,
+          onFilesReceived,
+        }),
       );
 
       const file = createMockFile("doc.txt", 100, "text/plain");

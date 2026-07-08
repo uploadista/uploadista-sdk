@@ -64,7 +64,9 @@ export type UploadistaErrorCode =
   | "PDF_ENCRYPTED"
   | "PDF_CORRUPTED"
   | "PAGE_RANGE_INVALID"
-  | "CIRCUIT_BREAKER_OPEN";
+  | "CIRCUIT_BREAKER_OPEN"
+  | "QUEUE_ITEM_NOT_FOUND"
+  | "QUEUE_ITEM_ALREADY_RUNNING";
 
 /**
  * Catalog of all predefined errors in the Uploadista system.
@@ -307,6 +309,14 @@ export const ERROR_CATALOG: Readonly<
   CIRCUIT_BREAKER_OPEN: {
     status: 503,
     body: "Circuit breaker is open - service temporarily unavailable\n",
+  },
+  QUEUE_ITEM_NOT_FOUND: {
+    status: 404,
+    body: "The queue item was not found\n",
+  },
+  QUEUE_ITEM_ALREADY_RUNNING: {
+    status: 409,
+    body: "Cannot cancel a queue item that is already running\n",
   },
 } as const;
 

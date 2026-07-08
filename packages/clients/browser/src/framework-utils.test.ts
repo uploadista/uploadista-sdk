@@ -20,8 +20,8 @@ import {
   isImageFile,
   isNetworkError,
   isVideoFile,
-  validateFileType,
   type UploadItem,
+  validateFileType,
 } from "./framework-utils";
 
 describe("formatFileSize", () => {
@@ -209,14 +209,18 @@ describe("validateFileType", () => {
 describe("createFileSizeValidator", () => {
   it("should pass files under the size limit", () => {
     const validator = createFileSizeValidator(1024 * 1024); // 1MB
-    const file = new File(["x".repeat(100)], "small.txt", { type: "text/plain" });
+    const file = new File(["x".repeat(100)], "small.txt", {
+      type: "text/plain",
+    });
     const result = validator(file);
     expect(result.valid).toBe(true);
   });
 
   it("should fail files over the size limit", () => {
     const validator = createFileSizeValidator(100);
-    const file = new File(["x".repeat(200)], "large.txt", { type: "text/plain" });
+    const file = new File(["x".repeat(200)], "large.txt", {
+      type: "text/plain",
+    });
     const result = validator(file);
     expect(result.valid).toBe(false);
     expect(result.error).toContain("exceeds maximum");

@@ -584,3 +584,118 @@ type FlowResult<Value>
     | { type: "error"; error: string }
     | { type: "cancelled" };
 ```
+
+---
+
+## Flow Queue Service
+
+`FlowQueueService` provides flow-level concurrency control and automatic DLQ retry scheduling. It sits above `FlowEngine.runFlow()` and is **optional** — existing deployments without it see identical behavior.
+
+### Features
+
+- Configurable `maxConcurrency` (default: 4) — cap the number of simultaneously running flows
+- Pluggable `FlowQueueStore` — in-memory by default, Redis-backed for persistence
+- Automatic DLQ retry loop — polls `DeadLetterQueueService.getScheduledRetries()` and re-enqueues eligible items
+- Backwards-compatible — when absent, `FlowEngine.runFlow()` uses its existing `forkDaemon`/`waitUntil` path
+
+### Configuration
+
+| Option | Default | Description |
+|---|---|---|
+| `maxConcurrency` | `4` | Maximum number of simultaneously running flows (per process) |
+| `dlqRetryIntervalMs` | `30_000` | How often the DLQ retry loop fires (milliseconds) |
+| `dlqRetryBatchSize` | `10` | Maximum DLQ items processed per retry loop tick |
+
+### Basic wiring (in-memory store)
+
+```typescript
+import { Effect, Layer } from "effect";
+import { FlowQueueService } from "@uploadista/core/flow";
+
+const program = myEffect.pipe(
+  Effect.provide(
+    FlowQueueService.Default({ maxConcurrency: 8 })
+  ),
+  Effect.provide(flowEngineLayer),
+);
+```
+
+### With Redis store (persistent across restarts)
+
+```typescript
+import { Effect, Layer } from "effect";
+import { FlowQueueService } from "@uploadista/core/flow";
+import { RedisFlowQueueStore } from "@uploadista/queue-store-redis";
+import { createClient } from "redis";
+
+const redis = createClient({ url: process.env.REDIS_URL });
+await redis.connect();
+
+const store = new RedisFlowQueueStore({ redis });
+const queueLayer = FlowQueueService.make(
+  { maxConcurrency: 8, dlqRetryIntervalMs: 60_000 },
+  store,
+);
+
+const program = myEffect.pipe(
+  Effect.provide(queueLayer),
+  Effect.provide(flowEngineLayer),
+);
+```
+
+### With IORedis store
+
+```typescript
+import { IoRedisFlowQueueStore } from "@uploadista/queue-store-ioredis";
+import Redis from "ioredis";
+
+const redis = new Redis({ host: "localhost", port: 6379 });
+const store = new IoRedisFlowQueueStore({ redis });
+const queueLayer = FlowQueueService.make({ maxConcurrency: 4 }, store);
+```
+
+### Querying queue status
+
+```typescript
+const effect = Effect.gen(function* () {
+  const queue = yield* FlowQueueService;
+
+  // Enqueue a flow
+  const item = yield* queue.enqueue({
+    flowId: "image-resize",
+    storageId: "s3-prod",
+    input: { files: ["photo.jpg"] },
+    clientId: "user_123",
+  });
+
+  // item.status === "pending"
+  // item.id starts with "q_"
+
+  // Poll status
+  const status = yield* queue.getStatus(item.id);
+
+  // Cancel a pending item (fails if running)
+  yield* queue.cancel(item.id);
+
+  // Get aggregate stats
+  const stats = yield* queue.getStats();
+  // { pending: 3, running: 2, completed: 47, failed: 1, maxConcurrency: 4, currentConcurrency: 2 }
+
+  // List all items or filter by status
+  const pendingItems = yield* queue.list({ status: "pending" });
+});
+```
+
+### DLQ retry loop
+
+When both `FlowQueueService` and `DeadLetterQueueService` are present, a background fiber automatically polls `getScheduledRetries()` and re-enqueues eligible DLQ items. No additional wiring required.
+
+```typescript
+const program = myEffect.pipe(
+  Effect.provide(FlowQueueService.Default({ dlqRetryIntervalMs: 30_000 })),
+  Effect.provide(deadLetterQueueService),  // from dead-letter-queue.ts
+  Effect.provide(flowEngineLayer),
+);
+```
+
+On completion, the retry loop calls `markResolved()` or `recordRetryFailure()` on the DLQ item automatically.

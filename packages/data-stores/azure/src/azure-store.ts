@@ -482,7 +482,10 @@ export function azureStore({
     // flow through the stream, before they reach S3. This solves the issue where
     // small files (< 5MB) would jump from 0% to 100% instantly.
     const withByteProgressTracking =
-      (onProgress?: (totalBytes: number) => void, initialOffset = 0) =>
+      (
+        onProgress?: (totalBytes: number) => Effect.Effect<void>,
+        initialOffset = 0,
+      ) =>
       <E, R>(stream: Stream.Stream<Uint8Array, E, R>) => {
         if (!onProgress) return stream;
 
@@ -496,7 +499,7 @@ export function azureStore({
                   totalBytesProcessedRef,
                   (total) => total + chunk.length,
                 );
-                onProgress(newTotal);
+                yield* onProgress(newTotal);
               }),
             ),
           );
@@ -511,7 +514,7 @@ export function azureStore({
       readStream: Stream.Stream<Uint8Array, UploadistaError>,
       initCurrentBlockNumber: number,
       initOffset: number,
-      onProgress?: (newOffset: number) => void,
+      onProgress?: (newOffset: number) => Effect.Effect<void>,
     ) => {
       return Effect.gen(function* () {
         yield* Effect.logInfo("Uploading blocks").pipe(
@@ -921,7 +924,7 @@ export function azureStore({
     const write = (
       options: DataStoreWriteOptions,
       dependencies: {
-        onProgress?: (chunkSize: number) => void;
+        onProgress?: (chunkSize: number) => Effect.Effect<void>;
       },
     ) => {
       return withUploadMetrics(

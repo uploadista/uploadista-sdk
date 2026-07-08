@@ -155,12 +155,13 @@ export type ValidatePlugins<
 export type TypeSafePluginConfig<
   TPlugins extends PluginTuple,
   TFlowRequirements,
-> = ValidatePlugins<TPlugins, TFlowRequirements> extends true
-  ? {
-      plugins: TPlugins;
-      flows: TypeSafeFlowFunction<TFlowRequirements>;
-    }
-  : ValidatePlugins<TPlugins, TFlowRequirements>; // Returns error object
+> =
+  ValidatePlugins<TPlugins, TFlowRequirements> extends true
+    ? {
+        plugins: TPlugins;
+        flows: TypeSafeFlowFunction<TFlowRequirements>;
+      }
+    : ValidatePlugins<TPlugins, TFlowRequirements>; // Returns error object
 
 /**
  * Extracts plugin requirements from a flow function type.

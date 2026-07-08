@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/react-native-core",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "type": "module",
   "description": "Core React Native client for Uploadista",
   "license": "MIT",
@@ -21,7 +21,7 @@
   "dependencies": {
     "@uploadista/core": "workspace:*",
     "@uploadista/client-core": "workspace:*",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "js-base64": "^3.7.7"
   },
   "peerDependencies": {

@@ -213,10 +213,10 @@ export type DataStoreCapabilities = {
  *   write: ({ file_id, stream, offset }, { onProgress }) => Effect.gen(function* () {
  *     // Write chunks to storage
  *     let bytesWritten = offset;
- *     yield* Stream.runForEach(stream, (chunk) => Effect.sync(() => {
+ *     yield* Stream.runForEach(stream, (chunk) => Effect.gen(function* () {
  *       writeChunk(file_id, chunk, bytesWritten);
  *       bytesWritten += chunk.byteLength;
- *       onProgress?.(chunk.byteLength);
+ *       yield* (onProgress?.(bytesWritten) ?? Effect.void);
  *     }));
  *     return bytesWritten;
  *   }),
@@ -286,7 +286,7 @@ export type DataStore<TData = unknown> = {
   readonly write: (
     options: DataStoreWriteOptions,
     dependencies: {
-      onProgress?: (chunkSize: number) => void;
+      onProgress?: (offset: number) => Effect.Effect<void>;
     },
   ) => Effect.Effect<number, UploadistaError>;
   /**

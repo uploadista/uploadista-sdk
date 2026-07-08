@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/flow-utility-nodes",
   "type": "module",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "description": "Utility nodes for Uploadista Flow",
   "license": "MIT",
   "author": "Uploadista",
@@ -41,7 +41,7 @@
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.18",
+    "vitest": "4.1.10",
     "zod": "catalog:"
   }
 }

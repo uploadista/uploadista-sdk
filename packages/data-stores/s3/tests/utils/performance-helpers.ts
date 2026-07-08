@@ -305,9 +305,10 @@ export const createPerformanceBenchmarks = (): Record<
 export class ProgressTracker {
   private updates: { offset: number; timestamp: number }[] = [];
 
-  readonly onProgress = (offset: number) => {
-    this.updates.push({ offset, timestamp: performance.now() });
-  };
+  readonly onProgress = (offset: number) =>
+    Effect.sync(() => {
+      this.updates.push({ offset, timestamp: performance.now() });
+    });
 
   getUpdates() {
     return [...this.updates];

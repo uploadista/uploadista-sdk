@@ -1,6 +1,6 @@
 {
   "name": "@uploadista/expo",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "type": "module",
   "description": "Expo client for Uploadista with managed workflow support",
   "license": "MIT",
@@ -19,8 +19,8 @@
     "@uploadista/core": "workspace:*",
     "@uploadista/client-core": "workspace:*",
     "@uploadista/react-native-core": "workspace:*",
-    "uuid": "^13.0.0",
-    "js-base64": "^3.7.7"
+    "uuid": "^14.0.0",
+    "js-base64": "3.8.0"
   },
   "peerDependencies": {
     "@react-native-async-storage/async-storage": ">=1.17.0",
@@ -28,8 +28,8 @@
     "expo-document-picker": ">=12.0.0",
     "expo-file-system": ">=16.0.0",
     "expo-image-picker": ">=14.0.0",
-    "expo-crypto": "15.0.8",
-    "expo-blob": "^0.1.6",
+    "expo-crypto": "57.0.0",
+    "expo-blob": "^0.1.6 || ^55.0.0 || ^56.0.0 || ^57.0.0",
     "react": ">=16.8.0",
     "react-native": ">=0.71.0"
   },

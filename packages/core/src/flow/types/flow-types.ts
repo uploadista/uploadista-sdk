@@ -933,6 +933,6 @@ export type FileNamingConfig = {
   autoSuffix?: AutoNamingSuffixGenerator;
 };
 
+export type { FlowEvent, FlowEventFlowEnd, FlowEventFlowStart };
 // Re-export existing types for compatibility
 export { NodeType };
-export type { FlowEvent, FlowEventFlowEnd, FlowEventFlowStart };

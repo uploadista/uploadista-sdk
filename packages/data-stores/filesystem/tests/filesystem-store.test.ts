@@ -382,7 +382,7 @@ describe("FilesystemStore - Basic Upload Tests", () => {
               offset: 0,
             },
             {
-              onProgress: (chunkSize) => progressUpdates.push(chunkSize),
+              onProgress: (chunkSize) => Effect.sync(() => { progressUpdates.push(chunkSize); }),
             },
           );
 

@@ -8,15 +8,17 @@ import { afterEach, vi } from "vitest";
 
 // Mock crypto.subtle for tests that need it
 const mockSubtle = {
-  digest: vi.fn().mockImplementation(async (_algorithm: string, data: ArrayBuffer) => {
-    // Return a mock hash based on data length for testing
-    const mockHash = new Uint8Array(32);
-    const view = new Uint8Array(data);
-    for (let i = 0; i < 32; i++) {
-      mockHash[i] = (view[i % view.length] || 0) ^ (i * 7);
-    }
-    return mockHash.buffer;
-  }),
+  digest: vi
+    .fn()
+    .mockImplementation(async (_algorithm: string, data: ArrayBuffer) => {
+      // Return a mock hash based on data length for testing
+      const mockHash = new Uint8Array(32);
+      const view = new Uint8Array(data);
+      for (let i = 0; i < 32; i++) {
+        mockHash[i] = (view[i % view.length] || 0) ^ (i * 7);
+      }
+      return mockHash.buffer;
+    }),
 };
 
 // Mock crypto.randomUUID

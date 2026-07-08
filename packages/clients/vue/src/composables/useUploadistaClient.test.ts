@@ -1,6 +1,6 @@
 import { mount } from "@vue/test-utils";
-import { defineComponent, h, ref } from "vue";
 import { describe, expect, it, vi } from "vitest";
+import { defineComponent, h, ref } from "vue";
 import {
   UPLOADISTA_CLIENT_KEY,
   UPLOADISTA_EVENT_SUBSCRIBERS_KEY,
@@ -120,7 +120,9 @@ describe("useUploadistaClient", () => {
     it("should warn and return no-op when subscribers not available", () => {
       const mockClient = createMockClient();
       let result: ReturnType<typeof useUploadistaClient> | null = null;
-      const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleWarn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
 
       const TestComponent = createTestComponent(() => {
         result = useUploadistaClient();
@@ -140,7 +142,9 @@ describe("useUploadistaClient", () => {
       const unsubscribe = result!.subscribeToEvents(handler);
 
       expect(consoleWarn).toHaveBeenCalledWith(
-        expect.stringContaining("subscribeToEvents called but no event subscribers provided"),
+        expect.stringContaining(
+          "subscribeToEvents called but no event subscribers provided",
+        ),
       );
 
       // Unsubscribe should be a no-op and not throw

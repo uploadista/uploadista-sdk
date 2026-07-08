@@ -3,6 +3,7 @@ import type { UploadistaApi } from "../client/uploadista-api";
 import { UploadistaError } from "../error";
 import type { Logger } from "../logger";
 import type { AbortControllerLike } from "../services/abort-controller-service";
+import { waitForResumeIfPaused } from "../services/abort-controller-service";
 import type { ChecksumService } from "../services/checksum-service";
 import type { FileSource } from "../services/file-reader-service";
 import type { IdGenerationService } from "../services/id-generation-service";
@@ -10,7 +11,6 @@ import type { PlatformService, Timeout } from "../services/platform-service";
 import type { WebSocketLike } from "../services/websocket-service";
 import type { SmartChunker, SmartChunkerConfig } from "../smart-chunker";
 import type { ClientStorage } from "../storage/client-storage";
-import { waitForResumeIfPaused } from "../services/abort-controller-service";
 import {
   type OnProgress,
   type OnShouldRetry,

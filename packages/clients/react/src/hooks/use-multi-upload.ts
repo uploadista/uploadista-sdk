@@ -1,8 +1,10 @@
 import type { BrowserUploadInput } from "@uploadista/client-browser";
 import type { UploadMetrics } from "@uploadista/client-core";
 import type { UploadFile } from "@uploadista/core/types";
-import { useCallback, useRef, useState } from "react";
+import { UploadEventType } from "@uploadista/core/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
+import { isUploadEvent } from "./event-utils";
 import type { UploadState, UploadStatus, UseUploadOptions } from "./use-upload";
 
 export interface UploadItem {
@@ -247,6 +249,8 @@ export function useMultiUpload(
   const itemsRef = useRef<UploadItem[]>([]);
   const nextIdRef = useRef(0);
   const activeUploadsRef = useRef(new Set<string>());
+  // Maps TUS upload ID → queue item ID for routing WS progress events to the right item
+  const uploadIdToItemIdRef = useRef<Map<string, string>>(new Map());
 
   // Store abort controllers for each upload
   const abortControllersRef = useRef<Map<string, { abort: () => void }>>(
@@ -276,6 +280,29 @@ export function useMultiUpload(
     },
     [],
   );
+
+  // Subscribe to WebSocket progress events for granular per-item byte-level updates
+  useEffect(() => {
+    return uploadClient.subscribeToEvents((event) => {
+      if (
+        !isUploadEvent(event) ||
+        event.type !== UploadEventType.UPLOAD_PROGRESS
+      )
+        return;
+      const data = event.data as {
+        id: string;
+        progress: number;
+        total: number;
+      };
+      const itemId = uploadIdToItemIdRef.current.get(data.id);
+      if (!itemId || data.total <= 0) return;
+      onStateUpdate(itemId, {
+        progress: Math.round((data.progress / data.total) * 100),
+        bytesUploaded: data.progress,
+        totalBytes: data.total,
+      });
+    });
+  }, [uploadClient.subscribeToEvents, onStateUpdate]);
 
   // Check if all uploads are complete and trigger completion callback
   const checkForCompletion = useCallback(() => {
@@ -331,10 +358,13 @@ export function useMultiUpload(
           uploadSize: options.uploadSize,
 
           onProgress: (
-            _uploadId: string,
+            uploadId: string,
             bytesUploaded: number,
             totalBytes: number | null,
           ) => {
+            // Map TUS upload ID to item ID so WS events can route to the correct item
+            uploadIdToItemIdRef.current.set(uploadId, nextItem.id);
+
             const progress = totalBytes
               ? Math.round((bytesUploaded / totalBytes) * 100)
               : 0;
@@ -644,6 +674,7 @@ export function useMultiUpload(
     setItems([]);
     itemsRef.current = [];
     activeUploadsRef.current.clear();
+    uploadIdToItemIdRef.current.clear();
   }, [abortAll]);
 
   const getItemsByStatus = useCallback((status: UploadStatus) => {

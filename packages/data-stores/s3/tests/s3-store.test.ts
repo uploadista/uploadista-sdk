@@ -444,7 +444,7 @@ describe("S3Store - Basic Upload Tests", () => {
               offset: 0,
             },
             {
-              onProgress: (offset) => progressUpdates.push(offset),
+              onProgress: (offset) => Effect.sync(() => { progressUpdates.push(offset); }),
             },
           );
 
@@ -483,7 +483,7 @@ describe("S3Store - Basic Upload Tests", () => {
               offset: 0,
             },
             {
-              onProgress: (offset) => progressUpdates.push(offset),
+              onProgress: (offset) => Effect.sync(() => { progressUpdates.push(offset); }),
             },
           );
 

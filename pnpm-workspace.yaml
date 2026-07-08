@@ -2,34 +2,38 @@ packages:
   - packages/**/*
   - examples/**/*
 
-catalog:
-  '@effect/vitest': 0.27.0
-  '@types/node': 24.10.9
-  effect: 3.19.17
-  hono: 4.11.5
-  react: 19.2.4
-  react-dom: 19.2.4
-  react-router: 7.13.0
-  react-router-dom: 7.13.0
-  tsdown: 0.20.3
-  typescript: 5.9.3
-  zod: 4.3.6
+# @cloudflare/workers-types is official, type-only, and publishes a new
+# date-stamped release daily — exempt it from the minimum release-age check.
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types'
+  - '@vue/language-core@3.3.7'
+  - vue-tsc@3.3.7
 
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@prisma/client'
-  - '@prisma/engines'
-  - '@seydx/node-av-darwin-arm64'
-  - '@swc/core'
-  - '@tailwindcss/oxide'
-  - core-js-pure
-  - esbuild
-  - msgpackr-extract
-  - node-av
-  - nx
-  - oxc-resolver
-  - protobufjs
-  - react-native-nitro-modules
-  - sharp
-  - unrs-resolver
-  - workerd
+allowBuilds:
+  '@seydx/node-av-darwin-x64': true
+  '@seydx/node-av-darwin-arm64': true
+  '@seydx/node-av-linux-x64': true
+  '@seydx/node-av-linux-arm64': true
+  '@swc/core': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  msgpackr-extract: true
+  node-av: true
+  nx: true
+  protobufjs: true
+  react-native-nitro-modules: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true
+
+catalog:
+  '@effect/vitest': 0.29.0
+  '@types/node': 24.10.9
+  effect: 3.21.4
+  hono: 4.12.27
+  react: 19.2.7
+  react-dom: 19.2.7
+  react-router: 8.0.1
+  tsdown: 0.22.3
+  typescript: 6.0.3
+  zod: 4.4.3

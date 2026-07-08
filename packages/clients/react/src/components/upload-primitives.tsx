@@ -20,10 +20,10 @@ import type {
 
 // Re-export types for convenience
 export type {
+  MultiUploadState,
+  UploadItemData as UploadItem,
   UploadState,
   UploadStatusType as UploadStatus,
-  UploadItemData as UploadItem,
-  MultiUploadState,
 };
 
 // ============ UPLOAD CONTEXT ============

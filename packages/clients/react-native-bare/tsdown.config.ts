@@ -8,5 +8,7 @@ export default defineConfig({
   format: ["esm"],
   dts: true,
   outDir: "dist",
-  external: ["react-native"],
+  deps: {
+    neverBundle: ["react-native"],
+  },
 });

@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/client-core",
   "type": "module",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "description": "Platform-agnostic core upload client logic for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "js-base64": "3.7.8"
+    "js-base64": "3.8.0"
   },
   "peerDependencies": {
     "zod": "^4.0.0"
@@ -47,7 +47,7 @@
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
     "tsdown": "catalog:",
-    "vitest": "4.0.18",
+    "vitest": "4.1.10",
     "zod": "catalog:"
   }
 }

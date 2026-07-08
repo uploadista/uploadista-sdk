@@ -19,9 +19,8 @@
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { serve } from "@hono/node-server";
+import { serve, upgradeWebSocket } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { createNodeWebSocket } from "@hono/node-ws";
 import { createClient } from "@redis/client";
 import { honoAdapter } from "@uploadista/adapters-hono";
 import { s3Store } from "@uploadista/data-store-s3";
@@ -37,9 +36,10 @@ import { redisKvStore } from "@uploadista/kv-store-redis";
 import { OtlpNodeSdkLive } from "@uploadista/observability";
 import { createUploadistaServer } from "@uploadista/server";
 import dotenv from "dotenv";
-import { Hono } from "hono";
+import { type Env, Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
+import { WebSocketServer } from "ws";
 import { flows } from "./flows";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -47,9 +47,7 @@ const __dirname = dirname(__filename);
 
 dotenv.config();
 
-const app = new Hono<{ Bindings: { env: unknown } }>();
-
-const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
+const app = new Hono<Env>();
 
 // Create Redis client for KV store
 const redisClient = createClient({
@@ -144,6 +142,13 @@ const uploadistaServer = await createUploadistaServer({
   // Enable tracing if OTLP endpoint is configured
   withTracing: isObservabilityEnabled,
   observabilityLayer: OtlpNodeSdkLive,
+  // Capture failed jobs for inspection and retry
+  deadLetterQueue: true,
+  // Queue backed by the same Redis kvStore — no extra client needed.
+  // Limits concurrent flows and auto-retries DLQ items every 30s.
+  flowQueue: {
+    config: { maxConcurrency: 4, dlqRetryIntervalMs: 30_000 },
+  },
 });
 
 app.use(
@@ -199,17 +204,20 @@ const routes = app;
 
 export type AppType = typeof routes;
 
+// WebSocket server attaches to the HTTP server via the `websocket` option.
+// `noServer: true` lets @hono/node-server handle the upgrade handshake.
+const wss = new WebSocketServer({ noServer: true });
+
 const server = serve(
   {
     port: process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 3000,
     fetch: routes.fetch,
+    websocket: { server: wss },
   },
   (info) => {
     console.log(`Server is running on port ${info.port}`);
   },
 );
-
-injectWebSocket(server);
 
 // Graceful shutdown with proper observability cleanup
 async function gracefulShutdown(signal: string) {

@@ -1,6 +1,8 @@
 import { Context, Effect, Layer } from "effect";
 import { UploadistaError } from "../errors";
-import type { DeadLetterItem, FlowJob } from "../flow";
+import type { DeadLetterItem } from "../flow/types/dead-letter-item";
+import type { FlowJob } from "../flow/types/flow-job";
+import type { FlowQueueItem } from "../flow/types/flow-queue-item";
 import type { UploadFile } from "./upload-file";
 
 /**
@@ -449,6 +451,34 @@ export const deadLetterQueueKvStore = Layer.effect(
     return new TypedKvStore<DeadLetterItem>(
       baseStore,
       "uploadista:dlq:",
+      jsonSerializer.serialize,
+      jsonSerializer.deserialize,
+    );
+  }),
+);
+
+/**
+ * Effect-TS context tag for the FlowQueueItem typed KV store.
+ */
+export class FlowQueueKVStore extends Context.Tag("FlowQueueKVStore")<
+  FlowQueueKVStore,
+  KvStore<FlowQueueItem>
+>() {}
+
+/**
+ * Effect Layer that creates the FlowQueueKVStore from a BaseKvStore.
+ *
+ * Stores queue items as JSON under the "uploadista:queue-item:" prefix.
+ * Used by FlowQueueService.fromKvStore() so the queue can be backed by
+ * any BaseKvStoreService (Redis, filesystem, Cloudflare KV, etc.).
+ */
+export const flowQueueKvStore = Layer.effect(
+  FlowQueueKVStore,
+  Effect.gen(function* () {
+    const baseStore = yield* BaseKvStoreService;
+    return new TypedKvStore<FlowQueueItem>(
+      baseStore,
+      "uploadista:queue-item:",
       jsonSerializer.serialize,
       jsonSerializer.deserialize,
     );

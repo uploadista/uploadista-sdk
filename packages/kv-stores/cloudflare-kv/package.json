@@ -1,7 +1,7 @@
 {
   "name": "@uploadista/kv-store-cloudflare-kv",
   "type": "module",
-  "version": "0.2.0",
+  "version": "1.0.0-beta.4",
   "description": "Cloudflare KV store for Uploadista",
   "license": "MIT",
   "author": "Uploadista",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "@cloudflare/workers-types": "4.20260213.0"
+    "@cloudflare/workers-types": "5.20260708.1"
   },
   "peerDependencies": {
     "effect": "^3.0.0"
@@ -34,6 +34,6 @@
     "@uploadista/typescript-config": "workspace:*",
     "effect": "catalog:",
     "tsdown": "catalog:",
-    "vitest": "4.0.18"
+    "vitest": "4.1.10"
   }
 }

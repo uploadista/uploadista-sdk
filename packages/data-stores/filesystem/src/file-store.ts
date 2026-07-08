@@ -82,7 +82,7 @@ const writeChunk =
   }: {
     writeStream: fs.WriteStream;
     bytesReceived: Ref.Ref<number>;
-    onProgress?: (chunkSize: number) => void;
+    onProgress?: (chunkSize: number) => Effect.Effect<void>;
   }) =>
   (chunk: Uint8Array) =>
     Effect.gen(function* () {
@@ -106,7 +106,7 @@ const writeChunk =
       });
 
       yield* Ref.update(bytesReceived, (size) => size + chunk.length);
-      onProgress?.(chunk.length);
+      yield* onProgress?.(chunk.length) ?? Effect.void;
     });
 
 const endWriteStream = (writeStream: fs.WriteStream) =>
@@ -280,7 +280,9 @@ export const fileStore = ({ directory, deliveryUrl }: FileStoreOptions) =>
       },
       write: (
         { file_id, stream, offset }: DataStoreWriteOptions,
-        { onProgress }: { onProgress?: (chunkSize: number) => void },
+        {
+          onProgress,
+        }: { onProgress?: (chunkSize: number) => Effect.Effect<void> },
       ): Effect.Effect<number, UploadistaError> => {
         return withUploadMetrics(
           file_id,

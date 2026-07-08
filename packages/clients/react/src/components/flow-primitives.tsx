@@ -17,10 +17,10 @@ import { type FlowInputMetadata, useFlow } from "../hooks/use-flow";
 
 // Re-export types for convenience
 export type {
+  FlowInputMetadata,
   FlowUploadState,
   FlowUploadStatus,
   InputExecutionState,
-  FlowInputMetadata,
 };
 
 // ============ FLOW CONTEXT ============

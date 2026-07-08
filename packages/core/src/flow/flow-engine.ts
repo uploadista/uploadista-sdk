@@ -79,6 +79,7 @@ import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadEngine } from "../upload";
 import { DeadLetterQueueService } from "./dead-letter-queue";
 import type { FlowEvent } from "./event";
+import { FlowQueueDispatchMarker, FlowQueueService } from "./flow-queue";
 import type { FlowJob } from "./types/flow-job";
 
 /**
@@ -245,11 +246,14 @@ export type FlowEngineShape = {
     storageId,
     clientId,
     inputs,
+    jobId,
   }: {
     flowId: string;
     storageId: string;
     clientId: string | null;
     inputs: any;
+    /** Optional job ID to use instead of generating a new UUID. Used by the queue worker to keep the queue item ID and flow job ID in sync. */
+    jobId?: string;
   }) => Effect.Effect<FlowJob, UploadistaError, TRequirements>;
 
   resumeFlow: <TRequirements>({
@@ -863,13 +867,15 @@ export function createFlowEngine() {
       status: "completed" | "failed";
     }) =>
       Option.isSome(lifecycleHookOption)
-        ? lifecycleHookOption.value.onComplete(ctx).pipe(
-            Effect.catchAll((error) =>
-              Effect.logWarning(
-                `FlowLifecycleHook.onComplete failed: ${error}`,
+        ? lifecycleHookOption.value
+            .onComplete(ctx)
+            .pipe(
+              Effect.catchAll((error) =>
+                Effect.logWarning(
+                  `FlowLifecycleHook.onComplete failed: ${error}`,
+                ),
               ),
-            ),
-          )
+            )
         : Effect.void;
 
     /**
@@ -1175,13 +1181,44 @@ export function createFlowEngine() {
         storageId,
         clientId,
         inputs,
+        jobId: providedJobId,
       }: {
         flowId: string;
         storageId: string;
         clientId: string | null;
         inputs: unknown;
+        jobId?: string;
       }) =>
         Effect.gen(function* () {
+          // When FlowQueueService is present, delegate to it for concurrency control,
+          // UNLESS we're already inside the queue's worker dispatch loop (indicated by
+          // FlowQueueDispatchMarker). This prevents infinite re-enqueue cycles.
+          const dispatchMarker = yield* Effect.serviceOption(
+            FlowQueueDispatchMarker,
+          );
+          const queueOption = yield* FlowQueueService.optional;
+          if (Option.isSome(queueOption) && Option.isNone(dispatchMarker)) {
+            const queueItem = yield* queueOption.value.enqueue({
+              flowId,
+              storageId,
+              input: inputs,
+              clientId,
+            });
+            const now = queueItem.enqueuedAt;
+            const pendingJob = {
+              id: queueItem.id,
+              flowId,
+              storageId,
+              clientId,
+              status: "pending" as const,
+              tasks: [],
+              createdAt: now,
+              updatedAt: now,
+            } satisfies FlowJob;
+            yield* kvStore.set(queueItem.id, pendingJob);
+            return pendingJob;
+          }
+
           const waitUntil = yield* FlowWaitUntil.optional;
 
           const parsedParams = yield* Effect.try({
@@ -1192,8 +1229,9 @@ export function createFlowEngine() {
               }),
           });
 
-          // Generate a unique jobId
-          const jobId = crypto.randomUUID();
+          // Generate a unique jobId, or reuse one provided by the queue worker
+          // so the queue item ID and flow job ID stay in sync.
+          const jobId = providedJobId ?? crypto.randomUUID();
           const createdAt = new Date();
 
           // Store initial job metadata

@@ -2,7 +2,6 @@
   "extends": "@uploadista/typescript-config/server.json",
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
-    "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
     },

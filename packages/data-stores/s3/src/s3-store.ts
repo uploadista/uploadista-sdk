@@ -444,7 +444,9 @@ export function createS3Store(config: S3StoreConfig) {
 
     const write = (
       options: DataStoreWriteOptions,
-      dependencies: { onProgress?: (currentOffset: number) => void },
+      dependencies: {
+        onProgress?: (currentOffset: number) => Effect.Effect<void>;
+      },
     ) =>
       withUploadMetrics(
         options.file_id,
@@ -826,7 +828,10 @@ export function createS3Store(config: S3StoreConfig) {
     // flow through the stream, before they reach S3. This solves the issue where
     // small files (< 5MB) would jump from 0% to 100% instantly.
     const withByteProgressTracking =
-      (onProgress?: (totalBytes: number) => void, initialOffset = 0) =>
+      (
+        onProgress?: (totalBytes: number) => Effect.Effect<void>,
+        initialOffset = 0,
+      ) =>
       <E, R>(stream: Stream.Stream<Uint8Array, E, R>) => {
         if (!onProgress) return stream;
 
@@ -840,7 +845,7 @@ export function createS3Store(config: S3StoreConfig) {
                   totalBytesProcessedRef,
                   (total) => total + chunk.length,
                 );
-                onProgress(newTotal);
+                yield* onProgress(newTotal);
               }),
             ),
           );
@@ -855,7 +860,7 @@ export function createS3Store(config: S3StoreConfig) {
       uploadPartSize: number,
       minPartSize: number,
       maxConcurrentPartUploads: number,
-      onProgress?: (newOffset: number) => void,
+      onProgress?: (newOffset: number) => Effect.Effect<void>,
     ) =>
       Effect.gen(function* () {
         yield* Effect.logInfo("Starting part uploads").pipe(

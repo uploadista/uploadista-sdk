@@ -155,7 +155,12 @@ describe("useUploadistaClient", () => {
         networkMonitoring: { maxSamples: 100 },
         uploadMetrics: { maxChunkHistory: 500 },
         connectionPooling: connectionPoolingConfig,
-        auth: { mode: "direct" as const, getCredentials: () => ({ headers: { Authorization: "Bearer test-token" } }) },
+        auth: {
+          mode: "direct" as const,
+          getCredentials: () => ({
+            headers: { Authorization: "Bearer test-token" },
+          }),
+        },
         onEvent,
       };
 

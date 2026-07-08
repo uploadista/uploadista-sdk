@@ -1,7 +1,6 @@
 {
   "extends": "@uploadista/typescript-config/base.json",
   "compilerOptions": {
-    "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
     },
