@@ -6,6 +6,8 @@ packages:
 # date-stamped release daily — exempt it from the minimum release-age check.
 minimumReleaseAgeExclude:
   - '@cloudflare/workers-types'
+  - '@vue/language-core@3.3.7'
+  - vue-tsc@3.3.7
 
 allowBuilds:
   '@seydx/node-av-darwin-x64': true
