@@ -187,11 +187,26 @@ describe("useUpload", () => {
 
       expect(uploadManagerConstructorCalls.length).toBeGreaterThan(0);
       const callbacks = uploadManagerConstructorCalls[0][1];
-      expect(callbacks.onProgress).toBe(onProgress);
+
+      // onChunkComplete is forwarded to the UploadManager by reference.
       expect(callbacks.onChunkComplete).toBe(onChunkComplete);
-      expect(callbacks.onSuccess).toBe(onSuccess);
-      expect(callbacks.onError).toBe(onError);
-      expect(callbacks.onAbort).toBe(onAbort);
+
+      // The remaining callbacks are wrapped by the hook (to track the current
+      // upload id), so they are not the same reference but must forward to the
+      // user-provided callbacks.
+      callbacks.onProgress("upload-1", 10, 100);
+      expect(onProgress).toHaveBeenCalledWith("upload-1", 10, 100);
+
+      const result = { id: "upload-1" };
+      callbacks.onSuccess(result);
+      expect(onSuccess).toHaveBeenCalledWith(result);
+
+      const error = new Error("boom");
+      callbacks.onError(error);
+      expect(onError).toHaveBeenCalledWith(error);
+
+      callbacks.onAbort();
+      expect(onAbort).toHaveBeenCalled();
     });
 
     it("should pass options to UploadManager", () => {
