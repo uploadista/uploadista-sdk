@@ -8,7 +8,10 @@ minimumReleaseAgeExclude:
   - '@cloudflare/workers-types'
 
 allowBuilds:
+  '@seydx/node-av-darwin-x64': true
   '@seydx/node-av-darwin-arm64': true
+  '@seydx/node-av-linux-x64': true
+  '@seydx/node-av-linux-arm64': true
   '@swc/core': true
   '@tailwindcss/oxide': true
   esbuild: true
