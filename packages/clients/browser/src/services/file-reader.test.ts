@@ -44,7 +44,7 @@ describe("createBrowserFileReaderService", () => {
       const service = createBrowserFileReaderService();
 
       await expect(
-        service.openFile("invalid" as unknown as Blob, 1024)
+        service.openFile("invalid" as unknown as Blob, 1024),
       ).rejects.toThrow("source object may only be an instance of File, Blob");
     });
   });
@@ -110,7 +110,9 @@ describe("createBrowserFileReaderService", () => {
       it("should handle binary data", async () => {
         const service = createBrowserFileReaderService();
         const binaryData = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        const blob = new Blob([binaryData], { type: "application/octet-stream" });
+        const blob = new Blob([binaryData], {
+          type: "application/octet-stream",
+        });
 
         const source = await service.openFile(blob, 1024);
         const result = await source.slice(0, 5);
@@ -156,7 +158,7 @@ describe("createBrowserFileReaderService", () => {
 
       // Verify combined content
       const combined = new Uint8Array(
-        chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+        chunks.reduce((acc, chunk) => acc + chunk.length, 0),
       );
       let pos = 0;
       for (const chunk of chunks) {

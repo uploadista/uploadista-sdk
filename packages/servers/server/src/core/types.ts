@@ -1,6 +1,9 @@
 import type { PluginLayer, UploadistaError } from "@uploadista/core";
-import type { Flow } from "@uploadista/core/flow";
-import type { FlowQueueConfig, FlowQueueStore } from "@uploadista/core/flow";
+import type {
+  Flow,
+  FlowQueueConfig,
+  FlowQueueStore,
+} from "@uploadista/core/flow";
 import type {
   BaseEventEmitterService,
   BaseKvStoreService,

@@ -4,8 +4,8 @@ import type { UploadFile } from "@uploadista/core/types";
 import { UploadEventType } from "@uploadista/core/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUploadistaContext } from "../components/uploadista-provider";
-import type { UploadState, UploadStatus, UseUploadOptions } from "./use-upload";
 import { isUploadEvent } from "./event-utils";
+import type { UploadState, UploadStatus, UseUploadOptions } from "./use-upload";
 
 export interface UploadItem {
   id: string;
@@ -284,8 +284,16 @@ export function useMultiUpload(
   // Subscribe to WebSocket progress events for granular per-item byte-level updates
   useEffect(() => {
     return uploadClient.subscribeToEvents((event) => {
-      if (!isUploadEvent(event) || event.type !== UploadEventType.UPLOAD_PROGRESS) return;
-      const data = event.data as { id: string; progress: number; total: number };
+      if (
+        !isUploadEvent(event) ||
+        event.type !== UploadEventType.UPLOAD_PROGRESS
+      )
+        return;
+      const data = event.data as {
+        id: string;
+        progress: number;
+        total: number;
+      };
       const itemId = uploadIdToItemIdRef.current.get(data.id);
       if (!itemId || data.total <= 0) return;
       onStateUpdate(itemId, {

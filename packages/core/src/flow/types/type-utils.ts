@@ -34,11 +34,8 @@ import type { Effect, Layer } from "effect";
  * ```
  */
 
-export type ExtractLayerService<
-  T,
-  TError = never,
-  TRequirements = never,
-> = T extends Layer.Layer<infer S, TError, TRequirements> ? S : never;
+export type ExtractLayerService<T, TError = never, TRequirements = never> =
+  T extends Layer.Layer<infer S, TError, TRequirements> ? S : never;
 
 /**
  * Extracts all service types from a tuple of layers and returns them as a union.

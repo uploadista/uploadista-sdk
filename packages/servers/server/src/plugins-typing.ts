@@ -132,14 +132,12 @@ export type PluginAssertion<
   ) => Effect.Effect<unknown, unknown, unknown>,
   // biome-ignore lint/suspicious/noExplicitAny: Permissive constraint allows plugin tuples where each plugin provides subset of requirements
   TPlugins extends readonly Layer.Layer<any, never, never>[],
-> = Exclude<
-  RequiredPluginsOf<TFlows>,
-  LayerSuccessUnion<TPlugins>
-> extends never
-  ? unknown
-  : {
-      __missingPlugins: Exclude<
-        RequiredPluginsOf<TFlows>,
-        LayerSuccessUnion<TPlugins>
-      >;
-    };
+> =
+  Exclude<RequiredPluginsOf<TFlows>, LayerSuccessUnion<TPlugins>> extends never
+    ? unknown
+    : {
+        __missingPlugins: Exclude<
+          RequiredPluginsOf<TFlows>,
+          LayerSuccessUnion<TPlugins>
+        >;
+      };

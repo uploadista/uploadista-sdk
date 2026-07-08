@@ -278,7 +278,9 @@ describe("isDocumentFile", () => {
 
   it("should identify Excel files", () => {
     expect(
-      isDocumentFile(createMockFile("sheet.xls", 100, "application/vnd.ms-excel")),
+      isDocumentFile(
+        createMockFile("sheet.xls", 100, "application/vnd.ms-excel"),
+      ),
     ).toBe(true);
     expect(
       isDocumentFile(
@@ -324,12 +326,12 @@ describe("isDocumentFile", () => {
   });
 
   it("should reject non-document files", () => {
-    expect(
-      isDocumentFile(createMockFile("photo.jpg", 100, "image/jpeg")),
-    ).toBe(false);
-    expect(
-      isDocumentFile(createMockFile("video.mp4", 100, "video/mp4")),
-    ).toBe(false);
+    expect(isDocumentFile(createMockFile("photo.jpg", 100, "image/jpeg"))).toBe(
+      false,
+    );
+    expect(isDocumentFile(createMockFile("video.mp4", 100, "video/mp4"))).toBe(
+      false,
+    );
   });
 });
 

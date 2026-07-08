@@ -169,9 +169,9 @@ describe("useDragDrop", () => {
       onDrop(createMockDragEvent("drop", files));
 
       expect(onValidationError).toHaveBeenCalled();
-      expect(state.value.errors.some((e) => e.includes("Maximum 2 files"))).toBe(
-        true,
-      );
+      expect(
+        state.value.errors.some((e) => e.includes("Maximum 2 files")),
+      ).toBe(true);
     });
 
     it("should validate max file size", () => {

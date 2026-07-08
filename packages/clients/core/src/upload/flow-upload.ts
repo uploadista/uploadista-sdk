@@ -3,12 +3,11 @@ import type { UploadistaApi } from "../client/uploadista-api";
 import { UploadistaError } from "../error";
 import type { Logger } from "../logger";
 import type { AbortControllerLike } from "../services";
+import { waitForResumeIfPaused } from "../services/abort-controller-service";
 import type { FileSource } from "../services/file-reader-service";
 import type { PlatformService, Timeout } from "../services/platform-service";
 import type { SmartChunker, SmartChunkerConfig } from "../smart-chunker";
 import type { FlowUploadConfig } from "../types/flow-upload-config";
-
-import { waitForResumeIfPaused } from "../services/abort-controller-service";
 import { shouldRetry } from "./chunk-upload";
 import type { Callbacks } from "./single-upload";
 import type { UploadMetrics } from "./upload-metrics";

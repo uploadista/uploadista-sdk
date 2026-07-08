@@ -1,6 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi, beforeEach, type MockInstance } from "vitest";
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
 import { UploadistaProvider } from "../components/uploadista-provider";
 import { useUpload } from "../hooks/use-upload";
 
@@ -42,7 +49,8 @@ vi.mock("@uploadista/client-browser", () => ({
 }));
 
 vi.mock("@uploadista/client-core", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@uploadista/client-core")>();
+  const actual =
+    await importOriginal<typeof import("@uploadista/client-core")>();
 
   // Use a proper class mock
   class MockUploadManager {
@@ -137,7 +145,9 @@ describe("useUpload", () => {
       expect(typeof result.current.metrics.getInsights).toBe("function");
       expect(typeof result.current.metrics.exportMetrics).toBe("function");
       expect(typeof result.current.metrics.getNetworkMetrics).toBe("function");
-      expect(typeof result.current.metrics.getNetworkCondition).toBe("function");
+      expect(typeof result.current.metrics.getNetworkCondition).toBe(
+        "function",
+      );
       expect(typeof result.current.metrics.resetMetrics).toBe("function");
     });
   });
@@ -293,7 +303,9 @@ describe("useUpload", () => {
     it("should throw when used outside provider", () => {
       expect(() => {
         renderHook(() => useUpload());
-      }).toThrow("useUploadistaContext must be used within an UploadistaProvider");
+      }).toThrow(
+        "useUploadistaContext must be used within an UploadistaProvider",
+      );
     });
   });
 

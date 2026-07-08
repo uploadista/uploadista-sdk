@@ -25,7 +25,8 @@ vi.mock("@uploadista/client-browser", () => ({
 
 // Mock UploadManager from client-core
 vi.mock("@uploadista/client-core", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@uploadista/client-core")>();
+  const actual =
+    await importOriginal<typeof import("@uploadista/client-core")>();
   return {
     ...actual,
     UploadManager: vi.fn().mockImplementation(() => ({

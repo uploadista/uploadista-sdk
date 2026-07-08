@@ -585,14 +585,13 @@ export function createFlowWithSchema<
         }
       }
 
-      const decision =
-        hasValidInput
-          ? "execute"
-          : (hasConditionalSkip || hasSkippedSource) && !hasPendingDependency
-            ? "skip"
-            : hasPendingDependency
-              ? "wait"
-              : "execute";
+      const decision = hasValidInput
+        ? "execute"
+        : (hasConditionalSkip || hasSkippedSource) && !hasPendingDependency
+          ? "skip"
+          : hasPendingDependency
+            ? "wait"
+            : "execute";
 
       return decision;
     };

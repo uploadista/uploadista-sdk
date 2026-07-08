@@ -18,7 +18,11 @@
  * - `completed`: Flow execution finished successfully
  * - `failed`: Flow execution ended with an error
  */
-export type FlowQueueItemStatus = "pending" | "running" | "completed" | "failed";
+export type FlowQueueItemStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed";
 
 /**
  * Represents a single queued flow execution request.

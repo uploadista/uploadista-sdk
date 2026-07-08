@@ -62,7 +62,7 @@ describe("createHttpClient", () => {
           headers: expect.objectContaining({
             Connection: "keep-alive",
           }),
-        })
+        }),
       );
       expect(response.status).toBe(200);
       expect(response.ok).toBe(true);
@@ -93,7 +93,7 @@ describe("createHttpClient", () => {
         expect.objectContaining({
           method: "POST",
           body,
-        })
+        }),
       );
       expect(response.status).toBe(201);
     });
@@ -123,7 +123,7 @@ describe("createHttpClient", () => {
               clearTimeout(timeoutId);
               reject(new DOMException("Aborted", "AbortError"));
             });
-          })
+          }),
       );
 
       const client = createHttpClient();
@@ -131,7 +131,7 @@ describe("createHttpClient", () => {
       await expect(
         client.request("https://api.example.com/slow", {
           timeout: 50,
-        })
+        }),
       ).rejects.toThrow();
 
       // Restore fake timers for other tests
@@ -161,7 +161,7 @@ describe("createHttpClient", () => {
         "https://api.example.com/data",
         expect.objectContaining({
           signal: expect.any(AbortSignal),
-        })
+        }),
       );
     });
 
@@ -184,7 +184,7 @@ describe("createHttpClient", () => {
         "https://api.example.com/data",
         expect.objectContaining({
           credentials: "include",
-        })
+        }),
       );
     });
 
@@ -194,7 +194,7 @@ describe("createHttpClient", () => {
       const client = createHttpClient();
 
       await expect(
-        client.request("https://api.example.com/data")
+        client.request("https://api.example.com/data"),
       ).rejects.toThrow("Network error");
     });
   });
@@ -312,13 +312,13 @@ describe("createHttpClient", () => {
         "https://api1.example.com",
         expect.objectContaining({
           method: "HEAD",
-        })
+        }),
       );
       expect(mockFetch).toHaveBeenCalledWith(
         "https://api2.example.com",
         expect.objectContaining({
           method: "HEAD",
-        })
+        }),
       );
     });
 
@@ -329,7 +329,7 @@ describe("createHttpClient", () => {
 
       // Should not throw
       await expect(
-        client.warmupConnections(["https://api.example.com"])
+        client.warmupConnections(["https://api.example.com"]),
       ).resolves.not.toThrow();
     });
 

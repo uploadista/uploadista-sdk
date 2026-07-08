@@ -11,7 +11,10 @@
 
 import { Effect } from "effect";
 import { UploadistaError } from "../errors";
-import type { FlowQueueItem, FlowQueueItemStatus } from "./types/flow-queue-item";
+import type {
+  FlowQueueItem,
+  FlowQueueItemStatus,
+} from "./types/flow-queue-item";
 
 /**
  * Adapter interface for flow queue item persistence.
@@ -33,7 +36,9 @@ export interface FlowQueueStore {
    * @param item - The fully-constructed FlowQueueItem to store
    * @returns The stored item
    */
-  createItem(item: FlowQueueItem): Effect.Effect<FlowQueueItem, UploadistaError>;
+  createItem(
+    item: FlowQueueItem,
+  ): Effect.Effect<FlowQueueItem, UploadistaError>;
 
   /**
    * Retrieve a queue item by ID.
@@ -96,7 +101,9 @@ export interface FlowQueueStore {
 export class MemoryFlowQueueStore implements FlowQueueStore {
   private readonly items = new Map<string, FlowQueueItem>();
 
-  createItem(item: FlowQueueItem): Effect.Effect<FlowQueueItem, UploadistaError> {
+  createItem(
+    item: FlowQueueItem,
+  ): Effect.Effect<FlowQueueItem, UploadistaError> {
     return Effect.sync(() => {
       this.items.set(item.id, { ...item });
       return item;
@@ -113,9 +120,8 @@ export class MemoryFlowQueueStore implements FlowQueueStore {
     id: string,
     updates: Partial<FlowQueueItem>,
   ): Effect.Effect<FlowQueueItem, UploadistaError> {
-    const self = this;
     return Effect.suspend(() => {
-      const existing = self.items.get(id);
+      const existing = this.items.get(id);
       if (!existing) {
         return Effect.fail(
           UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
@@ -124,7 +130,7 @@ export class MemoryFlowQueueStore implements FlowQueueStore {
         );
       }
       const updated: FlowQueueItem = { ...existing, ...updates };
-      self.items.set(id, updated);
+      this.items.set(id, updated);
       return Effect.succeed(updated);
     });
   }

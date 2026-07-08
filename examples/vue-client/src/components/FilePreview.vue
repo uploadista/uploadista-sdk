@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import {
+  FileAudio,
+  FileText,
+  FileVideo,
+  Image as ImageIcon,
+} from "@lucide/vue";
 import type { UploadFile } from "@uploadista/core/types";
 import {
   createFilePreview,
@@ -9,12 +15,6 @@ import {
   isVideoFile,
   revokeFilePreview,
 } from "@uploadista/vue";
-import {
-  FileAudio,
-  FileText,
-  FileVideo,
-  Image as ImageIcon,
-} from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { cn } from "../utils/cn";
 

@@ -812,8 +812,9 @@ export class FlowManager<TInput = FlowUploadInput> {
     // Determine what status to resume to
     // If we had started uploading, resume to uploading state
     // Otherwise, this shouldn't happen (can only pause during upload/processing)
-    const resumeStatus: "uploading" | "processing" =
-      this.state.flowStarted ? "processing" : "uploading";
+    const resumeStatus: "uploading" | "processing" = this.state.flowStarted
+      ? "processing"
+      : "uploading";
 
     // Call abort controller's resume method if available
     // This allows chunk uploads to continue

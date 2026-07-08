@@ -187,8 +187,16 @@ export function useUpload(options: UseUploadOptions = {}): UseUploadReturn {
   // Subscribe to WebSocket progress events for granular byte-level updates between TUS chunks
   useEffect(() => {
     return uploadClient.subscribeToEvents((event) => {
-      if (!isUploadEvent(event) || event.type !== UploadEventType.UPLOAD_PROGRESS) return;
-      const data = event.data as { id: string; progress: number; total: number };
+      if (
+        !isUploadEvent(event) ||
+        event.type !== UploadEventType.UPLOAD_PROGRESS
+      )
+        return;
+      const data = event.data as {
+        id: string;
+        progress: number;
+        total: number;
+      };
       if (data.id !== currentUploadIdRef.current || data.total <= 0) return;
       setState((prev) => {
         if (prev.status !== "uploading") return prev;

@@ -36,7 +36,7 @@ import { redisKvStore } from "@uploadista/kv-store-redis";
 import { OtlpNodeSdkLive } from "@uploadista/observability";
 import { createUploadistaServer } from "@uploadista/server";
 import dotenv from "dotenv";
-import { Hono, type Env } from "hono";
+import { type Env, Hono } from "hono";
 import { cors } from "hono/cors";
 import { pinoLogger } from "hono-pino";
 import { WebSocketServer } from "ws";

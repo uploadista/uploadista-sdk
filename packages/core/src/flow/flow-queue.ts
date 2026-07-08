@@ -32,13 +32,27 @@
  * ```
  */
 
-import { Context, Duration, Effect, Layer, Option, Ref, Schedule } from "effect";
+import {
+  Context,
+  Duration,
+  Effect,
+  Layer,
+  Option,
+  Ref,
+  Schedule,
+} from "effect";
 import { UploadistaError } from "../errors";
 import { FlowQueueKVStore, flowQueueKvStore } from "../types/kv-store";
 import { DeadLetterQueueService } from "./dead-letter-queue";
-import type { DeadLetterItem } from "./types/dead-letter-item";
-import { MemoryFlowQueueStore, type FlowQueueStore } from "./flow-queue-store";
 import type { FlowEngineShape } from "./flow-engine";
+// Import the FlowEngine tag lazily to avoid circular module graph issues.
+// flow-engine.ts will import FlowQueueService for the optional check,
+// and flow-queue.ts needs FlowEngine to dispatch items. We break the cycle
+// by importing only the *class* (tag) from flow-engine at call time inside
+// the Effect generator, where module evaluation is already complete.
+import { FlowEngine } from "./flow-engine";
+import { type FlowQueueStore, MemoryFlowQueueStore } from "./flow-queue-store";
+import type { DeadLetterItem } from "./types/dead-letter-item";
 import type { FlowJob } from "./types/flow-job";
 import {
   DEFAULT_QUEUE_CONFIG,
@@ -46,13 +60,6 @@ import {
   type FlowQueueItem,
   type FlowQueueStats,
 } from "./types/flow-queue-item";
-
-// Import the FlowEngine tag lazily to avoid circular module graph issues.
-// flow-engine.ts will import FlowQueueService for the optional check,
-// and flow-queue.ts needs FlowEngine to dispatch items. We break the cycle
-// by importing only the *class* (tag) from flow-engine at call time inside
-// the Effect generator, where module evaluation is already complete.
-import { FlowEngine } from "./flow-engine";
 
 /**
  * Context marker that signals the current Effect is running inside the
@@ -143,8 +150,7 @@ function makeKvStoreFlowQueueStore(
   });
 
   return {
-    createItem: (item) =>
-      kv.set(item.id, item).pipe(Effect.map(() => item)),
+    createItem: (item) => kv.set(item.id, item).pipe(Effect.map(() => item)),
 
     getItem: (id) =>
       kv.get(id).pipe(
@@ -173,14 +179,10 @@ function makeKvStoreFlowQueueStore(
         const keys = yield* kv.list();
         const items: FlowQueueItem[] = [];
         for (const key of keys) {
-          const item = yield* kv
-            .get(key)
-            .pipe(
-              Effect.map((i) => parseDates(i) as FlowQueueItem | null),
-              Effect.catchAll(() =>
-                Effect.succeed(null as FlowQueueItem | null),
-              ),
-            );
+          const item = yield* kv.get(key).pipe(
+            Effect.map((i) => parseDates(i) as FlowQueueItem | null),
+            Effect.catchAll(() => Effect.succeed(null as FlowQueueItem | null)),
+          );
           if (item && item.status === status) items.push(item);
         }
         if (status === "pending") {
@@ -291,7 +293,11 @@ export class FlowQueueService extends Context.Tag("FlowQueueService")<
    */
   static fromBaseKvStore(
     config: FlowQueueConfig = {},
-  ): Layer.Layer<FlowQueueService, never, FlowEngine | import("../types/kv-store").BaseKvStoreService> {
+  ): Layer.Layer<
+    FlowQueueService,
+    never,
+    FlowEngine | import("../types/kv-store").BaseKvStoreService
+  > {
     return FlowQueueService.fromKvStore(config).pipe(
       Layer.provide(flowQueueKvStore),
     );
@@ -369,72 +375,72 @@ function createFlowQueueService(
       ).pipe(Effect.provideService(FlowQueueDispatchMarker, true));
 
       const execute = runFlowEffect.pipe(
-          Effect.andThen(() =>
-            Effect.gen(function* () {
-              // Mark as completed
+        Effect.andThen(() =>
+          Effect.gen(function* () {
+            // Mark as completed
+            yield* Effect.catchAll(
+              store.updateItem(item.id, {
+                status: "completed",
+                completedAt: new Date(),
+              }),
+              (err) =>
+                Effect.logError(
+                  "FlowQueue: failed to mark item completed",
+                  err,
+                ),
+            );
+
+            // DLQ correlation — success
+            if (item.dlqItemId && Option.isSome(dlqOption)) {
               yield* Effect.catchAll(
-                store.updateItem(item.id, {
-                  status: "completed",
-                  completedAt: new Date(),
-                }),
+                dlqOption.value.markResolved(item.dlqItemId),
                 (err) =>
                   Effect.logError(
-                    "FlowQueue: failed to mark item completed",
+                    "FlowQueue: failed to mark DLQ item resolved",
                     err,
                   ),
               );
+            }
+          }),
+        ),
+        Effect.catchAll((err) =>
+          Effect.gen(function* () {
+            const errorMsg =
+              err instanceof UploadistaError ? err.body : String(err);
 
-              // DLQ correlation — success
-              if (item.dlqItemId && Option.isSome(dlqOption)) {
-                yield* Effect.catchAll(
-                  dlqOption.value.markResolved(item.dlqItemId),
-                  (err) =>
-                    Effect.logError(
-                      "FlowQueue: failed to mark DLQ item resolved",
-                      err,
-                    ),
-                );
-              }
-            }),
-          ),
-          Effect.catchAll((err) =>
-            Effect.gen(function* () {
-              const errorMsg =
-                err instanceof UploadistaError ? err.body : String(err);
+            // Mark as failed
+            yield* Effect.catchAll(
+              store.updateItem(item.id, {
+                status: "failed",
+                completedAt: new Date(),
+                error: errorMsg,
+              }),
+              (storeErr) =>
+                Effect.logError(
+                  "FlowQueue: failed to mark item failed",
+                  storeErr,
+                ),
+            );
 
-              // Mark as failed
+            // DLQ correlation — failure
+            if (item.dlqItemId && Option.isSome(dlqOption)) {
+              const durationMs = Date.now() - startedAt;
               yield* Effect.catchAll(
-                store.updateItem(item.id, {
-                  status: "failed",
-                  completedAt: new Date(),
-                  error: errorMsg,
-                }),
-                (storeErr) =>
+                dlqOption.value.recordRetryFailure(
+                  item.dlqItemId,
+                  errorMsg,
+                  durationMs,
+                ),
+                (dlqErr) =>
                   Effect.logError(
-                    "FlowQueue: failed to mark item failed",
-                    storeErr,
+                    "FlowQueue: failed to record DLQ retry failure",
+                    dlqErr,
                   ),
               );
-
-              // DLQ correlation — failure
-              if (item.dlqItemId && Option.isSome(dlqOption)) {
-                const durationMs = Date.now() - startedAt;
-                yield* Effect.catchAll(
-                  dlqOption.value.recordRetryFailure(
-                    item.dlqItemId,
-                    errorMsg,
-                    durationMs,
-                  ),
-                  (dlqErr) =>
-                    Effect.logError(
-                      "FlowQueue: failed to record DLQ retry failure",
-                      dlqErr,
-                    ),
-                );
-              }
-            }),
-          ),
-        );
+            }
+          }),
+        ),
+      );
 
       // Always decrement concurrency, even on unexpected failures
       const release = Ref.update(concurrencyRef, (n) => Math.max(0, n - 1));
@@ -502,13 +508,8 @@ function createFlowQueueService(
 
         for (const dlqItem of items) {
           // Mark as retrying before enqueuing to prevent duplicate dispatch
-          yield* Effect.catchAll(
-            dlq.markRetrying(dlqItem.id),
-            (err) =>
-              Effect.logError(
-                "FlowQueue: failed to mark DLQ item retrying",
-                err,
-              ),
+          yield* Effect.catchAll(dlq.markRetrying(dlqItem.id), (err) =>
+            Effect.logError("FlowQueue: failed to mark DLQ item retrying", err),
           );
 
           // Create queue item for the retry
@@ -523,13 +524,8 @@ function createFlowQueueService(
             enqueuedAt: new Date(),
           };
 
-          yield* Effect.catchAll(
-            store.createItem(queueItem),
-            (err) =>
-              Effect.logError(
-                "FlowQueue: failed to enqueue DLQ retry item",
-                err,
-              ),
+          yield* Effect.catchAll(store.createItem(queueItem), (err) =>
+            Effect.logError("FlowQueue: failed to enqueue DLQ retry item", err),
           );
         }
       });

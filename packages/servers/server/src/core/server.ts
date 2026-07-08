@@ -296,10 +296,8 @@ export const createUploadistaServer = async <
   // DeadLetterQueueService (for the DLQ retry loop — resolved via optional).
   const flowQueueLayer = flowQueue
     ? (() => {
-        const queueConfig =
-          flowQueue === true ? {} : (flowQueue.config ?? {});
-        const queueStore =
-          flowQueue === true ? undefined : flowQueue.store;
+        const queueConfig = flowQueue === true ? {} : (flowQueue.config ?? {});
+        const queueStore = flowQueue === true ? undefined : flowQueue.store;
         // When a custom store is provided (e.g. RedisFlowQueueStore), use it directly.
         // Otherwise back the queue with the application's kvStore — same backend already
         // used by uploads, flows, and the DLQ, no extra Redis client needed.

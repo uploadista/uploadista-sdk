@@ -72,7 +72,7 @@ describe("computeblobSha256", () => {
     const blob = new Blob(["test"], { type: "text/plain" });
 
     await expect(computeblobSha256(blob)).rejects.toThrow(
-      "Failed to compute file checksum"
+      "Failed to compute file checksum",
     );
 
     // Restore original

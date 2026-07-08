@@ -415,7 +415,9 @@ export function createR2Store(config: R2StoreConfig) {
 
     const write = (
       options: DataStoreWriteOptions,
-      dependencies: { onProgress?: (currentOffset: number) => Effect.Effect<void> },
+      dependencies: {
+        onProgress?: (currentOffset: number) => Effect.Effect<void>;
+      },
     ) =>
       withUploadMetrics(
         options.file_id,

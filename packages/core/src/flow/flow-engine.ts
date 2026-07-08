@@ -78,8 +78,8 @@ export class FlowLifecycleHook extends Context.Tag("FlowLifecycleHook")<
 import { FlowEventEmitter, FlowJobKVStore } from "../types";
 import { UploadEngine } from "../upload";
 import { DeadLetterQueueService } from "./dead-letter-queue";
-import { FlowQueueDispatchMarker, FlowQueueService } from "./flow-queue";
 import type { FlowEvent } from "./event";
+import { FlowQueueDispatchMarker, FlowQueueService } from "./flow-queue";
 import type { FlowJob } from "./types/flow-job";
 
 /**
@@ -867,13 +867,15 @@ export function createFlowEngine() {
       status: "completed" | "failed";
     }) =>
       Option.isSome(lifecycleHookOption)
-        ? lifecycleHookOption.value.onComplete(ctx).pipe(
-            Effect.catchAll((error) =>
-              Effect.logWarning(
-                `FlowLifecycleHook.onComplete failed: ${error}`,
+        ? lifecycleHookOption.value
+            .onComplete(ctx)
+            .pipe(
+              Effect.catchAll((error) =>
+                Effect.logWarning(
+                  `FlowLifecycleHook.onComplete failed: ${error}`,
+                ),
               ),
-            ),
-          )
+            )
         : Effect.void;
 
     /**
@@ -1191,7 +1193,9 @@ export function createFlowEngine() {
           // When FlowQueueService is present, delegate to it for concurrency control,
           // UNLESS we're already inside the queue's worker dispatch loop (indicated by
           // FlowQueueDispatchMarker). This prevents infinite re-enqueue cycles.
-          const dispatchMarker = yield* Effect.serviceOption(FlowQueueDispatchMarker);
+          const dispatchMarker = yield* Effect.serviceOption(
+            FlowQueueDispatchMarker,
+          );
           const queueOption = yield* FlowQueueService.optional;
           if (Option.isSome(queueOption) && Option.isNone(dispatchMarker)) {
             const queueItem = yield* queueOption.value.enqueue({

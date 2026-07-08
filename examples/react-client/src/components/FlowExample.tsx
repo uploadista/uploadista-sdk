@@ -5,7 +5,7 @@ import {
   type FlowInputMetadata,
   useFlowContext,
 } from "@uploadista/react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useId, useMemo, useState } from "react";
 import { FilePreview } from "./FilePreview";
 import { Card } from "./ui/card";
 import { Label } from "./ui/label";
@@ -305,6 +305,7 @@ function CustomFlowInputCard({
 export function FlowExample() {
   const [flowId, setFlowId] = useState<FlowId>("optimize-flow");
   const [outputs, setOutputs] = useState<TypedOutput[]>([]);
+  const flowSelectId = useId();
 
   const flowData = useMemo(() => flowDescriptions[flowId], [flowId]);
 
@@ -325,9 +326,9 @@ export function FlowExample() {
         </p>
 
         <div className="space-y-2">
-          <Label htmlFor="flow-select">Flow</Label>
+          <Label htmlFor={flowSelectId}>Flow</Label>
           <Select value={flowId} onValueChange={handleFlowIdChange}>
-            <SelectTrigger id="flow-select" className="w-full max-w-md">
+            <SelectTrigger id={flowSelectId} className="w-full max-w-md">
               <SelectValue placeholder="Select a flow" />
             </SelectTrigger>
             <SelectContent>

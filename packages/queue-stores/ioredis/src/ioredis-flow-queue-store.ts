@@ -13,9 +13,12 @@
  * @module queue-store-ioredis
  */
 
-import type { FlowQueueStore } from "@uploadista/core/flow";
-import type { FlowQueueItem, FlowQueueItemStatus } from "@uploadista/core/flow";
 import { UploadistaError } from "@uploadista/core/errors";
+import type {
+  FlowQueueItem,
+  FlowQueueItemStatus,
+  FlowQueueStore,
+} from "@uploadista/core/flow";
 import { Effect } from "effect";
 
 const ITEM_PREFIX = "uploadista:queue:item:";
@@ -30,7 +33,13 @@ export interface IoRedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<unknown>;
   del(...keys: string[]): Promise<number>;
-  scan(cursor: string, matchOption: "MATCH", pattern: string, countOption: "COUNT", count: string): Promise<[string, string[]]>;
+  scan(
+    cursor: string,
+    matchOption: "MATCH",
+    pattern: string,
+    countOption: "COUNT",
+    count: string,
+  ): Promise<[string, string[]]>;
   zadd(key: string, score: number, member: string): Promise<number | string>;
   zrange(key: string, start: number, stop: number): Promise<string[]>;
   zrem(key: string, ...members: string[]): Promise<number>;
@@ -89,23 +98,22 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
   createItem(
     item: FlowQueueItem,
   ): Effect.Effect<FlowQueueItem, UploadistaError> {
-    const self = this;
     return Effect.tryPromise({
       try: async () => {
         const key = `${ITEM_PREFIX}${item.id}`;
         const json = JSON.stringify(item);
-        await self.redis.set(key, json);
+        await this.redis.set(key, json);
 
         // Add to status-specific index
         if (item.status === "pending") {
           // ioredis zadd: (key, score, member)
-          await self.redis.zadd(
+          await this.redis.zadd(
             PENDING_ZSET,
             item.enqueuedAt.getTime(),
             item.id,
           );
         } else if (item.status === "running") {
-          await self.redis.sadd(RUNNING_SET, item.id);
+          await this.redis.sadd(RUNNING_SET, item.id);
         }
 
         return item;
@@ -115,10 +123,9 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
   }
 
   getItem(id: string): Effect.Effect<FlowQueueItem | null, UploadistaError> {
-    const self = this;
     return Effect.tryPromise({
       try: async () => {
-        const json = await self.redis.get(`${ITEM_PREFIX}${id}`);
+        const json = await this.redis.get(`${ITEM_PREFIX}${id}`);
         if (json === null) return null;
         return parseDates(JSON.parse(json) as FlowQueueItem);
       },
@@ -130,11 +137,10 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
     id: string,
     updates: Partial<FlowQueueItem>,
   ): Effect.Effect<FlowQueueItem, UploadistaError> {
-    const self = this;
     return Effect.tryPromise({
       try: async () => {
         const key = `${ITEM_PREFIX}${id}`;
-        const json = await self.redis.get(key);
+        const json = await this.redis.get(key);
         if (json === null) {
           throw UploadistaError.fromCode("FLOW_JOB_NOT_FOUND", {
             body: `Queue item ${id} not found`,
@@ -148,24 +154,24 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
         if (updates.status && updates.status !== existing.status) {
           // Remove from old index
           if (existing.status === "pending") {
-            await self.redis.zrem(PENDING_ZSET, id);
+            await this.redis.zrem(PENDING_ZSET, id);
           } else if (existing.status === "running") {
-            await self.redis.srem(RUNNING_SET, id);
+            await this.redis.srem(RUNNING_SET, id);
           }
 
           // Add to new index
           if (updated.status === "pending") {
-            await self.redis.zadd(
+            await this.redis.zadd(
               PENDING_ZSET,
               updated.enqueuedAt.getTime(),
               id,
             );
           } else if (updated.status === "running") {
-            await self.redis.sadd(RUNNING_SET, id);
+            await this.redis.sadd(RUNNING_SET, id);
           }
         }
 
-        await self.redis.set(key, JSON.stringify(updated));
+        await this.redis.set(key, JSON.stringify(updated));
         return updated;
       },
       catch: (cause) => {
@@ -178,7 +184,6 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
   listByStatus(
     status: FlowQueueItemStatus,
   ): Effect.Effect<FlowQueueItem[], UploadistaError> {
-    const self = this;
     return Effect.tryPromise({
       try: async () => {
         let ids: string[] = [];
@@ -186,15 +191,15 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
         if (status === "pending") {
           // FIFO order via sorted set (ascending scores = enqueuedAt ms)
           // ioredis zrange: (key, start, stop) — returns ascending by default
-          ids = await self.redis.zrange(PENDING_ZSET, 0, -1);
+          ids = await this.redis.zrange(PENDING_ZSET, 0, -1);
         } else if (status === "running") {
-          ids = await self.redis.smembers(RUNNING_SET);
+          ids = await this.redis.smembers(RUNNING_SET);
         } else {
           // For completed/failed, scan all item keys and filter
           const allKeys: string[] = [];
           let cursor = "0";
           do {
-            const [next, batch] = await self.redis.scan(
+            const [next, batch] = await this.redis.scan(
               cursor,
               "MATCH",
               `${ITEM_PREFIX}*`,
@@ -207,7 +212,7 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
 
           const items: FlowQueueItem[] = [];
           for (const key of allKeys) {
-            const json = await self.redis.get(key);
+            const json = await this.redis.get(key);
             if (json) {
               const item = parseDates(JSON.parse(json) as FlowQueueItem);
               if (item.status === status) {
@@ -221,7 +226,7 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
         // Fetch items for pending/running by IDs
         const items: FlowQueueItem[] = [];
         for (const id of ids) {
-          const json = await self.redis.get(`${ITEM_PREFIX}${id}`);
+          const json = await this.redis.get(`${ITEM_PREFIX}${id}`);
           if (json) {
             items.push(parseDates(JSON.parse(json) as FlowQueueItem));
           }
@@ -233,14 +238,13 @@ export class IoRedisFlowQueueStore implements FlowQueueStore {
   }
 
   deleteItem(id: string): Effect.Effect<void, UploadistaError> {
-    const self = this;
     return Effect.tryPromise({
       try: async () => {
         // Remove from all indexes and delete the item key
         await Promise.all([
-          self.redis.zrem(PENDING_ZSET, id),
-          self.redis.srem(RUNNING_SET, id),
-          self.redis.del(`${ITEM_PREFIX}${id}`),
+          this.redis.zrem(PENDING_ZSET, id),
+          this.redis.srem(RUNNING_SET, id),
+          this.redis.del(`${ITEM_PREFIX}${id}`),
         ]);
       },
       catch: (cause) => UploadistaError.fromCode("UNKNOWN_ERROR", { cause }),

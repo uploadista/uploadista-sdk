@@ -12,6 +12,7 @@ export type { Flow, FlowData } from "./flow";
 // Type registries (separate registries for input and output types)
 export * from "./input-type-registry";
 export * from "./output-type-registry";
+
 // Built-in node types (auto-registers on import)
 import "./node-types";
 
@@ -20,11 +21,11 @@ export type { StreamingConfig } from "../types/data-store";
 export { DEFAULT_STREAMING_CONFIG } from "../types/data-store";
 export * from "./dead-letter-queue";
 export * from "./flow";
-export * from "./flow-queue";
-export * from "./flow-queue-store";
 // Core flow engine
 export { createFlowWithSchema } from "./flow";
 export * from "./flow-engine";
+export * from "./flow-queue";
+export * from "./flow-queue-store";
 export * from "./node";
 // Node types and interfaces
 export { createFlowNode, NodeType } from "./node";
