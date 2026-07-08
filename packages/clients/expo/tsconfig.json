@@ -3,7 +3,6 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ES2020", "ES2020.Promise"],
-    "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
     },

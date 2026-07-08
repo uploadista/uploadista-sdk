@@ -12,12 +12,12 @@
     "check": "biome check --write ./src"
   },
   "dependencies": {
+    "@lucide/vue": "1.23.0",
     "@uploadista/client-browser": "workspace:*",
     "@uploadista/core": "workspace:*",
     "@uploadista/vue": "workspace:*",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
-    "lucide-vue-next": "0.469.0",
     "tailwind-merge": "3.3.1",
     "vue": "3.5.22"
   },

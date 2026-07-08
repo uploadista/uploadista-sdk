@@ -2,7 +2,6 @@
   "extends": "@uploadista/typescript-config/base.json",
   "compilerOptions": {
     "lib": ["ES2020", "DOM"],
-    "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
     },

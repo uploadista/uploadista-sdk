@@ -131,7 +131,11 @@ class BrowserWebSocket implements WebSocketLike {
    * ```
    */
   send(data: string | Uint8Array): void {
-    this.native.send(data);
+    // `WebSocketLike.send` accepts a plain `Uint8Array` (backed by `ArrayBufferLike`),
+    // but the DOM `WebSocket.send` only accepts an `ArrayBuffer`-backed `BufferSource`
+    // (it rejects the `SharedArrayBuffer` case at the type level). In the browser the
+    // views we send are always `ArrayBuffer`-backed, so this assertion is safe.
+    this.native.send(data as string | Uint8Array<ArrayBuffer>);
   }
 
   /**
