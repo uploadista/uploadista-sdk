@@ -774,8 +774,8 @@ importers:
         specifier: workspace:*
         version: link:../../core
       js-base64:
-        specifier: 3.8.0
-        version: 3.8.0
+        specifier: 3.8.1
+        version: 3.8.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -796,8 +796,8 @@ importers:
         specifier: workspace:*
         version: link:../../core
       js-base64:
-        specifier: 3.8.0
-        version: 3.8.0
+        specifier: 3.8.1
+        version: 3.8.1
     devDependencies:
       '@uploadista/typescript-config':
         specifier: workspace:*
@@ -845,8 +845,8 @@ importers:
         specifier: '>=14.0.0'
         version: 17.0.8(expo@54.0.25)
       js-base64:
-        specifier: 3.8.0
-        version: 3.8.0
+        specifier: 3.8.1
+        version: 3.8.1
       react:
         specifier: '>=16.8.0'
         version: 19.1.0
@@ -9549,8 +9549,8 @@ packages:
   js-base64@3.7.8:
     resolution: {integrity: sha512-hNngCeKxIUQiEUN3GPJOkz4wF/YvdUdbNL9hsBcMQTkKzboD7T/q3OYOuuPZLUE6dBxSGpwhk5mwuDud7JVAow==}
 
-  js-base64@3.8.0:
-    resolution: {integrity: sha512-65kvbemyZhj+ExQt1PEFyBEjL5vAHysu1lJdW1AwhhChkO8ZBPizYk/m9GVrpbS2Je1hF+UYZ+6KywqtZV8mHw==}
+  js-base64@3.8.1:
+    resolution: {integrity: sha512-5xVjhUZlHHeuO2W7w2rDFj/Kl1xLX+HjZxdOQwCsUOifl6UaoH1o1wsbsTMz+r0aeC7gCijvru02j6TfKZWzKg==}
 
   js-beautify@1.15.4:
     resolution: {integrity: sha512-9/KXeZUKKJwqCXUdBxFJ3vPh467OCckSBmYDwSK/EtV090K+iMJ7zx2S3HLVDIWFQdqMIsZWbnaGiba18aWhaA==}
@@ -21476,7 +21476,7 @@ snapshots:
 
   js-base64@3.7.8: {}
 
-  js-base64@3.8.0: {}
+  js-base64@3.8.1: {}
 
   js-beautify@1.15.4:
     dependencies:

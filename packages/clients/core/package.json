@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@uploadista/core": "workspace:*",
-    "js-base64": "3.8.0"
+    "js-base64": "3.8.1"
   },
   "peerDependencies": {
     "zod": "^4.0.0"
