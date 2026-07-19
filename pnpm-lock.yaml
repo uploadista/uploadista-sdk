@@ -2137,8 +2137,8 @@ importers:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0
       ws:
-        specifier: 8.21.0
-        version: 8.21.0
+        specifier: 8.21.1
+        version: 8.21.1
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
@@ -12563,8 +12563,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.21.0:
-    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
+  ws@8.21.1:
+    resolution: {integrity: sha512-+0NTnW77fFN/DjQi6k/Sq/Yvk4Sgajw7urW8V+asjXnRgDs9gyGkdb7EzgfhA4goXsRIZKE28fzIXBHEzhuiWw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -14703,7 +14703,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
-      ws: 8.21.0
+      ws: 8.21.1
     optionalDependencies:
       expo-router: 6.0.15(5a68218f561ac1a7d3478e6c66d4ad8b)
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
@@ -14780,7 +14780,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
-      ws: 8.21.0
+      ws: 8.21.1
     optionalDependencies:
       expo-router: 6.0.15(78ecef0c2feaea3b205d5ddc00aa0672)
       react-native: 0.81.5(@babel/core@7.28.5)(@types/react@19.2.11)(react@19.1.0)
@@ -14903,7 +14903,7 @@ snapshots:
 
   '@expo/mcp-tunnel@0.1.0':
     dependencies:
-      ws: 8.21.0
+      ws: 8.21.1
       zod: 3.25.76
       zod-to-json-schema: 3.25.0(zod@3.25.76)
     transitivePeerDependencies:
@@ -15102,7 +15102,7 @@ snapshots:
     dependencies:
       duplexify: 4.1.3
       fastify-plugin: 5.1.0
-      ws: 8.18.3
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -20963,7 +20963,7 @@ snapshots:
       '@types/ws': 8.18.1
       entities: 4.5.0
       whatwg-mimetype: 3.0.0
-      ws: 8.21.0
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -25359,7 +25359,7 @@ snapshots:
 
   ws@8.18.3: {}
 
-  ws@8.21.0: {}
+  ws@8.21.1: {}
 
   wsl-utils@0.1.0:
     dependencies:
