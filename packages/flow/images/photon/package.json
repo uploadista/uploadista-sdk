@@ -29,7 +29,7 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@cf-wasm/photon": "0.3.6",
+    "@cf-wasm/photon": "0.3.7",
     "@uploadista/core": "workspace:*",
     "@uploadista/observability": "workspace:*",
     "tinycolor2": "1.6.0"
