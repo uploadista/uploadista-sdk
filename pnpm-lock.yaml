@@ -2137,8 +2137,8 @@ importers:
         specifier: ^4.0.0 || ^5.0.0
         version: 5.1.0(supports-color@10.2.2)
       ws:
-        specifier: 8.21.0
-        version: 8.21.0
+        specifier: 8.21.1
+        version: 8.21.1
     devDependencies:
       '@effect/vitest':
         specifier: 'catalog:'
@@ -12803,8 +12803,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.21.0:
-    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
+  ws@8.21.1:
+    resolution: {integrity: sha512-+0NTnW77fFN/DjQi6k/Sq/Yvk4Sgajw7urW8V+asjXnRgDs9gyGkdb7EzgfhA4goXsRIZKE28fzIXBHEzhuiWw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -15362,7 +15362,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
-      ws: 8.21.0
+      ws: 8.21.1
     optionalDependencies:
       expo-router: 6.0.15(2822117d6b69ec3483d7355d0c9e9cc0)
       react-native: 0.81.5(@babel/core@7.28.5(supports-color@10.2.2))(@types/react@19.1.17)(react@19.1.0)(supports-color@10.2.2)
@@ -15439,7 +15439,7 @@ snapshots:
       terminal-link: 2.1.1
       undici: 6.22.0
       wrap-ansi: 7.0.0
-      ws: 8.21.0
+      ws: 8.21.1
     optionalDependencies:
       expo-router: 6.0.15(39ecd9b81e64f12ea868d158039963fb)
       react-native: 0.81.5(@babel/core@7.28.5(supports-color@10.2.2))(@types/react@19.2.11)(react@19.1.0)(supports-color@10.2.2)
@@ -15562,7 +15562,7 @@ snapshots:
 
   '@expo/mcp-tunnel@0.1.0':
     dependencies:
-      ws: 8.21.0
+      ws: 8.21.1
       zod: 3.25.76
       zod-to-json-schema: 3.25.0(zod@3.25.76)
     transitivePeerDependencies:
@@ -15761,7 +15761,7 @@ snapshots:
     dependencies:
       duplexify: 4.1.3
       fastify-plugin: 5.1.0
-      ws: 8.18.3
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -21779,7 +21779,7 @@ snapshots:
       '@types/ws': 8.18.1
       entities: 4.5.0
       whatwg-mimetype: 3.0.0
-      ws: 8.21.0
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -26347,7 +26347,7 @@ snapshots:
 
   ws@8.18.3: {}
 
-  ws@8.21.0: {}
+  ws@8.21.1: {}
 
   wsl-utils@0.1.0:
     dependencies:
