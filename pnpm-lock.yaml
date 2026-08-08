@@ -1166,8 +1166,8 @@ importers:
   packages/data-stores/r2:
     dependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1306,8 +1306,8 @@ importers:
   packages/event-emitters/durable-object:
     dependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1852,8 +1852,8 @@ importers:
   packages/kv-stores/cloudflare-do:
     dependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -1877,8 +1877,8 @@ importers:
   packages/kv-stores/cloudflare-kv:
     dependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -2039,8 +2039,8 @@ importers:
         version: 1.38.0
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.29.0(effect@3.22.1)(vitest@4.1.10(@opentelemetry/api@1.9.0)(@types/node@24.10.9)(happy-dom@20.4.0)(jsdom@29.0.0(@noble/hashes@1.8.0))(vite@8.1.0(@types/node@24.10.9)(jiti@2.7.0)(terser@5.44.1)(tsx@4.20.6)(yaml@2.9.0)))
@@ -2223,8 +2223,8 @@ importers:
   packages/servers/adapters-hono:
     dependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@uploadista/core':
         specifier: workspace:*
         version: link:../../core
@@ -2297,8 +2297,8 @@ importers:
         version: 4.10.7
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260708.1
-        version: 5.20260708.1
+        specifier: 5.20260710.1
+        version: 5.20260710.1
       '@effect/vitest':
         specifier: 'catalog:'
         version: 0.29.0(effect@3.22.1)(vitest@4.1.10(@opentelemetry/api@1.9.0)(@types/node@24.10.9)(happy-dom@20.4.0)(jsdom@29.0.0(@noble/hashes@1.8.0))(vite@8.1.0(@types/node@24.10.9)(jiti@2.7.0)(terser@5.44.1)(tsx@4.20.6)(yaml@2.9.0)))
@@ -3512,8 +3512,8 @@ packages:
   '@cloudflare/workers-types@4.20260629.1':
     resolution: {integrity: sha512-5vq2ErIFVRSQ8Dcw5YOeEoBdZBudqBjHFKTWD3SBGiJR5hD1+/86aRUV/DTpEK9sXXCGOTGgpWBGlPSlW7djVg==}
 
-  '@cloudflare/workers-types@5.20260708.1':
-    resolution: {integrity: sha512-FSRyCsxALKmmNnk/2HMkTiX9Iz9yqTiTWX/BJZdffGznMSunXmQgb3mKy9wGBX2BCTLOuRYWL36uh7/3Gm05Eg==}
+  '@cloudflare/workers-types@5.20260710.1':
+    resolution: {integrity: sha512-4ooaY2Pb5XGwDn8Fzm6jnTAJkIX0R5LBvL9euQpp2T58sQItlAQd9yivAlkwGhpY5cM1u81/9HaXwKAjXwtyzA==}
 
   '@craftzdog/react-native-buffer@6.1.0':
     resolution: {integrity: sha512-lJXdjZ7fTllLbzDrwg/FrJLjQ5sBcAgwcqgAB6OPpXTHdCenEhHZblQpfmBLLe7/S7m0yKXL3kN3jpwOEkpjGg==}
@@ -14984,7 +14984,7 @@ snapshots:
   '@cloudflare/workers-types@4.20260629.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260708.1': {}
+  '@cloudflare/workers-types@5.20260710.1': {}
 
   '@craftzdog/react-native-buffer@6.1.0(react-native@0.81.5(@babel/core@7.28.5(supports-color@10.2.2))(@types/react@19.2.11)(react@19.1.0)(supports-color@10.2.2))(react@19.1.0)':
     dependencies:
