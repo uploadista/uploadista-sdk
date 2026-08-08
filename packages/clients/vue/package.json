@@ -45,7 +45,7 @@
     "@uploadista/core": "workspace:*"
   },
   "devDependencies": {
-    "@tsdown/css": "0.22.3",
+    "@tsdown/css": "0.22.14",
     "@uploadista/typescript-config": "workspace:*",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/test-utils": "^2.4.6",
