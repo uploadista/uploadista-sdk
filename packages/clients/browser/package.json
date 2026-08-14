@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
-    "happy-dom": "20.4.0",
+    "happy-dom": "20.11.2",
     "tsdown": "catalog:",
     "vitest": "4.1.10"
   }
