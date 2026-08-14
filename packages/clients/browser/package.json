@@ -35,7 +35,7 @@
   "dependencies": {
     "@uploadista/client-core": "workspace:*",
     "@uploadista/core": "workspace:*",
-    "js-base64": "3.8.0"
+    "js-base64": "3.9.2"
   },
   "devDependencies": {
     "@uploadista/typescript-config": "workspace:*",
