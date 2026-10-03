@@ -28,7 +28,7 @@ allowBuilds:
   workerd: true
 
 catalog:
-  '@effect/vitest': 0.29.0
+  '@effect/vitest': 0.30.0
   '@types/node': 24.10.9
   effect: 3.22.1
   hono: 4.12.34
